@@ -2,7 +2,7 @@
 
 ## 小组坟贴标记
 
-安装地址：[mark\_old\_topic.user.js](./mark_old_topic.user.js)
+安装地址：[mark\_old\_topic.user.js](mark_old_topic.user.js?raw=true)
 
 版本：1.0
 
