@@ -1,5 +1,11 @@
 # [upsuper](http://bangumi.tv/user/upsuper)
 
+## [标签批量管理](tag_batch_editor.user.js?raw=true)
+
+支持批量添加、修改、删除标签。虽然脚本支持多任务同时进行，但如果多个任务之间有交叉的条目，可能存在修改不完全的风险。
+
+![Screenshot](images/screenshot_tag_batch_editor.png "Screenshot")
+
 ## [讨论增强](topic_enhancement.user.js?raw=true)
 
 讨论增强目前包含了两个功能：
