@@ -1,5 +1,11 @@
 # [upsuper](http://bangumi.tv/user/upsuper)
 
+## [目录管理增强](index_manager.user.js?raw=true)
+
+讨论帖：http://bangumi.tv/group/topic/22038
+
+增强目录管理功能。目前的功能为批量填写编号修改排序。未来计划添加拖拽排序支持、导入导出目录几批量删除的功能。
+
 ## [标签批量管理](tag_batch_editor.user.js?raw=true)
 
 支持批量添加、修改、删除标签。虽然脚本支持多任务同时进行，但如果多个任务之间有交叉的条目，可能存在修改不完全的风险。
