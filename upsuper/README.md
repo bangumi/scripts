@@ -1,5 +1,15 @@
 # [upsuper](http://bangumi.tv/user/upsuper)
 
+## [首页条目名中文化](name_chinesizer.user.js?raw=true)
+
+讨论帖：http://bangumi.tv/group/topic/20071
+
+自动将 Bangumi 首页上的条目日文名翻译为中文名。包括顶部进度管理中的条目、热门条目讨论中的条目名，以及时间线上的所有条目。
+
+每个条目第一次出现时程序会自动抓取条目页面并读取中文名，而后将缓存此中文名。如果条目原没有中文名而后添加了，或中文名修改了，访问该条目的条目页面将更新缓存的中文名。
+
+首页右下角的 dock 里的菱形图标可以切换显示以中文为主或以日文为主。
+
 ## [目录管理增强](index_manager.user.js?raw=true)
 
 讨论帖：http://bangumi.tv/group/topic/22038
