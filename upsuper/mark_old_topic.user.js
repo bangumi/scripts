@@ -2,7 +2,7 @@
 // @name        Bangumi 小组坟贴标记
 // @namespace   org.upsuper.bangumi
 // @include     /^http://(bangumi\.tv|bgm\.tv|chii\.in)/group/topic/\d+(#.*)?$/
-// @version     1.0
+// @version     1.1
 // @grant       GM_addStyle
 // ==/UserScript==
 
@@ -21,6 +21,9 @@ GM_addStyle("\
 } \
 .postTopic, .row_reply, .sub_reply_bg { \
   position: relative; \
+} \
+#sliderContainer.sticky { \
+  z-index: 100; \
 } \
 ");
 
