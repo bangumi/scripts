@@ -20,7 +20,7 @@
 // @include     http://chii.in/subject/*
 // @exclude     http://chii.in/subject/*/*
 // @include     http://chii.in/user/*/timeline*
-// @version     5.2.1
+// @version     5.2.2
 // ==/UserScript==
 
 var localStorage = window.localStorage,
@@ -193,7 +193,7 @@ document.body.appendChild($style);
 
 // create switcher
 var $logout = $('#dock a[href*="/logout/"]'),
-$dock = $('#dock .inner');
+    $dock = $logout.parentNode;
 if ($logout) {
   var $switcher = $c('a');
   $switcher.href = '#';
