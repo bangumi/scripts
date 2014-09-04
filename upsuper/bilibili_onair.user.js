@@ -11,7 +11,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.2
+// @version     3.2.1
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -162,22 +162,16 @@ function getBilibiliSP(subject_id, callback) {
   }
 }
 function parseBilibiliBgmPage(content) {
-  var anchors = /<a href="(\/video\/av(\d+)\/)" target="_blank">/g
-    , titles = /<div class="t">(.+?)<\/div>/g
+  var anchors = /<a class="t" href="(\/video\/av(\d+)\/)" target="_blank">\s+(.+?)\s+<\/a>/gm
     , maxAv = 0
     , resultUrl, resultTitle
     , anchor;
 
   while ((anchor = anchors.exec(content)) !== null) {
-    var av = parseInt(anchor[2])
-      , title;
+    var av = parseInt(anchor[2]);
     if (av > maxAv) {
-      titles.lastIndex = anchors.lastIndex;
-      title = titles.exec(content);
-      if (!title)
-        continue;
       resultUrl = anchor[1];
-      resultTitle = title[1];
+      resultTitle = anchor[3];
       maxAv = av;
     }
   }
