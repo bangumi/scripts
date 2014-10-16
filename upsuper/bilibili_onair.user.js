@@ -11,7 +11,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.2.1
+// @version     3.2.2
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -184,7 +184,7 @@ function parseBilibiliBgmPage(content) {
   };
 }
 function getBilibiliLink(spid, seasonId, lastupdate, callback) {
-  var key = biliBgmPrefix + spid
+  var key = biliBgmPrefix + spid + '_' + seasonId
     , bgm = localStorage[key];
   if (bgm) {
     var bgminfo = /^(\d+);(.*?);(.*)$/.exec(bgm);
@@ -312,8 +312,7 @@ if (location.pathname == '/') {
   }
 } else {
   var subject_id = location.pathname.split('/')[2]
-    , key = biliSPPrefix + subject_id
-    , sp = localStorage[biliSPPrefix + subject_id];
+    , key = biliSPPrefix + subject_id;
   if (localStorage[key]) {
     // we do not want to truly remove the value,
     // just hope to give it a chance to be updated
