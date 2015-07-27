@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        Bangumi 标签批量管理
 // @namespace   org.upsuper.bangumi
-// @include     /^http://(bgm\.tv|chii\.in|bangumi\.tv)/(anime|book|music|game|real)/list/.+$/
-// @version     2.3
+// @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(anime|book|music|game|real)/list/.+$/
+// @version     2.4
 // @grant       GM_addStyle
 // ==/UserScript==
 

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        Bangumi 小组坟贴标记
 // @namespace   org.upsuper.bangumi
-// @include     /^http://(bangumi\.tv|bgm\.tv|chii\.in)/group/topic/\d+(#.*)?$/
-// @version     1.1
+// @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/group/topic/\d+(#.*)?$/
+// @version     1.2
 // @grant       GM_addStyle
 // ==/UserScript==
 

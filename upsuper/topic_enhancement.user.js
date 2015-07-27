@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name        Bangumi 讨论增强
 // @namespace   org.upsuper.bangumi
-// @include     /^http://(bgm\.tv|chii\.in|bangumi\.tv)/(ep|character|(group|subject)/topic|rakuen/topic/(ep|crt|group|subject))/\d+(\?.*)?(#.*)?$/
+// @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(ep|character|(group|subject)/topic|rakuen/topic/(ep|crt|group|subject))/\d+(\?.*)?(#.*)?$/
 // @grant       none
-// @version     4.3
+// @version     4.4
 // ==/UserScript==
 
 var PREFIX_POST_READ = 'PostRead_'

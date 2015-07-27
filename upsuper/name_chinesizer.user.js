@@ -14,13 +14,19 @@
 // @include     http://bgm.tv/subject/*
 // @exclude     http://bgm.tv/subject/*/*
 // @include     http://bgm.tv/user/*/timeline*
+// @include     https://bgm.tv/
+// @include     https://bgm.tv/?*
+// @include     https://bgm.tv/timeline*
+// @include     https://bgm.tv/subject/*
+// @exclude     https://bgm.tv/subject/*/*
+// @include     https://bgm.tv/user/*/timeline*
 // @include     http://chii.in/
 // @include     http://chii.in/?*
 // @include     http://chii.in/timeline*
 // @include     http://chii.in/subject/*
 // @exclude     http://chii.in/subject/*/*
 // @include     http://chii.in/user/*/timeline*
-// @version     5.2.3
+// @version     5.2.4
 // ==/UserScript==
 
 (function() {

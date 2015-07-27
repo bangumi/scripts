@@ -3,11 +3,13 @@
 // @namespace   org.upsuper.bangumi
 // @include     http://bangumi.tv/subject/*
 // @include     http://bgm.tv/subject/*
+// @include     https://bgm.tv/subject/*
 // @include     http://chii.in/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
 // @exclude     http://bgm.tv/subject/*/*
+// @exclude     https://bgm.tv/subject/*/*
 // @exclude     http://chii.in/subject/*/*
-// @version     1.4.1
+// @version     1.4.2
 // ==/UserScript==
 
 function $(q) { return document.querySelector(q); }

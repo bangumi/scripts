@@ -5,6 +5,9 @@
 // @include     http://bgm.tv/
 // @include     http://bgm.tv/subject/*
 // @exclude     http://bgm.tv/subject/*/*
+// @include     https://bgm.tv/
+// @include     https://bgm.tv/subject/*
+// @exclude     https://bgm.tv/subject/*/*
 // @include     http://chii.in/
 // @include     http://chii.in/subject/*
 // @exclude     http://chii.in/subject/*/*

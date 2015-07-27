@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi 目录管理增强
 // @namespace   org.upsuper.bangumi
-// @include     /^http://(bgm\.tv|chii\.in|bangumi\.tv)/index/\d+(\?.*)?(#.*)?$/
+// @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/index/\d+(\?.*)?(#.*)?$/
 // @grant       none
 // @version     1.1
 // ==/UserScript==
