@@ -26,12 +26,13 @@
 鉴于有多个条目关联时要修改顺序时不够直观，  
 所以直接上个拖动排序了。
 
-## [拖动排序目录 BDSI](bangumi-drag2sort-index.user.js?raw=true)
+## [目录批量编辑 BIBE](bangumi-index-batch-edit.user.js?raw=true)
 
 本来 upsuper 有做一个[目录管理增强](https://github.com/bangumi/scripts/blob/master/upsuper/index_manager.user.js)，  
 但很可惜不支持拖动排序，  
 本来是想发 PR 的可是发现其实可以用更简单的方式实现（直接拿 jQuery + jQuery UI 就好了），  
 所以就从头开始做了。
+目前已经支持批量排序、编辑注解的功能了。
 
 ## [防剧透 BAN](bangumi-anti-netabare.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/311322)

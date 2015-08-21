@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name        Bangumi-Drag2Sort-Index
-// @namespace   BDSI
-// @description Drag to sort your index.
+// @name        Bangumi-Index-Batch-Edit
+// @namespace   BIBE
+// @description Batch edit comments in your index, and easily sort them by dragging.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/index\/\d+/
 // @version     0.0.1
 // @grant       none
@@ -10,17 +10,20 @@
 
 //Check the owner of index, then insert the button for modify orders
 if($('.idBadgerNeue a.avatar').attr('href').search($('.grp_box a.avatar').attr('href')) >= 0)
-    $('.grp_box .tip_j').append(' / <a id="modifyOrder" class="chiiBtn" href="#">修改排序</a>');
+    $('.grp_box .tip_j').append(' / <a id="modifyOrder" class="chiiBtn" href="#">批量编辑</a>');
 
 //Get formhash
 var formhash = $('input[name="formhash"]').val();
 
 $('#modifyOrder').click(function() {
   $('#browserItemList').sortable({
-    update: function(event, ui) {
-    }
+    handle: ".cover"
   });
-  $('#browserItemList').disableSelection();
+  $('#browserItemList .tools').each(function() {
+    if($(this).parent().find('.text').length == 0)
+      $('<div id="comment_box"><div class="item"><div style="float:none;" class="text_main_even"><div class="text"><br></div><div class="text_bottom"></div></div></div></div>').insertBefore($(this));
+  });
+  $('#browserItemList .text').attr('contenteditable', 'true');
   $(this).remove();
 
   $('.grp_box .tip_j').append('<a id="saveOrder" class="chiiBtn" href="#">保存修改</a>');
