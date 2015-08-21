@@ -3,7 +3,7 @@
 // @namespace   BIBE
 // @description Batch edit comments in your index, and easily sort them by dragging.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/index\/\d+/
-// @version     0.0.1
+// @version     0.0.2
 // @grant       none
 // @require     https://code.jquery.com/ui/1.11.4/jquery-ui.min.js
 // ==/UserScript==
@@ -35,7 +35,7 @@ $('#modifyOrder').click(function() {
       var postData = {content: '', formhash: '', order: ''};
       postData.content = $(this).find('.text').html();
       if(typeof postData.content === "undefined") postData.content = '';
-      postData.content = postData.content.trim();
+      postData.content = postData.content.trim().replace(/<br( \/|)>/, '');
       
       postData.formhash = formhash;
       postData.order = i;
