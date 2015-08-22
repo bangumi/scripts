@@ -3,7 +3,7 @@
 // @namespace   BIBE
 // @description Batch edit comments in your index, and easily sort them by dragging.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/index\/\d+/
-// @version     0.0.3
+// @version     0.0.4
 // @grant       none
 // @require     https://code.jquery.com/ui/1.11.4/jquery-ui.min.js
 // ==/UserScript==
@@ -13,6 +13,9 @@ if($('.idBadgerNeue a.avatar').attr('href').search($('.grp_box a.avatar').attr('
   $('.grp_box .tip_j').append(' / <a id="modifyOrder" class="chiiBtn" href="#">批量编辑</a>');
   $('#indexCatBox ul').append('<li><a id="addRelateBatch" class="add thickbox" title="批量添加关联" href="#TB_inline?tb&height=500&width=420&inlineId=newIndexRelatedBatch"><span>+批量添加关联</span></a></li>');
   $('<div style="display:none;" id="newIndexRelatedBatch"><div class="bibeBox" style="padding:10px"><label>输入条目URL或ID，如 http://bgm.tv/subject/265 或 265，一行一个</label><textarea rows="25" class="quick" name="urls"></textarea><input type="button" class="inputBtn" value="批量添加关联" name="submit" onclick="addRelateBatch()"></div></div>').insertBefore('#indexCatBox');
+  
+  //Re-init the element we just inserted.
+  tb_init('a.thickbox');
 }
 
 //Get formhash
