@@ -1,6 +1,13 @@
 # [binota](https://bgm.tv/user/binota)
 如果没特别标注的话，我的脚本一律用 MIT License。
 
+## [关联条目批量编辑 BRRS](bangumi-rename-related-subjects.user.js?raw=true)
+讨论帖[戳我](https://bgm.tv/group/topic/311647)
+
+批量编辑关联条目们
+![Screenshot](http://r.loli.io/vay6ny.jpg)
+![Screenshot](http://r.loli.io/jMR3Mn.jpg)
+
 ## [历史条目对比 BHD](bangumi-history-diff.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/311622)
 
