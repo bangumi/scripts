@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        Bangumi-ISBN-Amazon-Link
 // @namespace   BIAL
+// @description Add amazon link by ISBN
 // @include     /https?:\/\/(bgm|bangumi|chii)\.(tv|in)\/subject\/\d+/
 // @version     0.0.1
 // @grant       none
