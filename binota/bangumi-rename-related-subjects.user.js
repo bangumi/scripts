@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.0.2
+// @version     0.0.3
 // @grant       none
 // ==/UserScript==
 
@@ -71,7 +71,10 @@ $('#brrs-launcher').click(function() {
     li += '</td><td>';
     $.get('/subject/' + subjects[i].id + '/edit_detail', function(data) {
       var subject_id = data.match(/<a href="\/subject\/(\d+)" title="[^"]*" property="v:itemre/)[1];
-      var $i = subjects.findIndex(function(data) { if(data.id == subject_id) return true; });
+      var $i = null;
+      for($i in subjects) {
+        if(subjects[$i].id == subject_id) break;
+      }
       
       subjects[$i].platform = data.match(/value="(\d+)" onclick="WikiTpl\('[^']+'\)" checked>/)[1];
       subjects[$i].infobox = data.match(/subject_infobox"[^>]+>([\S\s]*?)<\/textarea>/m)[1];
