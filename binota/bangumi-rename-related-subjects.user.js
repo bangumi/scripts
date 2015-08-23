@@ -3,25 +3,25 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.0.3
+// @version     0.0.4
 // @grant       none
 // ==/UserScript==
 
 var platforms = {
-  book: [{id: 1001, name: '漫画', meta: 'comic'},
-         {id: 1002, name: '小说', meta: 'novel'},
-         {id: 1003, name: '画集', meta: 'illustration'},
-         {id: 0, name: '其它', meta: 'misc'}],
-  anime: [{id: 1, name: 'TV', meta: 'tv'},
-          {id: 2, name: 'OVA', meta: 'ova'},
-          {id: 3, name: '剧场版', meta: 'movie'},
-          {id: 0, name: '其它', meta: 'misc'}],
+  book: [{id: 1001, name: '漫画', meta: 'Manga'},
+         {id: 1002, name: '小说', meta: 'Novel'},
+         {id: 1003, name: '画集', meta: 'Book'},
+         {id: 0, name: '其它', meta: 'Book'}],
+  anime: [{id: 1, name: 'TV', meta: 'TVAnime'},
+          {id: 2, name: 'OVA', meta: 'OVA'},
+          {id: 3, name: '剧场版', meta: 'Movie'},
+          {id: 0, name: '其它', meta: 'Anime'}],
   music: [],
   game: [],
-  real: [{id: 1, name: '日剧'},
-         {id: 2, name: '欧美剧'},
-         {id: 3, name: '华语剧'},
-         {id: 0, name: '其它'}]
+  real: [{id: 1, name: '日剧', meta: 'Television'},
+         {id: 2, name: '欧美剧', meta: 'Television'},
+         {id: 3, name: '华语剧', meta: 'Television'},
+         {id: 0, name: '其它', meta: 'Television'}]
 };
 var subjects = [];
 var saving = 0;
@@ -40,6 +40,7 @@ $('<div id="brrs-workspace" class="columns clearit" style="display: none; paddin
           '#brrs-subject-list label { padding: 0 7px; }' +
       '</style>' +
       '<table id="brrs-subject-list"></table>' +
+      '<input type="hidden" id="subject_infobox" style="display:none;">' +
       '<input id="brrs-save" type="button" class="inputBtn" value="批量保存">' +
       '<small class="grey clearit rr">Powered by <a href="https://github.com/bangumi/scripts/tree/master/binota" target="_blank">BRRS</a>.</small>' +
   '</div>').insertBefore('.mainWrapper .columns');
@@ -97,11 +98,11 @@ $('#brrs-launcher').click(function() {
                    'type="radio" ' +
                    'value="' + platforms[platform][j].id + '" ' +
                    'name="platform[' + subjects[i].id + ']"' +
-                   'onchange="$(this.parentNode.parentNode).attr(\'data-edited\',\'1\')">';
+                   'onchange="$(this.parentNode.parentNode).attr(\'data-edited\',\'1\');changeSubjectType(' + i + ', \'' + platforms[platform][j].meta + '\');">';
       li += '<label for="platform[' + subjects[i].id + ']">' + platforms[platform][j].name + '</label>';
     }
     li += '</td><td>';
-    li += '<a class="chiiBtn thickbox" href="TB_inline?tb&height=500&width=500&inlineId=brrs-subject-details-' + subjects[i].id + '">编辑详细信息</a>';
+    li += '<a class="chiiBtn thickbox" href="#TB_inline?tb&height=500&width=500&inlineId=brrs-subject-details-' + subjects[i].id + '">编辑详细信息</a>';
     li += '<div id="brrs-subject-details-' + subjects[i].id + '" style="display:none;"></div>';
     li += '</td>';
     li += '</tr>';
@@ -118,6 +119,15 @@ window.saveTbSubject = function(i) {
   subjects[i].infobox = $('#TB_window textarea[name=infobox]').val();
   subjects[i].summary = $('#TB_window textarea[name=summary]').val();
   tb_remove();
+}
+
+window.changeSubjectType = function(i, platform) {
+  $('#subject_infobox').val(subjects[i].infobox);
+  WikiTpl(platform);
+  subjects[i].infobox = $('#subject_infobox').val();
+  $('#brrs-subject-details-' + subjects[i].id + ' textarea[name="infobox"]').val($('#subject_infobox').val());
+  $('#subject_infobox').val('');
+  console.log(subjects);
 }
 
 //Save:
