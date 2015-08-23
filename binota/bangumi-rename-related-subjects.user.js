@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.0.4
+// @version     0.0.5
 // @grant       none
 // ==/UserScript==
 
@@ -121,13 +121,13 @@ window.saveTbSubject = function(i) {
   tb_remove();
 }
 
-window.changeSubjectType = function(i, platform) {
+window.changeSubjectType = function(i, platform) {/*
   $('#subject_infobox').val(subjects[i].infobox);
   WikiTpl(platform);
   subjects[i].infobox = $('#subject_infobox').val();
   $('#brrs-subject-details-' + subjects[i].id + ' textarea[name="infobox"]').val($('#subject_infobox').val());
   $('#subject_infobox').val('');
-  console.log(subjects);
+  console.log(subjects);*/
 }
 
 //Save:
