@@ -3,14 +3,14 @@
 // @namespace   BIAL
 // @description Add amazon link by ISBN
 // @include     /https?:\/\/(bgm|bangumi|chii)\.(tv|in)\/subject\/\d+$/
-// @version     0.0.3
+// @version     0.0.4
 // @grant       none
 // ==/UserScript==
 
 $('#infobox').html((function() {
     var isbn = $('#infobox').html().match(/ISBN: <\/span\>([\dX\-]+)/)[1];
     if(typeof isbn == "undefined") return $('#infobox').html();
-    isbn.replace('-', '');
+    isbn = isbn.replace(/\-/g, '');
     if(isbn.length == 13) {
         isbn = isbn.substr(3, 9);
         var tmp = 0;
