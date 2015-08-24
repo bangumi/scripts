@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.1.1
+// @version     0.1.2
 // @grant       none
 // ==/UserScript==
 
@@ -167,7 +167,8 @@ window.seriesTitle = function() {
   var title = $('.nameSingle a').html().trim();
   var i = 1;
   $('#brrs-subject-list input.inputtext').each(function() {
-    $(this).val(title + ' (' + (i++) + ')');
+    $(this).val(title + ' (' + ((i < 10) ? ('0' + i) : i) + ')');
+    i++;
   });
   $('#brrs-subject-list tr[data-edited=0]').attr('data-edited', '1')
 }
