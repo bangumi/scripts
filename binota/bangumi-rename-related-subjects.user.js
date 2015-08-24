@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.1.2
+// @version     0.1.3
 // @grant       none
 // ==/UserScript==
 
@@ -32,8 +32,6 @@ var editCount = 0;
 var mode = MODE_NORMAL;
 var editSummary = '标题修正+类型修正 [BRRS]';
 var formhash = $('input[name="formhash"]').val();
-
-//Check platform type by url:
 
 //Preparing workspace:
 $('<div id="brrs-workspace" class="columns clearit" style="display: none; padding: 10px 0;">' +
@@ -165,9 +163,9 @@ window.saveTbSubject = function(i) {
 
 window.seriesTitle = function() {
   var title = $('.nameSingle a').html().trim();
-  var i = 1;
+  var i = parseInt(prompt('请输入序号起始', 1));
   $('#brrs-subject-list input.inputtext').each(function() {
-    $(this).val(title + ' (' + ((i < 10) ? ('0' + i) : i) + ')');
+    $(this).val(title + ' (' + ((i < 10 && i >= 0) ? ('0' + i) : i) + ')');
     i++;
   });
   $('#brrs-subject-list tr[data-edited=0]').attr('data-edited', '1')
