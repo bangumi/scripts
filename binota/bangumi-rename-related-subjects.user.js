@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.1.6
+// @version     0.1.7
 // @grant       none
 // ==/UserScript==
 
@@ -172,18 +172,16 @@ window.seriesTitle = function() {
 }
 
 window.removeChineseName = function() {
+  if(!confirm('本功能仅限于单行本「没有副标」的情况下使用，\n若单行本有副标题请勿使用！\n要继续么？')) return;
   for(i in subjects) {
     var chs = subjects[i].infobox.match(/中文名=(.+)/);
     if(chs !== null && chs[1].trim().length > 0) {
-      console.log(chs);
       subjects[i].infobox = subjects[i].infobox.replace(/中文名=(.+)/, '中文名= ');
-      console.log(subjects[i].infobox)
       $('#brrs-subject-list textarea[name="infobox"]').val(subjects[i].infobox);
       $('#brrs-subject-list tr[data-listid="' + i + '"]').attr('data-edited', '1');
       editSummary = '标题修正+类型修正+单行本去中文名 [BRRS]';
     }
   }
-  console.log(subjects);
 }
 
 //Save:
