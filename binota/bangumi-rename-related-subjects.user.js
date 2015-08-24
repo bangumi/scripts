@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.1.3
+// @version     0.1.4
 // @grant       none
 // ==/UserScript==
 
@@ -177,6 +177,7 @@ window.removeChineseName = function() {
     if(typeof chs[1] !== "undefined" && chs[1].trim().length > 0) {
       subjects[i].infobox = subjects[i].infobox.replace(/中文名=.+/, '中文名= ');
       $('#brrs-subject-list textarea[name="infobox"]').val(subjects[i].infobox);
+      $('#brrs-subject-list tr[data-listid="' + i + '"]').attr('data-edited', '1');
     }
   }
 }
