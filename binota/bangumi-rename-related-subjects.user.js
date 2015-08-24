@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.0.5
+// @version     0.0.6
 // @grant       none
 // ==/UserScript==
 
@@ -98,8 +98,9 @@ $('#brrs-launcher').click(function() {
                    'type="radio" ' +
                    'value="' + platforms[platform][j].id + '" ' +
                    'name="platform[' + subjects[i].id + ']"' +
-                   'onchange="$(this.parentNode.parentNode).attr(\'data-edited\',\'1\');changeSubjectType(' + i + ', \'' + platforms[platform][j].meta + '\');">';
-      li += '<label for="platform[' + subjects[i].id + ']">' + platforms[platform][j].name + '</label>';
+                   'id="brrs-platform-' + subjects[i].id + '-' + platforms[platform][j].id + '"' +
+                   'onchange="$(this.parentNode.parentNode).attr(\'data-edited\',\'1\');">';
+      li += '<label for="brrs-platform-' + subjects[i].id + '-' + platforms[platform][j].id + '">' + platforms[platform][j].name + '</label>';
     }
     li += '</td><td>';
     li += '<a class="chiiBtn thickbox" href="#TB_inline?tb&height=500&width=500&inlineId=brrs-subject-details-' + subjects[i].id + '">编辑详细信息</a>';
@@ -119,15 +120,6 @@ window.saveTbSubject = function(i) {
   subjects[i].infobox = $('#TB_window textarea[name=infobox]').val();
   subjects[i].summary = $('#TB_window textarea[name=summary]').val();
   tb_remove();
-}
-
-window.changeSubjectType = function(i, platform) {/*
-  $('#subject_infobox').val(subjects[i].infobox);
-  WikiTpl(platform);
-  subjects[i].infobox = $('#subject_infobox').val();
-  $('#brrs-subject-details-' + subjects[i].id + ' textarea[name="infobox"]').val($('#subject_infobox').val());
-  $('#subject_infobox').val('');
-  console.log(subjects);*/
 }
 
 //Save:
