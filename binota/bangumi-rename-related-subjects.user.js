@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.1.0
+// @version     0.1.1
 // @grant       none
 // ==/UserScript==
 
@@ -81,7 +81,10 @@ $('#brrs-launcher').click(function() {
   if(mode == MODE_OFFPRINT) {
     var li = '<tr>';
     li += '<td></td>';
-    li += '<td><a class="chiiBtn" href="#" onclick="seriesTitle()">全部填入系列标题 + 序号</a></td>';
+    li += '<td>';
+    li += '<a class="chiiBtn" href="#" onclick="seriesTitle()">全部填入系列标题 + 序号</a>';
+    li += '<a class="chiiBtn" href="#" onclick="removeChineseName()">去中文名</a>';
+    li += '</td>';
     li += '<td>';
     for(j in platforms[platform]) {
       li += '<input class="platform radio" ' +
@@ -167,6 +170,16 @@ window.seriesTitle = function() {
     $(this).val(title + ' (' + (i++) + ')');
   });
   $('#brrs-subject-list tr[data-edited=0]').attr('data-edited', '1')
+}
+
+window.removeChineseName = function() {
+  for(i in subjects) {
+    var chs = subjects[i].infobox.match(/中文名=(.+)/);
+    if(typeof chs[1] !== "undefined" && chs[1].trim().length > 0) {
+      subjects[i].infobox = subjects[i].infobox.replace(/中文名=.+/, '中文名= ');
+      $('#brrs-subject-list textarea[name="infobox"]').val(subjects[i].infobox);
+    }
+  }
 }
 
 //Save:
