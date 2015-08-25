@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.1.7
+// @version     0.1.8
 // @grant       none
 // ==/UserScript==
 
@@ -46,18 +46,23 @@ $('<div id="brrs-workspace" class="columns clearit" style="display: none; paddin
       '<input id="brrs-save" type="button" class="inputBtn" value="批量保存">' +
       '<small class="grey clearit rr">Powered by <a href="https://github.com/bangumi/scripts/tree/master/binota" target="_blank">BRRS</a>.</small>' +
   '</div>').insertBefore('.mainWrapper .columns');
-$('<a class="chiiBtn rr" id="brrs-launcher" href="#">BRRS</a>').insertAfter('#modifyOrder');
+$('<a class="chiiBtn rr" id="brrs-launcher-normal" href="#">BRRS</a>').insertAfter('#modifyOrder');
 $('<a class="chiiBtn rr" id="brrs-launcher-offprint" href="#">BRRS 单行本</a>').insertAfter('#modifyOrder');
 
 //Detect the type of platform:
 var platform = window.location.href.match(/add_related\/subject\/(anime|book|music|game|real)/)[1];
 
 //Get subjects:
-$('#crtRelateSubjects > li').each(function() {
-  var subject = {};
-  subject.id = $(this).attr('item_id');
-  subject.title = $(this).find('.title a').html().trim();
-  subjects.push(subject);
+$('#brrs-launcher-normal').click(function() {
+  mode = MODE_NORMAL;
+  subjects = [];
+  $('#crtRelateSubjects > li').each(function() {
+    var subject = {};
+    subject.id = $(this).attr('item_id');
+    subject.title = $(this).find('.title a').html().trim();
+    subjects.push(subject);
+  });
+  launcherBrrs();
 });
 
 $('#brrs-launcher-offprint').click(function() {
@@ -71,10 +76,12 @@ $('#brrs-launcher-offprint').click(function() {
     subject.title = $(this).parent().parent().find('.title a').html().trim();
     subjects.push(subject);
   });
-  $('#brrs-launcher').click();
+  launcherBrrs();
 });
 
-$('#brrs-launcher').click(function() {
+var launcherBrrs = function() {
+  //Clean workspace:
+  $('#brrs-subject-list').html('');
   $('#brrs-workspace').show();
   if(mode == MODE_OFFPRINT) {
     var li = '<tr>';
@@ -151,7 +158,7 @@ $('#brrs-launcher').click(function() {
 
   //Re-init thickbox
   tb_init('a.thickbox');
-});
+}
 
 
 window.saveTbSubject = function(i) {
