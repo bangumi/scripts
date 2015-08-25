@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.2.0
+// @version     0.2.0.1
 // @grant       none
 // ==/UserScript==
 
@@ -96,9 +96,9 @@ var launcherBrrs = function() {
     li += '<a class="chiiBtn" href="#" onclick="appendTitle($(\'.nameSingle a\').text().trim())">系列标题</a>';
     li += '<a class="chiiBtn" href="#" onclick="appendTitle(\' \')">半角空格</a>';
     li += '<a class="chiiBtn" href="#" onclick="appendTitle(\'(\')">(</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendSeriesNumber(prompt(\'请输入起始序号\', 1))">序号</a>';
+    li += '<a class="chiiBtn" href="#" onclick="appendSeriesNumber(parseInt(prompt(\'请输入起始序号\', 1)))">序号</a>';
     li += '<a class="chiiBtn" href="#" onclick="appendTitle(\')\')">)</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendTitle(parseInt(prompt(\'请输入自定义字符串\', 0)))">自定义</a>';
+    li += '<a class="chiiBtn" href="#" onclick="appendTitle(prompt(\'请输入自定义字符串\', 0))">自定义</a>';
     li += ' / <a class="chiiBtn" href="#" onclick="removeChineseName()">去中文名</a>';
     li += '</td>';
     li += '<td>';
