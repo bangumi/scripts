@@ -3,7 +3,7 @@
 // @namespace   BRRS
 // @description Quickly rename all related subjects at the same time.
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/subject\/\d+\/add_related\/subject/
-// @version     0.2.0.1
+// @version     0.2.1.1
 // @grant       none
 // ==/UserScript==
 
@@ -30,8 +30,10 @@ var subjects = [];
 var saving = 0;
 var editCount = 0;
 var mode = MODE_NORMAL;
-var editSummary = '标题修正+类型修正 [BRRS]';
+var editSummary = '标题修正+类型修正';
+var editSummaryShuffix = ' [BRRS:' + (window.location.href.match(/subject\/(\d+)\/add_related/)[1]) + ']';
 var formhash = $('input[name="formhash"]').val();
+var platform = window.location.href.match(/add_related\/subject\/(anime|book|music|game|real)/)[1];
 
 //Preparing workspace:
 $('<div id="brrs-workspace" class="columns clearit" style="display: none; padding: 10px 0;">' +
@@ -42,7 +44,7 @@ $('<div id="brrs-workspace" class="columns clearit" style="display: none; paddin
           '#brrs-subject-list tr { height: 40px; background: #F9F9F9; border-bottom: 1px solid #E0E0E0; padding: 5px 10px; }' +
           '#brrs-subject-list label { padding: 0 7px; }' +
       '</style>' +
-      '<table id="brrs-subject-list"></table>' +
+      '<table id="brrs-subject-list"><thead></thead><tbody></tbody></table>' +
       '<input type="hidden" id="subject_infobox" style="display:none;">' +
       '<input id="brrs-save" type="button" class="inputBtn" value="批量保存">' +
       '<small class="grey clearit rr">Powered by <a href="https://github.com/bangumi/scripts/tree/master/binota" target="_blank">BRRS</a>.</small>' +
@@ -50,8 +52,59 @@ $('<div id="brrs-workspace" class="columns clearit" style="display: none; paddin
 $('<a class="chiiBtn rr" id="brrs-launcher-normal" href="#">BRRS</a>').insertAfter('#modifyOrder');
 $('<a class="chiiBtn rr" id="brrs-launcher-offprint" href="#">BRRS 单行本</a>').insertAfter('#modifyOrder');
 
-//Detect the type of platform:
-var platform = window.location.href.match(/add_related\/subject\/(anime|book|music|game|real)/)[1];
+$('#brrs-subject-list thead').append('' +
+'<tr>' +
+    '<td></td>' +
+    '<td></td>' +
+    '<td>' +
+        '<input class="inputtext appendInput" name="brrs-append-start" type="number" value="1">' +
+        ' ~ ' +
+        '<input class="inputtext appendInput" name="brrs-append-end" type="number" value="' + subjects.length + '"> ' +
+        '<a class="chiiBtn" href="#" onclick="eraseTitle()">清空</a>' +
+        '<input class="inputtext appendFormat" name="brrs-append-format" type="text" value="{SeriesTitle} ({SeriesNumber})" title="{SeriesTitle} 为系列标题，{SeriesNumber} 为序号"> ' +
+        '<a id="brrs-append-title" class="chiiBtn" href="#">批量替换标题</a>' +
+        ' / <a class="chiiBtn" href="#" onclick="removeChineseName()">去中文名</a>' +
+    '</td>' +
+    '<td>' +
+    (function() {
+       var li = '';
+       for(j in platforms[platform]) {
+         li += '<input class="platform radio" ' +
+                      'type="radio" ' +
+                      'value="' + platforms[platform][j].id + '" ' +
+                      'name="platform[0]"' +
+                      'id="brrs-platform-' + platforms[platform][j].id + '"' +
+                      'onchange="$(&quot;#brrs-subject-list .platform[value=\'' + platforms[platform][j].id + '\']&quot;).click()">';
+         li += '<label for="brrs-platform-' + platforms[platform][j].id + '">' + platforms[platform][j].name + '</label>';
+       }
+       return li;
+    })() +
+    '</td>' +
+    '<td></td>' +
+'</tr>');
+$('input[name="brrs-append-format"]').tooltip({offset: 5});
+
+$('#brrs-append-title').click(function() {
+  var format = $('input[name="brrs-append-format"]').val();
+  format = format.replace(/{SeriesTitle}/g, $('.nameSingle a').text());
+  var useSeriesNumber = (format.search('{SeriesNumber}') >= 1);
+  if(useSeriesNumber) {
+    var seriesNumber = parseInt(prompt('请输入序号起始', 1));
+  }
+  $('#brrs-subject-list input.renameSubject').each(function(i) {
+    if((i + 1) < parseInt($('#brrs-workspace input[name="brrs-append-start"]').val())) return;
+    if((i + 1) > parseInt($('#brrs-workspace input[name="brrs-append-end"]').val())) return;
+    var newTitle = $(this).val() + format;
+    if(useSeriesNumber) {
+      newTitle = newTitle.replace(/{SeriesNumber}/g, seriesNumber++);
+    }
+    if(newTitle.trim() != $(this).val()) {
+      $(this).parent().parent().attr('data-edited', '1');
+    }
+    $(this).val(newTitle);
+  });
+});
+
 
 //Get subjects:
 $('#brrs-launcher-normal').click(function() {
@@ -82,38 +135,13 @@ $('#brrs-launcher-offprint').click(function() {
 
 var launcherBrrs = function() {
   //Clean workspace:
-  $('#brrs-subject-list').html('');
+  $('#brrs-subject-list tbody').html('');
   $('#brrs-workspace').show();
   if(mode == MODE_OFFPRINT) {
-    var li = '<tr>';
-    li += '<td></td>';
-    li += '<td></td>';
-    li += '<td>';
-    li += '<input class="inputtext appendInput" name="brrs-append-start" type="number" value="1">';
-    li += ' ~ ';
-    li += '<input class="inputtext appendInput" name="brrs-append-end" type="number" value="' + subjects.length + '"> ';
-    li += '<a class="chiiBtn" href="#" onclick="eraseTitle()">清空</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendTitle($(\'.nameSingle a\').text().trim())">系列标题</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendTitle(\' \')">半角空格</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendTitle(\'(\')">(</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendSeriesNumber(parseInt(prompt(\'请输入起始序号\', 1)))">序号</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendTitle(\')\')">)</a>';
-    li += '<a class="chiiBtn" href="#" onclick="appendTitle(prompt(\'请输入自定义字符串\', 0))">自定义</a>';
-    li += ' / <a class="chiiBtn" href="#" onclick="removeChineseName()">去中文名</a>';
-    li += '</td>';
-    li += '<td>';
-    for(j in platforms[platform]) {
-      li += '<input class="platform radio" ' +
-                   'type="radio" ' +
-                   'value="' + platforms[platform][j].id + '" ' +
-                   'name="platform[0]"' +
-                   'id="brrs-platform-' + platforms[platform][j].id + '"' +
-                   'onchange="$(&quot;#brrs-subject-list .platform[value=\'' + platforms[platform][j].id + '\']&quot;).click()">';
-      li += '<label for="brrs-platform-' + platforms[platform][j].id + '">' + platforms[platform][j].name + '</label>';
-    }
-    li += '</td><td></td>';
-    li += '</tr>';
-    $('#brrs-subject-list').append(li);
+    $('#brrs-subject-list thead').show();
+    $('#brrs-workspace input[name="brrs-append-end"]').val(subjects.length)
+  } else {
+    $('#brrs-subject-list thead').hide();
   }
   //Insert them into workspace:
   for(i in subjects) {
@@ -189,25 +217,6 @@ window.eraseTitle = function() {
   $('#brrs-subject-list tr[data-edited=0]').attr('data-edited', '1')
 }
 
-window.appendTitle = function(title) {
-  $('#brrs-subject-list input.renameSubject').each(function(i) {
-    if((i + 1) < parseInt($('#brrs-workspace input[name="brrs-append-start"]').val())) return;
-    if((i + 1) > parseInt($('#brrs-workspace input[name="brrs-append-end"]').val())) return;
-    $(this).val($(this).val() + title);
-  });
-  $('#brrs-subject-list tr[data-edited=0]').attr('data-edited', '1')
-}
-
-window.appendSeriesNumber = function(start) {
-  $('#brrs-subject-list input.renameSubject').each(function(i) {
-    if((i + 1) < parseInt($('#brrs-workspace input[name="brrs-append-start"]').val())) return;
-    if((i + 1) > parseInt($('#brrs-workspace input[name="brrs-append-end"]').val())) return;
-    $(this).val($(this).val() + start);
-    start++;
-  });
-  $('#brrs-subject-list tr[data-edited=0]').attr('data-edited', '1')
-}
-
 window.removeChineseName = function() {
   if(!confirm('本功能仅限于单行本「没有副标」的情况下使用，\n若单行本有副标题请勿使用！\n要继续么？')) return;
   for(i in subjects) {
@@ -216,7 +225,7 @@ window.removeChineseName = function() {
       subjects[i].infobox = subjects[i].infobox.replace(/中文名=(.+)/, '中文名= ');
       $('#brrs-subject-list textarea[name="infobox"]').val(subjects[i].infobox);
       $('#brrs-subject-list tr[data-listid="' + i + '"]').attr('data-edited', '1');
-      editSummary = '标题修正+类型修正+单行本去中文名 [BRRS]';
+      editSummary = '标题修正+类型修正+单行本去中文名';
     }
   }
 }
@@ -225,7 +234,7 @@ window.removeChineseName = function() {
 
 $("#brrs-save").click(function() {
   if(!confirm('这样就好了吗？')) return;
-  editSummary = prompt('请输入编辑摘要', editSummary);
+  editSummary = (prompt('请输入编辑摘要', editSummary) + editSummaryShuffix).trim();
   saving = 0;
   editCount = 0;
   //Get platforms:
@@ -247,4 +256,5 @@ $("#brrs-save").click(function() {
     })
   });
 });
+
 
