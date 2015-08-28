@@ -14,7 +14,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.2.3
+// @version     3.3
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -26,11 +26,14 @@ var localStorage = window.localStorage
 var bangumis = {};
 
 // upgrade local storage
-if (localStorage[onairVerAttr] != '2.7') {
-  for (var k in localStorage)
-    if (k.startsWith(biliSPPrefix) || k.startsWith(biliBgmPrefix))
-      delete localStorage[k];
-  localStorage[onairVerAttr] = '2.7';
+if (localStorage[onairVerAttr] != '3.3') {
+  for (var k in localStorage) {
+    if (k.startsWith(biliSPPrefix) || k.startsWith(biliBgmPrefix)) {
+      localStorage.removeItem(k);
+    }
+  }
+  console.log(`Cleared data from old version ${localStorage[onairVerAttr]}`);
+  localStorage[onairVerAttr] = '3.3';
 }
 
 function pad(x) {
@@ -84,6 +87,7 @@ function queryBilibiliSP(titles, callback) {
     , seasonId = '';
   if (title.includes('#S-'))
     [title, seasonId] = title.split('#S-');
+  console.log(`query title ${title}`);
   GM_xmlhttpRequest({
     method: 'GET',
     url: 'http://api.bilibili.cn/sp?type=json&appkey=' + APPKEY +
@@ -114,6 +118,8 @@ function queryBilibiliSP(titles, callback) {
           titles.shift();
           retry();
         } else {
+          if (sp.season_id !== undefined)
+            seasonId = sp.season_id;
           if (!seasonId) {
             if (sp.season) {
               for (var i in sp.season) {
@@ -165,9 +171,9 @@ function getBilibiliSP(subject_id, callback) {
   }
 }
 function parseBilibiliBgmPage(content) {
-  var anchors = /<a class="t" href="(\/video\/av(\d+)\/)" target="_blank">\s+(.+?)\s+<\/a>/gm
+  var anchors = /<a class="t" href="(\/video\/av(\d+)\/)" target="_blank" title="([^\"]*)">\s+第(\d+)集\s+<\/a>/gm
     , maxAv = 0
-    , resultUrl, resultTitle
+    , resultUrl, resultTitle, resultEp
     , anchor;
 
   while ((anchor = anchors.exec(content)) !== null) {
@@ -175,6 +181,7 @@ function parseBilibiliBgmPage(content) {
     if (av > maxAv) {
       resultUrl = anchor[1];
       resultTitle = anchor[3];
+      resultEp = anchor[4];
       maxAv = av;
     }
   }
@@ -183,16 +190,17 @@ function parseBilibiliBgmPage(content) {
     return null;
   return {
     url: 'http://www.bilibili.com' + resultUrl,
-    title: resultTitle
+    title: resultTitle,
+    ep: resultEp
   };
 }
 function getBilibiliLink(spid, seasonId, lastupdate, callback) {
   var key = biliBgmPrefix + spid + '_' + seasonId
     , bgm = localStorage[key];
   if (bgm) {
-    var bgminfo = /^(\d+);(.*?);(.*)$/.exec(bgm);
-    if (lastupdate == bgminfo[1] && bgminfo[2] + bgminfo[3])
-      return callback(bgminfo[2], bgminfo[3]);
+    var bgminfo = /^(\d+);(.*?);(\d+);(.*)$/.exec(bgm);
+    if (lastupdate == bgminfo[1] && bgminfo[2] && bgminfo[4])
+      return callback(bgminfo[2], bgminfo[3], bgminfo[4]);
   }
 
   var url = 'http://www.bilibili.com/sppage/' +
@@ -201,12 +209,12 @@ function getBilibiliLink(spid, seasonId, lastupdate, callback) {
   GM_xmlhttpRequest({
     method: 'GET',
     url: url,
-    onload: function (resp) {
+    onload: resp => {
       var info = parseBilibiliBgmPage(resp.responseText);
       if (!info)
-        info = {url: '', title: ''};
-      localStorage[key] = lastupdate + ';' + info.url + ';' + info.title;
-      callback(info.url, info.title);
+        info = {url: '', title: '', ep: 0};
+      localStorage[key] = `${lastupdate};${info.url};${info.ep};${info.title}`;
+      callback(info.url, info.ep, info.title);
     }
   });
 }
@@ -241,7 +249,7 @@ function updateEpBtn(subject_id, bgmep, old) {
   var $subject = $('#subjectPanel_' + subject_id)[0]
     , $prg_list = $subject.querySelectorAll('ul.prg_list>li>a');
   var found = false;
-  Array.prototype.forEach.call($prg_list, function ($elem) {
+  for (var $elem of $prg_list) {
     if (found) {
       setEpBtn($elem, 'epBtnNA');
     } else if ($elem.textContent == bgmep) {
@@ -249,25 +257,16 @@ function updateEpBtn(subject_id, bgmep, old) {
         setEpBtn($elem, 'epBtnToday');
       found = true;
     }
-  });
-}
-function parseEpNum(title) {
-  var re = /\d+(?:\.\d+)?/g
-    , match
-    , bgmep;
-  title = title.replace(/【.+?】/g, '');
-  while ((match = re.exec(title)) !== null)
-    bgmep = match[0];
-  return parseFloat(bgmep);
+  }
 }
 function updateBangumi(subject_id, $title) {
-  getBilibiliSP(subject_id, function (spid, seasonId, title) {
+  getBilibiliSP(subject_id, (spid, seasonId, title) => {
     if (!spid) return;
     var bgm = bangumis[spid] || {new: false, lastupdate: 0};
-    getBilibiliLink(spid, seasonId, bgm.lastupdate, function (url, title) {
+    getBilibiliLink(spid, seasonId, bgm.lastupdate, (url, ep, title) => {
       if (url && title) {
         insertLink(subject_id, url, title, !bgm.new);
-        updateEpBtn(subject_id, parseEpNum(title), !bgm.new);
+        updateEpBtn(subject_id, ep, !bgm.new);
       }
     });
 
@@ -321,7 +320,7 @@ if (location.pathname == '/') {
     // just hope to give it a chance to be updated
     // if possible.
     var old_val = localStorage[key];
-    delete localStorage[key];
+    localStorage.removeItem(key);
     getBilibiliSP(subject_id);
     localStorage[key] = old_val;
   }
