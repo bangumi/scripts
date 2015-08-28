@@ -3,7 +3,7 @@
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(ep|character|(group|subject)/topic|rakuen/topic/(ep|crt|group|subject))/\d+(\?.*)?(#.*)?$/
 // @grant       none
-// @version     4.4
+// @version     4.4.1
 // ==/UserScript==
 
 var PREFIX_POST_READ = 'PostRead_'
@@ -66,7 +66,7 @@ function updateTopicTitle($link) {
   }
 
   var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = () => {
     if (xhr.readyState == 4 && xhr.status == 200) {
       var title = /<title>(.+)<\/title>/m.exec(xhr.responseText);
       if (!title)
@@ -81,15 +81,15 @@ function updateTopicTitle($link) {
 }
 
 // update link title
-var $links = $('#main a.l:not([title])');
-for (var i = 0; i < $links.length; i++)
-  updateTopicTitle($links[i]);
+for (var $link of $('#main a.l:not([title])')) {
+  updateTopicTitle($link);
+}
 
 function getPostIDs() {
-  var $replies = $('div[id^="post_"]')
-    , postIDs = [];
-  for (var i = 0; i < $replies.length; i++)
-    postIDs.push(parseInt($replies[i].id.substr(5)));
+  var postIDs = [];
+  for (var $reply of $('div[id^="post_"]')) {
+    postIDs.push(parseInt($reply.id.substr(5)));
+  }
   return postIDs;
 }
 
@@ -98,8 +98,7 @@ var postIDs = getPostIDs()
   , key = PREFIX_POST_READ + topicID;
 if (localStorage[key]) {
   var lastMaxID = parseInt(localStorage[key]);
-  for (var i = 0; i < postIDs.length; i++) {
-    var postID = postIDs[i];
+  for (var postID of postIDs) {
     if (postID <= lastMaxID)
       continue;
 
