@@ -14,7 +14,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.3.1
+// @version     3.3.2
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -26,14 +26,14 @@ var localStorage = window.localStorage
 var bangumis = {};
 
 // upgrade local storage
-if (localStorage[onairVerAttr] != '3.3') {
+if (localStorage[onairVerAttr] != '3.3.2') {
   for (var k in localStorage) {
     if (k.startsWith(biliSPPrefix) || k.startsWith(biliBgmPrefix)) {
       localStorage.removeItem(k);
     }
   }
   console.log(`Cleared data from old version ${localStorage[onairVerAttr]}`);
-  localStorage[onairVerAttr] = '3.3';
+  localStorage[onairVerAttr] = '3.3.2';
 }
 
 function pad(x) {
@@ -196,7 +196,7 @@ function parseBilibiliBgmPage(content) {
   };
 }
 function getBilibiliLink(spid, seasonId, lastupdate, callback) {
-  var key = biliBgmPrefix + spid + '_' + seasonId
+  var key = `${biliBgmPrefix}${spid}_${seasonId ? seasonId : ''}`
     , bgm = localStorage[key];
   if (bgm) {
     var bgminfo = /^(\d+);(.*?);(\d+);(.*)$/.exec(bgm);
@@ -271,7 +271,7 @@ function updateBangumi(subject_id, $title) {
     getBilibiliLink(spid, seasonId, bgm.lastupdate, (url, ep, title) => {
       if (url && title) {
         insertLink(subject_id, url, title, !bgm.new);
-        updateEpBtn(subject_id, ep, !bgm.new);
+        updateEpBtn(subject_id, pad(ep), !bgm.new);
       }
     });
 
