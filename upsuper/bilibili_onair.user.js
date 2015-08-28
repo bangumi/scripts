@@ -14,7 +14,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.2.2
+// @version     3.2.3
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -82,7 +82,7 @@ function queryBilibiliSP(titles, callback) {
   }
   var title = titles[0]
     , seasonId = '';
-  if (title.contains('#S-'))
+  if (title.includes('#S-'))
     [title, seasonId] = title.split('#S-');
   GM_xmlhttpRequest({
     method: 'GET',
