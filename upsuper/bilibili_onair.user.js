@@ -17,6 +17,13 @@
 // @version     3.2.2
 // ==/UserScript==
 
+//Hack for Chromium
+if(typeof String.prototype.contains === "undefined") {
+    String.prototype.contains = function () {
+        return (this.search(arguments[0]) >= 0);
+    }
+}
+
 function $(q) { return document.querySelectorAll(q); }
 var APPKEY = 'ea99bbc2531c97c0';
 var localStorage = window.localStorage
@@ -82,8 +89,9 @@ function queryBilibiliSP(titles, callback) {
   }
   var title = titles[0]
     , seasonId = '';
-  if (title.contains('#S-'))
+  if (title.contains('#S-')) {
     [title, seasonId] = title.split('#S-');
+  }
   GM_xmlhttpRequest({
     method: 'GET',
     url: 'http://api.bilibili.cn/sp?type=json&appkey=' + APPKEY +
