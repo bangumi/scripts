@@ -112,8 +112,9 @@ if (localStorage[key]) {
     $(postID)[0].classList.add('reply_highlight');
   }
 }
-window.addEventListener('unload', function () {
+setInterval(() => {
   var newValue = Math.max.apply(Math, getPostIDs());
-  if (!localStorage[key] || newValue > localStorage[key])
+  if (!localStorage[key] || newValue > localStorage[key]) {
     localStorage[key] = newValue;
-});
+  }
+}, 5000);
