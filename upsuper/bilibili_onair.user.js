@@ -14,7 +14,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.3
+// @version     3.3.1
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -57,8 +57,9 @@ function parseTitles(text) {
     var title = match[1];
     titles.push(title);
     var season = /\s*第.[期季]/g.exec(title);
-    if (season)
+    if (season) {
       maintitles.push(title.substring(0, season.index));
+    }
   }
   re = /<title>(.+?) \| Bangumi 番组计划<\/title>/;
   titles.push(re.exec(text)[1]);
@@ -72,7 +73,7 @@ function queryTitles(subject_id, callback) {
     GM_xmlhttpRequest({
       method: 'GET',
       url: path,
-      onload: function (resp) {
+      onload: resp => {
         callback(parseTitles(resp.responseText));
       }
     });
@@ -92,7 +93,7 @@ function queryBilibiliSP(titles, callback) {
     method: 'GET',
     url: 'http://api.bilibili.cn/sp?type=json&appkey=' + APPKEY +
           '&title=' + encodeURIComponent(title) + '&_=' + Date.now(),
-    onload: function (resp) {
+    onload: resp => {
       function retry() {
         setTimeout(function () {
           queryBilibiliSP(titles, callback);
@@ -122,9 +123,9 @@ function queryBilibiliSP(titles, callback) {
             seasonId = sp.season_id;
           if (!seasonId) {
             if (sp.season) {
-              for (var i in sp.season) {
-                var id = sp.season[i].season_id;
-                if (sp.season[i].default) {
+              for (var season of sp.season) {
+                var id = season.season_id;
+                if (season.default) {
                   seasonId = id;
                   break;
                 }
@@ -152,16 +153,15 @@ function getBilibiliSP(subject_id, callback) {
     var title = spInfo[1]
       , spid = spInfo[2]
       , seasonId = spInfo[3];
-    if (!spid || !title)
+    if (!spid || !title) {
       return;
+    }
     if (callback) {
-      setTimeout(function () {
-        callback(spid, seasonId, title);
-      }, 0);
+      setTimeout(() => callback(spid, seasonId, title), 0);
     }
   } else {
-    queryTitles(subject_id, function (titles) {
-      queryBilibiliSP(titles, function (spid, seasonId, title) {
+    queryTitles(subject_id, titles => {
+      queryBilibiliSP(titles, (spid, seasonId, title) => {
         var spinfo = title + ';' + spid + ';' + seasonId;
         localStorage[biliSPPrefix + subject_id] = spinfo;
         if (callback)
@@ -186,8 +186,9 @@ function parseBilibiliBgmPage(content) {
     }
   }
 
-  if (!resultUrl || !resultTitle)
+  if (!resultUrl || !resultTitle) {
     return null;
+  }
   return {
     url: 'http://www.bilibili.com' + resultUrl,
     title: resultTitle,
@@ -211,15 +212,16 @@ function getBilibiliLink(spid, seasonId, lastupdate, callback) {
     url: url,
     onload: resp => {
       var info = parseBilibiliBgmPage(resp.responseText);
-      if (!info)
+      if (!info) {
         info = {url: '', title: '', ep: 0};
+      }
       localStorage[key] = `${lastupdate};${info.url};${info.ep};${info.title}`;
       callback(info.url, info.ep, info.title);
     }
   });
 }
 function insertLink(subject_id, url, title, old) {
-  var $header = $('#subjectPanel_' + subject_id + '>.header')[0]
+  var $header = $(`#subjectPanel_${subject_id}>.header`)[0]
     , $a = document.createElement('a')
     , $span = document.createElement('span');
   $a.href = url;
@@ -227,23 +229,26 @@ function insertLink(subject_id, url, title, old) {
   $a.target = '_blank';
   $span.className = 'onAir rr';
   $span.textContent = 'Bilibili 放送中';
-  if (old)
+  if (old) {
     $span.style.backgroundPosition = 'left bottom';
+  }
   $a.appendChild($span);
   $header.insertBefore($a, $header.firstChild);
 }
 function updateEpBtn(subject_id, bgmep, old) {
   function setEpBtn($prg, status) {
-    var cls = $prg.classList;
-    if (cls.contains('epBtnWatched') ||
-        cls.contains('epBtnQueue') ||
-        cls.contains('epBtnDrop') ||
-        cls.contains(status))
+    var classList = $prg.classList;
+    if (classList.contains('epBtnWatched') ||
+        classList.contains('epBtnQueue') ||
+        classList.contains('epBtnDrop') ||
+        classList.contains(status))
       return;
-    for (var j = cls.length - 1; j >= 0; j--)
-      if (cls[j].startsWith('epBtn'))
-        cls.remove(cls[j]);
-    cls.add(status);
+    for (var cls of classList) {
+      if (cls.startsWith('epBtn')) {
+        classList.remove(cls);
+      }
+    }
+    classList.add(status);
   }
 
   var $subject = $('#subjectPanel_' + subject_id)[0]
@@ -281,35 +286,28 @@ if (location.pathname == '/') {
     method: 'GET',
     url: 'http://api.bilibili.cn/bangumi?type=json&appkey=' + APPKEY +
         '&_=' + Date.now(),
-    onload: function (resp) {
-      var list = JSON.parse(resp.responseText).list;
-      for (var k in list) {
-        var item = list[k];
+    onload: resp => {
+      for (var item of JSON.parse(resp.responseText).list) {
         bangumis[item.spid] = item;
         if (item.alias_spid)
           bangumis[item.alias_spid] = item;
       }
-      for (var i = 0; i < $titles.length; i++) {
-        var $title = $titles[i]
-          , subject_id = $title.attributes.subject_id.value;
+      for (var $title of $titles) {
+        var subject_id = $title.attributes.subject_id.value;
         updateBangumi(subject_id, $title);
       }
     }
   });
 
   // clean up all onair icons
-  var $onairs = $('#prgSubjectList>li.onAir');
-  for (var i = 0; i < $onairs.length; i++)
-    $onairs[i].classList.remove('onAir');
-  $onairs = $('#cloumnSubjectInfo .epBtnToday');
-  for (var i = 0; i < $onairs.length; i++) {
-    var $btn = $onairs[i];
+  for (var $elem of $('#prgSubjectList>li.onAir')) {
+    $elem.classList.remove('onAir');
+  }
+  for (var $btn of $('#cloumnSubjectInfo .epBtnToday')) {
     $btn.classList.remove('epBtnToday');
     $btn.classList.add('epBtnNA');
   }
-  $onairs = $('#cloumnSubjectInfo .onAir.rr');
-  for (var i = 0; i < $onairs.length; i++) {
-    var $rr = $onairs[i];
+  for (var $rr of $('#cloumnSubjectInfo .onAir.rr')) {
     $rr.parentNode.removeChild($rr);
   }
 } else {
