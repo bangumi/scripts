@@ -34,6 +34,9 @@ platforms =
 
 formhash = $('input[name="formhash"]').val()
 platform = window.location.href.match(/add_related\/subject\/(anime|book|music|game|real)/)[1]
+pagesid = window.location.href.match(/subject\/(\d+)\/add_related/)[1]
+
+submitCue = []
 
 #############################################################
 # --------------------------------------------------------- #
@@ -142,6 +145,57 @@ templates.css = """
   |*-- Previewer ----------------------------------------*|
   \*-----------------------------------------------------*/
 
+  .brrs-col-left,
+  .brrs-col-right {
+    min-width: calc(50% - 28px);
+    width: calc(50% - 28px);
+    padding: 0 14px; }
+
+  .brrs-previewer-item {
+    width: 750px;
+    margin: 10px auto;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 1px 1px 7px rgba(0, 0, 0, .3); }
+    .brrs-previewer-item .header {
+      background: #F09199;
+      color: #FFF;
+      padding: 15px 20px 10px;
+      border-radius: 10px 10px 0 0; }
+      .brrs-previewer-item .header h3 {
+        font-size: 18px; }
+        .brrs-previewer-item .header h3 small {
+          font-size: 10px; }
+        .brrs-previewer-item .header h3 a {
+          color: #FFF; }
+    .brrs-previewer-item .thead .left,
+    .brrs-previewer-item .thead .right {
+      width: 50%;
+      height: 6px;
+      float: left;
+      text-align: center; }
+    .brrs-previewer-item .thead .left {
+      background: #31A7DE; }
+    .brrs-previewer-item .thead .right {
+      background: #56B985; }
+    .brrs-previewer-item .content {}
+      .brrs-previewer-item .content .title {
+        font-size: 18px;
+        padding: 0; }
+        .brrs-previewer-item .content .title .brrs-col-left,
+        .brrs-previewer-item .content .title .brrs-col-right {
+          line-height: 35px; }
+        .brrs-previewer-item .content .title small {
+          color: #555;
+          font-size: 12px; }
+      .brrs-previewer-item .content .summary {
+        overflow: auto;
+        overflow-wrap: break-word;
+        word-break: break-all; }
+
+  #brrs-workspace-previewer .submit {
+    margin: 0 auto;
+    width: 400px; }
+
   /*-----------------------------------------------------*\
   |*-- Footer -------------------------------------------*|
   \*-----------------------------------------------------*/
@@ -193,9 +247,15 @@ templates.workspace = do ->
         </div>
         <div id="brrs-subjects-editor" class="clearit">
         </div>
-        <a class="chiiBtn large" href="#brrs-previewer">编辑完成，点击预览</a>
+        <a class="chiiBtn large" id="brrs-preview" href="#brrs-preview">编辑完成，点击预览</a>
       </div>
       <div id="brrs-workspace-previewer" class="hidden clearit">
+        <div id="brrs-subjects-previewer" class="clearit">
+        </div>
+        <div class="submit">
+          <label>编辑摘要：<input type="text" name="brrs-edit-summary" class="inputtext" value="标题修正+类型修正"></label>
+          <a class="chiiBtn large" id="brrs-save" href="#brrs-submit">确认完毕，点击提交</a>
+        </div>
       </div>
       <div id="brrs-footer" class="clearit">
         <p>Powered by BRRS.</p>
@@ -222,13 +282,49 @@ templates.editor = do ->
   </div>
 """
 
+templates.previewer = """
+  <div class="brrs-previewer-item" data-id="{{id}}" data-bgmid="{{bgmid}}">
+    <div class="header"><h3>#<span>{{bgmid}}</span> <small><a href="/subject/{{bgmid}}" target="_blank">在新分页开启</a></small></h3></div>
+    <div class="thead">
+      <div class="left"></div>
+      <div class="right"></div>
+    </div>
+    <div class="content">
+      <div class="title clearit">
+        <div class="brrs-col-left">
+          {{left.title}} <small> - {{left.platform}}</small>
+        </div>
+        <div class="brrs-col-right">
+          {{right.title}} <small> - {{right.platform}}</small>
+        </div>
+      </div>
+      <div class="infobox clearit">
+        <div class="brrs-col-left">
+          {{left.infobox}}
+        </div>
+        <div class="brrs-col-right">
+          {{right.infobox}}
+        </div>
+      </div>
+      <div class="summary clearit">
+        <div class="brrs-col-left">
+          {{left.summary}}
+        </div>
+        <div class="brrs-col-right">
+          {{right.summary}}
+        </div>
+      </div>
+    </div>
+  </div>
+"""
+
 #############################################################
 # --------------------------------------------------------- #
-# -- Interface Function ----------------------------------- #
+# -- Functions -------------------------------------------- #
 # --------------------------------------------------------- #
 #############################################################
 
-BrrsView =
+Core =
   workspace: (name) ->
     $('[id^=brrs-workspace-]').hide()
     $("#brrs-workspace-#{name}").show()
@@ -269,7 +365,7 @@ BrrsView =
       tpl = tpl.replace(/{{bgmid}}/g, data.bgmid) if data.bgmid?
       tpl = tpl.replace(/{{title}}/g, data.title) if data.title?
 
-      $('#brrs-subjects-editor').append(tpl);
+      $('#brrs-subjects-editor').append(tpl)
     remove: (id) ->
       $(".brrs-editor-item[data-id=\"#{id}\"]").remove()
     details:
@@ -293,15 +389,38 @@ BrrsView =
       origin = $(selector).parent().attr 'data-origin'
       $(selector).attr 'checked', 'true' 
       $(selector).parent().parent().attr('data-origin', platform) unless origin?
+      $(selector).parent().parent().attr('data-origintext', $(selector).parent().text().trim()) unless origin?
     setInput: (bgmid, field, text) ->
       selector = ".brrs-editor-item[data-bgmid=\"#{bgmid}\"] textarea[name=\"#{field}\"]"
       $(selector).val(text)
       $(selector).attr('placeholder', text) unless $(selector).attr('placeholder')
 
+  previewer:
+    insert: (id, bgmid, left, right) ->
+      tpl = templates.previewer
+      tpl = tpl.replace /{{id}}/g, id
+      tpl = tpl.replace /{{bgmid}}/g, bgmid
+      tpl = tpl.replace /{{left.title}}/, left.title
+      tpl = tpl.replace /{{left.platform}}/, left.platform
+      tpl = tpl.replace /{{left.infobox}}/, left.infobox
+      tpl = tpl.replace /{{left.summary}}/, left.summary
+      if left.summary.trim() == ''
+        tpl = tpl.replace /{{left.summary}}/, '&nbsp'
+      else
+        tpl = tpl.replace /{{left.summary}}/, left.summary
+      tpl = tpl.replace /{{right.title}}/, right.title
+      tpl = tpl.replace /{{right.platform}}/, right.platform
+      tpl = tpl.replace /{{right.infobox}}/, right.infobox
+      if right.summary.trim() == ''
+        tpl = tpl.replace /{{right.summary}}/, '&nbsp'
+      else
+        tpl = tpl.replace /{{right.summary}}/, right.summary
+      $('#brrs-subjects-previewer').append(tpl)
+
 Wcode =
   parse: (wcode) ->
     retval = {}
-    wcode = wcode.replace /\r/, ''
+    wcode = wcode.replace /\r/g, ''
     json = wcode.replace /{{Infobox\s+\w+\/\w+\n([\S\s]*)}}/m, '{\n$1}'
     json = json.replace /\|.+?=\s*\n/g, ''                               #|AAA=\n => remove
     json = json.replace /\|(.+?)=\s*{\n*\s*}/, ''                        #|AAA={} => remove
@@ -311,6 +430,19 @@ Wcode =
     json = json.replace /,\s*}\n/g, ' ],\n'                              #, }\n => ]\n
     json = json.replace /,\s*}/g, '}'                                    #, } => }
     JSON.parse json
+  toHtml: (json) ->
+    retval  = '<ul id="infobox">'
+    for key, value of json
+      retval += '<li>'
+      retval += "<span class=\"tip\">#{key}: </span>"
+      if typeof value == 'string'
+        retval += value
+      else
+        for i in value
+          retval += '</li>'
+          retval += "<li class=\"tip\" style=\"visibility:hidden\">.</span> #{i}"
+      retval += '</li>'
+    retval += '</ul>'
 
 #############################################################
 # --------------------------------------------------------- #
@@ -318,12 +450,32 @@ Wcode =
 # --------------------------------------------------------- #
 #############################################################
 
-$(templates.workspace).insertBefore('.mainWrapper .columns');
 $('<a class="chiiBtn rr" id="brrs-launcher-normal" href="#">BRRS</a>').insertAfter('#modifyOrder')
 $('<a class="chiiBtn rr" id="brrs-launcher-offprint" href="#">BRRS 单行本</a>').insertAfter('#modifyOrder')
 
+Bootstrap = (subjects) ->
+  $('#brrs-workspace').remove()
+  $(templates.workspace).insertBefore('.mainWrapper .columns');
+
+  Core.loading.setTotal(subjects.length)
+  Core.loading.setProgress(0)
+  Core.workspace('loading')
+
+  for value, key in subjects
+    Core.editor.insert(key, value)
+    $.get "/subject/#{value.bgmid}/edit_detail", (data) ->
+      Core.loading.setProgress(Core.loading.getLoaded() + 1)
+      bgmid = data.match(/<a href="\/subject\/(\d+)" title="[^"]*" property="v:itemre/)[1];
+      Core.editor.setInput(bgmid, 'infobox', data.match(/subject_infobox"[^>]+>([\S\s]*?)<\/textarea>/m)[1])
+      Core.editor.setInput(bgmid, 'summary', data.match(/subject_summary"[^>]+>([\S\s]*?)<\/textarea>/m)[1])
+      Core.editor.setPlatform(bgmid, data.match(/value="(\d+)" onclick="WikiTpl\('[^']+'\)" checked>/)[1])
+      if Core.loading.getTotal() == Core.loading.getLoaded()
+        EventBinding()
+        $('#brrs-workspace-loading').fadeOut 1000, ->
+          Core.workspace('editor')
+
 $('#brrs-launcher-normal').click ->
-  subjects = do ->
+  Bootstrap do ->
     retval = []
     $('#crtRelateSubjects > li').each ->
       subject = {}
@@ -332,24 +484,20 @@ $('#brrs-launcher-normal').click ->
       subject.relation = $(this).find('option[selected="true"]').val()
       retval.push(subject)
     retval
-  BrrsView.loading.setTotal(subjects.length)
-  BrrsView.loading.setProgress(0)
-  BrrsView.workspace('loading')
 
-  for value, key in subjects
-    BrrsView.editor.insert(key, value)
-    $.get "/subject/#{value.bgmid}/edit_detail", (data) ->
-      BrrsView.loading.setProgress(BrrsView.loading.getLoaded() + 1)
-      bgmid = data.match(/<a href="\/subject\/(\d+)" title="[^"]*" property="v:itemre/)[1];
-      BrrsView.editor.setInput(bgmid, 'infobox', data.match(/subject_infobox"[^>]+>([\S\s]*?)<\/textarea>/m)[1])
-      BrrsView.editor.setInput(bgmid, 'summary', data.match(/subject_summary"[^>]+>([\S\s]*?)<\/textarea>/m)[1])
-      BrrsView.editor.setPlatform(bgmid, data.match(/value="(\d+)" onclick="WikiTpl\('[^']+'\)" checked>/)[1])
-      if BrrsView.loading.getTotal() == BrrsView.loading.getLoaded()
-        EventBinding()
-        $('#brrs-workspace-loading').fadeOut 1000, ->
-          BrrsView.workspace('editor')
+$('#brrs-launcher-offprint').click ->
+  Bootstrap do ->
+    retval = []
+    $('#crtRelateSubjects > li').each ->
+      subject = {}
+      subject.bgmid = $(this).attr('item_id')
+      subject.title = $(this).find('.title a').text().trim()
+      subject.relation = $(this).find('option[selected="true"]').val()
+      if subject.relation != '1003'
+        return
+      retval.push(subject)
+    retval
 
-  null
 
 #############################################################
 # --------------------------------------------------------- #
@@ -357,29 +505,75 @@ $('#brrs-launcher-normal').click ->
 # --------------------------------------------------------- #
 #############################################################
 
-$('#brrs-toolkit a[data-action="restore"]').click ->
-  BrrsView.toolkit.restore()
-$('#brrs-toolkit a[data-action="removechs"]').click ->
-  BrrsView.toolkit.removechs()
-$('#brrs-toolkit a[data-action="settitle"]').click ->
-  BrrsView.toolkit.settitle()
-
-$('#brrs-toolkit input[type="radio"]').click ->
-  newPlatform = $(this).val()
-  $("#brrs-subjects-editor input[value=\"#{$(this).val()}\"]").attr 'checked', true
-
 EventBinding = ->
   $('a[data-action="removeitem"]').click ->
-    BrrsView.editor.remove $(this).attr 'data-id'
+    Core.editor.remove $(this).attr 'data-id'
   $('a[data-action="editdetails"]').click ->
-    BrrsView.editor.details.show $(this).attr 'data-id'
+    Core.editor.details.show $(this).attr 'data-id'
   $('a[data-action="closedetails"]').click ->
-    BrrsView.editor.details.hide $(this).attr 'data-id'
+    Core.editor.details.hide $(this).attr 'data-id'
 
-#############################################################
-# --------------------------------------------------------- #
-# -- Preview ---------------------------------------------- #
-# --------------------------------------------------------- #
-#############################################################
-
+  $('#brrs-toolkit a[data-action="restore"]').click ->
+    Core.toolkit.restore()
+  $('#brrs-toolkit a[data-action="removechs"]').click ->
+    Core.toolkit.removechs()
+  $('#brrs-toolkit a[data-action="settitle"]').click ->
+    Core.toolkit.settitle()
+  
+  $('#brrs-toolkit input[type="radio"]').click ->
+    newPlatform = $(this).val()
+    $("#brrs-subjects-editor input[value=\"#{$(this).val()}\"]").attr 'checked', true
+  
+  $('#brrs-preview').click ->
+    $('.brrs-editor-item').each ->
+      right =
+        bgmid: $(this).attr('data-bgmid')
+        title: $(this).find('input[name="title"]').val().replace(/\r/g, '').trim()
+        platform: $(this).find(':checked').parent().text().trim()
+        platform_id: $(this).find(':checked').val()
+        infobox: $(this).find('textarea[name="infobox"]').val().replace(/\r/g, '').trim()
+        summary: $(this).find('textarea[name="summary"]').val().replace(/\r/g, '').trim()
+      left =
+        title: $(this).find('input[name="title"]').attr('placeholder').replace(/\r/g, '').trim()
+        platform: $(this).find('.brrs-col-platform').attr('data-origintext').trim()
+        platform_id: $(this).find('.brrs-col-platform').attr('data-origin')
+        infobox: $(this).find('textarea[name="infobox"]').attr('placeholder').replace(/\r/g, '').trim()
+        summary: $(this).find('textarea[name="summary"]').attr('placeholder').replace(/\r/g, '').trim()
+  
+      if left.title == right.title && left.platform == right.platform && left.infobox == right.infobox && left.summary == right.summary
+        return
+  
+      submitCue.push $.extend({}, right)
+  
+      left.infobox = Wcode.toHtml Wcode.parse left.infobox
+      right.infobox = Wcode.toHtml Wcode.parse right.infobox
+  
+      Core.previewer.insert($(this).attr('data-id'), $(this).attr('data-bgmid'), left, right)
+    Core.workspace 'previewer'
+    null
+  
+  $('#brrs-save').click ->
+    return unless confirm('这样就好了吗？')
+  
+    Core.loading.setTotal(submitCue.length)
+    Core.loading.setProgress(0)
+    Core.workspace('loading')
+    editSummary = $('input[name="brrs-edit-summary"]').val().trim() + ' [BRRS:' + pagesid + ']'
+    editSummary = editSummary.trim()
+  
+    for i in submitCue
+      postData = {}
+      postData.formhash = formhash;
+      postData.submit = '提交修改'
+      postData.editSummary = editSummary
+      postData.platform = i.platform_id
+      postData.subject_title = i.title
+      postData.subject_infobox = i.infobox
+      postData.subject_summary = i.summary
+  
+      console.log postData
+      $.post "/subject/#{i.bgmid}/new_revision", postData, ->
+        Core.loading.setProgress(Core.loading.getLoaded() + 1)
+        if Core.loading.getTotal() == Core.loading.getLoaded()
+          window.location.reload()
 
