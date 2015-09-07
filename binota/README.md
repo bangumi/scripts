@@ -41,6 +41,9 @@
 所以就从头开始做了。
 目前已经支持批量排序、编辑注解的功能了。
 
+## [自动替换域名 BLDF](bangumi-links-domain-fixer.user.js?raw=true)
+自动替换页面上所有的链接为你目前使用的 Protocal 与 Domain。
+
 ## [防剧透 BAN](bangumi-anti-netabare.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/311322)
 
