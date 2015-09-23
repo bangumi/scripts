@@ -14,10 +14,13 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.3.2
+// @version     3.3.3
 // ==/UserScript==
 
-function $(q) { return document.querySelectorAll(q); }
+var _$ = q => document.querySelectorAll(q);
+var $ = typeof NodeList.prototype[Symbol.iterator] == "function" ?
+  _$ : q => Array.prototype.slice.call(_$(q));
+
 var APPKEY = 'ea99bbc2531c97c0';
 var localStorage = window.localStorage
   , onairVerAttr = 'u_OnAir_Ver'
@@ -86,8 +89,9 @@ function queryBilibiliSP(titles, callback) {
   }
   var title = titles[0]
     , seasonId = '';
-  if (title.includes('#S-'))
+  if (title.includes('#S-')) {
     [title, seasonId] = title.split('#S-');
+  }
   console.log(`query title ${title}`);
   GM_xmlhttpRequest({
     method: 'GET',
