@@ -3,13 +3,15 @@
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(ep|character|(group|subject)/topic|rakuen/topic/(ep|crt|group|subject))/\d+(\?.*)?(#.*)?$/
 // @grant       none
-// @version     4.4.1
+// @version     4.4.2
 // ==/UserScript==
 
 var PREFIX_POST_READ = 'PostRead_'
   , PREFIX_TOPIC_TITLE = 'TopicTitle_';
 
-function $(q) { return document.querySelectorAll(q); }
+var _$ = q => document.querySelectorAll(q);
+var $ = typeof NodeList.prototype[Symbol.iterator] == "function" ?
+  _$ : q => Array.prototype.slice.call(_$(q));
 
 function getTopicID(url) {
   var url = url.split('/');
