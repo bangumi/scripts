@@ -2,7 +2,7 @@
 // @name        Bangumi 侧栏 Dollars
 // @namespace   org.upsuper.bangumi
 // @include     /^http://(bangumi\.tv|bgm\.tv|chii\.in)/(rakuen|(pm|blog|index|wiki|magi|user|group|anime|book|music|game|real|subject|ep|mono|person|character|timeline)(/.*)?)?(\?.*)?$/
-// @version     1.3.2
+// @version     1.3.3
 // @grant       GM_addStyle
 // ==/UserScript==
 
@@ -484,6 +484,8 @@ function updateMsg() {
     return resp.json();
   }).then(data => {
     throwIfTimeout();
+    if (!data)
+      return;
     var count = 0;
     for (var item of data) {
       if (writeMsg(item)) {
@@ -500,7 +502,7 @@ function updateMsg() {
       $history.removeChild($history.lastChild);
     }
   }).catch(e => {
-    console.log(`Error when updating: ${e}`);
+    console.log('Error when updating:', e);
   }).then(() => {
     if (!timeout) {
       updating = false;
