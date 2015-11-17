@@ -284,6 +284,37 @@ function updateBangumi(subject_id, $title) {
       $title.parentNode.classList.add('onAir');
   });
 }
+function getLastEpLink(subject_id) {
+  var $panel = $(`#subjectPanel_${subject_id}`)[0];
+  var $eps = $panel.querySelectorAll('.prg_list>li');
+  var $last_ep;
+  for (var i = 0; i < $eps.length; ++i) {
+    if ($eps[i].className)
+      break;
+    $last_ep = $eps[i];
+  }
+  return $last_ep.querySelector('a');
+}
+function getDateOfLastEp(subject_id) {
+  var $link = getLastEpLink(subject_id);
+  var $tip = $(`${$link.attributes.rel.value}>span.tip`)[0];
+  for (var $child of $tip.childNodes) {
+    if ($child.nodeType != Node.TEXT_NODE)
+      continue;
+    var match = /^首播:(\d{4})-(\d{2})-(\d{2})$/.exec($child.textContent);
+    if (match) {
+      return new Date(match[1], match[2], match[3]);
+    }
+  }
+  return null;
+}
+function isRecentBangumi(subject_id) {
+  var lastEpDate = getDateOfLastEp(subject_id);
+  if (!lastEpDate)
+    return true;
+  var oneMonthAgo = Date.now() - 30 * 24 * 3600 * 1000;
+  return lastEpDate.getTime() > oneMonthAgo;
+}
 if (location.pathname == '/') {
   var $titles = $('#prgSubjectList>li[subject_type="2"] a.title[subject_id]');
   var time_for_request = Math.floor(Date.now() / CACHE_INTERVAL);
@@ -299,7 +330,9 @@ if (location.pathname == '/') {
       }
       for (var $title of $titles) {
         var subject_id = $title.attributes.subject_id.value;
-        updateBangumi(subject_id, $title);
+        if (isRecentBangumi(subject_id)) {
+          updateBangumi(subject_id, $title);
+        }
       }
     }
   });
