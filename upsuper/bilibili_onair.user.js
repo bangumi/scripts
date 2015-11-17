@@ -14,7 +14,7 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.3.3
+// @version     3.4
 // ==/UserScript==
 
 var _$ = q => document.querySelectorAll(q);
@@ -22,6 +22,7 @@ var $ = typeof NodeList.prototype[Symbol.iterator] == "function" ?
   _$ : q => Array.prototype.slice.call(_$(q));
 
 var APPKEY = 'ea99bbc2531c97c0';
+var CACHE_INTERVAL = 15 * 60 * 1000; // 15min
 var localStorage = window.localStorage
   , onairVerAttr = 'u_OnAir_Ver'
   , biliSPPrefix = 'BilibiliSP_'
@@ -284,12 +285,12 @@ function updateBangumi(subject_id, $title) {
   });
 }
 if (location.pathname == '/') {
-  var $titles = $('#prgSubjectList>li[subject_type="2"] ' +
-                  'a.title[subject_id]');
+  var $titles = $('#prgSubjectList>li[subject_type="2"] a.title[subject_id]');
+  var time_for_request = Math.floor(Date.now() / CACHE_INTERVAL);
   GM_xmlhttpRequest({
     method: 'GET',
-    url: 'http://api.bilibili.cn/bangumi?type=json&appkey=' + APPKEY +
-        '&_=' + Date.now(),
+    url: 'http://api.bilibili.cn/bangumi?' +
+         `type=json&appkey=${APPKEY}&_=${time_for_request}`,
     onload: resp => {
       for (var item of JSON.parse(resp.responseText).list) {
         bangumis[item.spid] = item;
