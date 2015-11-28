@@ -14,12 +14,12 @@
 // @include     http://bangumi.tv/
 // @include     http://bangumi.tv/subject/*
 // @exclude     http://bangumi.tv/subject/*/*
-// @version     3.4
+// @version     3.4.1
 // ==/UserScript==
 
-var _$ = q => document.querySelectorAll(q);
-var $ = typeof NodeList.prototype[Symbol.iterator] == "function" ?
-  _$ : q => Array.prototype.slice.call(_$(q));
+var $ = q => document.querySelectorAll(q);
+var $i = typeof NodeList.prototype[Symbol.iterator] == "function" ?
+  list => list : list => Array.prototype.slice.call(list);
 
 var APPKEY = 'ea99bbc2531c97c0';
 var CACHE_INTERVAL = 15 * 60 * 1000; // 15min
@@ -259,7 +259,7 @@ function updateEpBtn(subject_id, bgmep, old) {
   var $subject = $('#subjectPanel_' + subject_id)[0]
     , $prg_list = $subject.querySelectorAll('ul.prg_list>li>a');
   var found = false;
-  for (var $elem of $prg_list) {
+  for (var $elem of $i($prg_list)) {
     if (found) {
       setEpBtn($elem, 'epBtnNA');
     } else if ($elem.textContent == bgmep) {
@@ -298,7 +298,7 @@ function getLastEpLink(subject_id) {
 function getDateOfLastEp(subject_id) {
   var $link = getLastEpLink(subject_id);
   var $tip = $(`${$link.attributes.rel.value}>span.tip`)[0];
-  for (var $child of $tip.childNodes) {
+  for (var $child of $i($tip.childNodes)) {
     if ($child.nodeType != Node.TEXT_NODE)
       continue;
     var match = /^首播:(\d{4})-(\d{2})-(\d{2})$/.exec($child.textContent);
@@ -328,7 +328,7 @@ if (location.pathname == '/') {
         if (item.alias_spid)
           bangumis[item.alias_spid] = item;
       }
-      for (var $title of $titles) {
+      for (var $title of $i($titles)) {
         var subject_id = $title.attributes.subject_id.value;
         if (isRecentBangumi(subject_id)) {
           updateBangumi(subject_id, $title);
@@ -338,14 +338,14 @@ if (location.pathname == '/') {
   });
 
   // clean up all onair icons
-  for (var $elem of $('#prgSubjectList>li.onAir')) {
+  for (var $elem of $i($('#prgSubjectList>li.onAir'))) {
     $elem.classList.remove('onAir');
   }
-  for (var $btn of $('#cloumnSubjectInfo .epBtnToday')) {
+  for (var $btn of $i($('#cloumnSubjectInfo .epBtnToday'))) {
     $btn.classList.remove('epBtnToday');
     $btn.classList.add('epBtnNA');
   }
-  for (var $rr of $('#cloumnSubjectInfo .onAir.rr')) {
+  for (var $rr of $i($('#cloumnSubjectInfo .onAir.rr'))) {
     $rr.parentNode.removeChild($rr);
   }
 } else {
