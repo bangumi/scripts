@@ -21,6 +21,10 @@
 
 在 Infobox 内的 ISBN 后添加日本亚马逊链接（/dp/{ISBN}）
 
+## [人物条目 Twitter 链接](bangumi-twitter-link.user.js?raw=true)
+
+人物条目内若 Infobox 有 Twitter 栏位，会替换为 Twitter 链接。
+
 
 ## [回帖增强 BRE](bangumi-reply-extend.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/311623)
