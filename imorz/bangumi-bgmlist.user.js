@@ -4,7 +4,7 @@
 // @namespace   org.sorz.bangumi
 // @grant       none
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.1.0
+// @version     0.1.1
 // ==/UserScript==
 
 var OLDEST_MONTH = 1310;
@@ -76,7 +76,6 @@ function addDownloadSearchLinks(bgm) {
   var en = bgm.titleEN ? bgm.titleEN : bgm.titleJP;
   addInfo('下载')
     .append($a(DOWNLOAD_DMHY_URL + cn, '花园')).append('、')
-    .append($a(DOWNLOAD_POPGO_URL + cn, '漫游')).append('、')
     .append($a(DOWNLOAD_NYAA_URL + en, 'Nyaa'));
 }
 
