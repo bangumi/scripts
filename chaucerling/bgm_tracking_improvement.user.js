@@ -98,6 +98,7 @@ function recover_dispaly(){
   $('.infoWrapper_tv div.infoWrapper').show();
   $('#ti-pages').hide();
 }
+
 // function get_all_display_subjects(subject_type) {
 //   switch(subject_type) {
 //     case "0": //all
@@ -209,6 +210,7 @@ function add_extra_subjects(extra_subjects){
 
   $('#subject_prg_content a.ep_status').click(function() {
     chiiLib.home.epStatusClick(this);
+		console.log('click');
     return false;
   });
 
@@ -309,6 +311,7 @@ $(document).on('click', '#ti-pages a', function(e){
     $('.infoWrapper_tv div.infoWrapper').hide();
     $('.infoWrapper_tv div.infoWrapper.extra').show();
   } else if ($(this).data('page') == 'refresh') {
+
     $(this).addClass('disabled');
     $(this).html('refreshing');
     localStorage.removeItem('extra_watching_animes');
@@ -323,4 +326,13 @@ $(document).on('click', '#ti-pages a', function(e){
       get_watching_animes();
     }, 10);
   }
+})
+
+// restore extra subjects' progress
+$(window).unload(function() {
+	if (cache_extra_subjects.length <= 0) return;
+	for (i in cache_extra_subjects){
+		cache_extra_subjects[i].prg_list_html = $("#subjectPanel_" + cache_extra_subjects[i].id + " .prg_list").html();
+	}
+	localStorage['extra_watching_animes'] = JSON.stringify(cache_extra_subjects);
 })
