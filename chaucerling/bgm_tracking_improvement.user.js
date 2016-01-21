@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.2.0
+// @version      0.2.1
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
 // @include      https://bgm.tv/
 // @include      http://bgm.tv/
 // @include      http://chii.in/
-// @grant        unsafeWindow
+// @grant        none
 // ==/UserScript==
 
 var $ = unsafeWindow.jQuery;
