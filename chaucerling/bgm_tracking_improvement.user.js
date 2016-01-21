@@ -8,9 +8,6 @@
 // @include      https://bgm.tv/
 // @include      http://bgm.tv/
 // @include      http://chii.in/
-// @require      https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.6.15/browser-polyfill.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.6.15/browser.min.js
-// @grant        none
 // ==/UserScript==
 
 var $ = unsafeWindow.jQuery;
@@ -90,7 +87,7 @@ function Subject() {
   this.prg_content_html = info.prg_content_html;
   this.thumb = info.thumb;
   this.extra = info.extra; //boolean
-  this.type = info.type; // 2: amine, 6: real
+  this.type = info.type; // 1: book, 2: amine, 6: real
 }
 
 function remove_img_src(str){
@@ -238,7 +235,7 @@ function add_extra_subjects(extra_subjects){
   $('#subject_prg_content a.ep_status').click(function() {
     var link = this;
     var ep_id = $(link).attr('id').split('_')[1];
-    chiiLib.home.epStatusClick(this);
+    chiiLib.home.epStatusClick(link);
     var l = cache_extra_subjects().filter(function(x){
       return x.id.toString() === $(`#prg_${ep_id}`).parents().eq(3).attr('id').split('_')[1]
     }).length
@@ -404,7 +401,7 @@ $(document).on('click', '#ti-pages a', function(e){
     $.each(ary, function (index, value) {
       index_ids.push($(value).attr('id').split("_")[1]);
     });
-    refresh = true
+    refresh = true;
     setTimeout(function () {
       get_watching_animes_and_reals();
     }, 10);
