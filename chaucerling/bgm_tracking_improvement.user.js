@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.3.0
+// @version      0.3.1
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -108,11 +108,7 @@ function get_display_subject_type() {
   return $("#prgCatrgoryFilter > li > a.focus").atrr('subject_type');
 }
 
-function change_dispaly(){
-  // $('#prgCatrgoryFilter a[subject_type="0"],a[subject_type="6"]').hide();
-  // $('#prgCatrgoryFilter a').removeClass('focus');
-  // $('#prgCatrgoryFilter a[subject_type="2"]').addClass('focus');
-
+function change_mode(){
   $('#switchNormalManager').removeClass();
   $('#switchNormalManager').hide();
   $('#switchTinyManager').addClass('active');
@@ -124,9 +120,75 @@ function change_dispaly(){
   $.cookie('prg_display_mode', 'tiny', {expires: 2592000});
 
   $('#ti-pages').show();
+
+  // bind events
+  $(document).on('click', '#ti-alert', function(e){
+    $('#ti-alert').hide();
+  });
+
+  $(document).on('click', 'a.disabled', function(e){
+    e.preventDefault();
+  });
+
+  $(document).on('click', '#ti-pages a', function(e){
+    if ($(this).data('page') !== 'refresh'){
+      $('#ti-pages a').removeClass('focus');
+      $(this).addClass('focus');
+      show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $(this).data('page') === 'extra');
+    } else {
+      $(this).addClass('disabled');
+      $(this).html('refreshing');
+
+      localStorage.removeItem(LS_SCOPE);
+      $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
+
+      refresh = true;
+      index_ids = all_ids_on_index();
+      setTimeout(function () {
+        get_watching_list();
+      }, 10);
+    }
+  });
+
+  $('#prgCatrgoryFilter a').off('click').on('click', function(e){
+    $('#prgCatrgoryFilter a').removeClass('focus');
+    $(this).addClass('focus');
+    show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
+  });
+
+  // restore extra subjects' progress
+  $(window).on('pagehide', function(e){
+    var subjects = cache_extra_subjects();
+    if (subjects.length <= 0 || extra_progress_changed === false) return;
+
+    for (var i in subjects){
+      if (subjects[i].type !== 1){
+        subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prg_list`).html();
+      } else {
+        subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prgText`).map(function(index, element){
+          $(element).find('input').map(function(index1, element2){
+            $(element2).attr('value', element2.value);
+          });
+          return element.outerHTML;
+        }).toArray().join('\n');
+      }
+    }
+    localStorage[LS_SCOPE] = JSON.stringify(subjects);
+    console.log('restore');
+  });
+
+  $(document).on('ajaxSuccess', function(event, xhr, options){
+    var link = document.createElement("a");
+    link.href = options.url;
+    var tv_match = link.pathname.match(/^\/subject\/ep\/(\d+)\/status/);
+    var book_match = link.pathname.match(/^\/subject\/set\/watched\/\d+/);
+    if ((tv_match !== null && !index_ids.includes(tv_match[1])) || (book_match !== null && !index_ids.includes(book_match[1]))) {
+      extra_progress_changed = true;
+    }
+  });
 }
 
-function recover_dispaly(){
+function recover_mode(){
   // $('#prgCatrgoryFilter a').show();
   $('#switchNormalManager').show();
   $('.infoWrapper_tv > div').show();
@@ -197,12 +259,12 @@ function check_get_all_pages_finished(){
   if (animes_size + reals_size > 50 || books_size > 50) {
     $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books, loading extra subjects' progress.(click to close)`);
-    change_dispaly();
+    change_mode();
     $.each(watching_list, function (index, element) {
       get_subject_progress($(element).attr('id').split("_")[1], parseInt($(element).attr('item_type')));
     });
   } else {
-    recover_dispaly();
+    recover_mode();
     $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books.(click to close)`);
   }
@@ -361,6 +423,8 @@ function show_subjects(subject_type, extra){
   console.log(subject_type, extra);
   switch (subject_type) {
     case "0": //all
+      $('.infoWrapper_tv').show();
+      $('.infoWrapper_book').hide();
       if (extra){
         $('.infoWrapper_tv > div').hide();
         $('.infoWrapper_tv > div.extra').show();
@@ -370,6 +434,8 @@ function show_subjects(subject_type, extra){
       }
       break;
     case "1": //book
+      $('.infoWrapper_tv').hide();
+      $('.infoWrapper_book').show();
       if (extra){
         $('.infoWrapper_book > div').hide();
         $('.infoWrapper_book > div[subject_type="1"].extra').show();
@@ -380,6 +446,8 @@ function show_subjects(subject_type, extra){
       }
       break;
     case "2": //anime
+      $('.infoWrapper_tv').show();
+      $('.infoWrapper_book').hide();
       if (extra){
         $('.infoWrapper_tv > div').hide();
         $('.infoWrapper_tv > div[subject_type="2"].extra').show();
@@ -390,6 +458,8 @@ function show_subjects(subject_type, extra){
       }
       break;
     case "6": //real
+      $('.infoWrapper_tv').show();
+      $('.infoWrapper_book').hide();
       if (extra){
         $('.infoWrapper_tv > div').hide();
         $('.infoWrapper_tv > div[subject_type="6"].extra').show();
@@ -461,7 +531,7 @@ $(document).ready(function(){
       ${size2 + cache_extra_real_subjects().length} reals, ${size3 + cache_extra_book_subjects().length} books,
       load form localStorage.(click to close)
     `);
-    change_dispaly();
+    change_mode();
     add_extra_subjects(cache_extra_subjects());
   } else {
     $('#ti-alert').show();
@@ -472,69 +542,5 @@ $(document).ready(function(){
     setTimeout(function () {
       get_watching_list();
     }, 10);
-  }
-});
-
-// bind events
-$(document).on('click', '#ti-alert', function(e){
-  $('#ti-alert').hide();
-});
-
-$(document).on('click', 'a.disabled', function(e){
-  e.preventDefault();
-});
-
-$(document).on('click', '#ti-pages a', function(e){
-  if ($(this).data('page') !== 'refresh'){
-    $('#ti-pages a').removeClass('focus');
-    $(this).addClass('focus');
-    show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $(this).data('page') === 'extra');
-  } else {
-    $(this).addClass('disabled');
-    $(this).html('refreshing');
-
-    localStorage.removeItem(LS_SCOPE);
-    $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
-
-    refresh = true;
-    index_ids = all_ids_on_index();
-    setTimeout(function () {
-      get_watching_list();
-    }, 10);
-  }
-});
-
-$('#prgCatrgoryFilter a').on('click', function(e){
-  show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
-});
-
-// restore extra subjects' progress
-$(window).on('pagehide', function(e){
-  var subjects = cache_extra_subjects();
-  if (subjects.length <= 0 || extra_progress_changed === false) return;
-
-  for (var i in subjects){
-    if (subjects[i].type !== 1){
-      subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prg_list`).html();
-    } else {
-      subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prgText`).map(function(index, element){
-        $(element).find('input').map(function(index1, element2){
-          $(element2).attr('value', element2.value);
-        });
-        return element.outerHTML;
-      }).toArray().join('\n');
-    }
-  }
-  localStorage[LS_SCOPE] = JSON.stringify(subjects);
-  console.log('restore');
-});
-
-$(document).on('ajaxSuccess', function(event, xhr, options){
-  var link = document.createElement("a");
-  link.href = options.url;
-  var tv_match = link.pathname.match(/^\/subject\/ep\/(\d+)\/status/);
-  var book_match = link.pathname.match(/^\/subject\/set\/watched\/\d+/);
-  if ((tv_match !== null && !index_ids.includes(tv_match[1])) || (book_match !== null && !index_ids.includes(book_match[1]))) {
-    extra_progress_changed = true;
   }
 });
