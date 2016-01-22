@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.2.4
+// @version      0.3.0
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -15,10 +15,12 @@
 
 var $ = unsafeWindow.jQuery;
 var index_ids = [];
+var watching_list = [];
 var refresh = false;
 var extra_progress_changed = false;
 var extra_subjects = [];
 var subjects_size = 0;
+var animes_size = 0, reals_size = 0, books_size = 0;
 const LS_SCOPE = 'BTI.extra_subjects';
 
 var cache_extra_subjects = function() {
@@ -131,77 +133,73 @@ function recover_dispaly(){
   $('#ti-pages').hide();
 }
 
+function get_path_and_size_of_all_type(){
+  animes_size = -1; reals_size = -1; books_size = -1;
+  return [
+    {
+      value: 2,
+      path: $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href'),
+      size: function(){return animes_size;},
+      set_size: function(value){animes_size = value;}
+    },
+    {
+      value: 6,
+      path: $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href'),
+      size: function(){return reals_size;},
+      set_size: function(value){reals_size = value;}
+    },
+    {
+      value: 1,
+      path: $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href'),
+      size: function(){return books_size;},
+      set_size: function(value){books_size = value;}
+    }
+  ];
+}
+
 function get_watching_list(){
-  extra_subjects = []; subjects_size = 0;
-  var animes_path = $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href');
-  var reals_path = $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href');
-  var books_path = $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href');
-  var animes_size = 0, reals_size = 0, books_size = 0;
-  var list = [], _temp_list;
-
-  var page, max_page;
-  for (page = 1, max_page = 2; page <= max_page; page++){
-    $.ajax({
-      method: "GET",
-      url: animes_path + "?page=" + page,
-      async: false,
-      success: function(data, textStatus, jqXHR) {
-        console.log(page);
-        var html = remove_img_src(data);
-        if (page === 1) {
-          animes_size = parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/));
-          max_page = parseInt(animes_size/24) + 1;
-        }
-        _temp_list = $(html).find('#browserItemList > li');
-        list = $.merge(list, _temp_list);
-      }
-    });
-    if (_temp_list.length < 0) break;
-  }
-  for (page = 1, max_page = 2; page <= max_page; page++){
-    $.ajax({
-      method: "GET",
-      url: reals_path + "?page=" + page,
-      async: false,
-    }).success(function(data, textStatus, jqXHR) {
-      console.log(page);
+  watching_list = []; extra_subjects = []; subjects_size = 0;
+  get_path_and_size_of_all_type().forEach(function(type, index, array) {
+    $.get(type.path + "?page=1", function(data){
       var html = remove_img_src(data);
-      if (page === 1) {
-        reals_size = parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/));
-        max_page = parseInt(reals_size/24) + 1;
+      type.set_size(parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/)));
+      var max_page = parseInt(type.size()/24) + 1;
+      var _temp_list = $(html).find('#browserItemList > li').attr('item_type', type.value);
+      watching_list = $.merge(watching_list, _temp_list);
+      console.log(type.size());
+      for (var i = 2; i <= max_page; i++){
+        parse_watching_page(type.path + "?page=" + i, type.value);
       }
-      _temp_list = $(html).find('#browserItemList > li');
-      list = $.merge(list, _temp_list);
     });
-    if (_temp_list.length < 24) break;
-  }
-  for (page = 1, max_page = 2; page <= max_page; page++){
-    $.ajax({
-      method: "GET",
-      url: books_path + "?page=" + page,
-      async: false,
-    }).success(function(data, textStatus, jqXHR) {
-      console.log(page);
-      var html = remove_img_src(data);
-      if (page === 1) {
-        books_size = parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/));
-        max_page = parseInt(books_size/24) + 1;
-      }
-      _temp_list = $(html).find('#browserItemList > li');
-      list = $.merge(list, _temp_list);
-    });
-    if (_temp_list.length < 24) break;
-  }
-  // console.log(list);
+  });
+}
 
+function parse_watching_page(url, type){
+  $.get(url, function(data) {
+    var html = remove_img_src(data);
+    var _temp_list = $(html).find('#browserItemList > li').attr('item_type', type);
+    watching_list = $.merge(watching_list, _temp_list);
+    check_get_all_pages_finished();
+  });
+}
+
+function check_get_all_pages_finished(){
+  if (typeof this.counter === "undefined") this.counter= 0;
+  this.counter++;
+  if (animes_size === -1 || reals_size === -1 || books_size === -1 ||
+    watching_list.length < animes_size + reals_size + books_size){
+    return false;
+  }
+
+  this.counter = 0;
   subjects_size = animes_size + reals_size + books_size;
+  console.log(subjects_size);
   if (animes_size + reals_size > 50 || books_size > 50) {
     $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books, loading extra subjects' progress.(click to close)`);
     change_dispaly();
-    $.each(list, function (index, element) {
-      var type = index < animes_size ? 2 : ((index < animes_size + reals_size) ? 6 : 1);
-      get_subject_progress($(element).attr('id').split("_")[1], type);
+    $.each(watching_list, function (index, element) {
+      get_subject_progress($(element).attr('id').split("_")[1], parseInt($(element).attr('item_type')));
     });
   } else {
     recover_dispaly();
@@ -212,7 +210,7 @@ function get_watching_list(){
 
 function get_subject_progress(subject_id, type){
   if (index_ids.includes(subject_id)) {
-    check_get_all_subjects_finished();
+    check_get_all_extra_subjects_finished();
     return;
   }
 
@@ -241,11 +239,11 @@ function get_subject_progress(subject_id, type){
                                  type: type,
                                  extra: true});
       extra_subjects.push(subject);
-      check_get_all_subjects_finished();
+      check_get_all_extra_subjects_finished();
   });
 }
 
-function check_get_all_subjects_finished(){
+function check_get_all_extra_subjects_finished(){
   if (typeof this.counter === "undefined") this.counter= 0;
   this.counter++;
   if (this.counter < subjects_size){
@@ -301,14 +299,14 @@ function add_extra_subjects(extra_subjects){
     form.submit();
   });
 
+  $('#ti-alert').show();
+  $('#ti-alert').text($('#ti-alert').text().replace(/load.+/, "loading finished.(click to close)"));
+  show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
+
   if (refresh === true) {
     $('#ti-pages a.refresh').removeClass('disabled');
     $('#ti-pages a.refresh').html('refresh');
   }
-
-  show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
-  $('#ti-alert').show();
-  $('#ti-alert').text($('#ti-alert').text().replace(/load.+/, "loading finished.(click to close)"));
 }
 
 function create_subject_cell(subject){
