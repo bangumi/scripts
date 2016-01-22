@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.2.2
+// @version      0.2.3
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -9,6 +9,9 @@
 // @include      http://bgm.tv/
 // @include      http://chii.in/
 // ==/UserScript==
+
+/* jshint loopfunc:true */
+/* jshint esversion:6 */
 
 var $ = unsafeWindow.jQuery;
 var index_ids = [];
@@ -22,24 +25,29 @@ var cache_extra_subjects = function() {
   if (localStorage[LS_SCOPE] === undefined){
     return [];
   }
-
   return JSON.parse(localStorage[LS_SCOPE]);
-}
+};
 
-var cache_extra_animes_subjects = function() {
+var cache_extra_anime_subjects = function() {
   return cache_extra_subjects().filter(function(x) {
-    return x.type === 2
-  })
-}
+    return x.type === 2;
+  });
+};
 
-var cache_extra_reals_subjects = function() {
+var cache_extra_real_subjects = function() {
   return cache_extra_subjects().filter(function(x) {
-    return x.type === 6
-  })
-}
+    return x.type === 6;
+  });
+};
+
+var cache_extra_book_subjects = function() {
+  return cache_extra_subjects().filter(function(x) {
+    return x.type === 1;
+  });
+};
 
 function GM_addStyle(style) {
-  $('head').append(`<style>${style}</style>`)
+  $('head').append(`<style>${style}</style>`);
 }
 
 GM_addStyle(`
@@ -123,53 +131,81 @@ function recover_dispaly(){
   $('#ti-pages').hide();
 }
 
-function get_watching_animes_and_reals(){
-  var anime_list_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href');
-  var real_list_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href');
-  var wathcing_anime_list = [];
-  var wathcing_real_list = [];
-  var page = 1;
-  var temp_page_list;
-  extra_subjects = [];
+function get_watching_list(){
+  extra_subjects = []; subjects_size = 0;
+  var animes_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href');
+  var reals_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href');
+  var books_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href');
+  var animes_size = 0, reals_size = 0, books_size = 0;
+  var list = [], _temp_list;
 
-  for (page = 1;page < 5;page++){
+  var page, max_page;
+  for (page = 1, max_page = 5; page <= max_page; page++){
     $.ajax({
       method: "GET",
-      url: anime_list_path + "?page=" + page,
+      url: animes_path + "?page=" + page,
+      async: false,
+      success: function(data, textStatus, jqXHR) {
+        console.log(page);
+        var html = remove_img_src(data);
+        if (page === 1) {
+          animes_size = parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/));
+          max_page = parseInt(animes_size/24) + 1;
+        }
+        _temp_list = $(html).find('#browserItemList > li');
+        list = $.merge(list, _temp_list);
+      }
+    });
+    if (_temp_list.length < 0) break;
+  }
+  for (page = 1, max_page = 5; page <= max_page; page++){
+    $.ajax({
+      method: "GET",
+      url: reals_path + "?page=" + page,
       async: false,
     }).success(function(data, textStatus, jqXHR) {
       console.log(page);
       var html = remove_img_src(data);
-      temp_page_list = $(html).find('#browserItemList > li');
-      wathcing_anime_list = $.merge(wathcing_anime_list, temp_page_list);
+      if (page === 1) {
+        reals_size = parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/));
+        max_page = parseInt(reals_size/24) + 1;
+      }
+      _temp_list = $(html).find('#browserItemList > li');
+      list = $.merge(list, _temp_list);
     });
-    if (temp_page_list.length === 0) break;
+    if (_temp_list.length < 24) break;
   }
-  for (page = 1;page < 5;page++){
+  for (page = 1, max_page = 5; page <= max_page; page++){
     $.ajax({
       method: "GET",
-      url: real_list_path + "?page=" + page,
+      url: books_path + "?page=" + page,
       async: false,
     }).success(function(data, textStatus, jqXHR) {
       console.log(page);
       var html = remove_img_src(data);
-      temp_page_list = $(html).find('#browserItemList > li');
-      wathcing_real_list = $.merge(wathcing_real_list, temp_page_list);
+      if (page === 1) {
+        books_size = parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/));
+        max_page = parseInt(books_size/24) + 1;
+      }
+      _temp_list = $(html).find('#browserItemList > li');
+      list = $.merge(list, _temp_list);
     });
-    if (temp_page_list.length < 24) break;
+    if (_temp_list.length < 24) break;
   }
+  // console.log(list);
 
-  subjects_size = wathcing_anime_list.length + wathcing_real_list.length
-  if (wathcing_anime_list.length + wathcing_real_list.length > 50) {
-    $('#ti-alert').text(`Watching ${wathcing_anime_list.length} animes and ${wathcing_real_list.length} reals, loading extra subjects' progress.(click to close)`);
+  subjects_size = animes_size + reals_size + books_size;
+  if (animes_size + reals_size > 50 || books_size > 50) {
+    $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books, loading extra subjects' progress.(click to close)`);
     change_dispaly();
-    $.each(wathcing_anime_list.concat(wathcing_real_list), function (index, value) {
-      get_subject_progress($(value).attr('id').split("_")[1], (index - wathcing_anime_list.length < 0) ? 2 : 6);
-    })
+    $.each(list, function (index, element) {
+      var type = index < animes_size ? 2 : ((index < animes_size + reals_size) ? 6 : 1);
+      get_subject_progress($(element).attr('id').split("_")[1], type);
+    });
   } else {
     recover_dispaly();
     $('#ti-alert').show();
-    $('#ti-alert').text(`Watching ${wathcing_anime_list.length} animes and ${wathcing_real_list.length} reals.(click to close)`);
+    $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books.(click to close)`);
   }
 }
 
@@ -180,11 +216,19 @@ function get_subject_progress(subject_id, type){
   }
 
   $.get('/subject/' + subject_id, function(data){
+      var prg_list_html, prg_content_html;
       var html = remove_img_src(data);
       var progress = $(html).find('#watchedeps').text().split("/")[0];
       var title = $(html).find('.nameSingle > a').text();
-      var prg_list_html = $(html).find('.prg_list').addClass("clearit").html();
-      var prg_content_html = $(html).find('#subject_prg_content').html();
+      if (type !== 1){
+        prg_list_html = $(html).find('.prg_list').addClass("clearit").html();
+        prg_content_html = $(html).find('#subject_prg_content').html();
+      } else {
+        prg_list_html = $(html).find('.prgText').map(function(index, element){
+          return element.outerHTML;
+        }).toArray().join('\n');
+        prg_content_html = null;
+      }
       var thumb = $(html).find('a.thickbox.cover').attr('href').replace('/l/','/g/');
       var subject = new Subject({id: subject_id,
                                  title: title,
@@ -200,20 +244,20 @@ function get_subject_progress(subject_id, type){
 }
 
 function check_get_all_subjects_finished(){
-  if(typeof this.counter === "undefined") this.counter= 0;
+  if (typeof this.counter === "undefined") this.counter= 0;
   this.counter++;
   if (this.counter < subjects_size){
     return false;
   }
 
   this.counter = 0;
-  console.log(extra_subjects)
+  console.log(extra_subjects);
   localStorage[LS_SCOPE] = JSON.stringify(extra_subjects);
   add_extra_subjects(extra_subjects);
 }
 
 function add_extra_subjects(extra_subjects){
-  for(i in extra_subjects){
+  for(var i in extra_subjects){
     create_subject_cell(extra_subjects[i]);
   }
 
@@ -237,9 +281,9 @@ function add_extra_subjects(extra_subjects){
     var ep_id = $(link).attr('id').split('_')[1];
     chiiLib.home.epStatusClick(link);
     var l = cache_extra_subjects().filter(function(x){
-      return x.id.toString() === $(`#prg_${ep_id}`).parents().eq(3).attr('id').split('_')[1]
-    }).length
-    if ( l > 0) extra_progress_changed = true;
+      return x.id.toString() === $(`#prg_${ep_id}`).parents().eq(3).attr('id').split('_')[1];
+    }).length;
+    if (l > 0) extra_progress_changed = true;
     return false;
   });
 
@@ -251,32 +295,59 @@ function add_extra_subjects(extra_subjects){
     $('#ti-pages a.refresh').removeClass('disabled');
     $('#ti-pages a.refresh').html('refresh');
   }
+  // console.log('ff');
 
   show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
   $('#ti-alert').show();
-  $('#ti-alert').text($('#ti-alert').text().replace(/loading.+/, "loading finished.(click to close)"));
+  $('#ti-alert').text($('#ti-alert').text().replace(/load.+/, "loading finished.(click to close)"));
 }
 
 function create_subject_cell(subject){
-  var extra = subject.extra ? " extra" : "";
-  $('.infoWrapper_tv').append(`
-    <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='${extra} clearit infoWrapper tinyMode' style='display:none;'>
-      <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
-        <img src='${subject.thumb}' class='grid'>
-      </a>
-      <div class='epGird'>
-        <div class='tinyHeader'>
-          <a href='/subject/"+subject.id+"' title='"+subject.title+"'>"+subject.title+"</a>
-          <small class='progress_percent_text'>
-            <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
-              title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
-          </small>
+  if (subject.type !== 1){
+    $('.infoWrapper_tv').append(`
+      <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='extra clearit infoWrapper tinyMode' style='display:none;'>
+        <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
+          <img src='${subject.thumb}' class='grid'>
+        </a>
+        <div class='epGird'>
+          <div class='tinyHeader'>
+            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <small class='progress_percent_text'>
+              <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
+                title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
+            </small>
+          </div>
+          <ul class='prg_list clearit'>${subject.prg_list_html}</ul>
         </div>
-        <ul class='prg_list clearit'>${subject.prg_list_html}</ul>
       </div>
-    </div>
-  `)
-  $('#subject_prg_content').append(subject.prg_content_html);
+    `);
+    $('#subject_prg_content').append(subject.prg_content_html);
+  } else {
+    $('.infoWrapper_book').append(`
+      <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='extra clearit infoWrapper tinyMode' style='display:none;'>
+        <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
+          <img src='${subject.thumb}' class='grid'>
+        </a>
+        <div class='epGird'>
+          <div class='tinyHeader'>
+            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <small class='progress_percent_text'>
+              <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
+                title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
+            </small>
+          </div>
+          <div class="tinyManager">
+            <form method="post" name="batch" class="prgBatchManagerForm" action="/subject/set/watched/${subject.id}">
+              <input type="hidden" name="home" value="subject">
+              <div class="btnSubmit rr"><input class="btn" type="submit" name="submit" value="更新"></div>
+              ${subject.prg_list_html}
+            </form>
+          </div>
+          <ul class="prg_list clearit"></ul>
+        </div>
+      </div>
+    `);
+  }
 }
 
 function show_subjects(subject_type, extra){
@@ -291,6 +362,14 @@ function show_subjects(subject_type, extra){
       }
       break;
     case "1": //book
+      if (extra){
+        $('.infoWrapper_book > div').hide();
+        $('.infoWrapper_book > div[subject_type="1"].extra').show();
+      } else {
+        $('.infoWrapper_book > div').hide();
+        $('.infoWrapper_book > div[subject_type="1"]').show();
+        $('.infoWrapper_book > div[subject_type="1"].extra').hide();
+      }
       break;
     case "2": //anime
       if (extra){
@@ -311,6 +390,7 @@ function show_subjects(subject_type, extra){
         $('.infoWrapper_tv > div[subject_type="6"]').show();
         $('.infoWrapper_tv > div[subject_type="6"].extra').hide();
       }
+      break;
     default:
       break;
   }
@@ -318,23 +398,33 @@ function show_subjects(subject_type, extra){
 }
 
 function reset_odd_even(){
-  $.each($('.infoWrapper_tv > div:visible'), function(index, item) {
+  $.each($('.infoWrapper_tv > div:visible, .infoWrapper_book > div:visible'), function(index, item) {
     $(item).removeClass("even odd");
     $(item).addClass((index % 2) ? "even" : "odd");
-  })
+  });
 }
 
 // 上限50是动画和三次元加起来的，这里返回的会包含三次元的条目
-function get_watching_animes_and_reals_on_index(){
-  return $('.infoWrapper_tv > div');
+function all_ids_on_index(){
+  return $('.infoWrapper_tv > div, .infoWrapper_book > div').map(function(index, element) {
+    return $(element).attr('id').split("_")[1];
+  }).toArray();
 }
 
-function get_watching_reals_on_index(){
-  return $('.infoWrapper_tv > div[subject_type="6"]');
+function tv_subjects_size_on_index(){
+  return $('.infoWrapper_tv > div').length;
 }
 
-function get_watching_animes_on_index(){
-  return $('.infoWrapper_tv > div[subject_type="2"]');
+function anime_subjects_size_on_index(){
+  return $('.infoWrapper_tv > div[subject_type="2"]').length;
+}
+
+function real_subjects_size_on_index(){
+  return $('.infoWrapper_tv > div[subject_type="6"]').length;
+}
+
+function book_subjects_size_on_index(){
+  return $('.infoWrapper_book > div').length;
 }
 
 // init
@@ -347,32 +437,32 @@ $(document).ready(function(){
     <a type='button' data-page='refresh' class='refresh' href='javascript:void(0);'><span>refresh</span></a>
   </div>`);
 
-  var ary1 = get_watching_animes_on_index();
-  var ary2 = get_watching_reals_on_index();
-  if (ary1.length + ary2.length <= 49){
+  var size1 = anime_subjects_size_on_index();
+  var size2 = real_subjects_size_on_index();
+  var size3 = book_subjects_size_on_index();
+  if (size1 + size2 <= 49 && size3 <= 49){
     $('#ti-alert').show();
-    $('#ti-alert').text(`Watching ${ary1.length} animes, ${ary2.length} reals.(click to close)`);
+    $('#ti-alert').text(`Watching ${size1} animes, ${size2} reals, ${size3} books.(click to close)`);
     localStorage.removeItem(LS_SCOPE);
     return;
   }
 
   if (cache_extra_subjects().length > 0){
     $('#ti-alert').show();
-    $('#ti-alert').text(`Maybe watching ${ary1.length + cache_extra_animes_subjects().length} animes,
-      ${ary2.length + cache_extra_reals_subjects().length} reals, load form localStorage.(click to close)
+    $('#ti-alert').text(`Maybe watching ${size1 + cache_extra_anime_subjects().length} animes,
+      ${size2 + cache_extra_real_subjects().length} reals, ${size3 + cache_extra_book_subjects().length} books,
+      load form localStorage.(click to close)
     `);
     change_dispaly();
     add_extra_subjects(cache_extra_subjects());
   } else {
-    index_ids = [];
-    $.each($.merge(ary1,ary2), function (index, value) {
-      index_ids.push($(value).attr('id').split("_")[1]);
-    });
-    console.log(index_ids);
     $('#ti-alert').show();
-    $('#ti-alert').text("Maybe watching more than 50 animes and reals, loading to comfirm.(click to close)");
+    $('#ti-alert').text(`Maybe watching more than 50 animes and reals, ${size3} books, loading to comfirm.(click to close)`);
+
+    index_ids = all_ids_on_index();
+    console.log(index_ids);
     setTimeout(function () {
-      get_watching_animes_and_reals();
+      get_watching_list();
     }, 10);
   }
 });
@@ -384,7 +474,7 @@ $(document).on('click', '#ti-alert', function(e){
 
 $(document).on('click', 'a.disabled', function(e){
   e.preventDefault();
-})
+});
 
 $(document).on('click', '#ti-pages a', function(e){
   if ($(this).data('page') !== 'refresh'){
@@ -394,29 +484,27 @@ $(document).on('click', '#ti-pages a', function(e){
   } else {
     $(this).addClass('disabled');
     $(this).html('refreshing');
+
     localStorage.removeItem(LS_SCOPE);
     $('.infoWrapper_tv div.extra').remove();
-    var ary = get_watching_animes_and_reals_on_index();
-    index_ids = [];
-    $.each(ary, function (index, value) {
-      index_ids.push($(value).attr('id').split("_")[1]);
-    });
+
     refresh = true;
+    index_ids = all_ids_on_index();
     setTimeout(function () {
-      get_watching_animes_and_reals();
+      get_watching_list();
     }, 10);
   }
 });
 
 $('#prgCatrgoryFilter a').on('click', function(e){
-  show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra')
+  show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
 });
 
 // restore extra subjects' progress
 $(window).on('pagehide', function(e){
   if (cache_extra_subjects().length <= 0 || extra_progress_changed === false) return;
 
-  for (i in cache_extra_subjects()){
+  for (var i in cache_extra_subjects()){
     cache_extra_subjects()[i].prg_list_html = $("#subjectPanel_" + cache_extra_subjects()[i].id + " .prg_list").html();
   }
   localStorage[LS_SCOPE] = JSON.stringify(cache_extra_subjects());
