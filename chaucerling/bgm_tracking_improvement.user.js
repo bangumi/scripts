@@ -196,6 +196,7 @@ function get_watching_list(){
 
   subjects_size = animes_size + reals_size + books_size;
   if (animes_size + reals_size > 50 || books_size > 50) {
+    $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books, loading extra subjects' progress.(click to close)`);
     change_dispaly();
     $.each(list, function (index, element) {
@@ -253,8 +254,8 @@ function check_get_all_subjects_finished(){
 
   this.counter = 0;
   console.log(extra_subjects);
-  localStorage[LS_SCOPE] = JSON.stringify(extra_subjects);
   add_extra_subjects(extra_subjects);
+  localStorage[LS_SCOPE] = JSON.stringify(extra_subjects);
 }
 
 function add_extra_subjects(extra_subjects){
@@ -292,13 +293,11 @@ function add_extra_subjects(extra_subjects){
     return false;
   });
 
-  $('a.input_plus').off('click').on('click', function() {
+  $('.prgBatchManagerForm a.input_plus').off('click').on('click', function(e) {
     var input = $(this).closest('div.prgText').find('input'),
       count = parseInt(input.val()),
-      input_id = input.attr('id'),
-      subject_id = input.attr(input_id),
       form = $(this).closest('form.prgBatchManagerForm');
-    $(`input[${input_id}$=${subject_id}]`).val(count + 1);
+    $(input).val(count+1);
     form.submit();
   });
 
