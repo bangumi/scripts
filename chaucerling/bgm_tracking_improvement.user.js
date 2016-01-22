@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.2.3
+// @version      0.2.4
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -127,20 +127,20 @@ function change_dispaly(){
 function recover_dispaly(){
   // $('#prgCatrgoryFilter a').show();
   $('#switchNormalManager').show();
-  $('.infoWrapper_tv div.infoWrapper').show();
+  $('.infoWrapper_tv > div').show();
   $('#ti-pages').hide();
 }
 
 function get_watching_list(){
   extra_subjects = []; subjects_size = 0;
-  var animes_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href');
-  var reals_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href');
-  var books_path = location.protocol+'//'+location.hostname + $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href');
+  var animes_path = $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href');
+  var reals_path = $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href');
+  var books_path = $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href');
   var animes_size = 0, reals_size = 0, books_size = 0;
   var list = [], _temp_list;
 
   var page, max_page;
-  for (page = 1, max_page = 5; page <= max_page; page++){
+  for (page = 1, max_page = 2; page <= max_page; page++){
     $.ajax({
       method: "GET",
       url: animes_path + "?page=" + page,
@@ -158,7 +158,7 @@ function get_watching_list(){
     });
     if (_temp_list.length < 0) break;
   }
-  for (page = 1, max_page = 5; page <= max_page; page++){
+  for (page = 1, max_page = 2; page <= max_page; page++){
     $.ajax({
       method: "GET",
       url: reals_path + "?page=" + page,
@@ -175,7 +175,7 @@ function get_watching_list(){
     });
     if (_temp_list.length < 24) break;
   }
-  for (page = 1, max_page = 5; page <= max_page; page++){
+  for (page = 1, max_page = 2; page <= max_page; page++){
     $.ajax({
       method: "GET",
       url: books_path + "?page=" + page,
@@ -225,6 +225,7 @@ function get_subject_progress(subject_id, type){
         prg_content_html = $(html).find('#subject_prg_content').html();
       } else {
         prg_list_html = $(html).find('.prgText').map(function(index, element){
+          $(element).append('<a href="javascript:void(0)" class="input_plus plus">+</a>');
           return element.outerHTML;
         }).toArray().join('\n');
         prg_content_html = null;
@@ -276,26 +277,35 @@ function add_extra_subjects(extra_subjects){
     cluezIndex: 79
   });
 
-  $('#subject_prg_content a.ep_status').click(function() {
-    var link = this;
-    var ep_id = $(link).attr('id').split('_')[1];
-    chiiLib.home.epStatusClick(link);
-    var l = cache_extra_subjects().filter(function(x){
-      return x.id.toString() === $(`#prg_${ep_id}`).parents().eq(3).attr('id').split('_')[1];
-    }).length;
-    if (l > 0) extra_progress_changed = true;
+  // chiiLib.home.init();
+  // chiiLib.home.prg();
+  // chiiLib.home.prgToolTip('#columnHomeA', 25);
+  tb_init('a.thickbox, area.thickbox, input.thickbox');
+
+  $('#subject_prg_content a.ep_status').off('click').on('click', function() {
+    chiiLib.home.epStatusClick(this);
     return false;
   });
 
+  $('form.prgBatchManagerForm').off('submit').on('submit', function() {
+    chiiLib.home.prgBatchManager($(this));
+    return false;
+  });
+
+  $('a.input_plus').off('click').on('click', function() {
+    var input = $(this).closest('div.prgText').find('input'),
+      count = parseInt(input.val()),
+      input_id = input.attr('id'),
+      subject_id = input.attr(input_id),
+      form = $(this).closest('form.prgBatchManagerForm');
+    $(`input[${input_id}$=${subject_id}]`).val(count + 1);
+    form.submit();
+  });
+
   if (refresh === true) {
-    $('.infoWrapper_tv > div').hide();
-    $('.infoWrapper_tv > div.extra').show();
-    $('#ti-pages a').removeClass('focus');
-    $('#ti-pages a[data-page="extra"]').addClass('focus');
     $('#ti-pages a.refresh').removeClass('disabled');
     $('#ti-pages a.refresh').html('refresh');
   }
-  // console.log('ff');
 
   show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
   $('#ti-alert').show();
@@ -351,6 +361,7 @@ function create_subject_cell(subject){
 }
 
 function show_subjects(subject_type, extra){
+  console.log(subject_type, extra);
   switch (subject_type) {
     case "0": //all
       if (extra){
@@ -486,7 +497,7 @@ $(document).on('click', '#ti-pages a', function(e){
     $(this).html('refreshing');
 
     localStorage.removeItem(LS_SCOPE);
-    $('.infoWrapper_tv div.extra').remove();
+    $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
 
     refresh = true;
     index_ids = all_ids_on_index();
@@ -502,10 +513,31 @@ $('#prgCatrgoryFilter a').on('click', function(e){
 
 // restore extra subjects' progress
 $(window).on('pagehide', function(e){
-  if (cache_extra_subjects().length <= 0 || extra_progress_changed === false) return;
+  var subjects = cache_extra_subjects();
+  if (subjects.length <= 0 || extra_progress_changed === false) return;
 
-  for (var i in cache_extra_subjects()){
-    cache_extra_subjects()[i].prg_list_html = $("#subjectPanel_" + cache_extra_subjects()[i].id + " .prg_list").html();
+  for (var i in subjects){
+    if (subjects[i].type !== 1){
+      subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prg_list`).html();
+    } else {
+      subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prgText`).map(function(index, element){
+        $(element).find('input').map(function(index1, element2){
+          $(element2).attr('value', element2.value);
+        });
+        return element.outerHTML;
+      }).toArray().join('\n');
+    }
   }
-  localStorage[LS_SCOPE] = JSON.stringify(cache_extra_subjects());
+  localStorage[LS_SCOPE] = JSON.stringify(subjects);
+  console.log('restore');
+});
+
+$(document).on('ajaxSuccess', function(event, xhr, options){
+  var link = document.createElement("a");
+  link.href = options.url;
+  var tv_match = link.pathname.match(/^\/subject\/ep\/(\d+)\/status/);
+  var book_match = link.pathname.match(/^\/subject\/set\/watched\/\d+/);
+  if ((tv_match !== null && !index_ids.includes(tv_match[1])) || (book_match !== null && !index_ids.includes(book_match[1]))) {
+    extra_progress_changed = true;
+  }
 });
