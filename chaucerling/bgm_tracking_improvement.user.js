@@ -1,19 +1,23 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.3.1
+// @version      0.3.2
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
 // @include      https://bgm.tv/
 // @include      http://bgm.tv/
 // @include      http://chii.in/
+// @grant        none
 // ==/UserScript==
 
 /* jshint loopfunc:true */
 /* jshint esversion:6 */
 
-var $ = unsafeWindow.jQuery;
+// var $ = $;
+// console.log($.cluetip);
+// console.log(chiiLib.home.init);
+// var $ = unsafeWindow.jQuery; // use to access 'chiiLib.home' and '$.cluetip'
 var index_ids = [];
 var watching_list = [];
 var refresh = false;
@@ -120,72 +124,6 @@ function change_mode(){
   $.cookie('prg_display_mode', 'tiny', {expires: 2592000});
 
   $('#ti-pages').show();
-
-  // bind events
-  $(document).on('click', '#ti-alert', function(e){
-    $('#ti-alert').hide();
-  });
-
-  $(document).on('click', 'a.disabled', function(e){
-    e.preventDefault();
-  });
-
-  $(document).on('click', '#ti-pages a', function(e){
-    if ($(this).data('page') !== 'refresh'){
-      $('#ti-pages a').removeClass('focus');
-      $(this).addClass('focus');
-      show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $(this).data('page') === 'extra');
-    } else {
-      $(this).addClass('disabled');
-      $(this).html('refreshing');
-
-      localStorage.removeItem(LS_SCOPE);
-      $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
-
-      refresh = true;
-      index_ids = all_ids_on_index();
-      setTimeout(function () {
-        get_watching_list();
-      }, 10);
-    }
-  });
-
-  $('#prgCatrgoryFilter a').off('click').on('click', function(e){
-    $('#prgCatrgoryFilter a').removeClass('focus');
-    $(this).addClass('focus');
-    show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
-  });
-
-  // restore extra subjects' progress
-  $(window).on('pagehide', function(e){
-    var subjects = cache_extra_subjects();
-    if (subjects.length <= 0 || extra_progress_changed === false) return;
-
-    for (var i in subjects){
-      if (subjects[i].type !== 1){
-        subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prg_list`).html();
-      } else {
-        subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prgText`).map(function(index, element){
-          $(element).find('input').map(function(index1, element2){
-            $(element2).attr('value', element2.value);
-          });
-          return element.outerHTML;
-        }).toArray().join('\n');
-      }
-    }
-    localStorage[LS_SCOPE] = JSON.stringify(subjects);
-    console.log('restore');
-  });
-
-  $(document).on('ajaxSuccess', function(event, xhr, options){
-    var link = document.createElement("a");
-    link.href = options.url;
-    var tv_match = link.pathname.match(/^\/subject\/ep\/(\d+)\/status/);
-    var book_match = link.pathname.match(/^\/subject\/set\/watched\/\d+/);
-    if ((tv_match !== null && !index_ids.includes(tv_match[1])) || (book_match !== null && !index_ids.includes(book_match[1]))) {
-      extra_progress_changed = true;
-    }
-  });
 }
 
 function recover_mode(){
@@ -221,14 +159,15 @@ function get_path_and_size_of_all_type(){
 
 function get_watching_list(){
   watching_list = []; extra_subjects = []; subjects_size = 0;
+  console.log('getting first page of all type');
   get_path_and_size_of_all_type().forEach(function(type, index, array) {
     $.get(type.path + "?page=1", function(data){
       var html = remove_img_src(data);
-      type.set_size(parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/)));
+      type.set_size(parseInt($(html).find('.navSubTabs a.focus').text().match(/\d+/) || 0));
+      console.log(`subjects_list: ${type.value}, size: ${type.size()}`);
       var max_page = parseInt(type.size()/24) + 1;
       var _temp_list = $(html).find('#browserItemList > li').attr('item_type', type.value);
       watching_list = $.merge(watching_list, _temp_list);
-      console.log(type.size());
       for (var i = 2; i <= max_page; i++){
         parse_watching_page(type.path + "?page=" + i, type.value);
       }
@@ -249,13 +188,15 @@ function check_get_all_pages_finished(){
   if (typeof this.counter === "undefined") this.counter= 0;
   this.counter++;
   if (animes_size === -1 || reals_size === -1 || books_size === -1 ||
-    watching_list.length < animes_size + reals_size + books_size){
+    counter < parseInt(animes_size/24) + parseInt(reals_size/24) + parseInt(books_size/24)){
+    console.log(`current_processing_watching_list_size: ${watching_list.length}`);
     return false;
   }
 
   this.counter = 0;
-  subjects_size = animes_size + reals_size + books_size;
-  console.log(subjects_size);
+  subjects_size = watching_list.length;
+  console.log('gettting all pages finished');
+  console.log(`watching_list_size: ${watching_list.length}`);
   if (animes_size + reals_size > 50 || books_size > 50) {
     $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${animes_size} animes, ${reals_size} reals and ${books_size} books, loading extra subjects' progress.(click to close)`);
@@ -313,6 +254,7 @@ function check_get_all_extra_subjects_finished(){
   }
 
   this.counter = 0;
+  console.log('extra_subjects:');
   console.log(extra_subjects);
   add_extra_subjects(extra_subjects);
   localStorage[LS_SCOPE] = JSON.stringify(extra_subjects);
@@ -420,7 +362,7 @@ function create_subject_cell(subject){
 }
 
 function show_subjects(subject_type, extra){
-  console.log(subject_type, extra);
+  console.log(`change_tab, subject_type: ${subject_type}, extra: ${extra}`);
   switch (subject_type) {
     case "0": //all
       $('.infoWrapper_tv').show();
@@ -542,5 +484,73 @@ $(document).ready(function(){
     setTimeout(function () {
       get_watching_list();
     }, 10);
+  }
+});
+
+$(document).on('click', '#ti-alert', function(e){
+  $('#ti-alert').hide();
+});
+
+$(document).on('click', 'a.disabled', function(e){
+  e.preventDefault();
+});
+
+$(document).on('click', '#ti-pages a', function(e){
+  if ($(this).data('page') !== 'refresh'){
+    $('#ti-pages a').removeClass('focus');
+    $(this).addClass('focus');
+    show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $(this).data('page') === 'extra');
+  } else {
+    $(this).addClass('disabled');
+    $(this).html('refreshing');
+
+    localStorage.removeItem(LS_SCOPE);
+    $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
+
+    refresh = true;
+    index_ids = all_ids_on_index();
+    setTimeout(function () {
+      get_watching_list();
+    }, 10);
+  }
+});
+
+$('#prgCatrgoryFilter a').off('click').on('click', function(e){
+  $('#prgCatrgoryFilter a').removeClass('focus');
+  $(this).addClass('focus');
+  show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
+});
+
+// restore extra subjects' progress
+$(window).on('pagehide', function(e){
+  var subjects = cache_extra_subjects();
+  if (subjects.length <= 0 || extra_progress_changed === false) return;
+
+  for (var i in subjects){
+    if (subjects[i].type !== 1){
+      subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prg_list`).html();
+    } else {
+      subjects[i].prg_list_html = $(`#subjectPanel_${subjects[i].id} .prgText`).map(function(index, element){
+        $(element).find('input').map(function(index1, element2){
+          $(element2).attr('value', element2.value);
+        });
+        return element.outerHTML;
+      }).toArray().join('\n');
+    }
+  }
+  localStorage[LS_SCOPE] = JSON.stringify(subjects);
+  console.log('restore localStorage');
+});
+
+$(document).on('ajaxSuccess', function(event, xhr, options){
+  if (cache_extra_subjects().length <= 0) return;
+
+  var link = document.createElement("a");
+  link.href = options.url;
+  var tv_match = link.pathname.match(/^\/subject\/ep\/(\d+)\/status/);
+  var book_match = link.pathname.match(/^\/subject\/set\/watched\/\d+/);
+  if ((tv_match !== null && !index_ids.includes(tv_match[1])) || (book_match !== null && !index_ids.includes(book_match[1]))) {
+    extra_progress_changed = true;
+    console.log('extra progress changed');
   }
 });
