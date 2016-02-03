@@ -8,6 +8,11 @@
 ![Screenshot](http://r.loli.io/vay6ny.jpg)
 ![Screenshot](http://r.loli.io/jMR3Mn.jpg)
 
+## [用户页统计图 BHC](bangumi-homepage-calendar.user.js?raw=true)
+仿 GitHub 用户页，在 Bangumi 的用户页上绘制自己的 Wiki 编辑记录与时空管理局统计图  
+  
+![Screenshot](http://puu.sh/mUdlQ/63f2e6354f.png)
+
 ## [历史条目对比 BHD](bangumi-history-diff.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/311622)
 
