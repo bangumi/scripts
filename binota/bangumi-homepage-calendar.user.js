@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\//
-// @version     1
+// @version     0.0.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
