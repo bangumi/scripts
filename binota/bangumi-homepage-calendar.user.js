@@ -3,13 +3,18 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\//
-// @version     0.0.1
+// @version     0.0.2
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
+/*
+localStorage.setItem('binota_bhc_binota_lastUpdate', (new Date( (new Date()).getTime() )) - (1000 * 60 * 60 * 24));
+*/
 
 const COLOURS = ['#CCC', '#FFAFB7', '#FE8A95', '#E26470', '#BB4956'];
-const SHAPE = '▩';
-const WEEKNAME = ['日', '月', '火', '水', '木', '金', '土'];
+const SHAPE = '■';
+const SHAPE_SIZE = '19';
+const WEEKNAME_JAPANESE = ['日', '月', '火', '水', '木', '金', '土'];
+const WEEKNAME_CHINESE = ['日', '一', '二', '三', '四', '五', '六'];
 const FONT_COLOUR = '#777';
 const DOMAIN = `${window.location.protocol}//${window.location.hostname}`;
 const USER = (function() {
@@ -17,10 +22,20 @@ const USER = (function() {
   if(typeof h === "undefined") return;
   return h.href.toString().match(/\/user\/(.+)/)[1];
 })();
-const STORAGE_PREFIX = 'binota_bhc_';
+const STORAGE_PREFIX = `binota_bhc_${USER}_`;
 const NSECS_IN_DAY = 1000 * 60 * 60 * 24;
 const DAYS_IN_YEAR = 365;
 const DAYS_IN_WEEK = 7;
+const DEFAULT_CONFIG = {
+      colours: COLOURS,
+      show_weekname: 'japanese',
+      show_weekday: true,
+      show_wiki: true,
+      show_tml: true,
+      shape: SHAPE,
+      shape_size: SHAPE_SIZE,
+      font_colour: FONT_COLOUR
+    };
 var formhash = '';
   
 var $ = function() { return document.querySelector(arguments[0]); }
@@ -50,13 +65,13 @@ var post = function(url, data = {}, sync = true) {
   
   return req.responseText;
 }
-var chiiLib = unsafeWindow.chiiLib;
 
 var Calendar = function(config = {}) {
   this._config = {
     'colours': (typeof config.colour === 'undefined') ? COLOURS : config.colours,
     'shape': (typeof config.shape === 'undefined') ? SHAPE : config.shape,
-    'weekname': (typeof config.weekname === 'undefined') ? WEEKNAME : config.weekname,
+    'shape_size': (typeof config.shape === 'undefined') ? SHAPE_SIZE : config.shape_size,
+    'weekname': (typeof config.weekname === 'undefined') ? WEEKNAME_JAPANESE : config.weekname,
     'font_colour': (typeof config.font_colour === 'undefined') ? FONT_COLOUR : config.font_colour,
     'show_weekday': (typeof config.show_weekday === 'undefined') ? true : config.show_weekday
   };
@@ -136,7 +151,7 @@ var Calendar = function(config = {}) {
       for(let day in this._result[week]) {
         dcolour = this.getColour(this._result[week][day]);
         if(dcolour == this._config.colours[0]) {
-          if(this._config.show_weekday) this._result[week][day] = this._config.shape;
+          this._result[week][day] = this._config.shape;
           continue;
         }
         this._result[week][day] = '[color=' + dcolour + ']' + this._config.shape + '[/color]';
@@ -146,22 +161,23 @@ var Calendar = function(config = {}) {
     // Make BBCode
     this._bbcode += `[color=${this._config.colours[0]}]`;
     for(let i = 0; i < DAYS_IN_WEEK; i++) {
-      this._bbcode += `[color=${this._config.font_colour}]${this._config.weekname[i]}[/color] `;
+      if(this._config.show_weekday) this._bbcode += `[color=${this._config.font_colour}]${this._config.weekname[i]}[/color] `;
+      this._bbcode += `[size=${this._config.shape_size}]`;
       for(let week in this._result) {
         if(typeof this._result[week][i] === "undefined") this._bbcode += `[color=transparent]${this._config.shape}[/color]`;
         else this._bbcode += this._result[week][i];
       }
-      this._bbcode += "\n";
+      this._bbcode += "[/size]\n";
     }
     this._bbcode += '[/color]';
     console.log(this._result);
     // Append Colour Refer
-    this._bbcode += `[color=transparent]` + this._config.shape.repeat(this._result.length - 11) + '[/color]';
-    this._bbcode += `Less [color=${this._config.colours[0]}]${this._config.shape}[/color][color=${this._config.colours[1]}]${this._config.shape}[/color][color=${this._config.colours[2]}]${this._config.shape}[/color][color=${this._config.colours[3]}]${this._config.shape}[/color][color=${this._config.colours[4]}]${this._config.shape}[/color] More\n`;
+    this._bbcode += `[color=transparent][size=${this._config.shape_size}]` + this._config.shape.repeat(this._result.length - 9) + '[/size][/color]';
+    this._bbcode += `Less [size=${this._config.shape_size}][color=${this._config.colours[0]}]${this._config.shape}[/color][color=${this._config.colours[1]}]${this._config.shape}[/color][color=${this._config.colours[2]}]${this._config.shape}[/color][color=${this._config.colours[3]}]${this._config.shape}[/color][color=${this._config.colours[4]}]${this._config.shape}[/color][/size] More\n`;
     // Append Analytic
     var dayt1 = (this._longest_streak > 1) ? 'days' : 'day';
     var dayt2 = (this._current_streak > 1) ? 'days' : 'day';
-    this._bbcode += `[size=11][color=${this._config.colour}]Activities in the Last Year: ${this._total_count} | Longest Streak: ${this._longest_streak} ${dayt1} | Current Streak: ${this._current_streak} ${dayt2} | Max a Day: ${this._max_count}[/color][/size]`;
+    this._bbcode += `[color=${this._config.colour}]Activities in the Last Year: ${this._total_count} | Longest Streak: ${this._longest_streak} ${dayt1} | Current Streak: ${this._current_streak} ${dayt2} | Max a Day: ${this._max_count}[/color]`;
     
     console.log(this._count_q);
     console.log(this._max_count);
@@ -288,6 +304,11 @@ var Bangumi = function() {
           return;
         }
       }
+    },
+    Ukagaka: {
+      Say: function(str) {
+        unsafeWindow.chiiLib.ukagaka.presentSpeech(str);
+      }
     }
   };
 }
@@ -313,125 +334,284 @@ var Application = function() {
   
   var storage = new Storage(localStorage);
   var client = new Bangumi();
-  var tmlCalendar = new Calendar();
-  var wikiCalendar = new Calendar();
 
-  //Check Last Update:
+  var config = (function() {
+    var tmp = storage.get('config');
+    return (tmp) ? JSON.parse(tmp) : DEFAULT_CONFIG;
+  })();
+  var tmlCalendar = new Calendar((config) ? config : {});
+  var wikiCalendar = new Calendar((config) ? config : {});
+
   var lastUpdate = parseInt(storage.get('lastUpdate'));
   var now = new Date();
 
   if(!lastUpdate) {
-    storage.set('firstLock', 1);
-  }
-  
-  var firstLock = storage.get('firstLock');
-  if(firstLock == 1) {
-    let page = get(`/user/${USER}`);
-    let matches = page.match(/#backup_(.+?)\[\/backup\]/);
+    //first run
+
+    //check user page for backup
+    var page = get(`/user/${USER}`);
+    var matches = page.match(/#bhc_backup_(.+?)"/);
     if(matches) {
-      let backup = matches[1];
+      //restore backup and continue
+      let backup = matches[1].replace(/&quot;/g, '"');
       let backup_tml, backup_wiki;
-      [backup_tml, backup_wiki, lastUpdate] = matches[1].split('|');
+      [backup_tml, backup_wiki, lastUpdate] = backup.split('|');
       lastUpdate = parseInt(lastUpdate);
+      storage.set('lastUpdate', lastUpdate);
       storage.set('cache_tml', backup_tml);
-      storage.set('cache_wiki', cache_wiki);
-      storage.set('firstLock', -1);
-      firstLock = -1;
-    } else {
-      firstLock = 2;
+      storage.set('cache_wiki', backup_wiki);
+      storage.set('firstRun', now.getTime());
     }
-  }
-  if(firstLock == 2) {
-    chiiLib.ukagaka.presentSpeech('看样子你是第一次运行 BHC 呢...<br>要开始统计数据吗？<br>统计数据会需要一段时间，可能会需要数分钟至数十分钟<br><a href="#" onclick="(function() { localStorage.setItem(\'${STORAGE_PREFIX}firstLock\', -1); })()"◆ 确定运行</a>');
   }
   
   var lock = storage.get('lock');
+  //write lock notice
   if(lock) {
     $('#footer .grey').innerHTML += ` - BHC 已锁定 (${now.getMonth() + 1}/${now.getDate()} ${now.toLocaleTimeString()}，
 <a href="#" onclick="(function() {if(confirm(&quot;请确认是否有其它页面正在运行 BHC ，\\n确认完毕请点击确认&quot;))localStorage.removeItem(&quot;${STORAGE_PREFIX}lock&quot;);window.location.reload();})()">点击此处强制解锁并刷新页面</a>`
     return;
   }
   
+  //if there is no need to update
   if(lastUpdate && (new Date(lastUpdate)).toDateString() === now.toDateString()) return;
 
   storage.set('lock', now.getTime());
   
   if(lastUpdate) {
-    let cache_tml = JSON.parse(storage.get('cache_tml'));
-    let cache_wiki = JSON.parse(storage.get('cache_wiki'));
-    // remove the data that stored before lastUpdate
-    let lu = new Date(lastUpdate);
-    // count days
-    for(let i = lu.getTime(); i <= now.getTime(); i += NSECS_IN_DAY) {
-      let td = new Date(i);
-      cache_tml[`${td.getFullYear()}/${td.getMonth() + 1}/${td.getDate()}`] = 0;
-      cache_wiki[`${td.getFullYear()}/${td.getMonth() + 1}/${td.getDate()}`] = 0;
+    // check cache
+    try {
+      let cache_tml = JSON.parse(storage.get('cache_tml'));
+      let cache_wiki = JSON.parse(storage.get('cache_wiki'));
+      // remove the data that stored before lastUpdate only
+      let lu = new Date(lastUpdate);
+      // count days
+      for(let i = lu.getTime(); i <= now.getTime(); i += NSECS_IN_DAY) {
+        let td = new Date(i);
+        cache_tml[`${td.getFullYear()}/${td.getMonth() + 1}/${td.getDate()}`] = 0;
+        cache_wiki[`${td.getFullYear()}/${td.getMonth() + 1}/${td.getDate()}`] = 0;
+      }
+
+      tmlCalendar._data_raw = cache_tml;
+      wikiCalendar._data_raw = cache_wiki;
+    } catch (e) {
     }
-    
-    tmlCalendar._data_raw = cache_tml;
-    wikiCalendar._data_raw = cache_wiki;
   }
   
   var checkBreakPoint = (lastUpdate) ? (new Date(lastUpdate - NSECS_IN_DAY)) : (new Date(now.getTime() - (NSECS_IN_DAY * (DAYS_IN_YEAR + 1))));
-  
+
   //Check
-  var check = function(get, calendar, tag) {
+  var getPage = function(get, calendar, tag) {
     for(let i = 1; ; i++) {
       var page = get(i);
       if(!page) return;
-      console.log(page);
-      chiiLib.ukagaka.presentSpeech(tag`${i}`);
+      client.Ukagaka.Say(tag`${i}`);
       for(let j in page) {
         calendar.data(j, page[j].length);
-        let checkDate = new Date(j);
-        if(checkDate.getTime() <= checkBreakPoint.getTime()) return;
+        if((new Date(j)).getTime() <= checkBreakPoint.getTime()) return;
       }
     }
   }
 
-  check(function(i) { return client.User.Timeline.Get(i); },
-        tmlCalendar,
-        function(string, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values[0]} 页...` });
-  check(function(i) { return client.User.Wiki.Get(i); },
-        wikiCalendar,
-        function(strings, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values[0]} 页...` });
+  if(config.show_tml == true) {
+    getPage(function(i) { return client.User.Timeline.Get(i); },
+            tmlCalendar,
+            function(string, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values[0]} 页...` });
+    var newTmlCalendar = `[size=16]Timeline 统计图[/size]
+${tmlCalendar.generate()}
+`;
+    storage.set(`cache_tml`, JSON.stringify(tmlCalendar._data_raw));
+  } else {
+    var newTmlCalendar = '';
+  }
+  if(config.show_wiki == true) {
+    getPage(function(i) { return client.User.Wiki.Get(i); },
+            wikiCalendar,
+            function(strings, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values[0]} 页...` });
+    var newWikiCalendar = `[size=16]Wiki 编辑统计图[/size]
+${wikiCalendar.generate()}
+`;
+    storage.set(`cache_wiki`, JSON.stringify(wikiCalendar._data_raw));
+  } else {
+    var newWikiCalendar = '';
+  }
 
-  chiiLib.ukagaka.presentSpeech('统计完成...<br>正在为你生成统计图...');
-  //Generate Calendar
-  var newTmlCalendar = tmlCalendar.generate();
-  var newWikiCalendar = wikiCalendar.generate();
-  
   //Update Last Update
   storage.set('lastUpdate', now.getTime());
-  
-  //Write Cache
-  storage.set('cache_tml', JSON.stringify(tmlCalendar._data_raw));
-  storage.set('cache_wiki', JSON.stringify(wikiCalendar._data_raw));
   
   //Generate Backup Script
   var backup_tml = storage.get('cache_tml');
   var backup_wiki = storage.get('cache_wiki');
-  var backup_script = `[buckup][url=${DOMAIN}/user/${USER}#backup_${backup_tml}|${backup_wiki}|${now.getTime()}] [/url][/buckup]`;
+  var backup_script = `[url=${DOMAIN}/user/${USER}#bhc_backup_${backup_tml}|${backup_wiki}|${now.getTime()}]備份數據[/url]`;
 
-  //Update bio
-  chiiLib.ukagaka.presentSpeech('正在为你更新个人主页...');
+  //Update Homepage
+  client.Ukagaka.Say('正在为你更新个人主页...');
   var settings = client.User.Settings.Get();
-  var realbio = settings.bio.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '');
+  var realbio = settings.bio.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '').trim();
   settings.bio = `${realbio}
 [color=transparent][bhc][/color]
-[size=18]我的 Bangumi 統計圖[/size] [size=10]（最後更新：${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} ${now.getHours()}:${now.getMinutes()}）[/size]
-[size=16]Timeline 統計圖：[/size]
-${newTmlCalendar}
-
-[size=16]Wiki 編輯統計圖：[/size]
-${newWikiCalendar}[color=transparent][code]${backup_script}//[/code]Powered by [url=${DOMAIN}/group/topic/123456]Bangumi-Homepage-Calendar[/url][/bhc][/color]`;
+[size=18]我的 Bangumi 統計圖[/size] [size=10]（最後更新：${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} ${now.toLocaleTimeString()}）[/size]
+${newTmlCalendar}${newWikiCalendar}[color=transparent][color=${FONT_COLOUR}]Powered by [url=${DOMAIN}/group/topic/337624]Bangumi-Homepage-Calendar[/url] | ${backup_script}[/color][/bhc][/color]`;
   client.User.Settings.Setting(settings);
-  chiiLib.ukagaka.presentSpeech(`更新好了，<a href="${DOMAIN}/user/{$USER}">前往个人主页看看吧</a>！`);
+  client.Ukagaka.Say(`更新好了，<a href="${DOMAIN}/user/${USER}">前往个人主页看看吧</a>！`);
   storage.remove('lock');
+}
+var Configure = function() {
+  var that = this;
+  var storage = new Storage(localStorage);
+  var config = (function() {
+    var tmp = storage.get('config');
+    return (tmp) ? JSON.parse(tmp) : DEFAULT_CONFIG;
+  })();
+
+  var configBtn = document.createElement('a');
+  configBtn.classList.add('btnGraySmall');
+  configBtn.href = '#bhc_config';
+  configBtn.onclick = function() {
+    that.showInterface();
+  }
+
+  configBtn.innerHTML = 'BHC 统计图设置';
+  $('.adminTools').insertBefore(configBtn, $('.adminTools .btnGraySmall'))
+
+  var regenBtn = document.createElement('a');
+  regenBtn.classList.add('btnGraySmall');
+  regenBtn.href = '#bhc_config';
+  regenBtn.onclick = function() {
+    that.reGenerate();
+  }
+
+  regenBtn.innerHTML = '重绘 BHC 统计图';
+  $('.adminTools').insertBefore(regenBtn, $('.adminTools .btnGraySmall'))
+
+  var configInterface = document.createElement('div');
+  configInterface.id = "bhc-config";
+  configInterface.style = "display:none;";
+  configInterface.innerHTML = `
+    <label for="show_weekname">显示星期名称</label>
+    <select class="form" name="show_weekname">
+      <option${config.show_weekname === 'none' ? ' selected' : ''} value="none">不显示</option>
+      <option${config.show_weekname === 'chinese' ? ' selected' : ''} value="chinese">显示中文</option>
+      <option${config.show_weekname === 'japanese' ? ' selected' : ''} value="japanese">显示日文</option>
+    </select>
+    <br>
+
+    <label for="show_wiki">显示 Wiki 统计图</label>
+    <select class="form" name="show_wiki">
+      <option${config.show_wiki === false ? ' selected' : ''} value="false">不显示</option>
+      <option${config.show_wiki === true ? ' selected' : ''} value="true">显示</option>
+    </select>
+    <br>
+
+    <label for="show_tml">显示时空管理局统计图</label>
+    <select class="form" name="show_tml">
+      <option${config.show_tml === false ? ' selected' : ''} value="false">不显示</option>
+      <option${config.show_tml === true ? ' selected' : ''} value="true">显示</option>
+    </select>
+    <br>
+
+    <label for="shape">绘制图形</label>
+    <input class="inputtext" type="text" name="shape" value="${config.shape}">
+    <br>
+
+    <label for="shape_size">图形大小</label>
+    <input class="inputtext" type="number" name="shape_size" value="${config.shape_size}">
+    <br>
+
+    <label for="font_colour">字体色彩</label>
+    <input class="inputtext" type="text" name="font_colour" value="${config.font_colour}">
+    <br>
+
+    <label for="colour_0">图形色彩 0</label>
+    <input class="inputtext" type="text" name="colour_0" value="${config.colours[0]}">
+    <br>
+
+    <label for="colour_1">图形色彩 1</label>
+    <input class="inputtext" type="text" name="colour_1" value="${config.colours[1]}">
+    <br>
+
+    <label for="colour_2">图形色彩 2</label>
+    <input class="inputtext" type="text" name="colour_2" value="${config.colours[2]}">
+    <br>
+
+    <label for="colour_3">图形色彩 3</label>
+    <input class="inputtext" type="text" name="colour_3" value="${config.colours[3]}">
+    <br>
+
+    <label for="colour_4">图形色彩 4</label>
+    <input class="inputtext" type="text" name="colour_4" value="${config.colours[4]}">
+    <br>
+`;
+  var saveBtn = document.createElement('a');
+  saveBtn.classList.add('chiiBtn');
+  saveBtn.href = '#bhc_save';
+  saveBtn.id = 'bhc_config_save';
+  saveBtn.innerHTML = '保存设置';
+  saveBtn.onclick = function() {
+    var config = {
+      colours: [
+        $('input[name="colour_0"]').value,
+        $('input[name="colour_1"]').value,
+        $('input[name="colour_2"]').value,
+        $('input[name="colour_3"]').value,
+        $('input[name="colour_4"]').value
+      ],
+      show_weekname: $('select[name="show_weekname"]').value,
+      show_wiki: $('select[name="show_wiki"]').value === 'true' ? true : false,
+      show_tml: $('select[name="show_tml"]').value === 'true' ? true : false,
+      shape: $('input[name="shape"]').value,
+      shape_size: $('input[name="shape_size"]').value,
+      font_colour: $('input[name="font_colour"]').value
+    }
+    console.log(config);
+    
+    that.saveConfig(config);
+  }
+  configInterface.appendChild(saveBtn);
+  
+  var resetBtn = document.createElement('a');
+  resetBtn.classList.add('chiiBtn');
+  resetBtn.href = '#bhc_reset';
+  resetBtn.id = 'bhc_config_save';
+  resetBtn.innerHTML = '还原默认设置';
+  resetBtn.onclick = function() {
+    storage.remove('config');
+  }
+  configInterface.appendChild(resetBtn);
+  
+  $('.adminTools').insertBefore(configInterface, $('.adminTools .btnGraySmall'))
+  
+  this.saveConfig = function(newConfig) {
+    switch(newConfig.show_weekname) {
+      case 'none':
+        newConfig.show_weekday = false;
+        break;
+      case 'japanese':
+        newConfig.show_weekday = true;
+        newConfig.weekname = WEEKNAME_JAPANESE;
+        break;
+      case 'chinese':
+        newConfig.show_weekday = true;
+        newConfig.weekname = WEEKNAME_CHINESE;
+        break;
+    }
+    storage.set('config', JSON.stringify(newConfig));
+    config = newConfig;
+  }
+
+  this.showInterface = function() {
+    configInterface.style = '';
+  }
+
+  this.reGenerate = function() {
+    var now = new Date();
+    storage.set('lastUpdate', now.getTime() - NSECS_IN_DAY);
+    BHC = new Application();
+  }
 }
 
 try {
   var BHC = new Application();
+  if(document.location.pathname == `/user/${USER}`) var configure = new Configure();
 } catch (e) {
   console.log(e);
 }
