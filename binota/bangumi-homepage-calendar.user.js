@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.0.4
+// @version     0.0.5
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -309,7 +309,7 @@ var Bangumi = function() {
     },
     Ukagaka: {
       Say: function(str) {
-        unsafeWindow.chiiLib.ukagaka.presentSpeech(str);
+        chiiLib.ukagaka.presentSpeech(str);
       }
     }
   };
