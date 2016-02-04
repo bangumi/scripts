@@ -2,13 +2,15 @@
 // @name        Bangumi Homepage Calendar
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
-// @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\//
-// @version     0.0.2
-// @grant       GM_xmlhttpRequest
+// @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
+// @version     0.0.3
+// @grant       none
 // ==/UserScript==
+/*jshint esnext: true*/
 /*
 localStorage.setItem('binota_bhc_binota_lastUpdate', (new Date( (new Date()).getTime() )) - (1000 * 60 * 60 * 24));
 */
+"use strict";
 
 const COLOURS = ['#CCC', '#FFAFB7', '#FE8A95', '#E26470', '#BB4956'];
 const SHAPE = '■';
@@ -20,7 +22,7 @@ const DOMAIN = `${window.location.protocol}//${window.location.hostname}`;
 const USER = (function() {
   var h = document.querySelector('.idBadgerNeue .avatar');
   if(typeof h === "undefined") return;
-  return h.href.toString().match(/\/user\/(.+)/)[1];
+  return h.href.match(/\/user\/(.+)/)[1];
 })();
 const STORAGE_PREFIX = `binota_bhc_${USER}_`;
 const NSECS_IN_DAY = 1000 * 60 * 60 * 24;
@@ -38,35 +40,35 @@ const DEFAULT_CONFIG = {
     };
 var formhash = '';
   
-var $ = function() { return document.querySelector(arguments[0]); }
-var get = function(url, sync = true) {
-  var req = GM_xmlhttpRequest({
-    method: "GET",
-    url: `${DOMAIN}${url}`,
-    synchronous: sync
-  });
-  
-  return req.responseText;
-}
-var post = function(url, data = {}, sync = true) {
-  postdata = [];
-  for(i in data) {
+var $ = function() { return document.querySelector(arguments[0]); };
+var get = function() {
+  console.log(arguments);
+  var url = arguments[0];
+  var sync = (typeof arguments[1] === 'undefined') ? true : arguments[1];
+  var req = new XMLHttpRequest();
+  req.open('GET', url, false);
+  req.send(null);
+ 
+  if(req.status === 200) return req.responseText;
+};
+var post = function() {
+  var url = arguments[0];
+  var data = (typeof arguments[1] === 'undefined') ? {} : arguments[1];
+  var sync = (typeof arguments[2] === 'undefined') ? true : arguments[2];
+  var postdata = [];
+  for(let i in data) {
     postdata.push(`${encodeURI(i)}=${encodeURI(data[i])}`);
   }
-  var req = GM_xmlhttpRequest({
-    method: "POST",
-    url: `${DOMAIN}${url}`,
-    data: postdata.join('&'),
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    synchronous: sync
-  });
+  var req = new XMLHttpRequest();
+  req.open('POST', url, false);
+  req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  req.send(postdata.join('&'));
   
-  return req.responseText;
-}
+  if(req.status === 200) return req.responseText;
+};
 
-var Calendar = function(config = {}) {
+var Calendar = function() {
+  var config = (typeof arguments[0] === 'undefined') ? {} : arguments[0];
   this._config = {
     'colours': (typeof config.colour === 'undefined') ? COLOURS : config.colours,
     'shape': (typeof config.shape === 'undefined') ? SHAPE : config.shape,
@@ -88,7 +90,10 @@ var Calendar = function(config = {}) {
   this._current_streak = 0;
   this._total_count = 0;
   
-  this.data = function(date, value, rewrite = false) {
+  this.data = function() {
+    var date = arguments[0];
+    var value = arguments[1];
+    var rewrite = (typeof rewrite === 'undefined') ? false : rewrite;
     date = date.replace(/\-/g, '/');
     if(typeof value === 'undefined') return this._data_raw[date];
     if(typeof this._data_raw[date] === 'undefined') this._data_raw[date] = 0;
@@ -98,7 +103,7 @@ var Calendar = function(config = {}) {
       this._data_raw[date] += value;
     }
     return this._data_raw[date];
-  }
+  };
 
   this.fixData = function() {
     this._data = [];
@@ -110,9 +115,10 @@ var Calendar = function(config = {}) {
       this._data.push({date: dt, count: c});
     }
     console.log(this._data);
-  }
+  };
   
-  this.generate = function(force = false) {
+  this.generate = function() {
+    var force = (typeof arguments[0] === 'undefined') ? false : arguments[0];
     if(!force && this._result.length) return this._bbcode;
     this.fixData();
 
@@ -123,7 +129,7 @@ var Calendar = function(config = {}) {
     this._result[row] = [];
     // Prepend space if first date in data is not Saturday
     d = new Date(this._data[0].date);
-    if(d.getDay() != 0) {
+    if(d.getDay() !== 0) {
       for(let i = 0; i < d.getDay(); i++) {
         this._result[row].push(-1);
       }
@@ -132,7 +138,7 @@ var Calendar = function(config = {}) {
     // Make rows
     for(let i of this._data) {
       d = new Date(i.date);
-      if(d.getDay() == 0) this._result[++row] = [];
+      if(d.getDay() === 0) this._result[++row] = [];
       this._result[row].push(i.count);
       this._total_count += i.count;
       if(i.count > 0) {
@@ -184,24 +190,26 @@ var Calendar = function(config = {}) {
     console.log(this._min_count);
     
     return this._bbcode;
-  }
+  };
 
   this.getColour = function(count) {
     if(count < 0) return 'transparent';
-    if(count == 0) return this._config.colours[0];
-    if(this._count_q == 0) this._count_q = (this._max_count - this._min_count) / 5;
+    if(count === 0) return this._config.colours[0];
+    if(this._count_q === 0) this._count_q = (this._max_count - this._min_count) / 5;
     var retval = this._config.colours[1];
     if(count >= (this._min_count + this._count_q * 2)) retval = this._config.colours[2];
     if(count >= (this._min_count + this._count_q * 3)) retval = this._config.colours[3];
     if(count >= (this._min_count + this._count_q * 4)) retval = this._config.colours[4];
     return retval;
-  }
-}
+  };
+};
 var Bangumi = function() {
   return {
     User: {
       Timeline: {
-        Get: function(page = 1, type = 'all') {
+        Get: function() {
+          var page = (typeof arguments[0] === 'undefined') ? 1 : arguments[0];
+          var type = (typeof arguments[1] === 'undefined') ? 'all' : arguments[2];
           console.log(`Timeline Page: ${page}`);
           var html = get(`/user/${USER}/timeline?type=${type}&page=${page}&ajax=1`).trim();
           if(html.length <= 0) return false;
@@ -236,7 +244,9 @@ var Bangumi = function() {
         }
       },
       Wiki: {
-        Get: function(page = 1, type = '') {
+        Get: function() {
+          var page = (typeof arguments[0] === 'undefined') ? 1 : arguments[0];
+          var type = (typeof arguments[1] === 'undefined') ? '' : arguments[2];
           console.log(`Wiki, Page: ${page}`);
           var type_url = type ? `/${type}` : '';
           var html = get(`/user/${USER}/wiki${type_url}?page=${page}`);
@@ -311,24 +321,24 @@ var Bangumi = function() {
       }
     }
   };
-}
+};
 var Storage = function(driver) {
   this._storage = driver;
   
   this.set = function(key, value) {
     this._storage.setItem(`${STORAGE_PREFIX}${key}`, value);
     return value;
-  }
+  };
   
   this.get = function(key) {
     return this._storage.getItem(`${STORAGE_PREFIX}${key}`);
-  }
+  };
   
   this.remove = function(key) {
     this._storage.removeItem(`${STORAGE_PREFIX}${key}`);
     return key;
-  }
-}
+  };
+};
 var Application = function() {
   if(typeof USER === "undefined") return;
   
@@ -350,13 +360,14 @@ var Application = function() {
 
     //check user page for backup
     var page = get(`/user/${USER}`);
+    console.log(page);
     var matches = page.match(/#bhc_backup_(.+?)"/);
     if(matches) {
       //restore backup and continue
-      let backup = matches[1].replace(/&quot;/g, '"');
-      let backup_tml, backup_wiki;
-      [backup_tml, backup_wiki, lastUpdate] = backup.split('|');
-      lastUpdate = parseInt(lastUpdate);
+      let backup = matches[1].replace(/&quot;/g, '"').split('|');
+      let backup_tmp = backup[0],
+          backup_wiki = backup[1];
+      lastUpdate = parseInt(backup[2]);
       storage.set('lastUpdate', lastUpdate);
       storage.set('cache_tml', backup_tml);
       storage.set('cache_wiki', backup_wiki);
@@ -368,7 +379,7 @@ var Application = function() {
   //write lock notice
   if(lock) {
     $('#footer .grey').innerHTML += ` - BHC 已锁定 (${now.getMonth() + 1}/${now.getDate()} ${now.toLocaleTimeString()}，
-<a href="#" onclick="(function() {if(confirm(&quot;请确认是否有其它页面正在运行 BHC ，\\n确认完毕请点击确认&quot;))localStorage.removeItem(&quot;${STORAGE_PREFIX}lock&quot;);window.location.reload();})()">点击此处强制解锁并刷新页面</a>`
+<a href="#" onclick="(function() {if(confirm(&quot;请确认是否有其它页面正在运行 BHC ，\\n确认完毕请点击确认&quot;))localStorage.removeItem(&quot;${STORAGE_PREFIX}lock&quot;);window.location.reload();})()">点击此处强制解锁并刷新页面</a>`;
     return;
   }
   
@@ -410,12 +421,12 @@ var Application = function() {
         if((new Date(j)).getTime() <= checkBreakPoint.getTime()) return;
       }
     }
-  }
+  };
 
-  if(config.show_tml == true) {
+  if(config.show_tml === true) {
     getPage(function(i) { return client.User.Timeline.Get(i); },
             tmlCalendar,
-            function(string, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values[0]} 页...` });
+            function(string, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values[0]} 页...`; });
     var newTmlCalendar = `[size=16]Timeline 统计图[/size]
 ${tmlCalendar.generate()}
 `;
@@ -423,10 +434,10 @@ ${tmlCalendar.generate()}
   } else {
     var newTmlCalendar = '';
   }
-  if(config.show_wiki == true) {
+  if(config.show_wiki === true) {
     getPage(function(i) { return client.User.Wiki.Get(i); },
             wikiCalendar,
-            function(strings, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values[0]} 页...` });
+            function(strings, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values[0]} 页...`; });
     var newWikiCalendar = `[size=16]Wiki 编辑统计图[/size]
 ${wikiCalendar.generate()}
 `;
@@ -454,7 +465,7 @@ ${newTmlCalendar}${newWikiCalendar}[color=transparent][color=${FONT_COLOUR}]Powe
   client.User.Settings.Setting(settings);
   client.Ukagaka.Say(`更新好了，<a href="${DOMAIN}/user/${USER}">前往个人主页看看吧</a>！`);
   storage.remove('lock');
-}
+};
 var Configure = function() {
   var that = this;
   var storage = new Storage(localStorage);
@@ -468,20 +479,20 @@ var Configure = function() {
   configBtn.href = '#bhc_config';
   configBtn.onclick = function() {
     that.showInterface();
-  }
+  };
 
   configBtn.innerHTML = 'BHC 统计图设置';
-  $('.adminTools').insertBefore(configBtn, $('.adminTools .btnGraySmall'))
+  $('.adminTools').insertBefore(configBtn, $('.adminTools .btnGraySmall'));
 
   var regenBtn = document.createElement('a');
   regenBtn.classList.add('btnGraySmall');
   regenBtn.href = '#bhc_config';
   regenBtn.onclick = function() {
     that.reGenerate();
-  }
+  };
 
   regenBtn.innerHTML = '重绘 BHC 统计图';
-  $('.adminTools').insertBefore(regenBtn, $('.adminTools .btnGraySmall'))
+  $('.adminTools').insertBefore(regenBtn, $('.adminTools .btnGraySmall'));
 
   var configInterface = document.createElement('div');
   configInterface.id = "bhc-config";
@@ -561,11 +572,11 @@ var Configure = function() {
       shape: $('input[name="shape"]').value,
       shape_size: $('input[name="shape_size"]').value,
       font_colour: $('input[name="font_colour"]').value
-    }
+    };
     console.log(config);
     
     that.saveConfig(config);
-  }
+  };
   configInterface.appendChild(saveBtn);
   
   var resetBtn = document.createElement('a');
@@ -575,10 +586,10 @@ var Configure = function() {
   resetBtn.innerHTML = '还原默认设置';
   resetBtn.onclick = function() {
     storage.remove('config');
-  }
+  };
   configInterface.appendChild(resetBtn);
   
-  $('.adminTools').insertBefore(configInterface, $('.adminTools .btnGraySmall'))
+  $('.adminTools').insertBefore(configInterface, $('.adminTools .btnGraySmall'));
   
   this.saveConfig = function(newConfig) {
     switch(newConfig.show_weekname) {
@@ -596,23 +607,19 @@ var Configure = function() {
     }
     storage.set('config', JSON.stringify(newConfig));
     config = newConfig;
-  }
+  };
 
   this.showInterface = function() {
     configInterface.style = '';
-  }
+  };
 
   this.reGenerate = function() {
     var now = new Date();
     storage.set('lastUpdate', now.getTime() - NSECS_IN_DAY);
     BHC = new Application();
-  }
-}
+  };
+};
 
-try {
-  var BHC = new Application();
-  if(document.location.pathname == `/user/${USER}`) var configure = new Configure();
-} catch (e) {
-  console.log(e);
-}
+var BHC = new Application();
+if(document.location.pathname == `/user/${USER}`) var configure = new Configure();
 
