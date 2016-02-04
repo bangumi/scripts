@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.0.3
+// @version     0.0.4
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -42,7 +42,6 @@ var formhash = '';
   
 var $ = function() { return document.querySelector(arguments[0]); };
 var get = function() {
-  console.log(arguments);
   var url = arguments[0];
   var sync = (typeof arguments[1] === 'undefined') ? true : arguments[1];
   var req = new XMLHttpRequest();
@@ -176,7 +175,6 @@ var Calendar = function() {
       this._bbcode += "[/size]\n";
     }
     this._bbcode += '[/color]';
-    console.log(this._result);
     // Append Colour Refer
     this._bbcode += `[color=transparent][size=${this._config.shape_size}]` + this._config.shape.repeat(this._result.length - 9) + '[/size][/color]';
     this._bbcode += `Less [size=${this._config.shape_size}][color=${this._config.colours[0]}]${this._config.shape}[/color][color=${this._config.colours[1]}]${this._config.shape}[/color][color=${this._config.colours[2]}]${this._config.shape}[/color][color=${this._config.colours[3]}]${this._config.shape}[/color][color=${this._config.colours[4]}]${this._config.shape}[/color][/size] More\n`;
@@ -184,10 +182,6 @@ var Calendar = function() {
     var dayt1 = (this._longest_streak > 1) ? 'days' : 'day';
     var dayt2 = (this._current_streak > 1) ? 'days' : 'day';
     this._bbcode += `[color=${this._config.colour}]Activities in the Last Year: ${this._total_count} | Longest Streak: ${this._longest_streak} ${dayt1} | Current Streak: ${this._current_streak} ${dayt2} | Max a Day: ${this._max_count}[/color]`;
-    
-    console.log(this._count_q);
-    console.log(this._max_count);
-    console.log(this._min_count);
     
     return this._bbcode;
   };
@@ -253,7 +247,7 @@ var Bangumi = function() {
           if(html.length <= 0) return false;
           
           var list = html.match(/<li class="line.+?>[\s\S]+?<\/li>/gm);
-          if(!list) return {};
+          if(!list) return false;
 
           var retval = {};
           for(let i of list) {
@@ -291,7 +285,6 @@ var Bangumi = function() {
           return retval;
         },
         Setting: function(settings) {
-          console.log(settings);
           var postData = {
             formhash: formhash,
             nickname: settings.nickname,
@@ -309,7 +302,6 @@ var Bangumi = function() {
             "network_service[8]": settings.network.twitter,
             "network_service[9]": settings.network.instagram
           };
-          console.log(postData);
           var result = post('/settings', postData);
           return;
         }
@@ -360,7 +352,6 @@ var Application = function() {
 
     //check user page for backup
     var page = get(`/user/${USER}`);
-    console.log(page);
     var matches = page.match(/#bhc_backup_(.+?)"/);
     if(matches) {
       //restore backup and continue
