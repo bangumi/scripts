@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.0.5
+// @version     0.0.6
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -414,27 +414,28 @@ var Application = function() {
     }
   };
 
+  var newTmlCalendar, newWikiCalendar;
   if(config.show_tml === true) {
     getPage(function(i) { return client.User.Timeline.Get(i); },
             tmlCalendar,
-            function(string, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values[0]} 页...`; });
-    var newTmlCalendar = `[size=16]Timeline 统计图[/size]
+            function(string, values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values} 页...`; });
+    newTmlCalendar = `[size=16]Timeline 统计图[/size]
 ${tmlCalendar.generate()}
 `;
     storage.set(`cache_tml`, JSON.stringify(tmlCalendar._data_raw));
   } else {
-    var newTmlCalendar = '';
+    newTmlCalendar = '';
   }
   if(config.show_wiki === true) {
     getPage(function(i) { return client.User.Wiki.Get(i); },
             wikiCalendar,
-            function(strings, ...values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values[0]} 页...`; });
-    var newWikiCalendar = `[size=16]Wiki 编辑统计图[/size]
+            function(strings, values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values} 页...`; });
+    newWikiCalendar = `[size=16]Wiki 编辑统计图[/size]
 ${wikiCalendar.generate()}
 `;
     storage.set(`cache_wiki`, JSON.stringify(wikiCalendar._data_raw));
   } else {
-    var newWikiCalendar = '';
+    newWikiCalendar = '';
   }
 
   //Update Last Update
@@ -487,7 +488,7 @@ var Configure = function() {
 
   var configInterface = document.createElement('div');
   configInterface.id = "bhc-config";
-  configInterface.style = "display:none;";
+  configInterface.style.cssText = "display:none;";
   configInterface.innerHTML = `
     <label for="show_weekname">显示星期名称</label>
     <select class="form" name="show_weekname">
@@ -601,7 +602,7 @@ var Configure = function() {
   };
 
   this.showInterface = function() {
-    configInterface.style = '';
+    configInterface.style.cssText = '';
   };
 
   this.reGenerate = function() {
@@ -613,4 +614,5 @@ var Configure = function() {
 
 var BHC = new Application();
 if(document.location.pathname == `/user/${USER}`) var configure = new Configure();
+
 
