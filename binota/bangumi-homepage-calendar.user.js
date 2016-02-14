@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.0.7
+// @version     0.1.0
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -147,8 +147,8 @@ var Calendar = function() {
         this._current_streak++;
         if(i.count > this._max_count) this._max_count = i.count;
         if(i.count < this._min_count) this._min_count = i.count;
-      } else {
         if(this._current_streak > this._longest_streak) this._longest_streak = this._current_streak;
+      } else {
         this._current_streak = 0;
       }
     }
@@ -291,7 +291,7 @@ var Bangumi = function() {
 
           retval.nickname = html.match(/nickname".+?value="(.*?)"/)[1].trim();
           retval.sign = html.match(/sign_input".+?value="(.*?)"/)[1].trim();
-          retval.timezone = html.match(/value="(\d*?)" selected/)[1].trim();
+          retval.timezone = html.match(/value="([^"]+)" selected/)[1].trim();
           retval.website = html.match(/newsite".+?value="(.*?)"/)[1].trim();
           retval.bio = html.match(/<textarea id="newbio".+?>([\s\S]*)<\/te/m)[1].trim();
           
