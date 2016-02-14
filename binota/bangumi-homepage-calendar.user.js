@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.0.6
+// @version     0.0.7
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -28,6 +28,8 @@ const STORAGE_PREFIX = `binota_bhc_${USER}_`;
 const NSECS_IN_DAY = 1000 * 60 * 60 * 24;
 const DAYS_IN_YEAR = 365;
 const DAYS_IN_WEEK = 7;
+const LOC_BIO = '0';
+const LOC_BLOG = '1';
 const DEFAULT_CONFIG = {
       colours: COLOURS,
       show_weekname: 'japanese',
@@ -35,6 +37,7 @@ const DEFAULT_CONFIG = {
       show_wiki: true,
       show_tml: true,
       shape: SHAPE,
+      save_loc: LOC_BIO,
       shape_size: SHAPE_SIZE,
       font_colour: FONT_COLOUR
     };
@@ -260,6 +263,26 @@ var Bangumi = function() {
           return retval;
         }
       },
+      Blog: {
+        Get: function(id) {
+          var html = get(`/blog/${id}/edit`);
+          var retval = {};
+          try {
+            retval.formhash = html.match(/formhash" value="(.+?)"/)[1];
+            retval.title = html.match(/tpc_title" name="title" class="inputtext" type="text" value="(.+?)"/)[1];
+            retval.content = html.match(/editTopicForm'\);">([\s\S]+?)<\/text/m)[1];
+            retval.tags = html.match(/tags" class="inputtext" type="text" style="width:450px;" value="(.*?)"/)[1];
+            retval.public = html.match(/public" type="radio" checked="true" value="(\d)/)[1];
+            return retval;
+          } catch(e) {
+            return {};
+          }
+        },
+        Write: function(id, blog) {
+          blog.submit = '加上去';
+          post(`/blog/${id}/edit`, blog);
+        }
+      },
       Settings: {
         Get: function() {
           var html = get('/settings');
@@ -446,16 +469,27 @@ ${wikiCalendar.generate()}
   var backup_wiki = storage.get('cache_wiki');
   var backup_script = `[url=${DOMAIN}/user/${USER}#bhc_backup_${backup_tml}|${backup_wiki}|${now.getTime()}]備份數據[/url]`;
 
-  //Update Homepage
-  client.Ukagaka.Say('正在为你更新个人主页...');
-  var settings = client.User.Settings.Get();
-  var realbio = settings.bio.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '').trim();
-  settings.bio = `${realbio}
-[color=transparent][bhc][/color]
+  var bhc_content = `[color=transparent][bhc][/color]
 [size=18]我的 Bangumi 統計圖[/size] [size=10]（最後更新：${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} ${now.toLocaleTimeString()}）[/size]
 ${newTmlCalendar}${newWikiCalendar}[color=transparent][color=${FONT_COLOUR}]Powered by [url=${DOMAIN}/group/topic/337624]Bangumi-Homepage-Calendar[/url] | ${backup_script}[/color][/bhc][/color]`;
-  client.User.Settings.Setting(settings);
-  client.Ukagaka.Say(`更新好了，<a href="${DOMAIN}/user/${USER}">前往个人主页看看吧</a>！`);
+
+  switch(config.save_loc) {
+    case LOC_BIO:
+      //Update Homepage
+      client.Ukagaka.Say('正在为你更新个人主页...');
+      var settings = client.User.Settings.Get();
+      var realbio = settings.bio.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '').trim();
+      settings.bio = `${realbio}\n${bhc_content}`;
+      client.User.Settings.Setting(settings);
+      client.Ukagaka.Say(`更新好了，<a href="${DOMAIN}/user/${USER}">前往个人主页看看吧</a>！`);
+      break;
+    case LOC_BLOG:
+      var blog = client.User.Blog.Get(config.blog_id);
+      var realblog = blog.content.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '').trim();
+      blog.content = `${realblog}\n${bhc_content}`;
+      client.User.Blog.Write(config.blog_id, blog);
+      client.Ukagaka.Say(`更新好了，<a href="${DOMAIN}/blog/${config.blog_id}">前往日志页看看吧</a>！`);
+  }
   storage.remove('lock');
 };
 var Configure = function() {
@@ -490,6 +524,17 @@ var Configure = function() {
   configInterface.id = "bhc-config";
   configInterface.style.cssText = "display:none;";
   configInterface.innerHTML = `
+    <label for="save_loc">保存位置</label>
+    <select class="form" name="save_loc">
+      <option${config.save_loc === LOC_BIO ? ' selected' : ''} value="${LOC_BIO}">保存在个人介绍里</option>
+      <option${config.save_loc === LOC_BLOG ? ' selected' : ''} value="${LOC_BLOG}">保存在日志里</option>
+    </select>
+    <br>
+
+    <label for="blog_id">日志 ID <small>请填写 ${DOMAIN}/blog/ 后面的数字</small></label>
+    <input class="inputtext" type="number" name="blog_id" value="${config.blog_id}">
+    <br>
+
     <label for="show_weekname">显示星期名称</label>
     <select class="form" name="show_weekname">
       <option${config.show_weekname === 'none' ? ' selected' : ''} value="none">不显示</option>
@@ -562,6 +607,8 @@ var Configure = function() {
       show_wiki: $('select[name="show_wiki"]').value === 'true' ? true : false,
       show_tml: $('select[name="show_tml"]').value === 'true' ? true : false,
       shape: $('input[name="shape"]').value,
+      save_loc: $('select[name="save_loc"]').value,
+      blog_id: $('input[name="blog_id"]').value,
       shape_size: $('input[name="shape_size"]').value,
       font_colour: $('input[name="font_colour"]').value
     };
@@ -614,5 +661,4 @@ var Configure = function() {
 
 var BHC = new Application();
 if(document.location.pathname == `/user/${USER}`) var configure = new Configure();
-
 
