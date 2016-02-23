@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.3.2
+// @version      0.3.3
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -14,9 +14,6 @@
 /* jshint loopfunc:true */
 /* jshint esversion:6 */
 
-// var $ = $;
-// console.log($.cluetip);
-// console.log(chiiLib.home.init);
 // var $ = unsafeWindow.jQuery; // use to access 'chiiLib.home' and '$.cluetip'
 var index_ids = [];
 var watching_list = [];
@@ -185,15 +182,15 @@ function parse_watching_page(url, type){
 }
 
 function check_get_all_pages_finished(){
-  if (typeof this.counter === "undefined") this.counter= 0;
-  this.counter++;
+  if (typeof this.counter1 === "undefined") this.counter1= 0;
+  this.counter1++;
   if (animes_size === -1 || reals_size === -1 || books_size === -1 ||
-    counter < parseInt(animes_size/24) + parseInt(reals_size/24) + parseInt(books_size/24)){
+    this.counter1 < parseInt(animes_size/24) + parseInt(reals_size/24) + parseInt(books_size/24)){
     console.log(`current_processing_watching_list_size: ${watching_list.length}`);
     return false;
   }
 
-  this.counter = 0;
+  this.counter1 = 0;
   subjects_size = watching_list.length;
   console.log('gettting all pages finished');
   console.log(`watching_list_size: ${watching_list.length}`);
@@ -223,8 +220,8 @@ function get_subject_progress(subject_id, type){
       var progress = $(html).find('#watchedeps').text().split("/")[0];
       var title = $(html).find('.nameSingle > a').text();
       if (type !== 1){
-        prg_list_html = $(html).find('.prg_list').addClass("clearit").html();
-        prg_content_html = $(html).find('#subject_prg_content').html();
+        prg_list_html = $(html).find('.prg_list').addClass("clearit").html() || '';
+        prg_content_html = $(html).find('#subject_prg_content').html() || '';
       } else {
         prg_list_html = $(html).find('.prgText').map(function(index, element){
           $(element).append('<a href="javascript:void(0)" class="input_plus plus">+</a>');
@@ -232,7 +229,7 @@ function get_subject_progress(subject_id, type){
         }).toArray().join('\n');
         prg_content_html = null;
       }
-      var thumb = $(html).find('a.thickbox.cover').attr('href').replace('/l/','/g/');
+      var thumb = ($(html).find('a.thickbox.cover').attr('href') || '').replace('/l/','/g/');
       var subject = new Subject({id: subject_id,
                                  title: title,
                                  progress: progress,
@@ -247,13 +244,13 @@ function get_subject_progress(subject_id, type){
 }
 
 function check_get_all_extra_subjects_finished(){
-  if (typeof this.counter === "undefined") this.counter= 0;
-  this.counter++;
-  if (this.counter < subjects_size){
+  if (typeof this.counter2 === "undefined") this.counter2= 0;
+  this.counter2++;
+  if (this.counter2 < subjects_size){
     return false;
   }
 
-  this.counter = 0;
+  this.counter2 = 0;
   console.log('extra_subjects:');
   console.log(extra_subjects);
   add_extra_subjects(extra_subjects);
