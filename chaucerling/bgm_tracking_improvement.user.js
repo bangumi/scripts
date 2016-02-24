@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.3.3
+// @version      0.3.4
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -209,7 +209,7 @@ function check_get_all_pages_finished(){
 }
 
 function get_subject_progress(subject_id, type){
-  if (index_ids.includes(subject_id)) {
+  if (index_ids.indexOf(subject_id) !== -1) {
     check_get_all_extra_subjects_finished();
     return;
   }
@@ -546,7 +546,7 @@ $(document).on('ajaxSuccess', function(event, xhr, options){
   link.href = options.url;
   var tv_match = link.pathname.match(/^\/subject\/ep\/(\d+)\/status/);
   var book_match = link.pathname.match(/^\/subject\/set\/watched\/\d+/);
-  if ((tv_match !== null && !index_ids.includes(tv_match[1])) || (book_match !== null && !index_ids.includes(book_match[1]))) {
+  if ((tv_match !== null && index_ids.indexOf(tv_match[1]) == -1)  || (book_match !== null && index_ids.indexOf(book_match[1]) == -1)) {
     extra_progress_changed = true;
     console.log('extra progress changed');
   }
