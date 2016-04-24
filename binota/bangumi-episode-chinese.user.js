@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bec
 // @description Show Chinese episode name in episode page.
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/ep\/\d+/
-// @version     0.0.2
+// @version     0.0.3
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 'use strict';
@@ -36,8 +36,10 @@ var storage = new (function(driver) {
 })(localStorage);
 
 var writeTitle = function(title) {
+  title = title.trim();
+  $('h2.title small').innerHTML += ` <a class="l" onclick="(function(){localStorage.removeItem('${STORAGE_PREFIX}${subject}');window.location.reload();})()" href="#">[刷新中文名缓存]`;
+  if(title == '') return;
   $('h2.title').innerHTML = $('h2.title').innerHTML.replace('<small', ` / ${title} <small`);
-  $('h2.title small').innerHTML += ` <a class="l" onclick="localStorage.removeItem('${STORAGE_PREFIX}${subject}');" href="#">[清除中文名缓存]`;
   return;
 }
 
