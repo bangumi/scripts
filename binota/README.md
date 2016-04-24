@@ -10,7 +10,7 @@
 
 ## [用户页统计图 BHC](bangumi-homepage-calendar.user.js?raw=true)
 仿 GitHub 用户页，在 Bangumi 的用户页上绘制自己的 Wiki 编辑记录与时空管理局统计图  
-  
+
 ![Screenshot](http://puu.sh/mUdlQ/63f2e6354f.png)
 
 ## [历史条目对比 BHD](bangumi-history-diff.user.js?raw=true)
@@ -21,6 +21,11 @@
 ![Screenshot](http://r.loli.io/YzUrMn.jpg)
 ![Screenshot](https://i.imgur.com/jlEMOxC.jpg)
 
+## [章节页显示中文名称](bangumi-episode-chinese.user.js?raw=true)
+
+在章节页内显示章节的中文名称（通过 api.bgm.tv 获取）
+
+![Screenshot](http://puu.sh/oufxZ/f59fb8144b.png)
 
 ## [条目ISBN日本亚马逊链接 BIAL](bangumi-isbn-amazon-link.user.js?raw=true)
 
