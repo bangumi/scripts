@@ -8,6 +8,7 @@
 ，作为接下来的脚本过滤已看过番组的参数。
 
 使用方式见下图
+
 ![](images/screenshot_bgm_to_horriblesubs.png)
 
 
@@ -17,6 +18,7 @@
 说明: 将脚本中的 'aria2Url' 和 'token' 变量设置为 aria2 的对应路径和 token 即可
 
 使用方式见下图
+
 ![](images/screenshot_horriblesubs_magnet_to_aria2.png)
 
 
