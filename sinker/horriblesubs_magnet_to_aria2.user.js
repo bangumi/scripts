@@ -10,8 +10,10 @@
 // @require https://raw.githubusercontent.com/datagraph/jquery-jsonrpc/master/jquery.jsonrpc.js
 // ==/UserScript==
 
+// Set your aria2 config here
 var aria2Url = 'http://ip:port/jsonrpc'
 var token = 'Your_aria2_token'
+
 this.$ = this.jQuery = jQuery.noConflict(true)
 $.jsonRPC.setup({
   endPoint: aria2Url,
