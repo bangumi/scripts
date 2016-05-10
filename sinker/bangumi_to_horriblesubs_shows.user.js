@@ -46,7 +46,7 @@ $('div.epGird small[id="prgsPercentNum"]').each(function(){
         });
     }
     var addLinkField = function(funcAddInputField){
-        nextPercent.append(`<span class="hs_link"><a href="http://horriblesubs.info/shows/${pair[id]}?latest=${latest}" target="_blank" >HS</a></span><button class="roma_btn">Remove Roma</button>`);
+        nextPercent.append(`<span class="hs_link"><a href="http://horriblesubs.info/shows/${pair[id]}?latest=${latest}" target="_blank" >HorribleSubs</a></span><button class="roma_btn">Rm Roma</button>`);
         nextPercent.find('.roma_btn').click(function(){
             remove(id);
             nextPercent.find('.hs_link').remove();
