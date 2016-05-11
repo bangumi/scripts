@@ -14,7 +14,7 @@
 var aria2Url = 'http://ip:port/jsonrpc'
 var token = 'Your_aria2_token'
 
-this.$ = this.jQuery = jQuery.noConflict(true)
+// this.$ = this.jQuery = jQuery.noConflict(true)
 $.jsonRPC.setup({
   endPoint: aria2Url,
 })

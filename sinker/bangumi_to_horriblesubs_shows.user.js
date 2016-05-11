@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 
-this.$ = this.jQuery = jQuery.noConflict(true);
+// this.$ = this.jQuery = jQuery.noConflict(true);
 $('head').append('<style type="text/css">.roma_input{ margin-left: 5%; } .roma_btn{ margin-left: 2%; } .hs_link{ margin-left: 5%; }</style>');
 var pair = JSON.parse(localStorage.getItem('bgm-id-name'));
 if (!pair){pair = {};}
