@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name        Bangumi-Index-Batch-Edit
-// @namespace   BIBE
-// @description Batch edit comments in your index, and easily sort them by dragging.
+// @namespace   org.binota.scripts.bangumi.bibe
+// @description Easilly modify multiple subjects in your index by drag-and-sort, and more!
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/index\/\d+/
-// @version     0.0.4
+// @version     0.0.8
 // @grant       none
 // @require     https://code.jquery.com/ui/1.11.4/jquery-ui.min.js
 // ==/UserScript==
@@ -21,41 +21,53 @@ if($('.idBadgerNeue a.avatar').attr('href').search($('.grp_box a.avatar').attr('
 //Get formhash
 var formhash = $('input[name="formhash"]').val();
 
+var totalItems = 0;
+var saveItems = 0;
+
 $('#modifyOrder').click(function() {
+  $(this).remove();
+  $('.grp_box .tip_j').append('<a id="saveOrder" class="chiiBtn" href="#">保存修改</a>');
+
+  //make items sortable.
   $('#browserItemList').sortable({
     handle: ".cover"
   });
+
+  //insert comment_box if needs.
   $('#browserItemList .tools').each(function() {
     if($(this).parent().find('.text').length == 0)
       $('<div id="comment_box"><div class="item"><div style="float:none;" class="text_main_even"><div class="text"><br></div><div class="text_bottom"></div></div></div></div>').insertBefore($(this));
   });
   $('#browserItemList .text').attr('contenteditable', 'true');
-  $(this).remove();
 
-  $('.grp_box .tip_j').append('<a id="saveOrder" class="chiiBtn" href="#">保存修改</a>');
   $('#saveOrder').click(function() {
     if(!confirm('确定要保存么？')) return;
     $(this).attr('disabled', 'disabled');
     $(this).html('保存中...');
+    totalItems = $('#browserItemList > li').length;
+    savedItems = 0;
     $('#browserItemList > li').each(function(i) {
-      var postData = {content: '', formhash: '', order: ''};
-      postData.content = $(this).find('.text').html();
-      if(typeof postData.content === "undefined") postData.content = '';
-      postData.content = postData.content.trim().replace(/<br( \/|)>/, '');
-      
-      postData.formhash = formhash;
-      postData.order = i;
-      postData.submit = '提交';
-      
-      console.log($(this));
+      var content = $(this).find('.text').text().trim();
       var itemid = $(this).find('.tools :first-child').attr('id').match(/modify_(\d+)/)[1];
 
-      $.ajaxSetup({timeOut: 10});
-      $.post('/index/related/' + itemid + '/modify', postData);
+      saveRelateItem(itemid, content, i);
     });
-    $(this).html('保存完毕...！');
   });
 });
+
+var saveRelateItem = function(id, content, order) {
+  var postData = {
+    content: content.trim(),
+    formhash: formhash,
+    order: order,
+    submit: '提交'
+  };
+
+  $.post('/index/related/' + id + '/modify', postData, function() {
+    if(++savedItems == totalItems) return $('#saveOrder').html('保存完毕...！');
+    $('#saveOrder').html('保存中... (' + savedItems + '/' + totalItems +')');
+  });
+};
 
 window.addRelateBatch = function() {
   $('.bibeBox input[name="submit"]').val('添加关联中...');
@@ -66,4 +78,5 @@ window.addRelateBatch = function() {
     $.post(url, {add_related: items[i].trim(), formhash: formhash, submit: '添加新关联'});
   }
   $('.bibeBox input[name="submit"]').val('添加完毕...！');
-}
+};
+
