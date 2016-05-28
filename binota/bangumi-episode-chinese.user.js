@@ -14,6 +14,10 @@ var $ = function(query) {
   return document.querySelector(query);
 };
 
+var $a = function(query) {
+  return document.querySelectorAll(query);
+};
+
 var subject = $('h1.nameSingle a').href.match(/\/subject\/(\d+)/)[1];
 var episode = window.location.href.match(/\/ep\/(\d+)/)[1];
 
@@ -35,17 +39,43 @@ var storage = new (function(driver) {
   };
 })(localStorage);
 
-var writeTitle = function(title) {
-  title = title.trim();
+var episodes = new (function(storage, id) {
+  var subject = (JSON.parse(storage.get(id)) || {});
+
+  this.getTitle = function(episode) {
+    return subject[episode] || '';
+  };
+
+  this.setTitle = function(episode, title) {
+    return subject[episode] = title.trim();
+  };
+
+  this.save = function() {
+    return storage.set(id, JSON.stringify(subject));
+  };
+})(storage, subject);
+
+var writeTitle = function() {
+  var title = episodes.getTitle(episode);
   $('h2.title').innerHTML += ` <small><a class="l" onclick="(function(){localStorage.removeItem('${STORAGE_PREFIX}${subject}');window.location.reload();})()" href="#">[刷新中文名缓存]</small>`;
-  if(title == '') return;
-  $('h2.title').innerHTML = $('h2.title').innerHTML.replace('<small', ` / ${title} <small`);
+  if(title !== '') {
+    $('h2.title').innerHTML = $('h2.title').innerHTML.replace('<small', ` / ${title} <small`);
+    document.title = document.title.replace(/ \/ /, ` | ${title} / `);
+  }
+
+  //Write title of episode list
+  var list = $a('.sideEpList li a');
+  for(let i = 0; i < list.length; i++) {
+    let liId = (list[i].href.match(/ep\/(\d+)/) || [-1, -1])[1];
+    let liTitle = episodes.getTitle(liId);
+    if(liTitle !== '') list[i].innerHTML += ' / ' + liTitle;
+  }
   return;
 }
 
 //check cache:
 if(storage.get(subject)) {
-  writeTitle(JSON.parse(storage.get(subject))[episode]);
+  writeTitle();
 } else {
   //Query API
   GM_xmlhttpRequest({
@@ -54,16 +84,15 @@ if(storage.get(subject)) {
     onload: function(response) {
       var data = JSON.parse(response.response);
       //write cache
-      var cacheData = {};
 
       for(let ep of data.eps) {
         if(ep.id == episode) {
-          writeTitle(ep.name_cn);
+          writeTitle();
         }
-        cacheData[ep.id] = ep.name_cn;
+        episodes.setTitle(ep.id, ep.name_cn);
       }
 
-      storage.set(subject, JSON.stringify(cacheData));
+      episodes.save();
     }
   });
 }
