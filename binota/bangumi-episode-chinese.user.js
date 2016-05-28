@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bec
 // @description Show Chinese episode name in episode page.
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/ep\/\d+/
-// @version     0.0.4
+// @version     0.1.0
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 'use strict';
