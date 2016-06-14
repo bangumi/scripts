@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer Histogram
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.1.0
-// @description  用色块的高度标注ep的讨论人气
+// @version      0.1.1
+// @description  条形图标注ep的讨论人气
 // @author       "Donuts."
 // @match        http://bgm.tv/subject/*
 // @match        http://bgm.tv/
@@ -16,13 +16,25 @@
 // @grant        none
 // ==/UserScript==
 
+var right;
+var bottom;
+var fontSize;
 
 function main() {
+    init();
     var $uls = $('ul.prg_list');
     $uls.each(function () {
         var $lis = $('li:not(.subtitle)', this);
         addVisualBar($lis);
     });
+}
+
+function init() {
+    $a = $('ul.prg_list > li:eq(0) > a');
+    right = $a.css('margin-right');
+    bottom = $a.css('margin-bottom');
+    fontSize = $a.css('font-size');
+    fontSize = parseFloat(fontSize.replace('px', ''));
 }
 
 function addVisualBar($lis) {
@@ -42,13 +54,13 @@ function addVisualBar($lis) {
     values = values.map(getLength(max));
     $lis.each(function (index) {
         var $li = $(this);
-        var html = 
+        var html =
             '<div style="' +
-            'position:absolute;' + 
-            'right:0;' + 
-            'bottom:3px;' + 
-            'width:3px;' + 
-            'height:' + values[index] + 'em;' + 
+            'position:absolute;' +
+            'right:0;' +
+            'bottom:' + bottom + ';' +
+            'width:' + right + ';' +
+            'height:' + values[index] + 'px;' +
             'background:#ffbc9a;"></div>';// 颜色
         $li.prepend(html);
     });
@@ -62,7 +74,7 @@ function getEpValue(id) {
 
 function getLength(max) {
     return function (v) {
-        return 1.73 * v / max;// 最大高度 默认值: 1.73em
+        return (8 + fontSize) * v / max;// 最大高度 字高 + 8
     };
 }
 
