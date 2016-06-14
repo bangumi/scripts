@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer Histogram
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.1.1
+// @version      0.1.2
 // @description  条形图标注ep的讨论人气
 // @author       "Donuts."
 // @match        http://bgm.tv/subject/*
@@ -30,7 +30,7 @@ function main() {
 }
 
 function init() {
-    $a = $('ul.prg_list > li:eq(0) > a');
+    $a = $('ul.prg_list:eq(0) > li:eq(0) > a');
     right = $a.css('margin-right');
     bottom = $a.css('margin-bottom');
     fontSize = $a.css('font-size');
@@ -48,8 +48,8 @@ function addVisualBar($lis) {
     var max = values.reduce(function (a, b) {
         return Math.max(a, b);
     });
-    if (max === 0) {
-        max = 1;
+    if (max < 20) {
+        max += (20 - max) / 2;// 调整 max 较低时的表现
     }
     values = values.map(getLength(max));
     $lis.each(function (index) {
@@ -61,7 +61,7 @@ function addVisualBar($lis) {
             'bottom:' + bottom + ';' +
             'width:' + right + ';' +
             'height:' + values[index] + 'px;' +
-            'background:#ffbc9a;"></div>';// 颜色
+            'background:#f7bac0;"></div>';// 颜色
         $li.prepend(html);
     });
 }
