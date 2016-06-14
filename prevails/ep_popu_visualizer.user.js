@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
-// @namespace    tv.bangumi.user.prevails.eppopuvisualizer
+// @namespace    http://bgm.tv/user/prevails
 // @version      0.1.7
 // @description  用颜色标注ep的讨论人气
 // @author       "Donuts."
