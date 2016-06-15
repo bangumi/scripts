@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.1.7
+// @version      0.1.8
 // @description  用颜色标注ep的讨论人气
 // @author       "Donuts."
 // @match        http://bgm.tv/subject/*
@@ -52,8 +52,8 @@ function addVisualBar($lis) {
     var max = values.reduce(function (a, b) {
         return Math.max(a, b);
     });
-    if (max === 0) {
-        max = 1;
+    if (max < 20) {
+        max += (20 - max) / 2;// 调整 max 较低时的表现
     }
     values = values.map(getColor(max));
     $lis.each(function (index) {
