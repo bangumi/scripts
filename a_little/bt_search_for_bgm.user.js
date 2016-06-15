@@ -4,19 +4,20 @@
 // @description add search icons in bangumi.tv for search anime 
 // @include     /^https?://(bangumi|bgm|chii)\.(tv|in)/(subject|index|anime|game|book|subject_search)/.*$/
 // @include     /^https?://(bangumi|bgm|chii).(tv|in)/$/
-// @version     0.13
+// @version     0.13.1
+// @updateURL   https://github.com/bangumi/scripts/blob/master/a_little/bt_search_for_bgm.user.js
 // @grant       GM_addStyle
 // ==/UserScript==
 
 if (!localStorage.getItem('searchEngines') || typeof JSON.parse(localStorage.getItem('searchEngines')) !== 'object') {
-  localStorage.setItem('searchEngines', JSON.stringify(['dmhy', 'google', 'btdigg']));
+  localStorage.setItem('searchEngines', JSON.stringify(['dmhy', 'google', 'btcherry']));
 }
 var searchEngines = JSON.parse(localStorage.getItem('searchEngines'));
 // Here, you can choose search engines that you want.
 var searchEngineLists = [
   "dmhy",
   "camoe",
-  "popgo",
+  "btcherry",
   "google",
   "btdigg",
   "nyaa",
@@ -27,7 +28,7 @@ var searchEngineLists = [
 // the engines in first list will search Chinese name by default.
 // The engines in second list may need a ladder to acess them. Search Japanese name by default.
 var allSearchEngineLists = [
-  ["dmhy", "camoe", "popgo"],
+  ["dmhy", "camoe", "btcherry"],
   ["google", "btdigg", "nyaa", "tokyotosho", "breadsearch"]
 ];
 
@@ -46,10 +47,10 @@ var searchAPIs = {
     "data:image/png;base64,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",
     "https://camoe.org/search.php?keyword={searchTerms}"
   ],
-  popgo : [
-    "漫游搜索",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAW0lEQVQ4jbWSUQoAIAhDd/9L22/INpdQECTo2zSB36eAuu9zIQONyawgAnTFSSRuY1WsILIFp9rnQBVYrEBS3VmO7TuYHFJ/T19KAckySYBKivcgVV7BnKMC6gD0yblHuqQ0dgAAAABJRU5ErkJggg==",
-    "http://share.popgo.org/search.php?title={searchTerms}"
+  btcherry : [
+    "btcherry",
+    "data:image/png;base64,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",
+    "http://www.btcherry.org/search?keyword={searchTerms}"
   ],
   google : [
     "Download Search",
@@ -198,6 +199,7 @@ var searchSwitch = {
       GM_addStyle([
         '.search-switches {display:none;}',
         '*:hover > .search-switches {display:block;}',
+        '.search-status {padding: 5px 15px 0;}',
         '.search-switches a {display:inline-block;float:left;margin:5px 5px;padding:5px 5px;border-radius:4px;box-shadow:1px 1px 2px #333;}',
         '.search-switches a.engine-off {background:#ccffcc none repeat scroll 0 0;color:#333;}',
         '.search-switches a.engine-on {background:#f09199 none repeat scroll 0 0;color:#fff;}'
@@ -205,9 +207,15 @@ var searchSwitch = {
     }
   },
   insertStatus: function() {
-    var b = document.querySelector('#columnHomeB');
+    // move to sidepanel because of confliction of default function
+    //var b = document.querySelector('#columnHomeB');
+    var b = document.querySelector('.SidePanelMini');
     if (b) {
-      var status = document.createElement('span');
+      // try to create a wrapper
+      //var statusContainer = document.createElement('div');
+      //b.appendChild(statusContainer);
+      
+      var status = document.createElement('div');
       status.className = 'search-status';
       status.textContent = '已开启'+ searchEngines.length + '个搜索引擎';
       b.appendChild(status);
@@ -248,6 +256,9 @@ var searchSwitch = {
       e.preventDefault();
     });
     return a;
+  },
+  registerEvent: function () {
+    
   }
 };
 

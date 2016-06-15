@@ -8,18 +8,19 @@
 // @include     http://bangumi.tv/subject/*/edit_detail
 // @include     https://cse.google.com/cse/home?cx=008561732579436191137:pumvqkbpt6w
 // @include     http://erogamescape.ddo.jp/~ap2/ero/toukei_kaiseki/*
-// @include     http://122.219.66.141/~ap2/ero/toukei_kaiseki/*
+// @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.2.1
+// @version     0.2.2
 // @updateURL   https://raw.githubusercontent.com/22earth/gm_scripts/master/bangumi_new_subject_helper.user.js
 // @run-at      document-end
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
-// @require     http://cdn.staticfile.org/jquery/2.1.1-beta1/jquery.min.js
+// @require     http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // ==/UserScript==
 
+// /^https?:\/\/(ja|en)\.wikipedia\.org\/wiki\/.*$/
 if (window.top != window.self) return;
 
 (function () {
@@ -284,6 +285,31 @@ if (window.top != window.self) return;
         }, 1000);
       });
     },
+    // another way to fill form, this way is directly
+    fillFormAnother: function(data) {
+      var pNode = $('.settings .inputtext').eq(0);
+      if (data.subjectName && pNode) {
+        pNode.val(data.subjectName);
+      }
+      if (data.subjectStory) {
+        $('#subject_summary').val(data.subjectStory);
+      }
+      setTimeout(function (){$('#showrobot').click();},300);
+      console.log($('.fill-form').text());
+      $('.fill-form').click(function() {
+        var inputtext = $('#infobox_normal').find('.inputtext.prop');
+        if (data['ジャンル']) {
+          inputtext.eq(3).get(0).value = data['ジャンル'];
+        }
+        if (data['発売日']) {
+          inputtext.eq(6).get(0).value = data['発売日'];
+        }
+        if (data['ブランド']) {
+          $('#infobox_normal').find('.inputtext.id').eq(9).attr('value', '开发');
+          inputtext.eq(9).attr('value', data['ブランド']);
+        }
+      });
+    },
     fillFormCharacter: function(data) {
       var pNode = $('.settings .inputtext').eq(0);
       if (data.characterName && pNode) {
@@ -351,7 +377,12 @@ if (window.top != window.self) return;
       this.addNode();
       //$('body').append($('<script>').html("(" + bangumi.fillForm.toString() + ")(" + GM_getValue('subjectData') + ");"));
       var selfInvokeScript = document.createElement("script");
-      selfInvokeScript.innerHTML = "(" + this.fillForm.toString() + ")(" + GM_getValue('subjectData') + ");";
+      var prop = 'fillForm';
+      if (GM_getValue('fillFormAnother') === 'wikipedia') {
+        prop = 'fillFormAnother';
+        GM_setValue('fillFormAnother', '');
+      }
+      selfInvokeScript.innerHTML = "(" + this[prop].toString() + ")(" + GM_getValue('subjectData') + ");";
       document.body.appendChild(selfInvokeScript);
     },
     createTable: function(data) {
@@ -378,7 +409,7 @@ if (window.top != window.self) return;
           if (data[prop].match('、')) {
             td2 = data[prop].split('、').map(function(item) {
               return '<span>' + item + '</span>';
-            }).join('、');
+            }).join(',');
           } else if(data[prop].match(',')) {
             td2 = data[prop].split(',').map(function(item) {
               return '<span>' + item + '</span>';
@@ -563,9 +594,54 @@ if (window.top != window.self) return;
     }
   };
 
+  var wikipedia = {
+    init: function() {
+      // wikipedia use different way to fill form
+      GM_setValue('fillFormAnother', 'wikipedia');
+      addStyle();
+      this.addNode();
+      GM_setValue('subjectData', JSON.stringify(this.getSubjectInfo()));
+    },
+    getSubjectInfo: function() {
+      var info = {};
+      var adict = {
+        '開発元': 'ブランド',
+        'Developer(s)': 'ブランド',
+        'ジャンル': 'ジャンル',
+        'Genre(s)': 'ジャンル',
+        'Release date(s)': '発売日',
+        '発売日': '発売日'
+      };
+      info.subjectName = $('#firstHeading').text().replace(/新建.*$/,'');
+      var $infotable = $('.infobox tbody').eq(0).find('tr');
+      $infotable.each(function(index, element) {
+        var alist = [];
+        alist = element.textContent.trim().split('\n');
+        if (alist.length === 2 && adict.hasOwnProperty(alist[0])) {
+          info[adict[alist[0]]] = alist[1];
+        }
+      });
+      return info;
+    },
+    addNode: function() {
+       // new subject
+      $('#firstHeading').append($('<a>').attr({
+        class: 'new-subject',
+        target: '_blank',
+        href: 'http://' + bgm_domain + '/new_subject/4',
+      }).text('\u65b0\u5efa\u6761\u76ee'));
+      // search subject
+      $('#firstHeading').append($('<a>').attr({
+        class: 'search-subject',
+        target: '_blank',
+        href: 'https://cse.google.com/cse/home?cx=008561732579436191137:pumvqkbpt6w',
+      }).text('\u641c\u7d22\u6761\u76ee'));
+    },
+  };
+
 
   var init = function() {
-    var re = new RegExp(['getchu', 'google', 'bangumi', 'bgm', 'chii', 'erogamescape', 'dmm', '219\.66'].join('|'));
+    var re = new RegExp(['getchu', 'google', 'bangumi', 'bgm', 'chii', 'erogamescape', 'dmm', '219\.66', 'wikipedia'].join('|'));
     var page = document.location.href.match(re);
     if (page) {
       switch (page[0]) {
@@ -583,6 +659,9 @@ if (window.top != window.self) return;
         break;
         case 'dmm':
           dmm.init();
+        break;
+        case 'wikipedia':
+          wikipedia.init();
         break;
         default:
           bangumi.init();
