@@ -2,7 +2,7 @@
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
 // @version      0.2.0
-// @description  直观标注ep的讨论人气
+// @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
 // @grant        GM_setValue
