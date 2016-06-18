@@ -30,7 +30,10 @@
     }
 
     function getMax(arr) {
-        return arr.reduce(function (a, b) {return a > b ? a : b;});
+        if (arr.length === 0) {
+            return 0;
+        }
+        return arr.reduce(function (a, b) {return a > b ? a : b;});// 不允许对空array使用reduce
     }
 
     function getValues($lis) {
