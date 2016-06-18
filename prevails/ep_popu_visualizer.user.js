@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.1
+// @version      0.2.3
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
@@ -14,7 +14,7 @@
 // @match        http://bangumi.tv/
 // @match        http://chii.in/subject/*
 // @match        http://chii.in/
-// @require      https://code.jquery.com/jquery-1.8.min.js
+// @require      https://code.jquery.com/jquery-1.8.2.min.js
 // @encoding     utf-8
 // ==/UserScript==
 
@@ -64,11 +64,10 @@ var epv_jq = $.noConflict();
         return parseInt($e.css(attr).replace('px', ''));
     }
 
-    function default_getWidth($a) {
-        var width = getPixel($a, 'width');
-        console.log(width);
-        return 6 + width;// padding + border == 6
-    }
+    // function default_getWidth($a) {
+    //     var width = getPixel($a, 'width');
+    //     return 6 + width;// padding + border == 6
+    // }
 
     function histogram_getHeight($a) {
         return getPixel($a, 'height') + 2 +
@@ -87,7 +86,7 @@ var epv_jq = $.noConflict();
                 var colors = values.map(getColor(colorX, max));
                 $lis.each(function (index) {
                     var $li = epv_jq(this);
-                    var width = default_getWidth(epv_jq('a', $li));
+                    //var width = default_getWidth(epv_jq('a', $li));
                     $li.prepend('<div style="height:3px;width:85%;background:' + colors[index] + ';"></div>');
                 });
             };
@@ -116,7 +115,6 @@ var epv_jq = $.noConflict();
                         'background:'+color+';"></div>';
                     $li.prepend(html);
                 });
-                
             };
         }
     }
@@ -154,7 +152,6 @@ var epv_jq = $.noConflict();
 
     function addControlPanel() {
         epv_jq('#columnHomeB').append('<div id="ep_popu_visualizer_control_panel" style="padding-left:10px;"></div>');
-
         var $cp = epv_jq('#ep_popu_visualizer_control_panel');
         $cp.append('<a class="l epv_control_panel_switch" href="javascript:;">EpPopuVisualizer 设置</a>');
         var mode = GM_getValue('viewMode');
@@ -169,9 +166,7 @@ var epv_jq = $.noConflict();
                     '<div id="epv_mode_select">模式切换: <input type="radio" name="viewMode" value="default" '+(mode === 'default' ? 'checked' : '')+' />渐变色 (默认) <input type="radio" name="viewMode" value="histogram" '+(mode === 'histogram' ? 'checked' : '')+' />条形图 </div>'+
                     '<div id="epv_color_pick">颜色选择: <input type="text" id="epv_color_text_input"  value="'+GM_getValue(mode + '_color')+'"> <input id="epv_color_input" type="color" value="'+GM_getValue(mode + '_color')+'" style="height:1.3em;"></div>'+
                     '</div>');
-                
                 $cp.append($content);
-
                 epv_jq('#epv_mode_select input').click(function () {
                     GM_setValue('viewMode', epv_jq(this).val());
                     refreshColor();
@@ -180,7 +175,6 @@ var epv_jq = $.noConflict();
                     GM_setValue(GM_getValue('viewMode') + "_color", epv_jq(this).val());
                     refreshColor();
                 });
-
             }
             epv_jq(".epv_content", $cp).slideDown('fast');
         },
@@ -191,7 +185,6 @@ var epv_jq = $.noConflict();
 
     function main() {
         init();
-        console.log(324);
         if (isRootpath()) {
             addControlPanel();
         }
@@ -209,9 +202,7 @@ var epv_jq = $.noConflict();
             var $lis = epv_jq('li:not(.subtitle)', this);
             var values = getValues($lis);
             show($lis, values);
-
         });
     }
-
     main();
 })();
