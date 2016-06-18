@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.4
+// @version      0.2.5
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
@@ -54,11 +54,6 @@ function getPixel($e, attr) {
     return parseInt($e.css(attr));
 }
 
-// function default_getWidth($a) {
-//     var width = getPixel($a, 'width');
-//     return 6 + width;// padding + border == 6
-// }
-
 // 获取格子高度
 function histogram_getHeight($a) {
     return getPixel($a, 'height') + 2 +
@@ -66,6 +61,9 @@ function histogram_getHeight($a) {
 }
 
 function getShowMethod(viewMode) {
+    var $expA = $('a.load-epinfo:eq(0)');
+    var bottomPx = $expA.css('margin-bottom');
+    var rightPx = $expA.css('margin-right');
     switch(viewMode) {
         case 'default':
         var colorX = colorToRgbaX(GM_getValue("default_color"));
@@ -76,18 +74,14 @@ function getShowMethod(viewMode) {
             }
             var colors = values.map(getColor(colorX, max));
             $lis.each(function (index) {
-                var $li = $(this);
-                //var width = default_getWidth($('a', $li));
-                $li.prepend(`<div style="height:3px;width:85%;background:${colors[index]};"></div>`);
+                var $a = $('a', this);
+                $a.append(`<div style="position:absolute;right:${rightPx};bottom:0;height:${bottomPx};width:80%;background:${colors[index]};"></div>`);
             });
         };
         /////////////////////////////
         case 'histogram':
         var color = GM_getValue("histogram_color");
-        var $expA = $('a.load-epinfo:eq(0)');
         var height = histogram_getHeight($expA);
-        var bottomPx = $expA.css('margin-bottom');
-        var rightPx = $expA.css('margin-right');
         return function ($lis, values) {
             var max = getMax(values);
             if (max < 20) {
@@ -95,8 +89,8 @@ function getShowMethod(viewMode) {
             }
             var lengths = values.map(getLength(height, max));
             $lis.each(function (index) {
-                var $li = $(this);
-                $li.prepend(`<div style="position:absolute;right:0;bottom:${bottomPx};width:${rightPx};height:${lengths[index]}px;background:${color};"></div>`);
+                var $a = $('a', this);
+                $a.append(`<div style="position:absolute;right:0;bottom:${bottomPx};width:${rightPx};height:${lengths[index]}px;background:${color};"></div>`);
             });
         };
     }
