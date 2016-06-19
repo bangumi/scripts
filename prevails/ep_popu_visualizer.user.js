@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.5
+// @version      0.2.6
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
@@ -27,9 +27,9 @@ function prgListExists() {
 }
 
 function getMax(arr) {
-	if (arr.length === 0) {
-		return 0;
-	}
+    if (arr.length === 0) {
+        return 0;
+    }
     return arr.reduce(function (a, b) {return a > b ? a : b;});
 }
 
@@ -137,20 +137,20 @@ function addControlPanel() {
         $('#epv_color_pick input').val(GM_getValue(GM_getValue('viewMode') + '_color'));
     }
     $('a.epv_control_panel_switch').click(function () {
-    	// lazy 载入设置面板
+        // lazy 载入设置面板
         if (!isControlPanelLoaded) {
             var $content = $(
 `<div class="epv_content" style="margin-top:10px;display:none;">
-	<div id="epv_mode_select">模式切换: 
-		<input type="radio" name="viewMode" value="default" ${(mode === 'default' ? 'checked' : '')} />渐变色 (默认) 
-		<input type="radio" name="viewMode" value="histogram" ${(mode === 'histogram' ? 'checked' : '')} />条形图 
-	</div>
-	<div id="epv_color_pick">颜色选择: 
-		<input type="text" id="epv_color_text_input"  value="${GM_getValue(mode + '_color')}"> 
-		<input id="epv_color_input" type="color" value="${GM_getValue(mode + '_color')}" style="height:1.3em;">
-	</div>
+    <div id="epv_mode_select">模式切换: 
+        <input type="radio" name="viewMode" value="default" ${(mode === 'default' ? 'checked' : '')} />渐变色 (默认) 
+        <input type="radio" name="viewMode" value="histogram" ${(mode === 'histogram' ? 'checked' : '')} />条形图 
+    </div>
+    <div id="epv_color_pick">颜色选择: 
+        <input type="text" id="epv_color_text_input"  value="${GM_getValue(mode + '_color')}"> 
+        <input id="epv_color_input" type="color" value="${GM_getValue(mode + '_color')}" style="height:1.3em;">
+    </div>
 </div>`
-			);
+            );
             $cp.append($content);
             $('#epv_mode_select input').click(function () {
                 GM_setValue('viewMode', $(this).val());
@@ -181,10 +181,13 @@ function main() {
         $uls = $('ul.prg_list');
     }
     var show = getShowMethod(GM_getValue('viewMode'));
-    $uls.each(function () {
-        var $lis = $('li:not(.subtitle)', this);
-        var values = getValues($lis);
-        show($lis, values);
+    $uls.each(function (index) {
+        var that = this;
+        setTimeout(function () {
+            var $lis = $('li:not(.subtitle)', that);
+            var values = getValues($lis);
+            show($lis, values);
+        }, 150 * index + 500);// async
     });
 }
 
