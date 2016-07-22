@@ -8,6 +8,18 @@
 ![Screenshot](http://r.loli.io/vay6ny.jpg)
 ![Screenshot](http://r.loli.io/jMR3Mn.jpg)
 
+## [关联人物同步 Infobox BRPS](bangumi-relationship-person-syncronize.user.js?raw=true)
+讨论帖[戳我](https://bgm.tv/group/topic/340812)
+
+Bangumi 关联人物之后要自己手动将 Infobox 内填上相同的人物。  
+食用本脚本可以将关联的人物一件同步上 Infobox。
+
+食用前：
+![Screenshot](https://puu.sh/qasgZ/ea148e4373.png)
+
+食用后：
+![Screenshot](https://puu.sh/qasis/73c8ec3e25.png)
+
 ## [用户页统计图 BHC](bangumi-homepage-calendar.user.js?raw=true)
 仿 GitHub 用户页，在 Bangumi 的用户页上绘制自己的 Wiki 编辑记录与时空管理局统计图  
 
