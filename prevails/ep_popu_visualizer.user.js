@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.6
+// @version      0.2.6.1
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
@@ -18,12 +18,12 @@
 // @encoding     utf-8
 // ==/UserScript==
 
-function isRootpath() {
-    return location.pathname === '/';
-}
-
-function prgListExists() {
-    return $('ul.prg_list').length !== 0;
+function noNeed(isRoot) {
+    if (isRoot) {
+        return $('a.load-epinfo').length === 0;
+    } else {
+        return ($('a.focus.chl.anime').length === 0 && $('a.focus.chl.real').length === 0) || $('a.load-epinfo').length === 0;
+    }
 }
 
 function getMax(arr) {
@@ -54,7 +54,6 @@ function getPixel($e, attr) {
     return parseInt($e.css(attr));
 }
 
-// 获取格子高度
 function histogram_getHeight($a) {
     return getPixel($a, 'height') + 2 +
         getPixel($a, 'padding-top') + getPixel($a, 'padding-bottom');
@@ -72,7 +71,7 @@ function getShowMethod(viewMode) {
             if (max < 20) {
                 max += (20 - max) / 2;
             }
-            var colors = values.map(getColor(colorX, max));
+            var colors = values.map(default_getColor(colorX, max));
             $lis.each(function (index) {
                 var $a = $('a', this);
                 $a.append(`<div style="position:absolute;right:${rightPx};bottom:0;height:${bottomPx};width:80%;background:${colors[index]};"></div>`);
@@ -87,7 +86,7 @@ function getShowMethod(viewMode) {
             if (max < 20) {
                 max += (20 - max) / 2;
             }
-            var lengths = values.map(getLength(height, max));
+            var lengths = values.map(histogram_getLength(height, max));
             $lis.each(function (index) {
                 var $a = $('a', this);
                 $a.append(`<div style="position:absolute;right:0;bottom:${bottomPx};width:${rightPx};height:${lengths[index]}px;background:${color};"></div>`);
@@ -102,18 +101,17 @@ function getEpValue(id) {
     return parseInt(value);
 }
 
-function getColor(colorX, max) {
+function default_getColor(colorX, max) {
     return function (v) {
         return colorX.replace('X', v / max);
     };
 }
 
-function getLength(height, max) {
+function histogram_getLength(height, max) {
     return function (v) {
         return height * v / max;
     };
 }
-
 
 function init() {
     if (!GM_getValue('viewMode')) {
@@ -136,8 +134,7 @@ function addControlPanel() {
     function refreshColor() {
         $('#epv_color_pick input').val(GM_getValue(GM_getValue('viewMode') + '_color'));
     }
-    $('a.epv_control_panel_switch').click(function () {
-        // lazy 载入设置面板
+    $('.epv_control_panel_switch').click(function () {
         if (!isControlPanelLoaded) {
             var $content = $(
 `<div class="epv_content" style="margin-top:10px;display:none;">
@@ -168,26 +165,26 @@ function addControlPanel() {
 
 function main() {
     init();
-    if (isRootpath()) {
+    var isRoot = location.pathname === '/';
+    if (isRoot) {
         addControlPanel();
     }
-    if (!prgListExists()) {
+    if (noNeed(isRoot)) {
         return;
     }
     var $uls;
-    if (isRootpath()) {
-        $uls = $('div.infoWrapper_tv ul.prg_list');
+    if (isRoot) {
+        $uls = $('.infoWrapper_tv .prg_list');
     } else {
-        $uls = $('ul.prg_list');
+        $uls = $('.prg_list');
     }
     var show = getShowMethod(GM_getValue('viewMode'));
-    $uls.each(function (index) {
-        var that = this;
+    $uls.each(function (index, element) {
         setTimeout(function () {
-            var $lis = $('li:not(.subtitle)', that);
+            var $lis = $('li:not(.subtitle)', element);
             var values = getValues($lis);
             show($lis, values);
-        }, 150 * index + 500);// async
+        }, 150 * index + 500);
     });
 }
 
