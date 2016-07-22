@@ -8,7 +8,7 @@
 ![Screenshot](http://r.loli.io/vay6ny.jpg)
 ![Screenshot](http://r.loli.io/jMR3Mn.jpg)
 
-## [关联人物同步 Infobox BRPS](bangumi-relationship-person-syncronize.user.js?raw=true)
+## [关联人物同步 Infobox BRPS](bangumi-relationship-person-synchronize.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/340812)
 
 Bangumi 关联人物之后要自己手动将 Infobox 内填上相同的人物。  
