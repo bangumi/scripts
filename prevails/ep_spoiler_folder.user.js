@@ -1,9 +1,11 @@
 // ==UserScript==
-// @name        EpSpoilerFolder
+// @name        Bangumi EpSpoilerFolder
+// @description 折叠章节讨论中含"剧透"的楼层
 // @namespace   bangumi.scripts.prevails.EpSpoilerFolder
+// @author      "Donuts."
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/((m|rakuen)\/topic\/)?ep\/\d+$/
 // @require     https://code.jquery.com/jquery-2.2.4.min.js
-// @version     1
+// @version     1.0.1
 // @grant       GM_addStyle
 // @encoding    utf-8
 // ==/UserScript==
