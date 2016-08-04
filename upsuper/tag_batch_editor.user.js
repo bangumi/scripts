@@ -123,6 +123,44 @@ $newtag.addEventListener('click', function (evt) {
 });
 $panel.insertBefore($newtag, $panel.firstChild);
 
+// add a button for making subject privacy  2016/08/04
+function add_btn(class_name, title, text, callback) {
+  var $panel = $('#userTagList').parentNode;
+  var $newtag = $c('a');
+  $newtag.href = '#';
+  $newtag.className = class_name;
+  $newtag.title = title;
+  $newtag.textContent = text;
+  $panel.insertBefore($newtag, $panel.firstChild);
+  $newtag.addEventListener('click', function (evt) {
+    var ids = [];
+    evt.preventDefault();
+
+    var $items = $a('#browserItemList>li');
+    for (var i = 0; i < $items.length; i++) {
+      var $item = $items[i],
+      $chk = $('input[type=checkbox]', $item);
+      if ($chk.checked)
+        ids.push($item.id.substr(5));
+    }
+
+    if (!ids.length) {
+      alert('请先选择条目');
+      return;
+    }
+
+    var flag_privacy = 1;
+    if (text === 'c')
+      flag_privacy = 0;
+    callback(ids, flag_privacy, function (id) {
+      //$('#item_{0} input[type=checkbox]'.u$format(id)).checked = false;
+    });
+  });
+}
+
+add_btn('__u_add', '自己可见', 'p', batch_make_privacy);
+add_btn('__u_add', '取消自己可见', 'c', batch_make_privacy);
+
 // bind event
 $('#userTagList').addEventListener('click', function (evt) {
   var className = evt.target.className;
@@ -275,3 +313,81 @@ function changeTag(id, oldTag, newTag,
     callback();
   }
 }
+
+// add a function for make subject privacy  2016/08/04
+function make_privacy(id, flag_privacy,
+                   $iframe, updateProcessBar, callback) {
+  console.log('begin', id, flag_privacy);
+  var url = '/update/' + id;
+  var watchdog;
+  stage0();
+
+  function stage0() {
+    $iframe.src = url;
+    $iframe.onload = stage1;
+    finished = false;
+    watchdog = setTimeout(function () {
+      if ($iframe.onload != stage1)
+        return;
+      url += '?';
+      stage0();
+    }, TIMEOUT);
+  }
+  function stage1() {
+    if (watchdog) {
+      clearTimeout(watchdog);
+      watchdog = 0;
+    }
+
+    var doc = $iframe.contentDocument;
+    var $privacy_checkbox = doc.getElementById('privacy');
+    if (!$privacy_checkbox)
+      window.setTimeout(stage0, RETRY_INTERVAL);
+    if (flag_privacy)
+      $privacy_checkbox.setAttribute('checked', 'checked');
+    else {
+      //$privacy_checkbox.setAttribute('checked', false);
+      $privacy_checkbox.removeAttribute('checked');
+      console.log('removed', id);
+    }
+
+    doc.forms[0].submit();
+    $iframe.onload = stage2;
+    watchdog = setTimeout(function () {
+      if ($iframe.onload != stage2)
+        return;
+      doc.forms[0].submit();
+    }, TIMEOUT);
+  }
+  function stage2() {
+    if (watchdog) {
+      clearTimeout(watchdog);
+      watchdog = 0;
+    }
+
+    $iframe.onload = undefined;
+    updateProcessBar(id);
+    callback();
+  }
+  console.log('finished', id);
+}
+
+function batch_make_privacy(ids, flag_privacy, updateProcessBar) {
+  var $iframe = $c('iframe');
+  $iframe.style.display = 'none';
+  document.body.appendChild($iframe);
+
+  function nextItem() {
+    var id = ids.shift();
+    if (id) {
+      make_privacy(id, flag_privacy,
+                $iframe, updateProcessBar, nextItem);
+    } else {
+      workingJobs--;
+      if (workingJobs === 0)
+        location.reload();
+    }
+  }
+  nextItem();
+}
+
