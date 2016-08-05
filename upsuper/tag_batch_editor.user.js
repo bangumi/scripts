@@ -2,7 +2,7 @@
 // @name        Bangumi 标签批量管理
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(anime|book|music|game|real)/list/.+$/
-// @version     2.5
+// @version     2.5.1
 // @grant       GM_addStyle
 // ==/UserScript==
 
@@ -14,6 +14,7 @@ const ITEMS_PER_PAGE = 24;
 let $ = (q, e) => (e ? e : document).querySelector(q);
 let $a = (q, e) => (e ? e : document).querySelectorAll(q);
 let $c = t => document.createElement(t);
+let delay = t => new Promise(r => setTimeout(r, t));
 
 function runAsync(iter) {
   return new Promise((resolve, reject) => {
@@ -212,7 +213,10 @@ function getIds(urlBase, pageNum) {
             ids.push(match[1]);
           }
           done = true;
-        }).catch(e => console.error(e));
+        }).catch(e => {
+          console.error(e);
+          return delay(RETRY_INTERVAL);
+        });
       }
       if (!done) {
         console.error(`exceeded max retry times for page ${page}`);
@@ -280,6 +284,7 @@ function changeTag(id, oldTag, newTag, $iframe) {
       }).catch(e => {
         console.log(e);
         url += '?';
+        return delay(RETRY_INTERVAL);
       });
     }
     if (!done) {
