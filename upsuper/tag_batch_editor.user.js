@@ -43,18 +43,28 @@ GM_addStyle(`
 #userTagList>li>a.l {
   margin-right: 32px;
 }
-#userTagList>li>a.__u_edit,
-#userTagList>li>a.__u_del {
-  width: 16px; height: 16px;
-  padding: 4px 0; float: right;
-  text-align: center; color: #aaa;
-  line-height: 16px; font-size: 10px;
+.__u_add::before {
+  content: '+';
 }
-a.__u_add {
+.__u_edit::before {
+  content: '#';
+}
+.__u_del::before {
+  content: 'x';
+}
+#wrapperNeue .__u_top_btn,
+#wrapperNeue .__u_item_btn {
   width: 16px; height: 16px;
-  padding: 3px 0; float: right;
-  text-align: center; color: #fff;
   line-height: 16px; font-size: 10px;
+  float: right; text-align: center;
+}
+#wrapperNeue .__u_top_btn {
+  padding: 3px 0;
+  color: #fff;
+}
+#wrapperNeue .__u_item_btn {
+  padding: 4px 0;
+  color: #aaa;
 }
 #__u_pb {
   position: fixed;
@@ -92,16 +102,14 @@ for (let $tag of $a('#userTagList>li')) {
 
   let $button = $c('a');
   $button.href = '#';
-  $button.className = '__u_del';
+  $button.classList.add('__u_item_btn', '__u_del');
   $button.title = '删除';
-  $button.textContent = 'x';
   $tag.insertBefore($button, $anchor);
 
   $button = $c('a');
   $button.href = '#';
-  $button.className = '__u_edit';
+  $button.classList.add('__u_item_btn', '__u_edit');
   $button.title = '编辑';
-  $button.textContent = '#';
   $tag.insertBefore($button, $anchor);
 }
 
@@ -117,9 +125,8 @@ for (let $item of $a('#browserItemList>li')) {
 let $panel = $('#userTagList').parentNode;
 let $newtag = $c('a');
 $newtag.href = '#';
-$newtag.className = '__u_add';
+$newtag.classList.add('__u_top_btn', '__u_add');
 $newtag.title = '添加';
-$newtag.textContent = '+';
 $newtag.addEventListener('click', evt => {
   evt.preventDefault();
   let ids = [];
@@ -143,24 +150,27 @@ $panel.insertBefore($newtag, $panel.firstChild);
 
 // bind event
 $('#userTagList').addEventListener('click', evt => {
-  let className = evt.target.className;
-  if (className != '__u_edit' && className != '__u_del') {
+  let classList = evt.target.classList;
+  if (!classList.contains('__u_item_btn')) {
     return;
   }
   let $li = evt.target.parentNode;
   let oldTag = decodeURIComponent($('a.l', $li).href.split('=')[1]);
   let newTag;
   evt.preventDefault();
-  if (className == '__u_del') {
+  if (classList.contains('__u_del')) {
     if (!confirm(`确认要删除标签“${oldTag}”吗？`)) {
       return;
     }
     newTag = '';
-  } else {
+  } else if (classList.contains('__u_edit')) {
     newTag = prompt('请输入新的标签名：');
     if (!newTag) {
       return;
     }
+  } else {
+    console.error('unknown item button');
+    return;
   }
   changeTagName(oldTag, newTag, $li);
 }, true);
