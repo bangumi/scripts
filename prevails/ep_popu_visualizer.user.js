@@ -1,20 +1,13 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.7
+// @version      0.2.7.1
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
-// @match        http://bgm.tv/subject/*
-// @match        http://bgm.tv/
-// @match        https://bgm.tv/subject/*
-// @match        https://bgm.tv/
-// @match        http://bangumi.tv/subject/*
-// @match        http://bangumi.tv/
-// @match        http://chii.in/subject/*
-// @match        http://chii.in/
+// @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/(subject\/\d+)?$/
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @encoding     utf-8
 // ==/UserScript==
