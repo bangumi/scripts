@@ -17,7 +17,7 @@
 ## 模板
 
 ```
-# [Bangumi ID](http://bgm.tv/user/Bangumi ID)
+# [Bangumi ID](https://bgm.tv/user/Bangumi ID)
 
 ## [脚本1](脚本1.user.js?raw=true)
 
