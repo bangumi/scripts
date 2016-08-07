@@ -1,3 +1,4 @@
+// ==UserScript==
 // @name         Bangumi Personal Calendar
 // @namespace    fitailsh
 // @version      0.8
