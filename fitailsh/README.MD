@@ -1,6 +1,6 @@
 # [fitailsh](https://bgm.tv/user/derrick)
 
-## [个性化每日放送：PersonalCalendar](personal_calendar.js?raw=true)
+## [个性化每日放送：PersonalCalendar](personal_calendar.user.js?raw=true)
 
 相关讨论位于 https://bgm.tv/group/topic/340945
 
