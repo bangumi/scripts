@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.6.1
+// @version      0.2.7
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_addStyle
 // @match        http://bgm.tv/subject/*
 // @match        http://bgm.tv/
 // @match        https://bgm.tv/subject/*
@@ -20,9 +21,9 @@
 
 function noNeed(isRoot) {
     if (isRoot) {
-        return $('a.load-epinfo').length === 0;
+        return $('.load-epinfo').length === 0;
     } else {
-        return ($('a.focus.chl.anime').length === 0 && $('a.focus.chl.real').length === 0) || $('a.load-epinfo').length === 0;
+        return ($('.focus.chl.anime').length === 0 && $('.focus.chl.real').length === 0) || $('.load-epinfo').length === 0;
     }
 }
 
@@ -30,7 +31,7 @@ function getMax(arr) {
     if (arr.length === 0) {
         return 0;
     }
-    return arr.reduce(function (a, b) {return a > b ? a : b;});
+    return arr.reduce((a, b) => (a > b ? a : b));
 }
 
 function getValues($lis) {
@@ -44,9 +45,9 @@ function getValues($lis) {
 }
 
 function colorToRgbaX(color) {
-    var r = parseInt('0x' + color.substr(1, 2));
-    var g = parseInt('0x' + color.substr(3, 2));
-    var b = parseInt('0x' + color.substr(5, 2));
+    var r = parseInt(color.substr(1, 2), 16);
+    var g = parseInt(color.substr(3, 2), 16);
+    var b = parseInt(color.substr(5, 2), 16);
     return `rgba(${r},${g},${b},X)`;
 }
 
@@ -59,58 +60,50 @@ function histogram_getHeight($a) {
         getPixel($a, 'padding-top') + getPixel($a, 'padding-bottom');
 }
 
-function getShowMethod(viewMode) {
-    var $expA = $('a.load-epinfo:eq(0)');
-    var bottomPx = $expA.css('margin-bottom');
-    var rightPx = $expA.css('margin-right');
+function getShowMethod() {
+    var viewMode = getCurrentMode();
+    var $exampleEp = $('.load-epinfo:eq(0)');
+    var bottomPx = $exampleEp.css('margin-bottom');
+    var rightPx = $exampleEp.css('margin-right');
+    var color = getCurrentModeColor();
+    GM_addStyle(
+        `.epv_popu_default{right:${rightPx};height:${bottomPx};}
+        .epv_popu_histogram{bottom:${bottomPx};width:${rightPx};background:${color};}`);
     switch(viewMode) {
         case 'default':
-        var colorX = colorToRgbaX(GM_getValue("default_color"));
+        var colorX = colorToRgbaX(color);
         return function ($lis, values) {
             var max = getMax(values);
             if (max < 20) {
                 max += (20 - max) / 2;
             }
-            var colors = values.map(default_getColor(colorX, max));
+            var colors = values.map((v) => (colorX.replace('X', v / max)));
             $lis.each(function (index) {
                 var $a = $('a', this);
-                $a.append(`<div style="position:absolute;right:${rightPx};bottom:0;height:${bottomPx};width:80%;background:${colors[index]};"></div>`);
+                $a.append(`<div class="epv_popu_default" style="background:${colors[index]};"></div>`);
             });
         };
         /////////////////////////////
         case 'histogram':
-        var color = GM_getValue("histogram_color");
-        var height = histogram_getHeight($expA);
+        var height = histogram_getHeight($exampleEp);
         return function ($lis, values) {
             var max = getMax(values);
             if (max < 20) {
                 max += (20 - max) / 2;
             }
-            var lengths = values.map(histogram_getLength(height, max));
+            var lengths = values.map((v) => (height * v / max));
             $lis.each(function (index) {
                 var $a = $('a', this);
-                $a.append(`<div style="position:absolute;right:0;bottom:${bottomPx};width:${rightPx};height:${lengths[index]}px;background:${color};"></div>`);
+                $a.append(`<div class="epv_popu_histogram" style="height:${lengths[index]}px;"></div>`);
             });
         };
     }
 }
 
 function getEpValue(id) {
-    var value = $(`#subject_prg_content > #prginfo_${id} small.na`).html();
+    var value = $(`#subject_prg_content > #prginfo_${id} .na`).html();
     value = value.substring(2, value.length - 1);
     return parseInt(value);
-}
-
-function default_getColor(colorX, max) {
-    return function (v) {
-        return colorX.replace('X', v / max);
-    };
-}
-
-function histogram_getLength(height, max) {
-    return function (v) {
-        return height * v / max;
-    };
 }
 
 function init() {
@@ -125,46 +118,99 @@ function init() {
     }
 }
 
-var isControlPanelLoaded = false;
+var isControlPanelContentLoaded = false;
 
 function addControlPanel() {
-    $('#columnHomeB').append('<div id="ep_popu_visualizer_control_panel" style="padding-left:10px;"><a class="l epv_control_panel_switch" href="javascript:;">EpPopuVisualizer 设置</a></div>');
-    var $cp = $('#ep_popu_visualizer_control_panel');
-    var mode = GM_getValue('viewMode');
-    function refreshColor() {
-        $('#epv_color_pick input').val(GM_getValue(GM_getValue('viewMode') + '_color'));
-    }
+    var cp = 
+        `<div id="ep_popu_visualizer_control_panel">
+            <a class="l epv_control_panel_switch" href="javascript:;">EpPopuVisualizer 设置</a>
+        </div>`;
+    $('#columnHomeB').append(cp);
     $('.epv_control_panel_switch').click(function () {
-        if (!isControlPanelLoaded) {
-            var $content = $(
-`<div class="epv_content" style="margin-top:10px;display:none;">
-    <div id="epv_mode_select">模式切换: 
-        <input type="radio" name="viewMode" value="default" ${(mode === 'default' ? 'checked' : '')} />渐变色 (默认) 
-        <input type="radio" name="viewMode" value="histogram" ${(mode === 'histogram' ? 'checked' : '')} />条形图 
-    </div>
-    <div id="epv_color_pick">颜色选择: 
-        <input type="text" id="epv_color_text_input"  value="${GM_getValue(mode + '_color')}"> 
-        <input id="epv_color_input" type="color" value="${GM_getValue(mode + '_color')}" style="height:1.3em;">
-    </div>
-</div>`
-            );
-            $cp.append($content);
-            $('#epv_mode_select input').click(function () {
-                GM_setValue('viewMode', $(this).val());
-                refreshColor();
-            });
-            $('#epv_color_pick input').change(function () {
-                GM_setValue(GM_getValue('viewMode') + "_color", $(this).val());
-                refreshColor();
-            });
-            isControlPanelLoaded = true;
+        if (!isControlPanelContentLoaded) {
+            loadControlPanelContent();
+            isControlPanelContentLoaded = true;
         }
-        $(".epv_content", $cp).slideToggle('fast');
+        $(".epv_content").slideToggle('fast');
     });
+}
+
+function refreshColorPickInputValue() {
+    $('#epv_color_pick input').val(getCurrentModeColor());
+}
+
+function getCurrentModeColorKey() {
+    return getCurrentMode() + "_color";
+}
+
+function getCurrentModeColor() {
+    return GM_getValue(getCurrentModeColorKey());
+}
+
+function getCurrentMode() {
+    return GM_getValue('viewMode');
+}
+
+function loadControlPanelContent() {
+    var currentMode = getCurrentMode();
+    var content =
+        `<div class="epv_content" style="display:none;">
+            <div id="epv_mode_select">模式切换: 
+                <input type="radio" name="viewMode" 
+                value="default" ${(currentMode === 'default' ? 'checked' : '')} /> 渐变色 (默认) 
+                &nbsp;&nbsp;&nbsp;
+                <input type="radio" name="viewMode" 
+                value="histogram" ${(currentMode === 'histogram' ? 'checked' : '')} /> 条形图 
+            </div>
+            <div id="epv_color_pick">颜色选择: 
+                <input type="text" id="epv_color_text_input"> 
+                <input id="epv_color_input" type="color">
+            </div>
+        </div>`;
+    $('#ep_popu_visualizer_control_panel').append(content);
+    refreshColorPickInputValue();
+    bindEventsToControlPanelInputs();
+}
+
+function bindEventsToControlPanelInputs() {
+    $('#epv_mode_select input').click(function () {
+        GM_setValue('viewMode', $(this).val());
+        refreshColorPickInputValue();
+    });
+    $('#epv_color_pick input').change(function () {
+        GM_setValue(getCurrentModeColorKey(), $(this).val());
+        refreshColorPickInputValue();
+    });
+}
+
+function addFixedStyleSheet() {
+    const css = 
+        `.epv_content > div {
+            border-bottom: 1px dotted #e0e0e0;
+            margin-top: 5px;
+            padding: 4px 0 4px 12px;
+        }
+        #epv_color_input {
+            height: 1.3em;
+        }
+        #ep_popu_visualizer_control_panel {
+            padding-left: 10px;
+        }
+        .epv_popu_default {
+            position: absolute;
+            bottom: 0;
+            width: 80%;
+        }
+        .epv_popu_histogram {
+            position: absolute;
+            right: 0;
+        }`;
+    GM_addStyle(css);
 }
 
 function main() {
     init();
+    addFixedStyleSheet();
     var isRoot = location.pathname === '/';
     if (isRoot) {
         addControlPanel();
@@ -172,13 +218,8 @@ function main() {
     if (noNeed(isRoot)) {
         return;
     }
-    var $uls;
-    if (isRoot) {
-        $uls = $('.infoWrapper_tv .prg_list');
-    } else {
-        $uls = $('.prg_list');
-    }
-    var show = getShowMethod(GM_getValue('viewMode'));
+    var $uls = isRoot ? $('.infoWrapper_tv .prg_list') : $('.prg_list');
+    var show = getShowMethod();
     $uls.each(function (index, element) {
         setTimeout(function () {
             var $lis = $('li:not(.subtitle)', element);
