@@ -2,7 +2,7 @@
 // @name        Bangumi 标签批量管理
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(anime|book|music|game|real)/list/.+$/
-// @version     2.5.1
+// @version     3.0
 // @grant       GM_addStyle
 // ==/UserScript==
 
@@ -40,11 +40,25 @@ let urlBase = urlPieces.slice(0, 7).join('/');
 
 // insert style
 GM_addStyle(`
+@font-face {
+  font-family: '_u FontAwesome';
+  src: url('https://netdna.bootstrapcdn.com/font-awesome/3.2.1/font/fontawesome-webfont.woff') format('woff');
+}
 #userTagList>li>a.l {
   margin-right: 32px;
 }
 .__u_add::before {
   content: '+';
+}
+.__u_set_priv::before {
+  /* icon eye closed */
+  font-family: '_u FontAwesome';
+  content: '\\f070';
+}
+.__u_clear_priv::before {
+  /* icon eye open */
+  font-family: '_u FontAwesome';
+  content: '\\f06e';
 }
 .__u_edit::before {
   content: '#';
@@ -53,105 +67,73 @@ GM_addStyle(`
   content: 'x';
 }
 #wrapperNeue .__u_top_btn,
-#wrapperNeue .__u_item_btn {
+#wrapperNeue .__u_tag_btn {
   width: 16px; height: 16px;
-  line-height: 16px; font-size: 10px;
+  line-height: 16px;
   float: right; text-align: center;
 }
 #wrapperNeue .__u_top_btn {
   padding: 3px 0;
   color: #fff;
+  margin: -2px 3px 0 0;
+  font-size: 12px;
 }
-#wrapperNeue .__u_item_btn {
+#wrapperNeue .__u_top_btn:first-of-type {
+  margin-right: -7px;
+}
+#wrapperNeue .__u_tag_btn {
   padding: 4px 0;
   color: #aaa;
+  font-size: 10px;
 }
 #__u_pb {
   position: fixed;
-  top: 0;
-  width: 100%;
-}
-#__u_pb[max="0"] {
-  display: none;
+  top: 0; border: 0 none;
+  width: 100%; height: 1px;
 }
 `);
 
 // add progress bar
 let $pb = $c('progress');
 $pb.id = '__u_pb';
-$pb.max = $pb.value = 0;
+$pb.value = 0;
+$pb.max = Number.MIN_VALUE;
+$pb.hidden = true;
 document.body.appendChild($pb);
 
-let workingJobs = 0;
-function increaseWorkingJobs(num) {
-  workingJobs++;
+let workingTasks = 0;
+function workOnTask(num, func) {
+  workingTasks++;
+  $pb.hidden = false;
   $pb.max += num;
-}
-function decreaseWorkingJobs() {
-  workingJobs--;
-  if (workingJobs == 0)
-    location.reload();
+  func().then(() => {
+    workingTasks--;
+    if (workingTasks == 0) {
+      location.reload();
+    }
+  });
 }
 function progress() {
   $pb.value++;
 }
 
-// update tag list
+// 为标签添加动作按钮
 for (let $tag of $a('#userTagList>li')) {
   $anchor = $tag.getElementsByTagName('a')[0];
-
-  let $button = $c('a');
-  $button.href = '#';
-  $button.classList.add('__u_item_btn', '__u_del');
-  $button.title = '删除';
-  $tag.insertBefore($button, $anchor);
-
-  $button = $c('a');
-  $button.href = '#';
-  $button.classList.add('__u_item_btn', '__u_edit');
-  $button.title = '编辑';
-  $tag.insertBefore($button, $anchor);
+  let createTagButton = (cls, title) => {
+    let $btn = $c('a');
+    $btn.href = '#';
+    $btn.classList.add('__u_tag_btn', cls);
+    $btn.title = title;
+    $tag.insertBefore($btn, $anchor);
+  };
+  createTagButton('__u_del', '删除');
+  createTagButton('__u_edit', '编辑');
 }
-
-// add checkboxes to item list
-for (let $item of $a('#browserItemList>li')) {
-  let $modify = $('.collectModify', $item);
-  let $checkbox = $c('input');
-  $checkbox.type = 'checkbox';
-  $modify.insertBefore($checkbox, $modify.firstChild);
-}
-
-// add new tag button
-let $panel = $('#userTagList').parentNode;
-let $newtag = $c('a');
-$newtag.href = '#';
-$newtag.classList.add('__u_top_btn', '__u_add');
-$newtag.title = '添加';
-$newtag.addEventListener('click', evt => {
-  evt.preventDefault();
-  let ids = [];
-  for (let $item of $a('#browserItemList>li')) {
-    $chk = $('input[type=checkbox]', $item);
-    if ($chk.checked) {
-      ids.push($item.id.substr(5));
-    }
-  }
-  if (!ids.length) {
-    alert('请先选择条目');
-    return;
-  }
-  let newTag = prompt('请输入新标签名：');
-  if (newTag) {
-    increaseWorkingJobs(ids.length);
-    batchChangeTag(ids, null, newTag).then(decreaseWorkingJobs);
-  }
-});
-$panel.insertBefore($newtag, $panel.firstChild);
-
-// bind event
+// 标签动作按钮的事件
 $('#userTagList').addEventListener('click', evt => {
   let classList = evt.target.classList;
-  if (!classList.contains('__u_item_btn')) {
+  if (!classList.contains('__u_tag_btn')) {
     return;
   }
   let $li = evt.target.parentNode;
@@ -169,11 +151,67 @@ $('#userTagList').addEventListener('click', evt => {
       return;
     }
   } else {
-    console.error('unknown item button');
+    console.error('未知标签按钮');
     return;
   }
   changeTagName(oldTag, newTag, $li);
 }, true);
+
+
+// 给条目添加复选框
+for (let $item of $a('#browserItemList>li')) {
+  let $modify = $('.collectModify', $item);
+  let $checkbox = $c('input');
+  $checkbox.type = 'checkbox';
+  $modify.insertBefore($checkbox, $modify.firstChild);
+}
+// 添加顶部动作按钮
+let $top = $('h2', $('#userTagList').parentNode);
+function createTopButton(cls, title, func) {
+  let $btn = document.createElement('a');
+  $btn.href = '#';
+  $btn.classList.add('__u_top_btn', cls);
+  $btn.title = title;
+  $top.insertBefore($btn, $top.firstChild);
+}
+createTopButton('__u_clear_priv', '取消仅自己可见');
+createTopButton('__u_set_priv', '设置仅自己可见');
+createTopButton('__u_add', '添加');
+// 顶部动作按钮的事件
+$top.addEventListener('click', evt => {
+  let classList = evt.target.classList;
+  if (!classList.contains('__u_top_btn')) {
+    return;
+  }
+  evt.preventDefault();
+  let ids = [];
+  for (let $item of $a('#browserItemList>li')) {
+    $chk = $('input[type=checkbox]', $item);
+    if ($chk.checked) {
+      ids.push($item.id.substr(5));
+    }
+  }
+  if (!ids.length) {
+    alert('请先选择条目');
+    return;
+  }
+  let func;
+  if (classList.contains('__u_add')) {
+    let newTag = prompt('请输入新标签名：');
+    if (newTag) {
+      func = () => batchChangeTag(ids, null, newTag);
+    }
+  } else if (classList.contains('__u_set_priv')) {
+    func = () => batchChangePrivacy(ids, true);
+  } else if (classList.contains('__u_clear_priv')) {
+    func = () => batchChangePrivacy(ids, false);
+  } else {
+    console.error('未知顶部按钮');
+  }
+  if (func) {
+    workOnTask(ids.length, func);
+  }
+});
 
 // process
 function changeTagName(oldTag, newTag, $li) {
@@ -181,10 +219,11 @@ function changeTagName(oldTag, newTag, $li) {
   let num = parseInt($('small', $anchor).textContent);
   let pageNum = Math.ceil(num / ITEMS_PER_PAGE);
   let url = `${urlBase}?tag=${encodeURIComponent(oldTag)}&page=`;
-  increaseWorkingJobs(num + pageNum);
-  getIds(url, pageNum)
-    .then(ids => batchChangeTag(ids, oldTag, newTag))
-    .then(decreaseWorkingJobs);
+  workOnTask(num + pageNum, () => {
+    return getIds(url, pageNum).then(ids => {
+      return batchChangeTag(ids, oldTag, newTag);
+    });
+  });
 }
 
 function fetchWithTimeout(url) {
@@ -238,20 +277,7 @@ function getIds(urlBase, pageNum) {
   return runAsync(iterator());
 }
 
-function batchChangeTag(ids, oldTag, newTag) {
-  function* iterator() {
-    let $iframe = $c('iframe');
-    $iframe.style.display = 'none';
-    document.body.appendChild($iframe);
-    for (let id of ids) {
-      yield changeTag(id, oldTag, newTag, $iframe);
-      progress();
-    }
-  }
-  return runAsync(iterator());
-}
-
-function changeTag(id, oldTag, newTag, $iframe) {
+function changeItem(id, $iframe, func) {
   function waitForIframeLoad() {
     return new Promise((resolve, reject) => {
       let watchdog = setTimeout(() => {
@@ -274,19 +300,7 @@ function changeTag(id, oldTag, newTag, $iframe) {
         return waitForIframeLoad();
       }).then(() => {
         let doc = $iframe.contentDocument;
-        let $tags = doc.getElementById('tags');
-        if (!$tags) {
-          throw "unexpected document";
-        }
-        if (oldTag) {
-          $tags.value = $tags.value.trim().split(/\s+/).map(value => {
-            if (value.toLowerCase() == oldTag.toLowerCase())
-              return newTag;
-            return value;
-          }).join(' ');
-        } else {
-          $tags.value += ' ' + newTag;
-        }
+        func(doc);
         doc.forms[0].submit();
         return waitForIframeLoad();
       }).then(() => {
@@ -302,4 +316,45 @@ function changeTag(id, oldTag, newTag, $iframe) {
     }
   }
   return runAsync(iterator());
+}
+
+function batchChangeItems(ids, func) {
+  function* iterator() {
+    let $iframe = $c('iframe');
+    $iframe.style.display = 'none';
+    document.body.appendChild($iframe);
+    for (let id of ids) {
+      yield changeItem(id, $iframe, func);
+      progress();
+    }
+  }
+  return runAsync(iterator());
+}
+
+function batchChangeTag(ids, oldTag, newTag) {
+  return batchChangeItems(ids, doc => {
+    let $tags = doc.getElementById('tags');
+    if (!$tags) {
+      throw '异常文档';
+    }
+    if (oldTag) {
+      $tags.value = $tags.value.trim().split(/\s+/).map(value => {
+        if (value.toLowerCase() == oldTag.toLowerCase())
+          return newTag;
+        return value;
+      }).join(' ');
+    } else {
+      $tags.value += ' ' + newTag;
+    }
+  });
+}
+
+function batchChangePrivacy(ids, privacy) {
+  return batchChangeItems(ids, doc => {
+    let $privacy = doc.getElementById('privacy');
+    if (!$privacy) {
+      throw '异常文档';
+    }
+    $privacy.checked = privacy;
+  });
 }
