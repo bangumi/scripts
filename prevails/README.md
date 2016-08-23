@@ -11,10 +11,6 @@ nickname: Donuts.
 - 可在 __主页右边栏下方的设置面板 "EpPopuVisualizer 设置"__ 选择显示方式, 选用自己喜欢的颜色进行标注
 
 
-### [用条形图标注 ep 讨论人气：EpPopuVisualizer Histogram](ep_popu_visualizer_histogram.user.js?raw=true)
-__Deprecated__: 该脚本功能已整合至上面的 EpPopuVisualizer 中, 此脚本将不再更新
-
-
 ## [章节讨论剧透关键词折叠：EpSpoilerFolder](ep_spoiler_folder.user.js?raw=true)
 
 若某层楼的讨论中包含“剧透”二字，则含有剧透内容的可能性会比较大. 本插件用于在章节讨论中折叠这类讨论，以免不小心看到剧透.
