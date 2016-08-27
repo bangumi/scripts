@@ -3,7 +3,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.0.0s1607
+// @version      1.0.1s1607
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -55,11 +55,12 @@ class Bangumi {
 const myBangumis = $('#prgSubjectList > [subject_type=2] > .thumbTip')
         .toArray().map(i => new Bangumi(i.getAttribute('subject_id'), i)).filter(i => i.bgm);
 
+$('.tooltip').hide();
 $('.week:eq(1)').remove();
 $('.week').data('date', NOW);
 
 for (let i = 1; i < 7; i++) {
-    const day = WEEK_DAY[(NOW.getDay() - i) % 7];
+    const day = WEEK_DAY[(NOW.getDay() - i + 7) % 7];
     const html = `
         <li class="clearit week ${day}">
             <h3><p><small>${day}</small></p></h3>               
