@@ -1,6 +1,35 @@
 # [prevails](https://bgm.tv/user/prevails)
 nickname: Donuts.
 
+## [首页放送整合 bgmlist.com 数据, 作为"在看"时间表](bgmlist_integrator.user.js?raw=true)
+### 数据取自 http://bgmlist.com
+其放送数据**只包含国内正版连载番剧**.<br>
+因此, 放送列表中, (原有的)*国内没有版权的番剧*将无法显示
+
+### 只展现你当前"在看"的番剧的放送情况
+Bangumi 放送列表中原有的其它番剧会被清理掉
+
+### 换季时若发现内容没有正确呈现
+#### 1. 请更新脚本, 或尝试删除并重新安装脚本
+#### 2. 若仍不准确, 请手动修改脚本第 2 行文件名最后的时间为[当季番剧开始时间], 并保存.
+- 例如现在是 16 年 8 月, 正在放送夏季番, 则开始时间为 7 月, 故文件名应为 bangumi-1607.json
+- 例如现在是 17 年 11 月, 正在放送秋季番, 则开始时间为 10 月, 故文件名应为 bangumi-1710.json
+
+通常的月份转换:
+- 1-3 月(冬) => 01
+- 4-6 月(春) => 04
+- 7-9 月(夏) => 07
+- 10-12 月(秋) => 10
+
+#### 3. 若仍不准确...
+你可以去看看 http://bgmlist.com 上的数据是否准确
+
+也可尝试把 URL 改成 GitHub 源如下(同样注意改时间):<br>
+https://raw.githubusercontent.com/wxt2005/bangumi-list/master/json/bangumi-1607.json
+
+### bgmlist 支持日本放送日
+若需使用, 请把第 14 行 TIME_ZONE 的值写为 'JP', 并保存
+
 ## [标注 ep 讨论人气：EpPopuVisualizer](ep_popu_visualizer.user.js?raw=true)
 
 相关讨论位于 https://bgm.tv/group/topic/340530

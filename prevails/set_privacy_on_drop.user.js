@@ -19,12 +19,12 @@ function setPrivacy(val) {
 }
 
 for (let i of document.querySelectorAll('#dropped, #SecTab [onclick*=dropped]')) {
-	i.addEventListener('click', () => setPrivacy(true));
+    i.addEventListener('click', () => setPrivacy(true));
 }
 
 const nonDropSelector = ['wish', 'collect', 'do', 'on_hold'].map(s => `#${s}, #SecTab [onclick*=${s}]`).join(', ');
 for (let i of document.querySelectorAll(nonDropSelector)) {
-	i.addEventListener('click', () => setPrivacy(remain));
+    i.addEventListener('click', () => setPrivacy(remain));
 }
 
 if (/collect_type=5/.test(location.search)) {
