@@ -3,7 +3,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.0.1s1607
+// @version      1.0.2s1607
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -57,7 +57,7 @@ const myBangumis = $('#prgSubjectList > [subject_type=2] > .thumbTip')
 
 $('.tooltip').hide();
 $('.week:eq(1)').remove();
-$('.week').data('date', NOW);
+// $('.week').data('date', NOW);
 
 for (let i = 1; i < 7; i++) {
     const day = WEEK_DAY[(NOW.getDay() - i + 7) % 7];
@@ -68,19 +68,19 @@ for (let i = 1; i < 7; i++) {
         </li>
     `;
     const $li = $(html);
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    $li.data('date', date);
+    // const date = new Date();
+    // date.setDate(date.getDate() - i);
+    // $li.data('date', date);
     $('.calendarMini .tip').before($li);
 }
 
 const $week = $('.week')
 $week.each(function () {
     const $div = $('div', this);
-    const date = $(this).data('date');
+    // const date = $(this).data('date');
     $div.html('');
     const weekDay = WEEK_DAY.indexOf(this.classList[2]); // <li class="clearit week Sat">
-    myBangumis.filter(i => i.bgm['weekDay' + TIME_ZONE] === weekDay && date >= new Date(i.bgm.showDate))
+    myBangumis.filter(i => i.bgm['weekDay' + TIME_ZONE] === weekDay /*&& date >= new Date(i.bgm.showDate)*/)
             .forEach(i => $div.append(i.get$Html()));
 });
 
