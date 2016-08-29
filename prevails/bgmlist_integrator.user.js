@@ -1,13 +1,15 @@
 // ==UserScript==
-// @resource     bgmlist http://bgmlist.com/json/bangumi-1607.json
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.0.2s1607
+// @version      1.1.0b0
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
-// @grant        GM_getResourceText
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_xmlhttpRequest
+// @connect      bgmlist.com
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -30,11 +32,7 @@ const WEEK_DAY = [
     'Sat',
 ];
 
-const origin = JSON.parse(GM_getResourceText('bgmlist'));
-const bgmlist = {};
-for (let i in origin) { // create index on bgmId
-    bgmlist[origin[i].bgmId] = origin[i];
-}
+const bgmlist = GM_getValue('bgmlist') || {};
 
 class Bangumi {
     constructor(id, a) {
@@ -114,3 +112,70 @@ $week.find('.thumbTip').click(function () {
 });
 
 GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;left:80%;top:20px;width:18%;}');
+
+const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 12; // 12h
+
+function getLast(obj) {
+    let last = undefined;
+    for (let i in obj) {
+        last = i;
+    }
+    return obj[last];
+}
+
+function createIndexOnBgmId(bgmlistOriginJson) {
+    const origin = JSON.parse(bgmlistOriginJson);
+    const bgmlist = {};
+    for (let i in origin) {
+        bgmlist[origin[i].bgmId] = origin[i];
+    }
+    return bgmlist
+}
+
+function update({path, version}) {
+    GM_xmlhttpRequest({
+        method: 'GET',
+        url: 'http://bgmlist.com/' + path,
+        onload: function(response) {
+            if (response.status === 200) {
+                GM_setValue('bgmlist', createIndexOnBgmId(response.responseText));
+                GM_setValue('path', path);
+                GM_setValue('version', version);
+                showTbWindow('数据更新成功! 请刷新页面<br>');
+                setTimeout(rmTbWindow, 5000);
+            } else {
+                showTbWindow('Connection Error<br>');
+                setTimeout(rmTbWindow, 5000);
+            }
+        }
+    });
+}
+
+function checkUpdate() {
+    const lastCheckUpdate = GM_getValue('lastCheckUpdate') || 0;
+    if (new Date().getTime() - lastCheckUpdate < CHECK_UPDATE_INTERVAL) {
+        return;
+    }
+    GM_xmlhttpRequest({
+        method: 'GET',
+        url: 'http://bgmlist.com/json/archive.json',
+        onload: function (response) {
+            if (response.status === 200) {
+                const archive = JSON.parse(response.responseText);
+                const data = archive.data;
+                const last = getLast(getLast(data)); // 是否按月切换?有待商榷
+                const oldPath = GM_getValue('path');
+                const oldVersion = GM_getValue('version');
+                if (!oldPath || !oldVersion || last.path > oldPath || last.version > oldVersion) {
+                    update(last);
+                }
+                GM_setValue('lastCheckUpdate', new Date().getTime());
+            } else {
+                showTbWindow('Connection Error<br>');
+                setTimeout(rmTbWindow, 5000);
+            }
+        }
+    });
+}
+
+setTimeout(checkUpdate, 500);
