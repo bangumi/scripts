@@ -89,24 +89,27 @@ function rmTbWindow() {
         $(this).remove();
     });
 }
-
-$week.find('.thumbTip').click(function () {
+function showTbWindow(html, style) {
     rmTbWindow();
-    const onAirSite = $(this).data('onAirSite');
     $('body').append(`
-        <div id="TB_window" class="userscript_bgmlist_integrator">
-            <small class="grey"><a href="${$(this).attr('href')}">${$(this).attr('title').replace('\n', '<br>')}</a></small>
-            <ul class="line_list">
-                ${onAirSite.map((v, i) => `
-                    <li class="line_${i % 2 ? 'odd' : 'even'}">
-                        <h6><a target="_blank" href="${v}">${v.replace(/http:\/\/.+?\./, '').split('/')[0]}</a></h6>
-                    </li>
-                    `).join('')}
-            </ul>
+        <div id="TB_window" class="userscript_bgmlist_integrator"${style ? ` style="${style}"` : ''}>
+            ${html}
             <small class="grey">本插件放送数据由 <a href="http://bgmlist.com">bgmlist.com</a> 提供</small>
         </div>`);
-    $('#TB_window.userscript_bgmlist_integrator a').click(rmTbWindow);
     $('#TB_window.userscript_bgmlist_integrator').mouseleave(rmTbWindow);
+}
+
+$week.find('.thumbTip').click(function () {
+    const onAirSite = $(this).data('onAirSite');
+    showTbWindow(`
+        <small class="grey"><a href="${$(this).attr('href')}">${$(this).attr('title').replace('\n', '<br>')}</a></small>
+        <ul class="line_list">
+            ${onAirSite.map((v, i) => `
+                <li class="line_${i % 2 ? 'odd' : 'even'}">
+                    <h6><a target="_blank" href="${v}">${v.replace(/http:\/\/.+?\./, '').split('/')[0]}</a></h6>
+                </li>
+                `).join('')}
+        </ul>`);
     return false;
 });
 
