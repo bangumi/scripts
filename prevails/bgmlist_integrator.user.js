@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.1.0b0
+// @version      1.2.0
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -21,7 +21,17 @@ if (!document.getElementById('badgeUserPanel')) {
     return;
 }
 
-const NOW = new Date();
+function getOneWeekRange(lastDayDate, endTime = '2359') {
+    const end = new Date(lastDayDate);
+    end.setHours(endTime.substr(0, 2));
+    end.setMinutes(endTime.substr(2, 2), 59, 999);
+    const begin = new Date(end.getTime());
+    begin.setTime(begin.getTime() - 1000 * 60 * 60 * 24 * 7 + 1);
+    return [begin, end];
+}
+
+const now = new Date();
+const lastWeekRange = getOneWeekRange(now);
 const WEEK_DAY = [
     'Sun',
     'Mon',
@@ -48,6 +58,26 @@ class Bangumi {
         $re.data('onAirSite', this.bgm.onAirSite);
         return $re;
     }
+    getShowDate() {
+        return new Date(this.bgm.showDate || 0);
+    }
+    getEndDate() {
+        return new Date(this.bgm.endDate || 0xfffffffffffff);
+    }
+    isInRange([begin, end]) {
+        const showBegin = this.getShowDate();
+        const showEnd = this.getEndDate();
+        if (showBegin <= begin && showEnd >= end) {
+            return true;
+        }
+        if (begin <= showBegin && showBegin <= end) {
+            return true;
+        }
+        if (begin <= showEnd && showEnd <= end) {
+            return true;
+        }
+        return false;
+    }
 }
 
 const myBangumis = $('#prgSubjectList > [subject_type=2] > .thumbTip')
@@ -55,10 +85,9 @@ const myBangumis = $('#prgSubjectList > [subject_type=2] > .thumbTip')
 
 $('.tooltip').hide();
 $('.week:eq(1)').remove();
-// $('.week').data('date', NOW);
 
 for (let i = 1; i < 7; i++) {
-    const day = WEEK_DAY[(NOW.getDay() - i + 7) % 7];
+    const day = WEEK_DAY[(now.getDay() - i + 7) % 7];
     const html = `
         <li class="clearit week ${day}">
             <h3><p><small>${day}</small></p></h3>               
@@ -66,19 +95,15 @@ for (let i = 1; i < 7; i++) {
         </li>
     `;
     const $li = $(html);
-    // const date = new Date();
-    // date.setDate(date.getDate() - i);
-    // $li.data('date', date);
     $('.calendarMini .tip').before($li);
 }
 
 const $week = $('.week')
 $week.each(function () {
     const $div = $('div', this);
-    // const date = $(this).data('date');
     $div.html('');
     const weekDay = WEEK_DAY.indexOf(this.classList[2]); // <li class="clearit week Sat">
-    myBangumis.filter(i => i.bgm['weekDay' + TIME_ZONE] === weekDay /*&& date >= new Date(i.bgm.showDate)*/)
+    myBangumis.filter(i => i.bgm['weekDay' + TIME_ZONE] === weekDay && i.isInRange(lastWeekRange))
             .forEach(i => $div.append(i.get$Html()));
 });
 
@@ -113,7 +138,7 @@ $week.find('.thumbTip').click(function () {
 
 GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;left:80%;top:20px;width:18%;}');
 
-const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 12; // 12h
+const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 8; // 8h
 
 function getLast(obj) {
     let last = undefined;
@@ -141,7 +166,7 @@ function update({path, version}) {
                 GM_setValue('bgmlist', createIndexOnBgmId(response.responseText));
                 GM_setValue('path', path);
                 GM_setValue('version', version);
-                showTbWindow('数据更新成功! 请刷新页面<br>');
+                showTbWindow('bgmlist 数据更新成功! 请刷新页面<br>');
                 setTimeout(rmTbWindow, 5000);
             } else {
                 showTbWindow('Connection Error<br>');
@@ -163,7 +188,7 @@ function checkUpdate() {
             if (response.status === 200) {
                 const archive = JSON.parse(response.responseText);
                 const data = archive.data;
-                const last = getLast(getLast(data)); // 是否按月切换?有待商榷
+                const last = getLast(getLast(data));
                 const oldPath = GM_getValue('path');
                 const oldVersion = GM_getValue('version');
                 if (!oldPath || !oldVersion || last.path > oldPath || last.version > oldVersion) {
