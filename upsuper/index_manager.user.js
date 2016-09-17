@@ -85,7 +85,7 @@ function refreshCount() {
     $input.type = 'number';
     $input.className = 'order';
     $input.dataset.id = id;
-    $input.value = i * 2;
+    $input.value = i * 2 + 1;
     elems.tools.appendChild($input);
   });
 }
