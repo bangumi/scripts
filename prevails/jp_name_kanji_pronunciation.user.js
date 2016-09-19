@@ -2,7 +2,7 @@
 // @name        Bangumi 人物名日文汉字标音
 // @include     /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(character|person)\/\d+(\/collections)?$/
 // @namespace   bangumi.scripts.prevails.mononamerubytag
-// @version     1.0
+// @version     1.0.1
 // @author      "Donuts."
 // @grant       none
 // ==/UserScript==
@@ -39,17 +39,20 @@ const [myoujiKana, namaeKana] = kana.split(/[ 　]+/); // namaeKana may be undef
 const nameAnchor = document.querySelector('.nameSingle > a');
 const name = nameAnchor.innerText.trim();
 
-if (/^[\u4e00-\u9fa5ヶノ々]+$/.test(name)) { // 全汉字 无空格, 无法分词
+const KANJI_MYOUJI = '[\u4e00-\u9fa5ヶノ々\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29]+';
+const KANJI_NAMAE = '[\u4e00-\u9fa5々\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29]+';
+
+if (RegExp(`^${KANJI_MYOUJI}$`).test(name)) { // 全汉字 无空格, 无法分词
     nameAnchor.innerHTML = getRuby(name, kana);
-} else if (/^[\u4e00-\u9fa5ヶノ々]+[ 　]+[\u4e00-\u9fa5々]+$/.test(name)) { // 全汉字 中间空格
+} else if (RegExp(`^${KANJI_MYOUJI}[ 　]+${KANJI_NAMAE}$`).test(name)) { // 全汉字 中间空格
     if (namaeKana) {
         const [myouji, namae] = name.split(/[ 　]+/);
         nameAnchor.innerHTML = getRuby(myouji, myoujiKana) + ' ' + getRuby(namae, namaeKana);
     } else {
         nameAnchor.innerHTML = getRuby(name, kana);
     }
-} else if (/^[\u4e00-\u9fa5ヶノ々]+[ 　]*[\u3040-\u309f子]+$/.test(name)) { // 汉字[空格]平假名
-    const myouji = name.match(/[\u4e00-\u9fa5ヶノ々]+/)[0];
+} else if (RegExp(`^${KANJI_MYOUJI}[ 　]*[\u3040-\u309f子]+$`).test(name)) { // 汉字[空格]平假名
+    const myouji = name.match(RegExp(KANJI_MYOUJI))[0];
     const namae = name.match(/[\u3040-\u309f子]+/)[0];
     if (namaeKana) {
         nameAnchor.innerHTML = getRuby(myouji, myoujiKana) + ' ' + namae;
@@ -62,8 +65,8 @@ if (/^[\u4e00-\u9fa5ヶノ々]+$/.test(name)) { // 全汉字 无空格, 无法�
             nameAnchor.innerHTML = getRuby(name, kana);
         }
     }
-} else if (/^[\u4e00-\u9fa5ヶノ々]+[ 　]*[\u30a0-\u30ff子]+$/.test(name)) { // 汉字[空格]片假名
-    const myouji = name.match(/[\u4e00-\u9fa5ヶノ々]+/)[0];
+} else if (RegExp(`^${KANJI_MYOUJI}[ 　]*[\u30a0-\u30ff子]+$`).test(name)) { // 汉字[空格]片假名
+    const myouji = name.match(RegExp(KANJI_MYOUJI))[0];
     const namae = name.match(/[\u30a0-\u30ff子]{2,}/)[0];
     if (namaeKana) {
         nameAnchor.innerHTML = getRuby(myouji, myoujiKana) + ' ' + namae;

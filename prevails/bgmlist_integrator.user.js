@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.2.0
+// @version      1.2.1
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -169,7 +169,7 @@ function update({path, version}) {
                 showTbWindow('bgmlist 数据更新成功! 请刷新页面<br>');
                 setTimeout(rmTbWindow, 5000);
             } else {
-                showTbWindow('Connection Error<br>');
+                showTbWindow(`Error, status code: ${response.status}<br>`);
                 setTimeout(rmTbWindow, 5000);
             }
         }
@@ -196,7 +196,7 @@ function checkUpdate() {
                 }
                 GM_setValue('lastCheckUpdate', new Date().getTime());
             } else {
-                showTbWindow('Connection Error<br>');
+                showTbWindow(`Error, status code: ${response.status}<br>`);
                 setTimeout(rmTbWindow, 5000);
             }
         }
