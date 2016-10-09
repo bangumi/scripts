@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.2.1
+// @version      1.2.2
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -12,6 +12,19 @@
 // @connect      bgmlist.com
 // @grant        GM_addStyle
 // ==/UserScript==
+
+const addOnSources = {
+////////////////////////////////////////////////////////////////
+// 可自行添加播放源超链接  以京吹2(http://bgm.tv/subject/152091)为例
+////////////////////////////////////////////////////////////////
+
+// 152091: [
+//     "https://www.biliplus.com/video/av6556317/",
+//     "http://www.dilidili.com/anime/euphonium2/",
+// ],
+
+////////////////////////////////////////////////////////////////
+};
 
 const TIME_ZONE = 'CN';
 // valid value: 'CN', 'JP'
@@ -49,6 +62,9 @@ class Bangumi {
         this.id = Number(id);
         this.bgm = bgmlist[this.id];
         this.a = a;
+        if (addOnSources && addOnSources[this.id]) {
+            this.bgm.onAirSite = addOnSources[this.id].concat(this.bgm.onAirSite);
+        }
     }
     get$Html() {
         const $re = $(this.a).clone();
@@ -90,7 +106,7 @@ for (let i = 1; i < 7; i++) {
     const day = WEEK_DAY[(now.getDay() - i + 7) % 7];
     const html = `
         <li class="clearit week ${day}">
-            <h3><p><small>${day}</small></p></h3>               
+            <h3><p><small>${day}</small></p></h3>
             <div class="coverList clearit"></div>
         </li>
     `;
@@ -98,7 +114,7 @@ for (let i = 1; i < 7; i++) {
     $('.calendarMini .tip').before($li);
 }
 
-const $week = $('.week')
+const $week = $('.week');
 $week.each(function () {
     const $div = $('div', this);
     $div.html('');
@@ -129,7 +145,7 @@ $week.find('.thumbTip').click(function () {
         <ul class="line_list">
             ${onAirSite.map((v, i) => `
                 <li class="line_${i % 2 ? 'odd' : 'even'}">
-                    <h6><a target="_blank" href="${v}">${v.replace(/http:\/\/.+?\./, '').split('/')[0]}</a></h6>
+                    <h6><a target="_blank" href="${v}">${v.replace(/https?:\/\/.+?\./, '').split('/')[0]}</a></h6>
                 </li>
                 `).join('')}
         </ul>`);

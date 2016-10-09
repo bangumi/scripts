@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        Bangumi 人物名日文汉字标音
-// @include     /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(character|person)\/\d+(\/collections)?$/
+// @include     /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(character|person)\/\d+(\/(collections|works(\/voice)?)?$/
 // @namespace   bangumi.scripts.prevails.mononamerubytag
-// @version     1.0.1
+// @version     1.0.2
 // @author      "Donuts."
 // @grant       none
 // ==/UserScript==
