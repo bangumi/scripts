@@ -2,7 +2,7 @@
 // @name         Bangumi 动画打分统计
 // @encoding     utf-8
 // @namespace    bangumi.scripts.prevails.animeratingstatistic
-// @version      1.0.0
+// @version      1.1.0
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/user\/\w+$/
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @grant        GM_addStyle
@@ -145,6 +145,10 @@ GM_addStyle(`
     }
 }
 
+#collect_progress {color: #99ccff}
+#do_progress {color: #99ff99}
+#on_hold_progress {color: #ffbf80}
+#dropped_progress {color: #ff9999}
 `);
 
 const voidArr = '0000000000'.split('').map(Number);
@@ -174,38 +178,58 @@ function start(){
         console.log(JSON.stringify(stat));
         return;
     }
-    $button.find('a').text('统计中……');
+    $button.find('a').html(`统计中 
+    <span id="collect_progress">▁</span><span id="do_progress">▁</span><span id="on_hold_progress">▁</span><span id="dropped_progress">▁</span>`);
     $button[0].title = '再次点击可将当前结果输出到控制台(F12 -> Console)';
+    showTbWindow(html);
     flag = true;
 
     const ultext = $('.horizontalOptions ul', $anime).text();
     const user = location.href.split('/').pop();
 
     for (let key in stat) {
-        const data = stat[key];
-
-        const n = (ultext.match(data.re) || [-1])[0];
+        const n = (ultext.match(stat[key].re) || [-1])[0];
         const pageCount = Math.floor(n / 24) + 1;
-        const urlprefix = `/anime/list/${user}/${key}?page=`;
-
-        for (let i = 0; i < pageCount; i++) {
-            fetch(urlprefix + (i + 1)).then(re => {
-                return re.text();
-            }).then(text => {
-                const pageStatArr = Array(10);
-                for (let i = 0; i < 10; i++) {
-                    pageStatArr[i] = (text.match(RegExp(`sstars${i + 1}(?!0)`, 'g')) || []).length;
-                }
-                for (let j = 0; j < 10; j++) {
-                    data.arr[j] += pageStatArr[j];
-                }
-                showStat();
-            });
-        }
-
+        const urlprefix = `/anime/list/${user}/${key}?orderby=rate&page=`;
+        
+        const g = fetchControl(urlprefix, pageCount, key);
+        deal(g, g.next());
     }
 }
 
+function* fetchControl(urlprefix, pageCount, key) {
+    const data = stat[key];
+    for (let i = 0; i < pageCount; i++) {
+        const text = yield fetch(urlprefix + (i + 1));
+        showProgress(i / pageCount, key);
+        const pageStatArr = Array(10);
+        for (let k = 0; k < 10; k++) {
+            pageStatArr[k] = (text.match(RegExp(`sstars${k + 1}(?!0)`, 'g')) || []).length;
+        }
+        total = pageStatArr.reduce((a, b) => a + b);
+        if (total === 0) {
+            break;
+        }
+        for (let j = 0; j < 10; j++) {
+            data.arr[j] += pageStatArr[j];
+        }
+        if (total < 24) {
+            break;
+        }
+        showStat();
+    }
+    showProgress(1.0, key);
+}
+
+function deal(g, next) {
+    if (next.done) {
+        return;
+    }
+    next.value.then(re => re.text())
+    .then(text => {
+        deal(g, g.next(text));
+    });
+}
 
 function addHeights(heights, barclass, $div) {
     for (let i = 0; i < 10; i++) {
@@ -222,8 +246,6 @@ function showStat() {
         }
     }
     const k = n => n * 90 / Math.max.apply(this, all);
-
-    showTbWindow(html);
     const $div = $('.rating-statistic-container');
     addHeights(all.map(i => 100 - k(i)), 'rating-bar-all', $div);
     addHeights(stat.do.arr.map(k), 'rating-bar-do', $div);
@@ -231,6 +253,11 @@ function showStat() {
     addHeights(stat.on_hold.arr.map(k), 'rating-bar-on_hold', $div);
 }
 
+const carr = '▁▂▃▅▆▇'.split('');
+function showProgress(progressf, key) {
+    const c = carr[Math.floor(progressf * 6) - 1] || carr[0];
+    document.getElementById(key + '_progress').innerText = c;
+}
 
 function rmTbWindow() {
     $('#TB_window.userscript_rating_statistic').fadeOut('fast', function () {
@@ -248,11 +275,9 @@ function showTbWindow(html, style) {
 }
 GM_addStyle('#TB_window.userscript_rating_statistic{display:block;left:75%;top:20px;width:23%;}');
 
-
 const $button = $(`
 <li style="float:right;">
     <a href="javascript:;">打分统计</a>
 </li>`);
-
 $anime.find('.horizontalOptions ul').append($button);
 $button.click(start);
