@@ -2,7 +2,7 @@
 // @name         Bangumi 动画打分统计
 // @encoding     utf-8
 // @namespace    bangumi.scripts.prevails.animeratingstatistic
-// @version      1.1.1
+// @version      1.1.2
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/user\/\w+$/
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @grant        GM_addStyle
@@ -128,7 +128,7 @@ GM_addStyle(`
 }
 
 
-@media (min-width: 1366px) {
+@media (min-width: 1380px) {
     .rating-bar-container {
         height: 300px;
     }
@@ -191,7 +191,7 @@ function start(){
         const n = (ultext.match(stat[key].re) || [-1])[0];
         const pageCount = Math.floor(n / 24) + 1;
         const urlprefix = `/anime/list/${user}/${key}?page=`; // `/anime/list/${user}/${key}?orderby=rate&page=`
-        // 设置"orderby=rate"后虽可通过逻辑避开末尾不必要的fetch，但访问响应时间会增加 7-10 倍？？成为一个瓶颈。遂弃。
+        // 设置"orderby=rate"后虽可通过逻辑避开末尾不必要的fetch，但访问响应时间会增加 7-10 倍？
         const g = fetchControl(urlprefix, pageCount, key);
         deal(g, g.next());
     }
