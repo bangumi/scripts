@@ -2,7 +2,7 @@
 // @name         Bangumi 动画打分统计
 // @encoding     utf-8
 // @namespace    bangumi.scripts.prevails.animeratingstatistic
-// @version      1.1.2
+// @version      1.2.0
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/user\/\w+$/
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @grant        GM_addStyle
@@ -173,12 +173,12 @@ const stat = {
 };
 
 let flag = false;
-function start(){
+function start({ctrlKey}){
     if (flag) {
         console.log(JSON.stringify(stat));
         return;
     }
-    $button.find('a').html(`统计中 
+    $button.find('a').html(`${ctrlKey ? '顺序' : ''}统计中
     <span id="collect_progress">▁</span><span id="do_progress">▁</span><span id="on_hold_progress">▁</span><span id="dropped_progress">▁</span>`);
     $button[0].title = '再次点击可将当前结果输出到控制台(F12 -> Console)';
     showTbWindow(html);
@@ -190,14 +190,13 @@ function start(){
     for (let key in stat) {
         const n = (ultext.match(stat[key].re) || [-1])[0];
         const pageCount = Math.floor(n / 24) + 1;
-        const urlprefix = `/anime/list/${user}/${key}?page=`; // `/anime/list/${user}/${key}?orderby=rate&page=`
-        // 设置"orderby=rate"后虽可通过逻辑避开末尾不必要的fetch，但访问响应时间会增加 7-10 倍？
-        const g = fetchControl(urlprefix, pageCount, key);
+        const urlprefix = `/anime/list/${user}/${key}?${ctrlKey ? 'orderby=rate&' : ''}page=`;
+        const g = fetchControl(urlprefix, pageCount, key, ctrlKey);
         deal(g, g.next());
     }
 }
 
-function* fetchControl(urlprefix, pageCount, key) {
+function* fetchControl(urlprefix, pageCount, key, ctrlKey) {
     const data = stat[key];
     for (let i = 0; i < pageCount; i++) {
         const text = yield fetch(urlprefix + (i + 1));
@@ -208,14 +207,17 @@ function* fetchControl(urlprefix, pageCount, key) {
         }
         total = pageStatArr.reduce((a, b) => a + b);
         if (total === 0) {
-            continue; // break; // "orderby=rate" 逻辑
+            if (ctrlKey) {
+                break;
+            }
+            continue;
         }
         for (let j = 0; j < 10; j++) {
             data.arr[j] += pageStatArr[j];
         }
-        // if (total < 24) { // "orderby=rate" 逻辑
-        //     break;
-        // }
+        if (ctrlKey && total < 24) {
+            break;
+        }
         showStat();
     }
     showProgress(1.0, key);
@@ -276,7 +278,7 @@ function showTbWindow(html, style) {
 GM_addStyle('#TB_window.userscript_rating_statistic{display:block;left:75%;top:20px;width:23%;}');
 
 const $button = $(`
-<li style="float:right;">
+<li style="float:right;" title="可按住 ctrl 再点击统计, 适用于统计收藏多, 打分少(稀疏)的用户.">
     <a href="javascript:;">打分统计</a>
 </li>`);
 $anime.find('.horizontalOptions ul').append($button);
