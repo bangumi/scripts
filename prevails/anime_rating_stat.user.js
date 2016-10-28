@@ -2,7 +2,7 @@
 // @name         Bangumi 动画打分统计
 // @encoding     utf-8
 // @namespace    bangumi.scripts.prevails.animeratingstatistic
-// @version      1.1.0
+// @version      1.1.1
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/user\/\w+$/
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @grant        GM_addStyle
@@ -190,8 +190,8 @@ function start(){
     for (let key in stat) {
         const n = (ultext.match(stat[key].re) || [-1])[0];
         const pageCount = Math.floor(n / 24) + 1;
-        const urlprefix = `/anime/list/${user}/${key}?orderby=rate&page=`;
-        
+        const urlprefix = `/anime/list/${user}/${key}?page=`; // `/anime/list/${user}/${key}?orderby=rate&page=`
+        // 设置"orderby=rate"后虽可通过逻辑避开末尾不必要的fetch，但访问响应时间会增加 7-10 倍？？成为一个瓶颈。遂弃。
         const g = fetchControl(urlprefix, pageCount, key);
         deal(g, g.next());
     }
@@ -208,14 +208,14 @@ function* fetchControl(urlprefix, pageCount, key) {
         }
         total = pageStatArr.reduce((a, b) => a + b);
         if (total === 0) {
-            break;
+            continue; // break; // "orderby=rate" 逻辑
         }
         for (let j = 0; j < 10; j++) {
             data.arr[j] += pageStatArr[j];
         }
-        if (total < 24) {
-            break;
-        }
+        // if (total < 24) { // "orderby=rate" 逻辑
+        //     break;
+        // }
         showStat();
     }
     showProgress(1.0, key);
