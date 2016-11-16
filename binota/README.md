@@ -48,11 +48,9 @@ Bangumi 关联人物之后要自己手动将 Infobox 内填上相同的人物。
 人物条目内若 Infobox 有 Twitter 栏位，会替换为 Twitter 链接。
 
 
-## [回帖增强 BRE](bangumi-reply-extend.user.js?raw=true)
-讨论帖[戳我](https://bgm.tv/group/topic/311623)
+## 回帖增强 BRE
 
-回帖后终于可以立即修改、删除了，  
-妈妈再也不用担心我提交后才发现有错字了！
+> 有 BUG，目前大概不能用，见 #13
 
 ## [拖动排序条目关联 BDSR](bangumi-drag2sort-relationship.user.js?raw=true)
 
