@@ -1,6 +1,13 @@
 # [binota](https://bgm.tv/user/binota)
 如果没特别标注的话，我的脚本一律用 MIT License。
 
+## [修正放送的绿色格子时间 BGBI ](bangumi-green-block-imporve.user.js?raw=true)
+讨论帖[戳我](https://bgm.tv/group/topic/341661)
+
+将绿色格子的点亮时间展到隔日的上午 6 时。
+隔日 6~24 点间的格子颜色将是橘色。
+![Sceenshot](https://puu.sh/suOts/82f78b1c22.png)
+
 ## [关联条目批量编辑 BRRS](bangumi-rename-related-subjects.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/311647)
 
