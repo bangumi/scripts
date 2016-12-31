@@ -13,8 +13,15 @@ const ITEMS_PER_PAGE = 24;
 
 let $ = (q, e) => (e ? e : document).querySelector(q);
 let $a = (q, e) => (e ? e : document).querySelectorAll(q);
-let $c = t => document.createElement(t);
 let delay = t => new Promise(r => setTimeout(r, t));
+
+function $c(tag, attrs) {
+  let $elem = document.createElement(tag);
+  for (let attr in attrs) {
+    $elem[attr] = attrs[attr];
+  }
+  return $elem;
+}
 
 function runAsync(iter) {
   return new Promise((resolve, reject) => {
@@ -99,11 +106,12 @@ GM_addStyle(`
 `);
 
 // add progress bar
-let $pb = $c('progress');
-$pb.id = '__u_pb';
-$pb.value = 0;
-$pb.max = Number.MIN_VALUE;
-$pb.hidden = true;
+let $pb = $c('progress', {
+  id: '__u_pb',
+  value: 0,
+  max: Number.MIN_VALUE,
+  hidden: true,
+});
 document.body.appendChild($pb);
 
 let workingTasks = 0;
@@ -126,11 +134,10 @@ function progress() {
 for (let $tag of $a('#userTagList>li')) {
   $anchor = $tag.getElementsByTagName('a')[0];
   let createTagButton = (cls, title) => {
-    let $btn = $c('a');
-    $btn.href = '#';
-    $btn.classList.add('__u_tag_btn', cls);
-    $btn.title = title;
-    $tag.insertBefore($btn, $anchor);
+    $tag.insertBefore($c('a', {
+      href: '#', title,
+      className: `__u_tag_btn ${cls}`,
+    }), $anchor);
   };
   createTagButton('__u_del', '删除');
   createTagButton('__u_edit', '编辑');
@@ -167,8 +174,7 @@ $('#userTagList').addEventListener('click', evt => {
 let checkboxes = [];
 for (let $item of $a('#browserItemList>li')) {
   let $modify = $('.collectModify', $item);
-  let $checkbox = $c('input');
-  $checkbox.type = 'checkbox';
+  let $checkbox = $c('input', {type: 'checkbox'});
   checkboxes.push($checkbox);
   $modify.insertBefore($checkbox, $modify.firstChild);
 }
@@ -199,24 +205,23 @@ $('#browserItemList').addEventListener('click', evt => {
   lastChangedIndex = index;
 });
 // 添加全选复选框
-let $checkboxAll = $c('input');
-$checkboxAll.id = '__u_cb_all';
-$checkboxAll.type = 'checkbox';
-$checkboxAll.title = '全选';
-$checkboxAll.addEventListener('change', evt => {
-  for (let $checkbox of checkboxes) {
-    $checkbox.checked = evt.target.checked;
+$('#browserTools').appendChild($c('input', {
+  id: '__u_cb_all',
+  type: 'checkbox',
+  title: '全选',
+  onchange(evt) {
+    for (let $checkbox of checkboxes) {
+      $checkbox.checked = evt.target.checked;
+    }
   }
-});
-$('#browserTools').appendChild($checkboxAll);
+}));
 // 添加顶部动作按钮
 let $top = $('h2', $('#userTagList').parentNode);
 function createTopButton(cls, title, func) {
-  let $btn = document.createElement('a');
-  $btn.href = '#';
-  $btn.classList.add('__u_top_btn', cls);
-  $btn.title = title;
-  $top.insertBefore($btn, $top.firstChild);
+  $top.insertBefore($c('a', {
+    href: '#', title,
+    className: `__u_top_btn ${cls}`,
+  }), $top.firstChild);
 }
 createTopButton('__u_clear_priv', '取消仅自己可见');
 createTopButton('__u_set_priv', '设置仅自己可见');
@@ -364,8 +369,7 @@ function changeItem(id, $iframe, func) {
 
 function batchChangeItems(ids, func) {
   function* iterator() {
-    let $iframe = $c('iframe');
-    $iframe.style.display = 'none';
+    let $iframe = $c('iframe', {style: 'display: none'});
     document.body.appendChild($iframe);
     for (let id of ids) {
       yield changeItem(id, $iframe, func);
