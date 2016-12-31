@@ -2,7 +2,7 @@
 // @name        Bangumi 标签批量管理
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(anime|book|music|game|real)/list/.+$/
-// @version     3.0
+// @version     4.0
 // @grant       GM_addStyle
 // ==/UserScript==
 
@@ -43,6 +43,11 @@ GM_addStyle(`
 @font-face {
   font-family: '_u FontAwesome';
   src: url('https://netdna.bootstrapcdn.com/font-awesome/3.2.1/font/fontawesome-webfont.woff') format('woff');
+}
+#__u_cb_all {
+  float: right;
+  margin-right: 5px;
+  height: 17px;
 }
 #userTagList>li>a.l {
   margin-right: 32px;
@@ -159,12 +164,51 @@ $('#userTagList').addEventListener('click', evt => {
 
 
 // 给条目添加复选框
+let checkboxes = [];
 for (let $item of $a('#browserItemList>li')) {
   let $modify = $('.collectModify', $item);
   let $checkbox = $c('input');
   $checkbox.type = 'checkbox';
+  checkboxes.push($checkbox);
   $modify.insertBefore($checkbox, $modify.firstChild);
 }
+// 添加复选框批量选择
+let lastChangedIndex = -1;
+$('#browserItemList').addEventListener('click', evt => {
+  let index = checkboxes.indexOf(evt.target);
+  if (index == -1) {
+    return;
+  }
+  if (evt.shiftKey && lastChangedIndex >= 0) {
+    let items;
+    if (lastChangedIndex < index) {
+      items = checkboxes.slice(lastChangedIndex + 1, index + 1);
+    } else if (lastChangedIndex > index) {
+      items = checkboxes.slice(index, lastChangedIndex);
+    }
+    if (items) {
+      // 等待事件默认处理结束
+      setTimeout(() => {
+        let checked = evt.target.checked;
+        for (let item of items) {
+          item.checked = checked;
+        }
+      }, 0);
+    }
+  }
+  lastChangedIndex = index;
+});
+// 添加全选复选框
+let $checkboxAll = $c('input');
+$checkboxAll.id = '__u_cb_all';
+$checkboxAll.type = 'checkbox';
+$checkboxAll.title = '全选';
+$checkboxAll.addEventListener('change', evt => {
+  for (let $checkbox of checkboxes) {
+    $checkbox.checked = evt.target.checked;
+  }
+});
+$('#browserTools').appendChild($checkboxAll);
 // 添加顶部动作按钮
 let $top = $('h2', $('#userTagList').parentNode);
 function createTopButton(cls, title, func) {
