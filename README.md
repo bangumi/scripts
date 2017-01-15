@@ -29,3 +29,10 @@
 
 还是脚本介绍。
 ```
+
+## 脚本列表
+
+<!--GENERATED#SCRIPT-LIST#START-->
+- 此处是 `gen-script-index.pl` 生成的脚本列表
+<!--GENERATED#SCRIPT-LIST#END-->
+
