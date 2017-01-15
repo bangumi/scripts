@@ -19,7 +19,7 @@ use strict;
 
 sub gen_script_list {
     my @script_list = ();
-    for(`grep -Rin '^##'`) {
+    for(`grep -Rin '^##' *`) {
         if (/ ^ ([^\/]+) (?:\/) .* \[ (.*) \] \( .* \) /ix) {
             my $username = $1;
             my $script = $2;
