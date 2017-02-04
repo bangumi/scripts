@@ -6,7 +6,7 @@
 // @include     /^https?://(bangumi|bgm|chii).(tv|in)/$/
 // @resource    apis  https://gist.githubusercontent.com/22earth/11859ea67a97b4df940350ce0f8052d5/raw/2609aeab9e42ad81d66fdb0b9721b76d4e12eacb/searchapis.json
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bt_search_for_bgm.user.js
-// @version     0.13.3
+// @version     0.13.4
 // @grant       GM_addStyle
 // @grant       GM_getResourceText
 // ==/UserScript==
@@ -142,7 +142,7 @@
       }
     },
     isHomepge: function() {
-      return window.location.pathname === '/' ? true : false;
+      return window.location.pathname === '/' && document.getElementById('columnTimelineInnerWrapper')? true : false;
     },
     addStyle: function(css) {
 
@@ -161,21 +161,18 @@
     },
     insertStatus: function() {
       // move to sidepanel because of confliction of default function
-      //var b = document.querySelector('#columnHomeB');
-      var b = document.querySelector('.SidePanelMini');
-      if (b) {
-        // try to create a wrapper
-        //var statusContainer = document.createElement('div');
-        //b.appendChild(statusContainer);
-
-        var status = document.createElement('div');
-        status.className = 'search-status';
-        status.textContent = '已开启'+ searchEngines.length + '个搜索引擎';
-        b.appendChild(status);
-        var div = document.createElement('div');
-        div.className = 'search-switches';
-        b.appendChild(div);
-      }
+      var colB = document.querySelector('#columnHomeB');
+      var b = document.createElement('div');
+      b.style.height = '500px';  // as high as posible to activate mouse hover event.
+      colB.appendChild(b);
+      // main div to show status and toggle search engine
+      var status = document.createElement('div');
+      status.className = 'search-status';
+      status.textContent = '已开启'+ searchEngines.length + '个搜索引擎';
+      b.appendChild(status);
+      var div = document.createElement('div');
+      div.className = 'search-switches';
+      b.appendChild(div);
       b.innerHTML += '<br />';
     },
     insertSearchEngineSwitch: function() {
