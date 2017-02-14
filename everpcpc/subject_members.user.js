@@ -5,7 +5,7 @@
 // @description  条目页面添加好友在看信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
-// @require      https://code.jquery.com/jquery-2.2.5.min.js
+// @require      none
 // @grant        none
 // @encoding     utf-8
 // ==/UserScript==
