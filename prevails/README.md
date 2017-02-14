@@ -1,24 +1,6 @@
 # [prevails](https://bgm.tv/user/prevails)
 nickname: Donuts.
 
-## [首页放送整合 bgmlist.com 数据, 作为"在看"时间表](bgmlist_integrator.user.js?raw=true)
-### 数据取自 http://bgmlist.com
-其放送数据**只包含国内正版连载番剧**.<br>
-因此, 放送列表中, (原有的)*国内没有版权的番剧*将无法显示
-
-### 只展现你当前"在看"的番剧的放送情况
-Bangumi 放送列表中原有的其它番剧会被清理掉
-
-### 换季时若发现内容没有正确呈现
-请更新脚本, 或尝试删除并重新安装脚本
-
-若仍不准确...
-
-你可以去看看 http://bgmlist.com 上的数据是否准确
-
-### bgmlist 支持日本放送日
-若需使用, 请把 TIME_ZONE 的值写为 'JP', 并保存
-
 ## [标注 ep 讨论人气：EpPopuVisualizer](ep_popu_visualizer.user.js?raw=true)
 
 相关讨论位于 https://bgm.tv/group/topic/340530
@@ -53,3 +35,7 @@ Bangumi 放送列表中原有的其它番剧会被清理掉
 效果如下
 ![example_0](images/example_jp_name_kanji_pronunciation_0.jpg)
 ![example_1](images/example_jp_name_kanji_pronunciation_1.jpg)
+
+
+## [首页放送整合 bgmlist.com 数据, 作为"在看"时间表](bgmlist_integrator.user.js?raw=true)
+因 bgmlist 改动, 脚本暂时失效
