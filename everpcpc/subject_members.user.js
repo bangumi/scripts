@@ -14,7 +14,7 @@ var bgm_friends = localStorage.getItem('bgm_friends');
 if (bgm_friends === null || bgm_friends_date === null || isOneDayAgo() || typeof bgm_friends != 'object') {
     localStorage.setItem('bgm_friends_date', (new Date()).valueOf());
     storageFriendsList();
-} 
+}
 
 function isOneDayAgo() {
     return (new Date() -  new Date(parseInt(bgm_friends_date, 10))) > 1000*60*60*24;
