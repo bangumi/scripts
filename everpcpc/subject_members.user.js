@@ -11,7 +11,8 @@
 var bgm_friends_date = localStorage.getItem('bgm_friends_date');
 var bgm_friends = localStorage.getItem('bgm_friends');
 
-if (bgm_friends === null || bgm_friends_date === null || isOneDayAgo() || typeof bgm_friends != 'object') {
+
+if (bgm_friends === null || bgm_friends_date === null || isOneDayAgo() || bgm_friends.constructor === Array) {
     localStorage.setItem('bgm_friends_date', (new Date()).valueOf());
     storageFriendsList();
 }
