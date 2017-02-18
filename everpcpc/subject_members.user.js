@@ -1,24 +1,23 @@
 // ==UserScript==
 // @name         Bangumi添加好友在看、看过
 // @namespace    com.everpcpc.bgm
-// @version      1.2.4
+// @version      1.2.5
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
 // @encoding     utf-8
 // ==/UserScript==
 
-if (localStorage.getItem('bgm_friends_date') === null || isOneDayAgo()) {
+var bgm_friends_date = localStorage.getItem('bgm_friends_date');
+var bgm_friends = localStorage.getItem('bgm_friends');
+
+if (bgm_friends === null || bgm_friends_date === null || isOneDayAgo() || typeof bgm_friends != 'object') {
     localStorage.setItem('bgm_friends_date', (new Date()).valueOf());
     storageFriendsList();
-}
+} 
 
-if (localStorage.getItem('bgm_friends') === null) {
-    storageFriendsList();
-}
 function isOneDayAgo() {
-    var d = localStorage.getItem('bgm_friends_date');
-    return (new Date() -  new Date(parseInt(d, 10))) > 1000*60*60*24;
+    return (new Date() -  new Date(parseInt(bgm_friends_date, 10))) > 1000*60*60*24;
 }
 
 function getStatusWords() {
@@ -37,28 +36,26 @@ function getStatusWords() {
     }
 }
 
-function createFriendNode(friend) {
-    var member_url = location.protocol + '//' + location.hostname + '/user/' + friend.member_id;
+function createFriendNode(uid, friend) {
+    var member_url = location.protocol + '//' + location.hostname + '/user/' + uid;
     // ES6 syntax
     //return $(`<a class="avatar" href="${member_url}" title="${friend.member_name}"><span class="userImage"><img src="${friend.member_img}" class="avatar"></span></a>`);
     return $('<a class="avatar" href="${member_url}" title="${member_name}"><span class="userImage"><img src="${member_img}" class="avatar"></span></a>'.replace('${member_url}',
         member_url).replace('${member_name}',
-            friend.member_name).replace('${member_img}',
-                friend.member_img));
+            friend.name).replace('${member_img}',
+                friend.img));
 }
 
 function storageFriendsList() {
     var friends_url = $('#badgeUserPanel').find('li>a').eq(6).attr('href');
     $.get(friends_url, function(data) {
-        var member_list = [];
+        var member_list = {};
         $('.userContainer a.avatar', $(data)).each(function() {
             var $elem = $(this);
-            var member = {
-                'member_id': $elem.attr('href').replace(/\/.*\//, ''), 
-                'member_name': $elem.text().trim(),
-                'member_img': $elem.find('.avatar').attr('src'),
+            member_list[$elem.attr('href').replace(/\/.*\//, '')] = {
+                'name': $elem.text().trim(),
+                'img': $elem.find('.avatar').attr('src'),
             };
-            member_list.push(member);
         });
         localStorage.setItem('bgm_friends', JSON.stringify(member_list));
     });
@@ -78,11 +75,15 @@ function get_members(members_url) {
             collections = data.collections;
             try {
                 var member_list = JSON.parse(localStorage.getItem('bgm_friends'));
-                member_list.forEach(function(elem) {
-                    if ($.inArray(elem.member_id, doings) > -1) {
-                        $('#friend_doings').append(createFriendNode(elem));
-                    } else if ($.inArray(elem.member_id, collections) > -1) {
-                        $('#friend_collections').append(createFriendNode(elem));
+                var memberIdList = Object.keys(member_list);
+                doings.forEach(function(elem) {
+                    if ($.inArray(elem, memberIdList) > -1) {
+                        $('#friend_doings').append(createFriendNode(elem, member_list[elem]));
+                    }
+                });
+                collections.forEach(function(elem) {
+                    if ($.inArray(elem, memberIdList) > -1) {
+                        $('#friend_collections').append(createFriendNode(elem, member_list[elem]));
                     }
                 });
                 $('#btn_update_members').text("手动更新↓");
