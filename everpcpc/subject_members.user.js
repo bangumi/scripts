@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi添加好友在看、看过
 // @namespace    com.everpcpc.bgm
-// @version      1.2.5
+// @version      1.2.6
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -12,7 +12,7 @@ var bgm_friends_date = localStorage.getItem('bgm_friends_date');
 var bgm_friends = localStorage.getItem('bgm_friends');
 
 
-if (bgm_friends === null || bgm_friends_date === null || isOneDayAgo() || bgm_friends.constructor === Array) {
+if (bgm_friends === null || bgm_friends_date === null || isOneDayAgo() || /^\[/.test(bgm_friends)) {
     localStorage.setItem('bgm_friends_date', (new Date()).valueOf());
     storageFriendsList();
 }
