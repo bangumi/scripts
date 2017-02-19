@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi添加好友在看、看过
 // @namespace    com.everpcpc.bgm
-// @version      1.2.6
+// @version      1.2.7
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -41,10 +41,7 @@ function createFriendNode(uid, friend) {
     var member_url = location.protocol + '//' + location.hostname + '/user/' + uid;
     // ES6 syntax
     //return $(`<a class="avatar" href="${member_url}" title="${friend.member_name}"><span class="userImage"><img src="${friend.member_img}" class="avatar"></span></a>`);
-    return $('<a class="avatar" href="${member_url}" title="${member_name}"><span class="userImage"><img src="${member_img}" class="avatar"></span></a>'.replace('${member_url}',
-        member_url).replace('${member_name}',
-            friend.name).replace('${member_img}',
-                friend.img));
+    return $('<a class="avatar" href="${member_url}" title="${member_name}"><span class="avatarNeue avatarSize32 ll" style="margin:3px 3px 0 0;background-image:url(\'${member_img}\')"></span></a>'.replace('${member_url}',member_url).replace('${member_name}',friend.name).replace('${member_img}',friend.img.replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/')));
 }
 
 function storageFriendsList() {
