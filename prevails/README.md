@@ -36,6 +36,14 @@ nickname: Donuts.
 ![example_0](images/example_jp_name_kanji_pronunciation_0.jpg)
 ![example_1](images/example_jp_name_kanji_pronunciation_1.jpg)
 
+## [查找他人收藏的特定条目](find_others_collection.user.js?raw=true)
+在他人的收藏中找到你想查看的特定条目，了解 ta 对这部作品的评价如何。特别是当你感兴趣的那个人收藏的条目很多的时候。
+
+### 使用方法
+打开某个用户的“看过”列表，可以看到右侧“看过的标签”上方出现一个输入框。输入你要找的条目的名字进行搜索，在弹出的结果中单击你要找的那条。
+这时脚本会在后台开始查找此人的收藏列表，请等待春菜告诉你结果。
+
+如果春菜说“找到了”，那么点击她给的链接就可以前往查看；如果她说没找到，你可以试着在“在看”，“搁置”，“抛弃”或“想看”里再试着找找看。
 
 ## [首页放送整合 bgmlist.com 数据, 作为"在看"时间表](bgmlist_integrator.user.js?raw=true)
 因 bgmlist 改动, 脚本暂时失效
