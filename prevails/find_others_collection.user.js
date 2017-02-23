@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 查找他人收藏
 // @namespace    bangumi.scripts.prevails.findotherscollection
-// @version      1.0
+// @version      1.1
 // @description  在他人的收藏中找到你想查看的特定条目，了解 ta 对这部作品的评价如何
 // @author       "Donuts."
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(anime|game|book|music|real)\/list\/\w+?\/(collect|do|wish|on_hold|dropped)/
@@ -9,7 +9,7 @@
 // @grant        none
 // @encoding     utf-8
 // ==/UserScript==
-
+(function() {
 const avatarhref = $('.idBadgerNeue>.avatar').attr('href');
 if (avatarhref && avatarhref.replace(location.origin, '') === $('.headerAvatar>.avatar').attr('href')) { // login myself
     return;
@@ -167,3 +167,4 @@ $('#subjectList').on('click', '.inner a', function(event) {
 });
 
 document.getElementById('findSubject').addEventListener('click', findSubjectFunc);
+})();
