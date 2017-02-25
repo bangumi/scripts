@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         subjectPowerUp
 // @namespace    fifth26.com
-// @version      1.1.1
+// @version      1.1.2
 // @description  subject page power up ver2.0
 // @author       fifth | everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -15,6 +15,14 @@ const ACTIONS = [
     'on_hold',
     'dropped'
 ];
+
+const ACTION_LANG = {
+    '动画': ['在看', '看过'],
+    '书籍': ['在读', '读过'],
+    '音乐': ['在听', '听过'],
+    '游戏': ['在玩', '玩过'],
+    '三次元': ['在看', '看过']
+};
 
 let allNum = {
     wishes: 0,
@@ -35,6 +43,8 @@ let friendsNum = {
 let allInfo = {};
 let friendsInfo = {};
 let isOnAir = false;
+let lang = [];
+let checkBoxLock = 0;
 
 function checkIsOnAir() {
     let today = new Date();
@@ -74,6 +84,8 @@ function checkIsOnAir() {
 // }
 
 function getCurrentPathInfo() {
+    var type = $('.focus.chl').text().trim();
+    lang = ACTION_LANG.hasOwnProperty(type) ? ACTION_LANG[type] : ['在看', '看过'];
     let info = location.pathname.split('/');
     let sid = info[2] || 0;
     // let action = info[3] || 'collections';
@@ -116,6 +128,10 @@ function updatePageInfo(action) {
     else {
         a_l.html('');
     }
+    checkBoxLock++;
+    if (checkBoxLock >= 5) {
+        $('#toggle_friend_only').removeAttr('disabled');
+    }
 }
 
 function switchToFriendsOnly() {
@@ -123,14 +139,14 @@ function switchToFriendsOnly() {
         $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(friendsInfo.ul);
         $('div.SimpleSidePanel').eq(1).find('span.tip_i').html(friendsInfo.span);
         $('#toggle_friend_only').attr("checked","checked");
+        $('#toggle_friend_only').removeAttr('disabled');
         return;
     }
 
     for (let action of ACTIONS) {
         countFriendsNum(currentPathInfo.sid, action, 1);
     }
-    let url = location.origin + '/subject/' + currentPathInfo.sid + '/{action}?filter=friends'
-        .replace('{action}', isOnAir ? 'doings' : 'collections');
+    let url = `${location.origin}/subject/${currentPathInfo.sid}/${isOnAir ? 'doings' : 'collections'}?filter=friends`
     let tops = [];
     $.get(url, function (data) {
         let info = $('ul#memberUserList', $(data)).find('li:lt(10)');
@@ -157,33 +173,38 @@ function switchToAll() {
     $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(allInfo.ul);
     $('div.SimpleSidePanel').eq(1).find('span.tip_i').html(allInfo.span);
     $('#toggle_friend_only').attr("checked",null);
-
+    $('#toggle_friend_only').removeAttr('disabled');
 }
 
 function buildElement(info) {
-    return '<li class="clearit"><a href="/user/{user_id}" class="avatar"><span class="avatarNeue avatarSize32 ll" style="background-image:url(\'{user_image}\')"></span></a><div class="innerWithAvatar"><a href="/user/{user_id}" class="avatar">{user_name}</a>{user_star}<br><small class="grey">{user_time}</small></div><div style="padding: 0px 5px;">{user_comment}</div></li>'
-        .replace(/\{user\_id\}/g, info.uid)
-        .replace(/\{user\_name\}/g, info.name)
-        .replace(/\{user\_image\}/g, info.img)
-        .replace(/\{user\_star\}/g, info.star ? '<span class="s{stars} starsinfo"></span>'.replace('{stars}', info.star.split(' ')[0]) : '')
-        .replace(/\{user\_time\}/g, info.time + ' ' + (isOnAir ? '在看' : '看过'))
-        .replace(/\{user\_comment\}/g, info.comment);
+    let starInfo = info.star ? `<span class="s${info.star.split(' ')[0]} starsinfo"></span>` : '';
+    let timeInfo = info.time + ' ' + (isOnAir ? lang[0] : lang[1]);
+    return `<li class="clearit">
+                <a href="/user/${info.uid}" class="avatar">
+                    <span class="avatarNeue avatarSize32 ll" style="background-image:url(\'${info.img}\')"></span>
+                </a>
+                <div class="innerWithAvatar">
+                    <a href="/user/${info.uid}" class="avatar">${info.name}</a>
+                    ${starInfo}
+                    <br>
+                    <small class="grey">${timeInfo}</small>
+                </div>
+                <div style="padding: 0px 5px;">${info.comment}</div>
+            </li>`;
 }
 
 function cacheAllInfo() {
     allInfo.ul = $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html();
     allInfo.span = $('div.SimpleSidePanel').eq(1).find('span.tip_i').html();
-    console.log(allInfo.span);
 }
 
 function cacheFriendsInfo() {
     friendsInfo.ul = $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html();
     friendsInfo.span = $('div.SimpleSidePanel').eq(1).find('span.tip_i').html();
-    console.log(friendsInfo.span);
 }
 
 function addFriendsOnlyToggle() {
-    $('div.SimpleSidePanel').eq(1).prepend('<div class="rr"><h2 style="display: inline-block">只看好友</h2><input id="toggle_friend_only" type="checkbox" name="friends_only"></input></div>');
+    $('div.SimpleSidePanel').eq(1).prepend('<div class="rr"><h2 style="display: inline">只看好友</h2><input id="toggle_friend_only" type="checkbox" name="friends_only"></input></div>');
     $('input#toggle_friend_only').css({
         'height': '15px',
         'width': '15px',
@@ -192,15 +213,18 @@ function addFriendsOnlyToggle() {
         'right': '3px'
     });
     $('#toggle_friend_only').change(function (event) {
+        $(this).attr('disabled', 'disabled');
         if (event.target.checked) {
             if (!allInfo.ul) {
                 cacheAllInfo();
             }
+            localStorage.setItem('bgm_subject_friends_only', 'friends_only');
             switchToFriendsOnly();
         } else {
             if (!friendsInfo.ul) {
                 cacheFriendsInfo();
             }
+            localStorage.removeItem('bgm_subject_friends_only');
             switchToAll();
         }
     });
@@ -210,3 +234,6 @@ let currentPathInfo = getCurrentPathInfo();
 checkIsOnAir();
 countAllNum();
 addFriendsOnlyToggle();
+if (localStorage.getItem('bgm_subject_friends_only') && localStorage.getItem('bgm_subject_friends_only') == 'friends_only') {
+    $('#toggle_friend_only').click();
+}
