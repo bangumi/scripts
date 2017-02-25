@@ -8,6 +8,9 @@
 
 暂时没有对书籍等进行判断，除了动画之外别的全是默认放送完毕只显示看过/读过/听过/玩过信息（显示为“看过”，这一点日后修复
 
+[没有装的样子]
 ![没有装的样子](images/subjectPowerUp_old.png)
+[装上后的样子]
 ![装上后的样子](images/subjectPowerUp_new.png)
+[点击后的样子]
 ![点击后的样子](images/subjectPowerUp_new_clicked.png)
