@@ -135,7 +135,7 @@ function updatePageInfo(action) {
 }
 
 function switchToFriendsOnly() {
-    if (friendsInfo.ul) {
+    if (friendsInfo.ul || friendsInfo.span) {
         $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(friendsInfo.ul);
         $('div.SimpleSidePanel').eq(1).find('span.tip_i').html(friendsInfo.span);
         $('#toggle_friend_only').attr("checked","checked");
@@ -215,13 +215,13 @@ function addFriendsOnlyToggle() {
     $('#toggle_friend_only').change(function (event) {
         $(this).attr('disabled', 'disabled');
         if (event.target.checked) {
-            if (!allInfo.ul) {
+            if (!allInfo.ul && !allInfo.span) {
                 cacheAllInfo();
             }
             localStorage.setItem('bgm_subject_friends_only', 'friends_only');
             switchToFriendsOnly();
         } else {
-            if (!friendsInfo.ul) {
+            if (!friendsInfo.ul && !friendsInfo.span) {
                 cacheFriendsInfo();
             }
             localStorage.removeItem('bgm_subject_friends_only');
