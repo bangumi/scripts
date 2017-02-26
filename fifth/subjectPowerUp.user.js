@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         subjectPowerUp
 // @namespace    fifth26.com
-// @version      1.1.3
-// @description  subject page power up ver2.0
+// @version      1.1.4
+// @description  subject page power up: help you to know what your friends are doing
 // @author       fifth | everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
 // @encoding     utf-8
@@ -45,6 +45,10 @@ let friendsInfo = {};
 let isOnAir = false;
 let lang = [];
 let checkBoxLock = 0;
+let loadingImgUrl = 'http://bgm.tv/img/loadingAnimation.gif';
+let loadingElement = `<li class="clearit"
+                         style="background-image: url(${loadingImgUrl}); height: 4px; background-repeat: no-repeat;">
+                     </li>`;
 
 function checkIsOnAir() {
     let today = new Date();
@@ -52,17 +56,25 @@ function checkIsOnAir() {
     let totalNum = {};
     $('ul#infobox li').each(function () {
         let currentLine = $(this).text().split(': ');
+        if (currentLine[0].search(/结束/) >= 0) {
+            isOnAir = false;
+            return;
+        }
         if (currentLine[0] === '话数') {
             totalNum = currentLine[1];
         }
-        if (currentLine[0] === '放送开始') {
+        if (currentLine[0].search(/开始/) >= 0) {
             let start = currentLine[1].match(/\d+/g);
+            if (start.length !== 3) {
+                isOnAir = false;
+                return;
+            }
             startDay.setFullYear(start[0]);
             startDay.setMonth(start[1] - 1);
             startDay.setDate(start[2]);
         }
     });
-    if (totalNum && totalNum !== '*') {
+    if (totalNum && totalNum !== '*' & today.getTime() > startDay.getTime()) {
         isOnAir = today.getTime() - startDay.getTime() < totalNum * 7 * 24 * 60 * 60 * 1000;
     }
     else {
@@ -84,14 +96,14 @@ function checkIsOnAir() {
 // }
 
 function getCurrentPathInfo() {
-    var type = $('.focus.chl').text().trim();
+    let type = $('.focus.chl').text().trim();
     lang = ACTION_LANG.hasOwnProperty(type) ? ACTION_LANG[type] : ['在看', '看过'];
     let info = location.pathname.split('/');
     let sid = info[2] || 0;
     // let action = info[3] || 'collections';
     // let queryInfo = getQueryInfo();
     return {
-        sid: sid,
+        sid: sid
         // action: action,
         // filter: queryInfo.filter,
         // page: queryInfo.page
@@ -105,7 +117,7 @@ function countAllNum() {
 }
 
 function countFriendsNum(sid, action, page) {
-    let urlWithFilter = location.origin + '/subject/' + currentPathInfo.sid + '/' + action + '?filter=friends&page=' + page;
+    let urlWithFilter = `${location.origin}/subject/${currentPathInfo.sid}/${action}?filter=friends&page=${page}`;
     $.get(urlWithFilter, function (data) {
         let itemNum = $('ul#memberUserList', $(data)).find('li').length;
         if (itemNum >= 20) {
@@ -120,13 +132,13 @@ function countFriendsNum(sid, action, page) {
 }
 
 function updatePageInfo(action) {
-    let a_l = $('div.SimpleSidePanel').eq(1).find('[href="/subject/' + currentPathInfo.sid + '/' + action + '"]');
+    let aL = $('div.SimpleSidePanel').eq(1).find('[href="/subject/' + currentPathInfo.sid + '/' + action + '"]');
     if (friendsNum[action] > 0) {
-        a_l.html(a_l.html().replace(allNum[action], friendsNum[action]));
-        a_l.attr('href', '/subject/' + currentPathInfo.sid + '/' + action + '?filter=friends');
+        aL.html(aL.html().replace(allNum[action], friendsNum[action]));
+        aL.attr('href', '/subject/' + currentPathInfo.sid + '/' + action + '?filter=friends');
     }
     else {
-        a_l.html('');
+        aL.html('');
     }
     checkBoxLock++;
     if (checkBoxLock >= 5) {
@@ -135,10 +147,11 @@ function updatePageInfo(action) {
 }
 
 function switchToFriendsOnly() {
+    $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(loadingElement);
     if (friendsInfo.ul || friendsInfo.span) {
         $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(friendsInfo.ul);
         $('div.SimpleSidePanel').eq(1).find('span.tip_i').html(friendsInfo.span);
-        $('#toggle_friend_only').attr("checked","checked");
+        $('#toggle_friend_only').attr('checked', 'checked');
         $('#toggle_friend_only').removeAttr('disabled');
         return;
     }
@@ -146,7 +159,7 @@ function switchToFriendsOnly() {
     for (let action of ACTIONS) {
         countFriendsNum(currentPathInfo.sid, action, 1);
     }
-    let url = `${location.origin}/subject/${currentPathInfo.sid}/${isOnAir ? 'doings' : 'collections'}?filter=friends`
+    let url = `${location.origin}/subject/${currentPathInfo.sid}/${isOnAir ? 'doings' : 'collections'}?filter=friends`;
     let tops = [];
     $.get(url, function (data) {
         let info = $('ul#memberUserList', $(data)).find('li:lt(10)');
@@ -165,14 +178,15 @@ function switchToFriendsOnly() {
         tops.forEach(function (item) {
             panel.find('ul').append(buildElement(item));
         });
-        $('#toggle_friend_only').attr("checked","checked");
+        $('#toggle_friend_only').attr('checked', 'checked');
     });
 }
 
 function switchToAll() {
+    // $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(loadingElement);
     $('div.SimpleSidePanel').eq(1).find('ul.groupsLine').html(allInfo.ul);
     $('div.SimpleSidePanel').eq(1).find('span.tip_i').html(allInfo.span);
-    $('#toggle_friend_only').attr("checked",null);
+    $('#toggle_friend_only').attr('checked', null);
     $('#toggle_friend_only').removeAttr('disabled');
 }
 
@@ -186,7 +200,7 @@ function buildElement(info) {
                 <div class="innerWithAvatar">
                     <a href="/user/${info.uid}" class="avatar">${info.name}</a>
                     ${starInfo}
-                    <br>
+                    <br />
                     <small class="grey">${timeInfo}</small>
                 </div>
                 <div style="padding: 0px 5px;">${info.comment}</div>
@@ -204,13 +218,16 @@ function cacheFriendsInfo() {
 }
 
 function addFriendsOnlyToggle() {
-    $('div.SimpleSidePanel').eq(1).prepend('<div class="rr"><h2 style="display: inline">只看好友</h2><input id="toggle_friend_only" type="checkbox" name="friends_only"></input></div>');
+    $('div.SimpleSidePanel').eq(1).prepend(`<div class="rr">
+                                                <h2 style="display: inline">只看好友</h2>
+                                                <input id="toggle_friend_only" type="checkbox" name="friends_only" />
+                                            </div>`);
     $('input#toggle_friend_only').css({
-        'height': '15px',
-        'width': '15px',
-        'position': 'relative',
-        'top': '4px',
-        'right': '3px'
+        height: '15px',
+        width: '15px',
+        position: 'relative',
+        top: '4px',
+        right: '3px'
     });
     $('#toggle_friend_only').change(function (event) {
         $(this).attr('disabled', 'disabled');
@@ -220,7 +237,8 @@ function addFriendsOnlyToggle() {
             }
             localStorage.setItem('bgm_subject_friends_only', 'friends_only');
             switchToFriendsOnly();
-        } else {
+        }
+        else {
             if (!friendsInfo.ul && !friendsInfo.span) {
                 cacheFriendsInfo();
             }
@@ -234,6 +252,8 @@ let currentPathInfo = getCurrentPathInfo();
 checkIsOnAir();
 countAllNum();
 addFriendsOnlyToggle();
-if (localStorage.getItem('bgm_subject_friends_only') && localStorage.getItem('bgm_subject_friends_only') == 'friends_only') {
+if (localStorage.getItem('bgm_subject_friends_only')
+    && localStorage.getItem('bgm_subject_friends_only') === 'friends_only'
+) {
     $('#toggle_friend_only').click();
 }
