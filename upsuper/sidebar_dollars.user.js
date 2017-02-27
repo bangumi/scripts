@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        Bangumi 侧栏 Dollars
 // @namespace   org.upsuper.bangumi
-// @include     /^http://(bangumi\.tv|bgm\.tv|chii\.in)/(rakuen|(pm|blog|index|wiki|magi|user|group|anime|book|music|game|real|subject|ep|mono|person|character|timeline)(/.*)?)?(\?.*)?$/
-// @version     1.3.3
+// @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(rakuen|(pm|blog|index|wiki|magi|user|group|anime|book|music|game|real|subject|ep|mono|person|character|timeline)(/.*)?)?(\?.*)?$/
+// @version     1.3.4
 // @grant       GM_addStyle
 // ==/UserScript==
 
