@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         subjectPowerUp
 // @namespace    fifth26.com
-// @version      1.3.0
+// @version      1.3.1
 // @description  条目页面优化：看看你的好友是否喜欢
 // @author       fifth | aslo thanks to @everpcpc's contributions.
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
+// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.3.0';
+const CURRENT_VERSION = '1.3.1';
 
 const ACTIONS = [
     'wishes',
@@ -72,14 +72,16 @@ let isFolded = {
 
 let checkBoxLock = 0;
 
+let isFilterPage = false;
+
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
-const LOADING_ELEMENT_HTML =
-    `<li class="clearit" style="background-image: url(${LOADING_IMG_URL});
-                                height: 4px;
-                                background-repeat: no-repeat;"></li>`;
-const addOnsHTML =
-    `<div class="rr">
-        <h2 style="display: inline; cursor: pointer;">设置</h2>
+const LOADING_ELEMENT_HTML
+    = `<li class="clearit" style="background-image: url(${LOADING_IMG_URL});
+                                    height: 4px;
+                                    background-repeat: no-repeat;"></li>`;
+const addOnsHTML
+    = `<div class="rr">
+        <h2 style="display: inline; cursor: pointer; visibility: hidden;">设置</h2>
         <h2 style="display: inline">只看好友</h2>
         <input id="toggle_friend_only" type="checkbox" name="friends_only" />
     </div>`;
@@ -88,17 +90,29 @@ let toggleBox;
 let settingsMenu;
 let settings;
 
+function getQueryInfo() {
+    let queryInfo = {
+        filter: '',
+        page: 1
+    };
+    if (location.search) {
+        location.search.slice(1).split('&').forEach(function (elem) {
+            queryInfo[elem.split('=')[0]] = elem.split('=')[1];
+        });
+    }
+    return queryInfo;
+}
+
 function getCurrentPathInfo() {
-    // disable some prototype
     let info = location.pathname.split('/');
     let sid = info[2] || 0;
-    // let action = info[3] || 'collections';
-    // let queryInfo = getQueryInfo();
+    let action = info[3];
+    let queryInfo = getQueryInfo();
     return {
-        sid: sid
-        // action: action,
-        // filter: queryInfo.filter,
-        // page: queryInfo.page
+        sid: sid,
+        action: action,
+        filter: queryInfo.filter,
+        page: queryInfo.page
     };
 }
 
@@ -123,24 +137,66 @@ function countFriendsNum(sid, action, page) {
     });
 }
 
+function setNewPages(pageNum, currentPage) {
+    if (pageNum <= 1) {
+        return;
+    }
+    let pageInner = [];
+    for (let i = 1; i <= pageNum; i++) {
+        if (i === currentPage) {
+            pageInner.push(`<strong class="p_cur">${i}</strong>`);
+        }
+        else {
+            pageInner.push(`<a href="/subject/${currentPathInfo.sid}/${currentPathInfo.action}?filter=${currentPathInfo.filter}&amp;page=${i}" class="p">${i}</a>`);
+        }
+    }
+    if (currentPage > 1) {
+        pageInner.unshift(`<a href="/subject/${currentPathInfo.sid}/${currentPathInfo.action}?filter=${currentPathInfo.filter}&amp;page=${currentPage - 1}" class="p">‹‹</a>`);
+    }
+    if (currentPage < pageNum) {
+        pageInner.push(`<a href="/subject/${currentPathInfo.sid}/${currentPathInfo.action}?filter=${currentPathInfo.filter}&amp;page=${currentPage + 1}" class="p">››</a>`);
+    }
+    $('div#multipage').html(pageInner.join(''));
+}
+
 function updatePageInfo(action) {
-    let aL = panel.find('[href="/subject/' + currentPathInfo.sid + '/' + action + '"]');
-    if (friendsNum[action] > 0) {
-        aL.html(aL.html().replace(allNum[action], friendsNum[action]));
-        aL.attr('href', '/subject/' + currentPathInfo.sid + '/' + action + '?filter=friends');
+    if (isFilterPage) {
+        let secTab = $(`div#SecTab [href="/subject/${currentPathInfo.sid}/${action}?filter=friends&"]`);
+        if (friendsNum[action] === 0) {
+            secTab.unwrap();
+            secTab.remove();
+            return;
+        }
+        secTab.find('small').text(`(${friendsNum[action]})`);
+        if (action === currentPathInfo.action) {
+            if (friendsNum[action] <= 20) {
+                $('div#multipage').html('');
+            }
+            else {
+                let totalPages = Math.floor((friendsNum[action] - 1) / 20 + 1);
+                setNewPages(totalPages, currentPathInfo.page);
+            }
+        }
     }
     else {
-        aL.html('');
-    }
-    checkBoxLock += 1;
-    if (checkBoxLock >= 5) {
-        toggleBox.removeAttr('disabled');
+        let aL = panel.find(`[href="/subject/${currentPathInfo.sid}/${action}"]`);
+        if (friendsNum[action] > 0) {
+            aL.html(aL.html().replace(allNum[action], friendsNum[action]));
+            aL.attr('href', `/subject/${currentPathInfo.sid}/${action}?filter=friends`);
+        }
+        else {
+            aL.html('');
+        }
+        checkBoxLock += 1;
+        if (checkBoxLock >= 5) {
+            toggleBox.removeAttr('disabled');
+        }
     }
 }
 
 function switchToAll() {
     panel.find('div.rr h2:first').css({
-        'visibility': 'hidden'
+        visibility: 'hidden'
     });
     panel.find('ul.groupsLine').html(allInfo.ul);
     panel.find('span.tip_i').html(allInfo.span);
@@ -150,7 +206,7 @@ function switchToAll() {
 
 function switchToFriendsOnly(countPage = true) {
     panel.find('div.rr h2:first').css({
-        'visibility': 'visible'
+        visibility: 'visible'
     });
     if (friendsInfo.ul || friendsInfo.span) {
         panel.find('ul.groupsLine').html(friendsInfo.ul);
@@ -181,29 +237,27 @@ function addFoldAction(start, end) {
             target.slideDown();
             isFolded[action] = false;
             $(this).css({
-                'background-color': '#fff',
+                'background-color': '#fff'
             });
-            console.log(isFolded);
         }
         else {
             target.slideUp();
             isFolded[action] = true;
             $(this).css({
-                'background-color': '#eee',
+                'background-color': '#eee'
             });
-            console.log(isFolded);
         }
     });
     if (isFolded[action]) {
         target.slideUp();
         source.css({
-            'background-color': '#eee',
+            'background-color': '#eee'
         });
     }
     else {
         target.slideDown();
         source.css({
-            'background-color': '#fff',
+            'background-color': '#fff'
         });
     }
 }
@@ -254,19 +308,19 @@ function listRequest(action, page = 1, limit = settings[action + 'Num']) {
 
 function buildList(action, lang) {
     if (tops[action].length > 0) {
-        panel.find('ul').append(buildListTitle(action, `现在${lang}的好友`));
+        panel.find('ul').append(buildListTitle(action, `符合条件的${lang}的好友`));
         let startIndex = panel.find('ul li').length - 1;
         tops[action].forEach(function (item) {
             panel.find('ul').append(buildElement(item, lang));
         });
-        let endIndex = panel.find('ul li').length - 1;
         panel.find('ul li').eq(startIndex).css({
-            'cursor': 'pointer'
+            cursor: 'pointer'
         });
         if (settings.fold[action]) {
             panel.find('ul li').eq(startIndex).click();
         }
-    } else {
+    }
+    else {
         panel.find('ul').append(buildListTitle(action, `没有符合条件的${lang}好友`));
     }
 }
@@ -311,11 +365,11 @@ function addFriendsOnlyToggle() {
     panel.prepend(addOnsHTML);
     toggleBox = $('input#toggle_friend_only');
     toggleBox.css({
-        'height': '15px',
-        'width': '15px',
-        'position': 'relative',
-        'top': '4px',
-        'right': '3px'
+        height: '15px',
+        width: '15px',
+        position: 'relative',
+        top: '4px',
+        right: '3px'
     });
     toggleBox.change(function (event) {
         $(this).attr('disabled', 'disabled');
@@ -337,37 +391,37 @@ function addFriendsOnlyToggle() {
 }
 
 function addSettingsMenu() {
-    const MENU_CONTENT_HTML =
-        `<div class="settings">
-            <div>设置中心，请设置成合理的值</div>
-            <div>
-                在〇好友数量上限
-                <input id="doingsNum" type="text" value="${settings.doingsNum}">
-            </div>
-            <div>
-                〇过好友数量上限
-                <input id="collectionsNum" type="text" value="${settings.collectionsNum}">
-            </div>
-            <div>
-                不显示未打分好友
-                <input id="starredOnly" type="checkbox" ${settings.starredOnly ? 'checked' : ''}>
-            </div>
-            <div>
-                不显示未评论好友
-                <input id="commentedOnly" type="checkbox" ${settings.commentedOnly ? 'checked' : ''}>
-            </div>
-            <div>
-                默认折叠在〇列表
-                <input id="foldDoings" type="checkbox" ${settings.fold.doings ? 'checked' : ''}>
-            </div>
-            <div>
-                默认折叠〇过列表
-                <input id="foldCollections" type="checkbox" ${settings.fold.collections ? 'checked' : ''}>
-            </div>
-            <a id="settings_save" class="l">保存并刷新</a>
-            <a id="settings_cancel" class="l">取消并退出</a>
-            <a id="settings_default" class="l">填写默认值</a>
-        </div>`;
+    const MENU_CONTENT_HTML
+        = `<div class="settings">
+                <div>设置中心，请设置成合理的值</div>
+                <div>
+                    在〇好友数量上限
+                    <input id="doingsNum" type="text" value="${settings.doingsNum}">
+                </div>
+                <div>
+                    〇过好友数量上限
+                    <input id="collectionsNum" type="text" value="${settings.collectionsNum}">
+                </div>
+                <div>
+                    不显示未打分好友
+                    <input id="starredOnly" type="checkbox" ${settings.starredOnly ? 'checked' : ''}>
+                </div>
+                <div>
+                    不显示未评论好友
+                    <input id="commentedOnly" type="checkbox" ${settings.commentedOnly ? 'checked' : ''}>
+                </div>
+                <div>
+                    默认折叠在〇列表
+                    <input id="foldDoings" type="checkbox" ${settings.fold.doings ? 'checked' : ''}>
+                </div>
+                <div>
+                    默认折叠〇过列表
+                    <input id="foldCollections" type="checkbox" ${settings.fold.collections ? 'checked' : ''}>
+                </div>
+                <a id="settings_save" class="l">保存并刷新</a>
+                <a id="settings_cancel" class="l">取消并退出</a>
+                <a id="settings_default" class="l">填写默认值</a>
+            </div>`;
     panel.before(MENU_CONTENT_HTML);
     settingsMenu = $('div.settings');
     panel.find('div.rr h2:first').toggle(
@@ -410,11 +464,11 @@ function addSettingsMenu() {
                 settings = {
                     doingsNum: parseInt($('input#doingsNum').val(), 10),
                     collectionsNum: parseInt($('input#collectionsNum').val(), 10),
-                    starredOnly: $('input#starredOnly').attr('checked') ? true : false,
-                    commentedOnly: $('input#commentedOnly').attr('checked') ? true : false,
-                    fold:{
-                        doings: $('input#foldDoings').attr('checked') ? true : false,
-                        collections: $('input#foldCollections').attr('checked') ? true : false
+                    starredOnly: !!$('input#starredOnly').attr('checked'),
+                    commentedOnly: !!$('input#commentedOnly').attr('checked'),
+                    fold: {
+                        doings: !!$('input#foldDoings').attr('checked'),
+                        collections: !!$('input#foldCollections').attr('checked')
                     }
                 };
                 localStorage.setItem('fifth_bgm_subject_userjs_settings', JSON.stringify(settings));
@@ -468,7 +522,7 @@ function settingsMenuWrite(settings) {
 }
 
 if (!localStorage.getItem('fifth_bgm_subject_userjs_version')
-    || localStorage.getItem('fifth_bgm_subject_userjs_version') != CURRENT_VERSION
+    || localStorage.getItem('fifth_bgm_subject_userjs_version') !== CURRENT_VERSION
 ) {
     localStorage.removeItem('fifth_bgm_subject_userjs_settings');
     localStorage.removeItem('fifth_bgm_subject_userjs_is_friends_only');
@@ -477,13 +531,13 @@ if (!localStorage.getItem('fifth_bgm_subject_userjs_version')
 
 if (localStorage.getItem('fifth_bgm_subject_userjs_settings')) {
     settings = JSON.parse(localStorage.getItem('fifth_bgm_subject_userjs_settings'));
-} else {
+}
+else {
     settings = DEFAULT_SETTINGS;
     localStorage.setItem('fifth_bgm_subject_userjs_settings', JSON.stringify(settings));
 }
 isFolded.doings = settings.fold.doings;
 isFolded.collections = settings.fold.collections;
-console.log(isFolded);
 
 let currentPathInfo = getCurrentPathInfo();
 let subjectType = $('.focus.chl').text().trim();
@@ -491,13 +545,23 @@ let lang = ACTION_LANG.hasOwnProperty(subjectType) ? ACTION_LANG[subjectType] : 
 let panel = $('div.SimpleSidePanel:eq(1)');
 
 countAllNum();
-addFriendsOnlyToggle();
-addSettingsMenu();
 
-if (localStorage.getItem('fifth_bgm_subject_userjs_is_friends_only')
-    && localStorage.getItem('fifth_bgm_subject_userjs_is_friends_only') === 'friends_only'
-) {
-    toggleBox.click();
+if (!currentPathInfo.action) {
+    isFilterPage = false;
+    addFriendsOnlyToggle();
+    addSettingsMenu();
+
+    if (localStorage.getItem('fifth_bgm_subject_userjs_is_friends_only')
+        && localStorage.getItem('fifth_bgm_subject_userjs_is_friends_only') === 'friends_only'
+    ) {
+        toggleBox.click();
+    }
+}
+else if (!!currentPathInfo.action && currentPathInfo.filter === 'friends') {
+    isFilterPage = true;
+    for (let action of ACTIONS) {
+        countFriendsNum(currentPathInfo.sid, action, 1);
+    }
 }
 
 // ----- 以下为目前未被使用的函数，不确定是否未来会重新启用故注释置底 -----
@@ -536,19 +600,3 @@ if (localStorage.getItem('fifth_bgm_subject_userjs_is_friends_only')
 //     }
 // }
 // let isOnAir = checkIsOnAir();
-
-// -- 2 --
-// 获取url请求内容，以对象形式返回，暂时用不到
-// function getQueryInfo() {
-//     let queryInfo = {
-//         filter: '',
-//         page: 1
-//     };
-//     if (location.search) {
-//         location.search.slice(1).split('&').forEach(function (elem) {
-//             queryInfo[elem.split('=')[0]] = elem.split('=')[1];
-//         });
-//     }
-//     return queryInfo;
-// }
-// let queryInfo = getQueryInfo();
