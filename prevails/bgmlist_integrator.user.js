@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.2.3
+// @version      1.2.4
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -66,11 +66,26 @@ class Bangumi {
             this.bgm.onAirSite = addOnSources[this.id].concat(this.bgm.onAirSite);
         }
     }
+    getTime() {
+        const isSameDay = this.bgm.weekDayJP === this.bgm.weekDayCN;
+        let time = '';
+        const tcn = this.bgm.timeCN && this.bgm.timeCN.slice(0, 2) + ':' + this.bgm.timeCN.slice(2);
+        const tjp = this.bgm.timeJP.slice(0, 2) + ':' + this.bgm.timeJP.slice(2);
+        if (TIME_ZONE === 'JP') {
+            time += tjp;
+        } else {
+            time += 'CN ' + (tcn || '无');
+            time += '\n';
+            time += 'JP ' + (isSameDay ? tjp : ('前日' + tjp));
+        }
+        return time;
+    }
     get$Html() {
         const $re = $(this.a).clone();
         $re.find('img').removeAttr('class');
         $re.find('span').remove();
-        $re.attr('title', this.bgm.titleCN + '\n' + this.bgm.titleJP);
+        $re.attr('title', this.bgm.titleCN + '\n'+ this.bgm.titleJP + '\n播放时间:\n' + this.getTime());
+        $re.attr('alt', this.bgm.titleCN + '<br>' + this.bgm.titleJP);
         $re.data('onAirSite', this.bgm.onAirSite);
         return $re;
     }
@@ -141,13 +156,13 @@ function showTbWindow(html, style) {
 $week.find('.thumbTip').click(function () {
     const onAirSite = $(this).data('onAirSite');
     showTbWindow(`
-        <small class="grey"><a href="${$(this).attr('href')}">${$(this).attr('title').replace('\n', '<br>')}</a></small>
+        <small class="grey"><a href="${$(this).attr('href')}">${$(this).attr('alt')}</a></small>
         <ul class="line_list">
             ${onAirSite.map((v, i) => `
                 <li class="line_${i % 2 ? 'odd' : 'even'}">
                     <h6><a target="_blank" href="${v}">${v.replace(/https?:\/\/.+?\./, '').split('/')[0]}</a></h6>
                 </li>
-                `).join('')}
+                `.trim()).join('')}
         </ul>`);
     return false;
 });
