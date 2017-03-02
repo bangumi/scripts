@@ -1,20 +1,23 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.1
+// @version      1.0.2
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = '1.0.2';
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 const ME = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
+
 let missions = [];
 
 let userInfo = {};
+
+let isDisplaying = false;
 
 // let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -33,7 +36,7 @@ let userInfo = {};
 //     return total;
 // }
 
-function fetch(uid, missionId) {
+function fetch(uid, missionId, adjust = false) {
 
     userInfo = {};
     // starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -48,13 +51,19 @@ function fetch(uid, missionId) {
         }
         userInfo = {
             uid: uid,
-            name: $('h1.nameSingle div.inner a', $(data)).text(),
-            isFriend: $('h1.nameSingle div.rr a:first span', $(data)).text() === '解除好友',
-            latestTL: $('ul.timeline li:eq(0) small:last', $(data)).text(),
-            syncNum: $('div.userSynchronize small.hot', $(data)).text().match(/\d+/)[0],
-            syncPercent: $('div.userSynchronize span.percent_text', $(data)).text()
+            name: $('h1.nameSingle div.inner a', $(data)).text().trim(),
+            isFriend: $('h1.nameSingle div.rr a:first span', $(data)).text().trim() === '解除好友',
+            latestTL: $('ul.timeline li:eq(0) small:last', $(data)).text().trim(),
+            syncNum: $('div.userSynchronize small.hot', $(data)).text().trim().match(/\d+/)[0],
+            syncPercent: $('div.userSynchronize span.percent_text', $(data)).text().trim()
         };
-        updateInfoBox(userInfo);
+        $.get(`${location.origin}/user/${uid}/timeline`, function (data) {
+            if (!missions[missionId]) {
+                return;
+            }
+            userInfo.latestTL = $('div#timeline li:first p.date', $(data)).text().trim();
+            updateInfoBox(userInfo, adjust);
+        });
     });
 
     // $.get(`${location.origin}/anime/list/${uid}/collect`, function (data) {
@@ -92,20 +101,27 @@ function fetch(uid, missionId) {
 
 }
 
-$('a.avatar').mouseenter(function () {
+$('a.avatar').mouseover(function () {
+    if (isDisplaying) {
+        return;
+    }
+    isDisplaying = true;
     let uid = $(this).attr('href').match(/\w+$/)[0];
     if (uid === ME) {
         return;
     }
-
+    infoBox.find('div.fifth_bgm_loading').css({
+        display: 'block'
+    });
     let self = $(this).find('span');
+    let adjust = false;
     if (self.offset().left + self.width() > window.innerWidth / 2) {
         infoBox.css({
             display: 'block',
             top: `${self.offset().top}px`,
-            // right: `${self.offset().left - 10}px`
-            left: `${self.offset().left - 250}px`
+            left: `${self.offset().left - infoBox.width() -10}px`
         });
+        adjust = true;
     } else {
         infoBox.css({
             display: 'block',
@@ -113,15 +129,12 @@ $('a.avatar').mouseenter(function () {
             left: `${self.offset().left + self.width() + 10}px`
         });
     }
-    infoBox.find('div.fifth_bgm_loading').css({
-        display: 'block'
-    });
     infoBox.find('div.fifth_bgm_userInfo').css({
         display: 'none'
     });
 
     missions.push(true);
-    fetch(uid, missions.length - 1);
+    fetch(uid, missions.length - 1, adjust);
 });
 $('a.avatar').mouseout(function () {
     infoBox.css({
@@ -134,6 +147,7 @@ $('a.avatar').mouseout(function () {
         display: 'none'
     });
     missions[missions.length - 1] = false;
+    isDisplaying = false;
 });
 
 let infoBox;
@@ -155,7 +169,6 @@ function createInfoBox() {
     `);
     infoBox = $('div#fifth_bgm_infoBox');
     infoBox.css({
-        width: '240px',
         display: 'none',
         position: 'absolute',
         'background-color': '#fff',
@@ -170,7 +183,6 @@ function createInfoBox() {
     infoBox.find('div.fifth_bgm_loading').css({
         'background-image': `url(${LOADING_IMG_URL})`,
         'background-repeat': 'no-repeat',
-        'margin-left': '15px',
         width: '210px',
         height: '15px',
         display: 'none',
@@ -178,9 +190,11 @@ function createInfoBox() {
     });
 }
 
-function updateInfoBox(userInfo) {
+function updateInfoBox(userInfo, adjust = false) {
+    let oldLeft = infoBox.offset().left;
+    let oldWidth = infoBox.width();
     infoBox.find('p.fifth_bgm_name').text(`${userInfo.name}  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
-    infoBox.find('p.fifth_bgm_tl').text(`TA最后一条TimeLine在 ${userInfo.latestTL}`);
+    infoBox.find('p.fifth_bgm_tl').text(`TA的时间胶囊最后更新时间是在 ${userInfo.latestTL}`);
     infoBox.find('p.fifth_bgm_sync').text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
 
     infoBox.find('div.fifth_bgm_loading').css({
@@ -189,6 +203,16 @@ function updateInfoBox(userInfo) {
     infoBox.find('div.fifth_bgm_userInfo').css({
         display: 'block'
     });
+    if (adjust) {
+        infoBox.css({
+            left: `${oldLeft - infoBox.width() + oldWidth}px`
+        });
+    }
     // infoBox.find('p.fifth_bgm_anime').text(`collected anime: ${userInfo.animeCollectNum}.`);
     // infoBox.find('p.fifth_bgm_score').text(`average score: ${calculateAverage(starsCounts) / userInfo.animeCollectNum}`);
 }
+
+
+// v1.0.0 init version, popup infomation box when mouse enter $('a.avatar') *note that this don't include all user avatar
+// v1.0.1 no longer tracking myself; small fixes
+// v1.0.2 change timeline info source page; position modify; text modify
