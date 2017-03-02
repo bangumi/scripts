@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.0
+// @version      1.0.1
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
@@ -11,7 +11,7 @@
 const CURRENT_VERSION = '1.0.0';
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
-
+const ME = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
 let missions = [];
 
 let userInfo = {};
@@ -93,8 +93,13 @@ function fetch(uid, missionId) {
 }
 
 $('a.avatar').mouseenter(function () {
+    let uid = $(this).attr('href').match(/\w+$/)[0];
+    if (uid === ME) {
+        return;
+    }
+
     let self = $(this).find('span');
-    if (self.offset().left > window.innerWidth / 2) {
+    if (self.offset().left + self.width() > window.innerWidth / 2) {
         infoBox.css({
             display: 'block',
             top: `${self.offset().top}px`,
@@ -115,7 +120,6 @@ $('a.avatar').mouseenter(function () {
         display: 'none'
     });
 
-    let uid = $(this).attr('href').match(/\w+$/)[0];
     missions.push(true);
     fetch(uid, missions.length - 1);
 });
