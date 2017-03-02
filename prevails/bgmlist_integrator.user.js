@@ -150,6 +150,14 @@ function showTbWindow(html, style) {
             ${html}
             <small class="grey">本插件放送数据由 <a href="http://bgmlist.com">bgmlist.com</a> 提供</small>
         </div>`);
+
+    let url = html.match(/\/subject\/\d+/)[0];
+    let source = $(`div#home_calendar ul a[href="${url}"] img`);
+    $('div#TB_window').css({
+        position: 'absolute',
+        top: source.offset().top,
+        left: (source.offset().left - $('div#TB_window').width() - 10)
+    });
     $('#TB_window.userscript_bgmlist_integrator').mouseleave(rmTbWindow);
 }
 
