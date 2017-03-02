@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.2
+// @version      1.0.3
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.2';
+const CURRENT_VERSION = '1.0.3';
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 const ME = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
@@ -102,6 +102,9 @@ function fetch(uid, missionId, adjust = false) {
 }
 
 $('a.avatar').mouseover(function () {
+    if (!$(this).attr('href').match(/\/user\//)) {
+        return;
+    }
     if (isDisplaying) {
         return;
     }
@@ -216,3 +219,4 @@ function updateInfoBox(userInfo, adjust = false) {
 // v1.0.0 init version, popup infomation box when mouse enter $('a.avatar') *note that this don't include all user avatar
 // v1.0.1 no longer tracking myself; small fixes
 // v1.0.2 change timeline info source page; position modify; text modify
+// v1.0.3 fix: no popup when 'href' of $('a.avatar') don't contain '/user/' in 'href'
