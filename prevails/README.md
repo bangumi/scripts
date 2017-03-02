@@ -2,14 +2,19 @@
 nickname: Donuts.
 
 ## [标注 ep 讨论人气：EpPopuVisualizer](ep_popu_visualizer.user.js?raw=true)
-
-相关讨论位于 https://bgm.tv/group/topic/340530
+[讨论帖](https://bgm.tv/group/topic/340530)
 
 - 用 __颜色深浅__ 或 __条形图__ 标注 ep(章节) 的讨论人气
 - 直观展现番剧的讨论走势和热点!
 - 可在 条目页(/subject/*) 或 首页(/) 起作用
 - 可在 __主页右边栏下方的设置面板 "EpPopuVisualizer 设置"__ 选择显示方式, 选用自己喜欢的颜色进行标注
 
+## [首页放送整合 bgmlist.com 数据, 作为"在看"时间表: Bgmlist Integrator](bgmlist_integrator.user.js?raw=true)		
+在你的“在看”中找出当季动画番剧，并置于放送列表中. 数据取自 [bgmlist.com](https://bgmlist.com)
+
+[讨论帖](http://bgm.tv/group/topic/341136)
+- 支持日本放送日, 若需使用, 请把 TIME_ZONE 的值写为 'JP', 并保存
+- 支持“手动”添加播放地址，请根据代码中的说明操作……
 
 ## [章节讨论剧透关键词折叠：EpSpoilerFolder](ep_spoiler_folder.user.js?raw=true)
 
@@ -27,12 +32,15 @@ nickname: Donuts.
 - 若你点"抛弃"之后又改变主意(如点了"搁置"), 自动恢复点"抛弃"之前的状态
 
 ## [给人物的日文名中汉字标注读音](jp_name_kanji_pronunciation.user.js?raw=true)
+[讨论帖](https://bgm.tv/group/topic/341271)
+
 记汉字的读音常常令日语初学者头疼, 人名又是少见汉字和一字多音的重灾区
 
 这个用户脚本使用网站里原有的人物条目数据帮大家把读音标到人物页首人名的汉字上, 比在 infobox 里慢慢找要更加直观, 
 让人一打开页面就能正确地读出人物的名字
 
 效果如下
+
 ![example_0](images/example_jp_name_kanji_pronunciation_0.jpg)
 ![example_1](images/example_jp_name_kanji_pronunciation_1.jpg)
 
@@ -44,6 +52,3 @@ nickname: Donuts.
 这时脚本会在后台开始查找此人的收藏列表，请等待春菜告诉你结果。
 
 如果春菜说“找到了”，那么点击她给的链接就可以前往查看；如果她说没找到，你可以试着在“在看”，“搁置”，“抛弃”或“想看”里再试着找找看。
-
-## [首页放送整合 bgmlist.com 数据, 作为"在看"时间表](bgmlist_integrator.user.js?raw=true)
-因 bgmlist 改动, 脚本暂时失效
