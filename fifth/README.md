@@ -16,3 +16,7 @@
 ![装上后的样子](images/subjectPowerUp_new.png)
 [点击后的样子]
 ![点击后的样子](images/subjectPowerUp_new_clicked.png)
+
+## [friendsPowerUp](friendsPowerUp.user.js?raw=true)
+
+鼠标移到用户头像上是浮出小窗展示好友信息。
