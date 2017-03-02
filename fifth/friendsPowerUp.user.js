@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.4
+// @version      1.0.5
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.4';
+const CURRENT_VERSION = '1.0.5';
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 const ME = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
@@ -107,9 +107,9 @@ $('a').mouseover(function () {
         self = $(this).find('span');
     }
     else if ($(this).find('img').length > 0) {
-        self = $(this).find('img')
+        self = $(this).find('img');
     }
-    if (!$(this).attr('href').match(/\/user\//)) {
+    if (!$(this).attr('href').match(/\/user\/\w+$/)) {
         return;
     }
     if (isDisplaying) {
@@ -128,10 +128,11 @@ $('a').mouseover(function () {
         infoBox.css({
             display: 'block',
             top: `${self.offset().top}px`,
-            left: `${self.offset().left - infoBox.width() -10}px`
+            left: `${self.offset().left - infoBox.width() - 10}px`
         });
         adjust = true;
-    } else {
+    }
+    else {
         infoBox.css({
             display: 'block',
             top: `${self.offset().top}px`,
@@ -181,12 +182,12 @@ function createInfoBox() {
     `);
     infoBox = $('div#fifth_bgm_infoBox');
     infoBox.css({
-        display: 'none',
-        position: 'absolute',
+        'display': 'none',
+        'position': 'absolute',
         'background-color': '#fff',
         'border-radius': '5px',
         'box-shadow': '0px 0px 20px #ccc',
-        opacity: '.85'
+        'opacity': '.85'
     });
     infoBox.find('div').css({
         margin: '5px',
@@ -195,10 +196,9 @@ function createInfoBox() {
     infoBox.find('div.fifth_bgm_loading').css({
         'background-image': `url(${LOADING_IMG_URL})`,
         'background-repeat': 'no-repeat',
-        width: '210px',
-        height: '15px',
-        display: 'none',
-
+        'width': '210px',
+        'height': '15px',
+        'display': 'none'
     });
 }
 
