@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.3
+// @version      1.0.4
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.3';
+const CURRENT_VERSION = '1.0.4';
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 const ME = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
@@ -101,7 +101,14 @@ function fetch(uid, missionId, adjust = false) {
 
 }
 
-$('a.avatar').mouseover(function () {
+$('a').mouseover(function () {
+    let self = $(this);
+    if ($(this).find('span').length > 0) {
+        self = $(this).find('span');
+    }
+    else if ($(this).find('img').length > 0) {
+        self = $(this).find('img')
+    }
     if (!$(this).attr('href').match(/\/user\//)) {
         return;
     }
@@ -116,7 +123,6 @@ $('a.avatar').mouseover(function () {
     infoBox.find('div.fifth_bgm_loading').css({
         display: 'block'
     });
-    let self = $(this).find('span');
     let adjust = false;
     if (self.offset().left + self.width() > window.innerWidth / 2) {
         infoBox.css({
@@ -139,7 +145,10 @@ $('a.avatar').mouseover(function () {
     missions.push(true);
     fetch(uid, missions.length - 1, adjust);
 });
-$('a.avatar').mouseout(function () {
+$('a').mouseout(function () {
+    if (!$(this).attr('href').match(/\/user\//)) {
+        return;
+    }
     infoBox.css({
         display: 'none'
     });
@@ -196,7 +205,7 @@ function createInfoBox() {
 function updateInfoBox(userInfo, adjust = false) {
     let oldLeft = infoBox.offset().left;
     let oldWidth = infoBox.width();
-    infoBox.find('p.fifth_bgm_name').text(`${userInfo.name}  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
+    infoBox.find('p.fifth_bgm_name').html(`<a href="#" class="l">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
     infoBox.find('p.fifth_bgm_tl').text(`TA的时间胶囊最后更新时间是在 ${userInfo.latestTL}`);
     infoBox.find('p.fifth_bgm_sync').text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
 
@@ -214,9 +223,3 @@ function updateInfoBox(userInfo, adjust = false) {
     // infoBox.find('p.fifth_bgm_anime').text(`collected anime: ${userInfo.animeCollectNum}.`);
     // infoBox.find('p.fifth_bgm_score').text(`average score: ${calculateAverage(starsCounts) / userInfo.animeCollectNum}`);
 }
-
-
-// v1.0.0 init version, popup infomation box when mouse enter $('a.avatar') *note that this don't include all user avatar
-// v1.0.1 no longer tracking myself; small fixes
-// v1.0.2 change timeline info source page; position modify; text modify
-// v1.0.3 fix: no popup when 'href' of $('a.avatar') don't contain '/user/' in 'href'

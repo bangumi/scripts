@@ -20,3 +20,6 @@
 ## [friendsPowerUp](friendsPowerUp.user.js?raw=true)
 
 鼠标移到用户头像上是浮出小窗展示好友信息。
+
+[装上后的样子]
+![装上后的样子](images/friendsPowerUp.png)
