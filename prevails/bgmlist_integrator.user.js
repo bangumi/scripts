@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.2.2
+// @version      1.2.3
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -157,7 +157,7 @@ GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;left:80%;top
 const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 8; // 8h
 
 function getLast(obj) {
-    let last = undefined;
+    let last;
     for (let i in obj) {
         last = i;
     }
@@ -170,19 +170,19 @@ function createIndexOnBgmId(bgmlistOriginJson) {
     for (let i in origin) {
         bgmlist[origin[i].bgmId] = origin[i];
     }
-    return bgmlist
+    return bgmlist;
 }
 
 function update({path, version}) {
     GM_xmlhttpRequest({
         method: 'GET',
-        url: 'http://bgmlist.com/' + path,
+        url: path,
         onload: function(response) {
             if (response.status === 200) {
                 GM_setValue('bgmlist', createIndexOnBgmId(response.responseText));
                 GM_setValue('path', path);
                 GM_setValue('version', version);
-                showTbWindow('bgmlist 数据更新成功! 请刷新页面<br>');
+                showTbWindow('bgmlist 数据更新成功! 请<a class="l" href="javascript:location.reload();">刷新页面</a><br>');
                 setTimeout(rmTbWindow, 5000);
             } else {
                 showTbWindow(`Error, status code: ${response.status}<br>`);
@@ -199,7 +199,8 @@ function checkUpdate() {
     }
     GM_xmlhttpRequest({
         method: 'GET',
-        url: 'http://bgmlist.com/json/archive.json',
+        url: 'https://bgmlist.com/tempapi/archive.json',
+        data: {"__t": Date.now()},
         onload: function (response) {
             if (response.status === 200) {
                 const archive = JSON.parse(response.responseText);
