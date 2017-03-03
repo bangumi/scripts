@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.2.4
+// @version      1.3.0
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
