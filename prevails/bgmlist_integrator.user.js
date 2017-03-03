@@ -55,6 +55,8 @@ const WEEK_DAY = [
     'Sat',
 ];
 
+const TB_WINDOW_WIDTH = 250;
+
 const bgmlist = GM_getValue('bgmlist') || {};
 
 class Bangumi {
@@ -151,34 +153,26 @@ function showTbWindow(html, style) {
             <small class="grey">本插件放送数据由 <a href="http://bgmlist.com">bgmlist.com</a> 提供</small>
         </div>`);
     $('#TB_window.userscript_bgmlist_integrator').mouseleave(rmTbWindow);
-
-    let url = html.match(/\/subject\/\d+/)[0];
-    if (!url) {
-        return;
-    }
-    let source = $(`div#home_calendar ul a[href="${url}"] img`);
-    $('div#TB_window').css({
-        position: 'absolute',
-        top: source.offset().top,
-        left: (source.offset().left - $('div#TB_window').width() - 10)
-    });
 }
 
 $week.find('.thumbTip').click(function () {
-    const onAirSite = $(this).data('onAirSite');
+    const $this = $(this);
+    const $img = $this.find('img');
+    const style = `position:absolute;top:${$img.offset().top}px;left:${$img.offset().left - TB_WINDOW_WIDTH - 10}px;`;
+    const onAirSite = $this.data('onAirSite');
     showTbWindow(`
-        <small class="grey"><a href="${$(this).attr('href')}">${$(this).attr('alt')}</a></small>
+        <small class="grey"><a href="${$this.attr('href')}">${$this.attr('alt')}</a></small>
         <ul class="line_list">
             ${onAirSite.map((v, i) => `
                 <li class="line_${i % 2 ? 'odd' : 'even'}">
                     <h6><a target="_blank" href="${v}">${v.replace(/https?:\/\/.+?\./, '').split('/')[0]}</a></h6>
                 </li>
                 `.trim()).join('')}
-        </ul>`);
+        </ul>`, style);
     return false;
 });
 
-GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;left:80%;top:20px;width:18%;}');
+GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;width:' + TB_WINDOW_WIDTH + 'px;}');
 
 const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 8; // 8h
 
