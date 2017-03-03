@@ -2,7 +2,7 @@
 // @name         Bangumi Bgmlist Integrator
 // @description  将你的"在看"与 bgmlist.com 的放送数据优雅整合!
 // @namespace    bangumi.scripts.prevails.bgmlistintegrator
-// @version      1.2.4
+// @version      1.3.0
 // @author       "Donuts."
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
@@ -54,6 +54,8 @@ const WEEK_DAY = [
     'Fri',
     'Sat',
 ];
+
+const TB_WINDOW_WIDTH = 250;
 
 const bgmlist = GM_getValue('bgmlist') || {};
 
@@ -154,20 +156,23 @@ function showTbWindow(html, style) {
 }
 
 $week.find('.thumbTip').click(function () {
-    const onAirSite = $(this).data('onAirSite');
+    const $this = $(this);
+    const $img = $this.find('img');
+    const style = `position:absolute;top:${$img.offset().top}px;left:${$img.offset().left - TB_WINDOW_WIDTH - 10}px;`;
+    const onAirSite = $this.data('onAirSite');
     showTbWindow(`
-        <small class="grey"><a href="${$(this).attr('href')}">${$(this).attr('alt')}</a></small>
+        <small class="grey"><a href="${$this.attr('href')}">${$this.attr('alt')}</a></small>
         <ul class="line_list">
             ${onAirSite.map((v, i) => `
                 <li class="line_${i % 2 ? 'odd' : 'even'}">
                     <h6><a target="_blank" href="${v}">${v.replace(/https?:\/\/.+?\./, '').split('/')[0]}</a></h6>
                 </li>
                 `.trim()).join('')}
-        </ul>`);
+        </ul>`, style);
     return false;
 });
 
-GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;left:80%;top:20px;width:18%;}');
+GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;width:' + TB_WINDOW_WIDTH + 'px;}');
 
 const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 8; // 8h
 
