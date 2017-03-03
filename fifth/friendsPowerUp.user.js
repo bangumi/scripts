@@ -1,17 +1,28 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.5
+// @version      1.0.6
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.5';
+const CURRENT_VERSION = '1.0.6';
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
-const ME = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
+
+let me;
+let body;
+if (location.pathname !== '/rakuen') {
+    me = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
+    localStorage.setItem('fifth_bgm_friends_userjs_me', me);
+    body = $('body');
+}
+else {
+    me = localStorage.getItem('fifth_bgm_friends_userjs_me');
+    body = $(document.getElementById('right').contentDocument.getElementsByTagName('body'));
+}
 
 let missions = [];
 
@@ -19,28 +30,9 @@ let userInfo = {};
 
 let isDisplaying = false;
 
-// let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-// function checkTotal(e) {
-//     let total = 0;
-//     e.forEach(function (elem) {
-//         total += elem;
-//     });
-//     return total;
-// }
-// function calculateAverage(e) {
-//     let total = 0;
-//     e.forEach(function (elem, index) {
-//         total += elem * index;
-//     });
-//     return total;
-// }
-
+let infoBox;
 function fetch(uid, missionId, adjust = false) {
-
     userInfo = {};
-    // starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
     if (!missions[missionId]) {
         return;
     }
@@ -65,43 +57,8 @@ function fetch(uid, missionId, adjust = false) {
             updateInfoBox(userInfo, adjust);
         });
     });
-
-    // $.get(`${location.origin}/anime/list/${uid}/collect`, function (data) {
-    //     if (!missions[missionId]) {
-    //         return;
-    //     }
-    //     userInfo.animeCollectNum = parseInt($('ul.navSubTabs a.focus span', $(data)).text().match(/\d+/)[0], 10);
-    //     for (let i = 1; i <= Math.ceil(userInfo.animeCollectNum / MAX_SUBJECTS_ON_ONE_PAGE); i++) {
-    //         if (!missions[missionId]) {
-    //             return;
-    //         }
-    //         $.get(`${location.origin}/anime/list/${userInfo.uid}/collect?page=${i}`, function (data) {
-    //             if (!missions[missionId]) {
-    //                 return;
-    //             }
-    //             console.log(missions);
-    //             $('ul#browserItemList li.item', $(data)).each(function () {
-    //                 let starsinfo = $(this).find('p.collectInfo span.starsinfo');
-    //                 console.log(starsinfo.attr('class').match(/\d+/)[0]);
-    //                 if (starsinfo.length > 0) {
-    //                     starsCounts[starsinfo.attr('class').match(/\d+/)[0]] += 1;
-    //                 }
-    //                 else {
-    //                     starsCounts[0] += 1;
-    //                 }
-    //             });
-    //             console.log(starsCounts);
-    //             if (checkTotal(starsCounts) === userInfo.animeCollectNum) {
-    //                 console.log(starsCounts);
-    //                 console.log(Math.round(calculateAverage(starsCounts) / userInfo.animeCollectNum * 100) / 100);
-    //             }
-    //         });
-    //     }
-    // });
-
 }
-
-$('a').mouseover(function () {
+body.on('mouseover', 'a', function(event){
     let self = $(this);
     if ($(this).find('span').length > 0) {
         self = $(this).find('span');
@@ -117,8 +74,11 @@ $('a').mouseover(function () {
     }
     isDisplaying = true;
     let uid = $(this).attr('href').match(/\w+$/)[0];
-    if (uid === ME) {
+    if (uid === me) {
         return;
+    }
+    if (!infoBox) {
+        createInfoBox();
     }
     infoBox.find('div.fifth_bgm_loading').css({
         display: 'block'
@@ -145,8 +105,9 @@ $('a').mouseover(function () {
 
     missions.push(true);
     fetch(uid, missions.length - 1, adjust);
+    $(this).mouseleave(hidePopup);
 });
-$('a').mouseout(function () {
+function hidePopup() {
     if (!$(this).attr('href').match(/\/user\//)) {
         return;
     }
@@ -161,15 +122,10 @@ $('a').mouseout(function () {
     });
     missions[missions.length - 1] = false;
     isDisplaying = false;
-});
-
-let infoBox;
-if (!infoBox) {
-    createInfoBox();
 }
 
 function createInfoBox() {
-    $('body').append(`
+    body.append(`
         <div id="fifth_bgm_infoBox" style="
             ">
             <div class="fifth_bgm_loading"></div>
@@ -223,3 +179,55 @@ function updateInfoBox(userInfo, adjust = false) {
     // infoBox.find('p.fifth_bgm_anime').text(`collected anime: ${userInfo.animeCollectNum}.`);
     // infoBox.find('p.fifth_bgm_score').text(`average score: ${calculateAverage(starsCounts) / userInfo.animeCollectNum}`);
 }
+
+// functiong backup
+//
+// ----- 1 -----
+// collect data fetch
+//
+// $.get(`${location.origin}/anime/list/${uid}/collect`, function (data) {
+//     if (!missions[missionId]) {
+//         return;
+//     }
+//     userInfo.animeCollectNum = parseInt($('ul.navSubTabs a.focus span', $(data)).text().match(/\d+/)[0], 10);
+//     for (let i = 1; i <= Math.ceil(userInfo.animeCollectNum / MAX_SUBJECTS_ON_ONE_PAGE); i++) {
+//         if (!missions[missionId]) {
+//             return;
+//         }
+//         $.get(`${location.origin}/anime/list/${userInfo.uid}/collect?page=${i}`, function (data) {
+//             if (!missions[missionId]) {
+//                 return;
+//             }
+//             console.log(missions);
+//             $('ul#browserItemList li.item', $(data)).each(function () {
+//                 let starsinfo = $(this).find('p.collectInfo span.starsinfo');
+//                 console.log(starsinfo.attr('class').match(/\d+/)[0]);
+//                 if (starsinfo.length > 0) {
+//                     starsCounts[starsinfo.attr('class').match(/\d+/)[0]] += 1;
+//                 }
+//                 else {
+//                     starsCounts[0] += 1;
+//                 }
+//             });
+//             console.log(starsCounts);
+//             if (checkTotal(starsCounts) === userInfo.animeCollectNum) {
+//                 console.log(starsCounts);
+//                 console.log(Math.round(calculateAverage(starsCounts) / userInfo.animeCollectNum * 100) / 100);
+//             }
+//         });
+//     }
+// });
+//
+// ----- 2 -----
+// array sum up with/without weighted
+//
+// let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+// function sumUp(e, isWeighted) {
+//     let total = 0;
+//     e.forEach(function (elem, index) {
+//         total += elem * (isWeighted ? index : 1);
+//     });
+//     return total;
+// }
+// sumUp(starsCounts, true) 加权
+// sumUp(starsCounts, false) 不加权
