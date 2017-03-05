@@ -8,26 +8,30 @@
 // @encoding     utf-8
 // ==/UserScript==
 
+var STATUS = ['doings', 'collections'];
 
 function getStatusWords() {
     var t = $('.focus.chl').text().trim();
     var a_dict = {
-        '动画': ['在看', '看过'],
-        '书籍': ['在读', '读过'],
-        '音乐': ['在听', '听过'],
-        '游戏': ['在玩', '玩过'],
-        '三次元': ['在看', '看过'],
+        '动画': {'doings': '在看', 'collections': '看过'},
+        '书籍': {'doings': '在读', 'collections': '读过'},
+        '音乐': {'doings': '在听', 'collections': '听过'},
+        '游戏': {'doings': '在玩', 'collections': '玩过'},
+        '三次元': {'doings': '在看', 'collections': '看过'}
     };
     if (a_dict.hasOwnProperty(t)) {
         return a_dict[t];
     } else {
-        return ['在看', '看过'];
+        return a_dict['动画'];
     }
 }
 
 function createFriendNode(uid, friend) {
-    var member_url = location.protocol + '//' + location.hostname + '/user/' + uid;
-    return $('<a class="avatar" href="${member_url}" title="${member_name}"><span class="avatarNeue avatarSize32 ll" style="margin:3px 3px 0 0;background-image:url(\'${member_img}\')"></span></a>'.replace('${member_url}',member_url).replace('${member_name}',friend.name).replace('${member_img}',friend.img.replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/')));
+    var member_url = '//' + location.hostname + '/user/' + uid;
+    return $(`<a class="avatar" href="${member_url}" title="${friend.name}"><span class="avatarNeue avatarSize32 ll" style="margin:3px 3px 0 0;background-image:url(\'${friend.img}\')"></span></a>`);
+}
+
+function createFriendDetail(uid, friend) {
 }
 
 function get_members(members_url, type_) {
@@ -37,28 +41,22 @@ function get_members(members_url, type_) {
             var uid = elem.attr('href').split('/')[2];
             var friend = new Object({});
             friend.name = elem.text().trim();
-            friend.img = elem.find('.avatar').attr('src');
+            friend.img = elem.find('.avatar').attr('src').replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/');
             $('#friend_' + type_).append(createFriendNode(uid, friend));
         });
     });
 }
 
 
-function update_members() {
-    var doings_url = location.href + '/doings?filter=friends';
-    var collections_url = location.href + '/collections?filter=friends';
-    $('#friend_collections').empty();
-    $('#friend_doings').empty();
-    get_members(collections_url, 'collections');
-    get_members(doings_url, 'doings');
-}
-
-
 function main() {
     var words = getStatusWords();
-    $('#columnSubjectHomeA').append('<div class="SimpleSidePanel"><h2>哪些好友${words}？</h2><ul id="friend_doings" class="groupsLine"></ul>'.replace('${words}', words[0]));
-    $('#columnSubjectHomeA').append('<div class="SimpleSidePanel"><h2>哪些好友${words}？</h2><ul id="friend_collections" class="groupsLine"></ul>'.replace('${words}', words[1]));
-    update_members();
+    for (i = 0; i < STATUS.length; i++) {
+        var st = STATUS[i];  // status type
+        var status_url = location.href + '/' + st + '?filter=friends';
+        $('#columnSubjectHomeA').append(`<div class="SimpleSidePanel"><h2>哪些好友${words[st]}？</h2><ul id="friend_${st}" class="groupsLine"></ul>`);
+        $('#friend_' + st).empty();
+        get_members(status_url, st);
+    }
 }
 
 
