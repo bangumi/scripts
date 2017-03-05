@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.0
+// @version      1.4.1
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -54,6 +54,7 @@ function get_members(members_url, st) {
                 .css('border-radius', '5px')
                 .css('box-shadow', '0 0 5px grey')
                 .css('padding','10px')
+                .css('max-width', '360px')
                 .hide()
             );
             $('#' + friend.node_id).mouseover(function(e){
