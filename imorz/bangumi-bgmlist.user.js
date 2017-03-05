@@ -7,8 +7,8 @@
 // @version     0.1.1
 // ==/UserScript==
 
-var OLDEST_MONTH = 1310;
-var BGMLIST_URL = 'https://bgmlist.sorz.org/json/bangumi-';
+var OLDEST_YEAR = 2013;
+var BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
 var DOWNLOAD_DMHY_URL = "http://share.dmhy.org/topics/list?keyword=";
 var DOWNLOAD_POPGO_URL = "http://share.popgo.org/search.php?title=";
 var DOWNLOAD_NYAA_URL = "http://www.nyaa.se/?page=search&term=";
@@ -39,20 +39,20 @@ function currentBgmId() {
   return location.pathname.match(/\/subject\/(\d+)/)[1];
 }
   
-function findOnAirMonth(callback) {
+function findOnAirYearMonth(callback) {
   $infobox.find('.tip').each(function() {
     var $this = $(this);
     if ($this.text().startsWith('放送开始')) {
-      var groups = $this.parent().text().match(/\d{2}(\d{2})年(\d{1,2})月/);
+      var groups = $this.parent().text().match(/(\d{4})年(\d{1,2})月/);
       if (groups == null)
         return;
-      callback(parseInt(groups[1]) * 100 + parseInt(groups[2]));
+      callback(parseInt(groups[1]), parseInt(groups[2]));
     }
   });
 }
 
-function getBgmList(month, callback) {
-  var url = BGMLIST_URL + month + '.json';
+function getBgmList(year, month, callback) {
+  let url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
   $.getJSON(url, function(list) {
     var bgms = {};
     for (var key in list) {
@@ -98,10 +98,10 @@ function addOnAirSites(bgm) {
     $info.remove();
 }
 
-findOnAirMonth(function(month) {
-  if (month < OLDEST_MONTH || month > 6000)
+findOnAirYearMonth((year, month) => {
+  if (year < OLDEST_YEAR)
     return;
-  getBgmList(month, function(list) {
+  getBgmList(year, month, (list) => {
     var bgm = list[currentBgmId()];
     if (bgm == undefined)
       return;
