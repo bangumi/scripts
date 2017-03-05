@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.3.0
+// @version      1.4.0
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -28,21 +28,43 @@ function getStatusWords() {
 
 function createFriendNode(uid, friend) {
     var member_url = '//' + location.hostname + '/user/' + uid;
-    return $(`<a class="avatar" href="${member_url}" title="${friend.name}"><span class="avatarNeue avatarSize32 ll" style="margin:3px 3px 0 0;background-image:url(\'${friend.img}\')"></span></a>`);
+    return $(`
+        <a id="${friend.node_id}" class="avatar" href="${member_url}">
+          <span class="avatarNeue avatarSize32 ll" style="margin:3px 3px 0 0;background-image:url(\'${friend.img}\')" ></span>
+        </a>`);
 }
 
-function createFriendDetail(uid, friend) {
-}
 
-function get_members(members_url, type_) {
+function get_members(members_url, st) {
     $.get(members_url, function(data) {
-        $('.userContainer a.avatar', $(data)).each(function() {
-            var elem = $(this);
-            var uid = elem.attr('href').split('/')[2];
+        $('.userContainer', $(data)).each(function() {
             var friend = new Object({});
+            var elem = $($(this).find('a.avatar'));
+            var uid = elem.attr('href').split('/')[2];
+            friend.node_id = st + '_node_' + uid;
+            friend.detail_id = st + "_detail_" + uid;
             friend.name = elem.text().trim();
             friend.img = elem.find('.avatar').attr('src').replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/');
-            $('#friend_' + type_).append(createFriendNode(uid, friend));
+            $('#friend_' + st).append(createFriendNode(uid, friend));
+            $('#friend_' + st).append(
+                $(this).attr('id', friend.detail_id)
+                .css('background', 'white')
+                .css('display', 'block')
+                .css('position', 'absolute')
+                .css('border-radius', '5px')
+                .css('box-shadow', '0 0 5px grey')
+                .css('padding','10px')
+                .hide()
+            );
+            $('#' + friend.node_id).mouseover(function(e){
+                $('#' + friend.detail_id)
+                    .css('left', e.pageX + 32)
+                    .css('top', e.pageY - 32)
+                    .fadeIn();
+            });
+            $('#' + friend.node_id).mouseout(function(e){
+                $('#' + friend.detail_id).hide();
+            });
         });
     });
 }
@@ -53,7 +75,16 @@ function main() {
     for (i = 0; i < STATUS.length; i++) {
         var st = STATUS[i];  // status type
         var status_url = location.href + '/' + st + '?filter=friends';
-        $('#columnSubjectHomeA').append(`<div class="SimpleSidePanel"><h2>哪些好友${words[st]}？</h2><ul id="friend_${st}" class="groupsLine"></ul>`);
+        $('#columnSubjectHomeA').append(`
+            <div class="SimpleSidePanel">
+              <h2>
+                <a href="${location.href}/${st}?filter=friends" style="color:white;">
+                  哪些好友${words[st]}？
+                </a>
+              </h2>
+            <ul id="friend_${st}" class="groupsLine">
+            </ul>
+            </div>`);
         $('#friend_' + st).empty();
         get_members(status_url, st);
     }
@@ -62,6 +93,5 @@ function main() {
 
 // check if user has logged in and subject exists
 if ($('#badgeUserPanel').length > 0 && $('#bangumiInfo').length > 0) {
-    var subject_id = location.pathname.split('/')[2];
     main();
 }
