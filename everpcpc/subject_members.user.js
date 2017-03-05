@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.1
+// @version      1.4.2
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -44,6 +44,7 @@ function get_members(members_url, st) {
             friend.node_id = st + '_node_' + uid;
             friend.detail_id = st + "_detail_" + uid;
             friend.name = elem.text().trim();
+            // use small avatar
             friend.img = elem.find('.avatar').attr('src').replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/');
             $('#friend_' + st).append(createFriendNode(uid, friend));
             $('#friend_' + st).append(
@@ -61,9 +62,8 @@ function get_members(members_url, st) {
                 $('#' + friend.detail_id)
                     .css('left', e.pageX + 32)
                     .css('top', e.pageY - 32)
-                    .fadeIn();
-            });
-            $('#' + friend.node_id).mouseout(function(e){
+                    .show();
+            }).mouseout(function(e){
                 $('#' + friend.detail_id).hide();
             });
         });
