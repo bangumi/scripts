@@ -4,3 +4,4 @@
 
 讨论帖[戳我](https://bgm.tv/group/topic/342194)
 
+![装上后的样子](images/subject_members.png)
