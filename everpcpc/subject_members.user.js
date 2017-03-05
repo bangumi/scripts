@@ -1,23 +1,23 @@
 // ==UserScript==
-// @name         Bangumi添加好友在看、看过
+// @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.2.8
+// @version      1.3.0
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
 // @encoding     utf-8
 // ==/UserScript==
 
-var STATUS = ['doings', 'collections'];
+var STATUS = ['wishes', 'collections', 'doings'];
 
 function getStatusWords() {
     var t = $('.focus.chl').text().trim();
     var a_dict = {
-        '动画': {'doings': '在看', 'collections': '看过'},
-        '书籍': {'doings': '在读', 'collections': '读过'},
-        '音乐': {'doings': '在听', 'collections': '听过'},
-        '游戏': {'doings': '在玩', 'collections': '玩过'},
-        '三次元': {'doings': '在看', 'collections': '看过'}
+        '动画': {'doings': '在看', 'collections': '看过', 'wishes': '想看'},
+        '书籍': {'doings': '在读', 'collections': '读过', 'wishes': '想读'},
+        '音乐': {'doings': '在听', 'collections': '听过', 'wishes': '想听'},
+        '游戏': {'doings': '在玩', 'collections': '玩过', 'wishes': '想玩'},
+        '三次元': {'doings': '在看', 'collections': '看过', 'wishes': '想看'}
     };
     if (a_dict.hasOwnProperty(t)) {
         return a_dict[t];
