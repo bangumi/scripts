@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.8
+// @version      1.0.9
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.8';
+const CURRENT_VERSION = '1.0.9';
 // const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -27,12 +27,14 @@ else {
 }
 
 let missions = {};
-
+let currentMission = '';
 let userInfo = {};
 
 let isDisplaying = false;
 
 let infoBox;
+let infoBoxUserInfo;
+let infoBoxLoading;
 
 function fetch(uid, adjust = false) {
     userInfo = {};
@@ -58,7 +60,9 @@ function fetch(uid, adjust = false) {
                 syncPercent: syncPercent
             };
             cache[uid] = userInfo;
-            updateInfoBox(userInfo, adjust);
+            if (uid === currentMission || !currentMission) {
+                updateInfoBox(userInfo, adjust);
+            }
         });
     }
     else {
@@ -69,11 +73,15 @@ function fetch(uid, adjust = false) {
 }
 body.on('mouseenter', 'a', function(event){
     let self = $(this);
-    let uid = self.attr('href').match(/\w+$/)[0];
-    if (!self.attr('href').match(/\/user\/\w+$/)|| self.attr('class') === 'l noPop' || uid === me) {
+    if (!self.attr('href').match(/^\/user\/\w+$/)) {
         return;
     }
-
+    let uid = self.attr('href').match(/\w+$/);
+    if (!uid || self.attr('class') === 'l noPop' || uid[0] === me) {
+        return;
+    }
+    uid = uid[0];
+    currentMission = uid;
     let top = event.pageY;
     let left = event.pageX;
     let adjust = {
@@ -87,49 +95,39 @@ body.on('mouseenter', 'a', function(event){
         createInfoBox();
     }
 
-    infoBox.find('div.fifth_bgm_userInfo').css({
-        display: 'none'
-    });
-    infoBox.find('div.fifth_bgm_loading').css({
-        display: 'block'
-    });
-    infoBox.css({
-        display: 'block',
-        top: adjust.toTop ? `${top - infoBox.height() - 20}px` : `${top + 20}px`,
-        left: adjust.toLeft ? `${left - infoBox.width() - 20}px` : `${left + 20}px`
-    });
-
+    infoBoxUserInfo.hide();
+    infoBoxLoading.show();
+    infoBox.css('top', adjust.toTop ? `${top - infoBox.height() - 20}px` : `${top + 20}px`)
+           .css('left', adjust.toLeft ? `${left - infoBox.width() - 20}px` : `${left + 20}px`)
+           .fadeIn();
 
     fetch(uid, adjust);
     infoBox.mouseleave(hidePopup);
 });
 
 function hidePopup() {
-    infoBox.css({
-        display: 'none'
-    });
+    infoBox.fadeOut();
+    currentMission = '';
 }
 
 function updateInfoBox(userInfo, adjust = {toLeft: false, toTop: false}) {
+    if (!userInfo) {
+        return;
+    }
     let oldOffset = infoBox.offset();
     let oldSize = {
         width: infoBox.width(),
         height: infoBox.height()
     };
-    infoBox.find('p.fifth_bgm_name').html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
-    infoBox.find('p.fifth_bgm_tl').text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
-    infoBox.find('p.fifth_bgm_sync').text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
+    infoBoxUserInfo.find('p.fifth_bgm_name').html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
+    infoBoxUserInfo.find('p.fifth_bgm_tl').text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
+    infoBoxUserInfo.find('p.fifth_bgm_sync').text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
 
-    infoBox.find('div.fifth_bgm_loading').css({
-        display: 'none'
-    });
-    infoBox.find('div.fifth_bgm_userInfo').css({
-        display: 'block'
-    });
-    infoBox.css({
-        left: adjust.toLeft ? `${oldOffset.left - infoBox.width() + oldSize.width}px` : oldOffset.left,
-        top: adjust.toTop ? `${oldOffset.top - infoBox.height() + oldSize.height}px` : oldOffset.top
-    });
+    infoBoxLoading.fadeOut();
+    infoBoxUserInfo.fadeIn();
+    infoBox.css('left', adjust.toLeft ? `${oldOffset.left - infoBox.width() + oldSize.width}px` : oldOffset.left)
+           .css('top', adjust.toTop ? `${oldOffset.top - infoBox.height() + oldSize.height}px` : oldOffset.top);
+
     // infoBox.find('p.fifth_bgm_anime').text(`collected anime: ${userInfo.animeCollectNum}.`);
     // infoBox.find('p.fifth_bgm_score').text(`average score: ${calculateAverage(starsCounts) / userInfo.animeCollectNum}`);
 }
@@ -137,34 +135,30 @@ function updateInfoBox(userInfo, adjust = {toLeft: false, toTop: false}) {
 function createInfoBox() {
     body.append(`
         <div id="fifth_bgm_infoBox">
-            <div class="fifth_bgm_loading"></div>
             <div class="fifth_bgm_userInfo">
                 <p class="fifth_bgm_name"></p>
                 <p class="fifth_bgm_tl"></p>
                 <p class="fifth_bgm_sync"></p>
             </div>
+            <div class="fifth_bgm_loading"></div>
         </div>
     `);
     infoBox = $('div#fifth_bgm_infoBox');
-    infoBox.css({
-        'display': 'none',
-        'position': 'absolute',
-        'background-color': '#fff',
-        'border-radius': '5px',
-        'box-shadow': '0px 0px 20px #ccc',
-        'opacity': '.85'
-    });
-    infoBox.find('div').css({
-        margin: '5px',
-        display: 'none'
-    });
-    infoBox.find('div.fifth_bgm_loading').css({
-        'background-image': `url(${LOADING_IMG_URL})`,
-        'background-repeat': 'no-repeat',
-        'width': '210px',
-        'height': '15px',
-        'display': 'none'
-    });
+    infoBoxUserInfo = infoBox.find('div.fifth_bgm_userInfo');
+    infoBoxLoading = infoBox.find('div.fifth_bgm_loading');
+    infoBox.css('display', 'none')
+           .css('position', 'absolute')
+           .css('background-color', '#fff')
+           .css('border-radius', '5px')
+           .css('box-shadow', '0px 0px 20px #ccc')
+           .css('opacity', '.85');
+    infoBox.find('div').css('margin', '5px')
+                       .css('display', 'none');
+    infoBoxLoading.css('background-image', `url(${LOADING_IMG_URL})`)
+                  .css('background-repeat', 'no-repeat')
+                  .css('width', '210px')
+                  .css('height', '15px')
+                  .css('display', 'none');
 }
 
 // functiong backup
