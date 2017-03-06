@@ -6,7 +6,7 @@
 // @grant       GM_getValue
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
 // @require     http://code.jquery.com/jquery-3.1.1.min.js
-// @version     0.2.0
+// @version     0.2.1
 // ==/UserScript==
 
 const OLDEST_YEAR = 2013;
@@ -14,18 +14,19 @@ const CACHE_EXPIRE_SECS = 24 * 3600;
 const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
 const DOWNLOAD_DMHY_URL = "http://share.dmhy.org/topics/list?keyword=";
 const DOWNLOAD_NYAA_URL = "http://www.nyaa.se/?page=search&term=";
-const SITES = {
-  'acfun'   : { name: 'A站' },
-  'bilibili': { name: 'B站' },
-  'tucao'   : { name: 'C站' },
-  'sohu'    : { name: '搜狐' },
-  'youku'   : { name: '优酷' },
-  'qq'      : { name: '腾讯' },
-  'iqiyi'   : { name: '爱奇艺'},
-  'letv'    : { name: '乐视'}, 
-  'pptv'    : { name: 'PPTV'},
-  'tudou'   : { name: '土豆'}, 
-  'movie'   : { name: '迅雷'}
+const SITE_NAMES = {
+  'acfun'   : 'A站',
+  'bilibili': 'B站',
+  'tucao'   : 'C站',
+  'sohu'    : '搜狐',
+  'youku'   : '优酷',
+  'qq'      : '腾讯',
+  'iqiyi'   : '爱奇艺',
+  'letv'    : '乐视',
+  'le'      : '乐视',
+  'pptv'    : 'PPTV',
+  'tudou'   : '土豆',
+  'movie'   : '迅雷'
 }
 
 // Change to false to disable download search links:
@@ -105,16 +106,15 @@ function addDownloadSearchLinks(bgm) {
 function addOnAirSites(bgm) {
   $info = addInfo('放送站点');
   var added = false;
-  for (var i in bgm.onAirSite) {
-    var url = bgm.onAirSite[i];
-    var domain = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
-    var name = SITES[domain].name;
-    name == undefined ? domain : name;
-    if (name == undefined)
+  for (let i in bgm.onAirSite) {
+    const url = bgm.onAirSite[i];
+    const domain = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
+    const siteName = domain in SITE_NAMES ? SITE_NAMES[domain] : domain;
+    if (!siteName)
       continue;
     if (added)
       $info.append("、");
-    $a(url, name).appendTo($info);
+    $a(url, siteName).appendTo($info);
     added = true;
   }
   if (!added)
