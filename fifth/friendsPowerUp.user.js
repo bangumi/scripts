@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.9
+// @version      1.0.10
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.9';
+const CURRENT_VERSION = '1.0.10';
 // const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -73,7 +73,7 @@ function fetch(uid, adjust = false) {
 }
 body.on('mouseenter', 'a', function(event){
     let self = $(this);
-    if (!self.attr('href').match(/^\/user\/\w+$/)) {
+    if (!self.attr('href').match(/^(https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv))?\/user\/\w+$/)) {
         return;
     }
     let uid = self.attr('href').match(/\w+$/);
