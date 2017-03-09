@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi EpPopuVisualizer
 // @namespace    http://bgm.tv/user/prevails
-// @version      0.2.7.1
+// @version      2.7.1
 // @description  标注ep的讨论人气
 // @author       "Donuts."
 // @grant        GM_getValue
@@ -177,8 +177,8 @@ function bindEventsToControlPanelInputs() {
 }
 
 function addFixedStyleSheet() {
-    const css = 
-        `.epv_content > div {
+    GM_addStyle(`
+        .epv_content > div {
             border-bottom: 1px dotted #e0e0e0;
             margin-top: 5px;
             padding: 4px 0 4px 12px;
@@ -197,8 +197,7 @@ function addFixedStyleSheet() {
         .epv_popu_histogram {
             position: absolute;
             right: 0;
-        }`;
-    GM_addStyle(css);
+        }`);
 }
 
 function main() {
