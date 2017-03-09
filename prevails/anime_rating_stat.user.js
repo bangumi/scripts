@@ -2,7 +2,7 @@
 // @name         Bangumi 动画打分统计
 // @encoding     utf-8
 // @namespace    bangumi.scripts.prevails.animeratingstatistic
-// @version      1.2.0
+// @version      1.2.1
 // @include      /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/user\/\w+$/
 // @require      https://code.jquery.com/jquery-2.2.4.min.js
 // @grant        GM_addStyle
@@ -151,34 +151,34 @@ GM_addStyle(`
 #dropped_progress {color: #ff9999}
 `);
 
-const voidArr = '0000000000'.split('').map(Number);
+const zeroArr = '0000000000'.split('').map(Number);
 
 const stat = {
     "collect": {
-        arr: voidArr.slice(),
+        arr: zeroArr.slice(),
         re: /\d+(?=部看过)/
     },
     "do": {
-        arr: voidArr.slice(),
+        arr: zeroArr.slice(),
         re: /\d+(?=部在看)/
     },
     "on_hold": {
-        arr: voidArr.slice(),
+        arr: zeroArr.slice(),
         re: /\d+(?=部搁置)/
     },
     "dropped": {
-        arr: voidArr.slice(),
+        arr: zeroArr.slice(),
         re: /\d+(?=部抛弃)/
     },
 };
 
 let flag = false;
-function start({ctrlKey}){
+function start(){
     if (flag) {
         console.log(JSON.stringify(stat));
         return;
     }
-    $button.find('a').html(`${ctrlKey ? '顺序' : ''}统计中
+    $button.find('a').html(`统计中
     <span id="collect_progress">▁</span><span id="do_progress">▁</span><span id="on_hold_progress">▁</span><span id="dropped_progress">▁</span>`);
     $button[0].title = '再次点击可将当前结果输出到控制台(F12 -> Console)';
     showTbWindow(html);
@@ -190,13 +190,13 @@ function start({ctrlKey}){
     for (let key in stat) {
         const n = (ultext.match(stat[key].re) || [-1])[0];
         const pageCount = Math.floor(n / 24) + 1;
-        const urlprefix = `/anime/list/${user}/${key}?${ctrlKey ? 'orderby=rate&' : ''}page=`;
-        const g = fetchControl(urlprefix, pageCount, key, ctrlKey);
+        const urlprefix = `/anime/list/${user}/${key}?orderby=rate&page=`;
+        const g = fetchControl(urlprefix, pageCount, key);
         deal(g, g.next());
     }
 }
 
-function* fetchControl(urlprefix, pageCount, key, ctrlKey) {
+function* fetchControl(urlprefix, pageCount, key) {
     const data = stat[key];
     for (let i = 0; i < pageCount; i++) {
         const text = yield fetch(urlprefix + (i + 1));
@@ -207,15 +207,12 @@ function* fetchControl(urlprefix, pageCount, key, ctrlKey) {
         }
         total = pageStatArr.reduce((a, b) => a + b);
         if (total === 0) {
-            if (ctrlKey) {
-                break;
-            }
-            continue;
+            break;
         }
         for (let j = 0; j < 10; j++) {
             data.arr[j] += pageStatArr[j];
         }
-        if (ctrlKey && total < 24) {
+        if (total < 24) {
             break;
         }
         showStat();
@@ -241,7 +238,7 @@ function addHeights(heights, barclass, $div) {
 }
 
 function showStat() {
-    const all = voidArr.slice();
+    const all = zeroArr.slice();
     for (let i in all) {
         for (let k in stat) {
             all[i] += stat[k].arr[i];
@@ -278,7 +275,7 @@ function showTbWindow(html, style) {
 GM_addStyle('#TB_window.userscript_rating_statistic{display:block;left:75%;top:20px;width:23%;}');
 
 const $button = $(`
-<li style="float:right;" title="可按住 ctrl 再点击统计, 适用于统计收藏多, 打分少(稀疏)的用户.">
+<li style="float:right;">
     <a href="javascript:;">打分统计</a>
 </li>`);
 $anime.find('.horizontalOptions ul').append($button);
