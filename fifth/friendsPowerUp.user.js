@@ -1,16 +1,24 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.0.10
+// @version      1.1.0
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.0.10';
-// const MAX_SUBJECTS_ON_ONE_PAGE = 24;
+const CURRENT_VERSION = '1.1.0';
+
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
+
+const MAX_SUBJECTS_ON_ONE_PAGE = 24;
+
+const SUBJECT_TYPE = ['anime', 'book', 'music', 'game', 'real'];
+
+const ACTIONS = ['wish', 'collect', 'do', 'on_hold', 'dropped'];
+
+let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 let cache = {};
 
@@ -18,11 +26,11 @@ let me;
 let body;
 if (location.pathname !== '/rakuen') {
     me = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
-    localStorage.setItem('fifth_bgm_friends_userjs_me', me);
+    localStorage.setItem('fifth_bgm_user_userjs_me', me);
     body = $('body');
 }
 else {
-    me = localStorage.getItem('fifth_bgm_friends_userjs_me');
+    me = localStorage.getItem('fifth_bgm_user_userjs_me');
     body = $(document.getElementById('right').contentDocument.getElementsByTagName('body'));
 }
 
@@ -34,9 +42,15 @@ let isDisplaying = false;
 
 let infoBox;
 let infoBoxUserInfo;
+let infoBoxUserData;
+let infoBoxSeeMore;
 let infoBoxLoading;
+let p_name;
+let p_tl;
+let p_sync;
+let p_scores;
 
-function fetch(uid, adjust = false) {
+function fetchInfo(uid, adjust = false) {
     userInfo = {};
     if (!cache[uid] && !missions[uid]) {
         missions[uid] = true;
@@ -61,16 +75,17 @@ function fetch(uid, adjust = false) {
             };
             cache[uid] = userInfo;
             if (uid === currentMission || !currentMission) {
-                updateInfoBox(userInfo, adjust);
+                updateUserInfo(userInfo, adjust);
             }
         });
     }
     else {
         userInfo = cache[uid];
-        updateInfoBox(userInfo, adjust);
+        updateUserInfo(userInfo, adjust);
     }
 
 }
+
 body.on('mouseenter', 'a', function(event){
     let self = $(this);
     if (!self.attr('href').match(/^(https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv))?\/user\/\w+$/)) {
@@ -96,21 +111,27 @@ body.on('mouseenter', 'a', function(event){
     }
 
     infoBoxUserInfo.hide();
+    infoBoxUserData.hide();
+    infoBoxSeeMore.hide();
     infoBoxLoading.show();
-    infoBox.css('top', adjust.toTop ? `${top - infoBox.height() - 20}px` : `${top + 20}px`)
-           .css('left', adjust.toLeft ? `${left - infoBox.width() - 20}px` : `${left + 20}px`)
-           .fadeIn();
+    infoBox.css({
+        top: adjust.toTop ? `${top - infoBox.height() - 20}px` : `${top + 20}px`,
+        left: adjust.toLeft ? `${left - infoBox.width() - 20}px` : `${left + 20}px`
+    }).fadeIn();
 
-    fetch(uid, adjust);
+    fetchInfo(uid, adjust);
+
     infoBox.mouseleave(hidePopup);
 });
 
 function hidePopup() {
     infoBox.fadeOut();
+    infoBoxSeeMore.hide();
+    p_scores.text('');
     currentMission = '';
 }
 
-function updateInfoBox(userInfo, adjust = {toLeft: false, toTop: false}) {
+function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
     if (!userInfo) {
         return;
     }
@@ -119,17 +140,17 @@ function updateInfoBox(userInfo, adjust = {toLeft: false, toTop: false}) {
         width: infoBox.width(),
         height: infoBox.height()
     };
-    infoBoxUserInfo.find('p.fifth_bgm_name').html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
-    infoBoxUserInfo.find('p.fifth_bgm_tl').text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
-    infoBoxUserInfo.find('p.fifth_bgm_sync').text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
+    p_name.html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
+    p_tl.text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
+    p_sync.text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
 
     infoBoxLoading.fadeOut();
     infoBoxUserInfo.fadeIn();
-    infoBox.css('left', adjust.toLeft ? `${oldOffset.left - infoBox.width() + oldSize.width}px` : oldOffset.left)
-           .css('top', adjust.toTop ? `${oldOffset.top - infoBox.height() + oldSize.height}px` : oldOffset.top);
-
-    // infoBox.find('p.fifth_bgm_anime').text(`collected anime: ${userInfo.animeCollectNum}.`);
-    // infoBox.find('p.fifth_bgm_score').text(`average score: ${calculateAverage(starsCounts) / userInfo.animeCollectNum}`);
+    infoBoxSeeMore.fadeIn();
+    infoBox.css({
+        top: adjust.toTop ? `${oldOffset.top - infoBox.height() + oldSize.height}px` : oldOffset.top,
+        left: adjust.toLeft ? `${oldOffset.left - infoBox.width() + oldSize.width}px` : oldOffset.left
+    });
 }
 
 function createInfoBox() {
@@ -140,25 +161,137 @@ function createInfoBox() {
                 <p class="fifth_bgm_tl"></p>
                 <p class="fifth_bgm_sync"></p>
             </div>
+            <div class="fifth_bgm_seeMore">--- 查看更多 ---</div>
+            <div class="fifth_bgm_userData">
+                <p class="fifth_bgm_scores"></p>
+            </div>
             <div class="fifth_bgm_loading"></div>
         </div>
     `);
     infoBox = $('div#fifth_bgm_infoBox');
     infoBoxUserInfo = infoBox.find('div.fifth_bgm_userInfo');
+    infoBoxUserData = infoBox.find('div.fifth_bgm_userData');
+    infoBoxSeeMore = infoBox.find('div.fifth_bgm_seeMore');
     infoBoxLoading = infoBox.find('div.fifth_bgm_loading');
-    infoBox.css('display', 'none')
-           .css('position', 'absolute')
-           .css('background-color', '#fff')
-           .css('border-radius', '5px')
-           .css('box-shadow', '0px 0px 20px #ccc')
-           .css('opacity', '.85');
-    infoBox.find('div').css('margin', '5px')
-                       .css('display', 'none');
-    infoBoxLoading.css('background-image', `url(${LOADING_IMG_URL})`)
-                  .css('background-repeat', 'no-repeat')
-                  .css('width', '210px')
-                  .css('height', '15px')
-                  .css('display', 'none');
+    p_name = infoBoxUserInfo.find('p.fifth_bgm_name');
+    p_tl = infoBoxUserInfo.find('p.fifth_bgm_tl');
+    p_sync = infoBoxUserInfo.find('p.fifth_bgm_sync');
+    p_scores = infoBoxUserData.find('p.fifth_bgm_scores');
+    infoBox.css({
+        display: 'none',
+        position: 'absolute',
+        opacity: '.85',
+        'background-color': '#fff',
+        'border-radius': '5px',
+        'box-shadow': '0px 0px 20px #ccc'
+    });
+    infoBox.find('div').css({
+        margin: '5px',
+        display: 'none'
+    });
+    infoBoxLoading.css({
+        width: '210px',
+        height: '15px',
+        display: 'none',
+        'background-image': `url(${LOADING_IMG_URL})`,
+        'background-repeat': 'no-repeat'
+    });
+    infoBoxSeeMore.css({
+        display: 'none',
+        cursor: 'pointer',
+        'text-align': 'center'
+    });
+    infoBoxSeeMore.mouseenter(function () {
+        infoBoxSeeMore.css({
+            'background-color': '#eee'
+        });
+    });
+    infoBoxSeeMore.mouseleave(function () {
+        infoBoxSeeMore.css({
+            'background-color': '#fff'
+        });
+    });
+
+    infoBoxSeeMore.click(function () {
+        let uid = infoBoxUserInfo.find('a').attr('href').split('/')[2];
+        p_scores.text('读取中...');
+        infoBoxUserData.show();
+        infoBoxSeeMore.fadeOut();
+        starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        fetchData(uid);
+    });
+}
+
+function sumUp(e, isWeighted) {
+    // sumUp(starsCounts, true) 加权
+    // sumUp(starsCounts, false) 不加权
+    let total = 0;
+    e.forEach(function (elem, index) {
+        total += elem * (isWeighted ? index : 1);
+    });
+    return total;
+}
+
+function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum = 0) {
+    if (uid !== currentMission) {
+        return;
+    }
+    console.log(`fetch page: ${page}`);
+    $.get(`${location.origin}/${type}/list/${uid}/${action}?page=${page}`, function (data) {
+        let total = totalNum;
+        if (!total || total <= 0) {
+            total = data.match(/<ul class="navSubTabs">[\s\S]+?<\/ul>/)[0]
+                               .match(/<span>看过[\s\S]*?\(\d+?\)<\/span>/)[0]
+                               .match(/\d{1,}/)[0];
+            total = parseInt(total, 10);
+        }
+        if (page === 1) {
+            let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
+            if (cachedScores.hasOwnProperty(uid)) {
+                let currentUserData = cachedScores[uid];
+                if (currentUserData && currentUserData.count == total) {
+                    updateUserData(uid, currentUserData.scores, total)
+                    return;
+                }
+            }
+        }
+        p_scores.text(`读取中：${page} / ${Math.ceil(total / MAX_SUBJECTS_ON_ONE_PAGE)}`);
+        let stars = data.match(/<span class="sstars\d{1,2} starsinfo"><\/span>/g);
+        if (stars) {
+            stars.forEach(function (elem) {
+                starsCounts[elem.match(/\d{1,2}/)[0]] += 1;
+            });
+        }
+        if (MAX_SUBJECTS_ON_ONE_PAGE * page < total) {
+            fetchData(uid, type, action, page + 1, total);
+        }
+        else {
+            starsCounts[0] = total - sumUp(starsCounts, false);
+            updateUserData(uid, starsCounts, total);
+        }
+    });
+}
+
+function updateUserData(uid, scores, total) {
+    p_scores.text(`TA一共看过 ${total} 部动画，平均打分为 ${(sumUp(scores, true) / total).toFixed(2)}`);
+    let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
+    cachedScores[uid] = {
+        count: total,
+        scores: scores
+    }
+    localStorage.setItem('fifth_bgm_user_userjs_scores', JSON.stringify(cachedScores));
+    // console.log(scores, sumUp(scores, false), sumUp(scores, true) / total);
+}
+
+// fetchData(location.pathname.split('/')[3]);
+
+function drawChart(e) {
+    let maxium = e[0];
+    e.forEach(function (elem) {
+        if (elem > maxium) {
+            maxium = elem;
+        }
+    });
 }
 
 // functiong backup
@@ -198,17 +331,3 @@ function createInfoBox() {
 //         });
 //     }
 // });
-//
-// ----- 2 -----
-// array sum up with/without weighted
-//
-// let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-// function sumUp(e, isWeighted) {
-//     let total = 0;
-//     e.forEach(function (elem, index) {
-//         total += elem * (isWeighted ? index : 1);
-//     });
-//     return total;
-// }
-// sumUp(starsCounts, true) 加权
-// sumUp(starsCounts, false) 不加权
