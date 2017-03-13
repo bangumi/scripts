@@ -5,14 +5,14 @@
 // @author      "Donuts."
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/((m|rakuen)\/topic\/)?ep\/\d+$/
 // @require     https://code.jquery.com/jquery-2.2.4.min.js
-// @version     1.0.1
+// @version     1.0.2
 // @grant       GM_addStyle
 // @encoding    utf-8
 // ==/UserScript==
 
 const $reply = $('.row_reply');
 
-const regex = /(剧透|劇透)/;
+const regex = /(剧透|劇透|R\.?I\.?P|走好)/i;
 const message = '可能有剧透！单击此处显示 / 隐藏';
 
 $reply.each(function(){
