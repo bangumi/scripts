@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.3
+// @version      1.4.4
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -47,7 +47,7 @@ function get_members(members_url, st) {
             // use small avatar
             friend.img = elem.find('.avatar').attr('src').replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/');
             $('#friend_' + st).append(createFriendNode(uid, friend));
-            $('body').append(
+            $('#friend_watch_detail').append(
                 $(this).attr('id', friend.detail_id)
                 .css('background', 'white')
                 .css('display', 'block')
@@ -73,6 +73,7 @@ function get_members(members_url, st) {
 
 function main() {
     var words = getStatusWords();
+    $('body').append('<div id="friend_watch_detail" style="display:none;"></div>');
     for (i = 0; i < STATUS.length; i++) {
         var st = STATUS[i];  // status type
         var status_url = location.href + '/' + st + '?filter=friends';
