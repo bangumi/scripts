@@ -73,7 +73,7 @@ function get_members(members_url, st) {
 
 function main() {
     var words = getStatusWords();
-    $('body').append('<div id="friend_watch_detail" style="display:none;"></div>');
+    $('body').append('<div id="friend_watch_detail" style="display:hide;"></div>');
     for (i = 0; i < STATUS.length; i++) {
         var st = STATUS[i];  // status type
         var status_url = location.href + '/' + st + '?filter=friends';
