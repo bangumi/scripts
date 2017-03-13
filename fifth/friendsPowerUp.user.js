@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.1.0
+// @version      1.1.1
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.1.0';
+const CURRENT_VERSION = '1.1.1';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -25,8 +25,14 @@ let cache = {};
 let me;
 let body;
 if (location.pathname !== '/rakuen') {
-    me = $('div.idBadgerNeue a.avatar').attr('href').match(/\w+$/)[0];
-    localStorage.setItem('fifth_bgm_user_userjs_me', me);
+    me = $('div.idBadgerNeue a.avatar');
+    if (me.length > 0) {
+        me = me.attr('href').match(/\w+$/)[0];
+        localStorage.setItem('fifth_bgm_user_userjs_me', me);
+    }
+    else {
+        me = localStorage.getItem('fifth_bgm_user_userjs_me');
+    }
     body = $('body');
 }
 else {
@@ -57,22 +63,25 @@ function fetchInfo(uid, adjust = false) {
         $.get(`${location.origin}/user/${uid}`, function (data) {
             let name = data.match(/<a href="\/user\/\w+">[\s\S]+?<\/a>/)[0];
             name = $(name).text();
-            let isFriend = data.match(/<span id="friend_flag">[\s\S]*?<\/span>/)[0];
-            isFriend = !!$(isFriend).text();
             let latestTL = data.match(/<ul class="timeline">[\s\S]+?<\/ul>/)[0];
-            latestTL = $(latestTL).find('li:first small.time').text().replace(/\s{2,}/g, ' ')
-                .replace('d', '天').replace('h', '小时').replace('m', '分钟').replace('s', '秒').replace('ago', '前');
-            let sync = data.match(/<div class="userSynchronize">[\s\S]+?<\/div>/)[0];
-            let syncNum = $(sync).find('small').text().match(/\d+/)[0];
-            let syncPercent = $(sync).find('span.percent_text').text();
+            latestTL = $(latestTL).find('li:first small.time').text()
+                                  .replace(/\s{2,}/g, ' ').replace('d', '天').replace('h', '小时')
+                                  .replace('m', '分钟').replace('s', '秒').replace('ago', '前');
             userInfo = {
                 uid: uid,
                 name: name,
-                isFriend: isFriend,
-                latestTL: latestTL,
-                syncNum: syncNum,
-                syncPercent: syncPercent
+                latestTL: latestTL
             };
+            if (uid !== me) {
+                let isFriend = data.match(/<span id="friend_flag">[\s\S]*?<\/span>/)[0];
+                isFriend = !!$(isFriend).text();
+                let sync = data.match(/<div class="userSynchronize">[\s\S]+?<\/div>/)[0];
+                let syncNum = $(sync).find('small').text().match(/\d+/)[0];
+                let syncPercent = $(sync).find('span.percent_text').text();
+                userInfo.isFriend = isFriend;
+                userInfo.syncNum = syncNum;
+                userInfo.syncPercent = syncPercent;
+            }
             cache[uid] = userInfo;
             if (uid === currentMission || !currentMission) {
                 updateUserInfo(userInfo, adjust);
@@ -92,7 +101,7 @@ body.on('mouseenter', 'a', function(event){
         return;
     }
     let uid = self.attr('href').match(/\w+$/);
-    if (!uid || self.attr('class') === 'l noPop' || uid[0] === me) {
+    if (!uid || self.attr('class') === 'l noPop' || self.text().match(/时光机/)) {
         return;
     }
     uid = uid[0];
@@ -140,9 +149,17 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
         width: infoBox.width(),
         height: infoBox.height()
     };
-    p_name.html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
-    p_tl.text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
-    p_sync.text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
+
+    if (userInfo.uid == me) {
+        p_name.html('当你窥视深渊的时候，深渊也在窥视着你');
+        p_tl.text(`你的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
+        p_sync.text('');
+    }
+    else {
+        p_name.html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
+        p_tl.text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
+        p_sync.text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
+    }
 
     infoBoxLoading.fadeOut();
     infoBoxUserInfo.fadeIn();
@@ -213,7 +230,13 @@ function createInfoBox() {
     });
 
     infoBoxSeeMore.click(function () {
-        let uid = infoBoxUserInfo.find('a').attr('href').split('/')[2];
+        let uid = infoBoxUserInfo.find('a');
+        if (uid.length > 0) {
+            uid = uid.attr('href').split('/')[2];
+        }
+        else {
+            uid = localStorage.getItem('fifth_bgm_user_userjs_me');
+        }
         p_scores.text('读取中...');
         infoBoxUserData.show();
         infoBoxSeeMore.fadeOut();
@@ -236,7 +259,7 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum =
     if (uid !== currentMission) {
         return;
     }
-    console.log(`fetch page: ${page}`);
+
     $.get(`${location.origin}/${type}/list/${uid}/${action}?page=${page}`, function (data) {
         let total = totalNum;
         if (!total || total <= 0) {
@@ -250,7 +273,7 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum =
             if (cachedScores.hasOwnProperty(uid)) {
                 let currentUserData = cachedScores[uid];
                 if (currentUserData && currentUserData.count == total) {
-                    updateUserData(uid, currentUserData.scores, total)
+                    updateUserData(uid, currentUserData.scores, total);
                     return;
                 }
             }
@@ -273,12 +296,13 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum =
 }
 
 function updateUserData(uid, scores, total) {
-    p_scores.text(`TA一共看过 ${total} 部动画，平均打分为 ${(sumUp(scores, true) / total).toFixed(2)}`);
+    let person = uid === me ? '你' : 'TA';
+    p_scores.text(`${person}一共看过 ${total} 部动画，平均打分为 ${(sumUp(scores, true) / total).toFixed(2)}`);
     let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
     cachedScores[uid] = {
         count: total,
         scores: scores
-    }
+    };
     localStorage.setItem('fifth_bgm_user_userjs_scores', JSON.stringify(cachedScores));
     // console.log(scores, sumUp(scores, false), sumUp(scores, true) / total);
 }
@@ -292,6 +316,14 @@ function drawChart(e) {
             maxium = elem;
         }
     });
+}
+
+function whoareyou() {
+    // plz tell me who you are because i can't find it
+}
+
+function canPopUp() {
+
 }
 
 // functiong backup
