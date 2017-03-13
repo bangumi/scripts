@@ -47,7 +47,7 @@ function get_members(members_url, st) {
             // use small avatar
             friend.img = elem.find('.avatar').attr('src').replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/');
             $('#friend_' + st).append(createFriendNode(uid, friend));
-            $('#friend_' + st).append(
+            $('body').append(
                 $(this).attr('id', friend.detail_id)
                 .css('background', 'white')
                 .css('display', 'block')
