@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.1.1
+// @version      1.1.2
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.1.1';
+const CURRENT_VERSION = '1.1.2';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -151,12 +151,20 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
     };
 
     if (userInfo.uid == me) {
-        p_name.html('当你窥视深渊的时候，深渊也在窥视着你');
+        p_name.html('「当你窥视深渊的时候，深渊也在窥视着你」');
+        p_name.css({
+            'text-align': 'center',
+            'font-style': 'oblique'
+        });
         p_tl.text(`你的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
         p_sync.text('');
     }
     else {
         p_name.html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
+        p_name.css({
+            'text-align': 'start',
+            'font-style': 'normal'
+        });
         p_tl.text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
         p_sync.text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
     }
@@ -245,11 +253,14 @@ function createInfoBox() {
     });
 }
 
-function sumUp(e, isWeighted) {
-    // sumUp(starsCounts, true) 加权
-    // sumUp(starsCounts, false) 不加权
+function sumUp(e, isWeighted = false, starredOnly = false) {
+    // isWeighted 是否加权
+    // starredOnly 是否包含e[0]
     let total = 0;
     e.forEach(function (elem, index) {
+        if (index === 0 && starredOnly) {
+            return;
+        }
         total += elem * (isWeighted ? index : 1);
     });
     return total;
@@ -297,17 +308,27 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum =
 
 function updateUserData(uid, scores, total) {
     let person = uid === me ? '你' : 'TA';
-    p_scores.text(`${person}一共看过 ${total} 部动画，平均打分为 ${(sumUp(scores, true) / total).toFixed(2)}`);
+    let mean = sumUp(scores, true, true) / (total - scores[0]);
+    let standardDeviation = calculateSD(scores, mean, total - scores[0]);
+    p_scores.html(`${person}一共看过 ${total} 部动画，并为其中 ${total - scores[0]} 部评过分<br>平均打分为 ${mean.toFixed(2)}，标准差为${standardDeviation.toFixed(2)}`);
     let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
     cachedScores[uid] = {
         count: total,
         scores: scores
     };
     localStorage.setItem('fifth_bgm_user_userjs_scores', JSON.stringify(cachedScores));
-    // console.log(scores, sumUp(scores, false), sumUp(scores, true) / total);
 }
 
-// fetchData(location.pathname.split('/')[3]);
+function calculateSD(e, mean, n) {
+    let sd = 0;
+    e.forEach(function (elem, index) {
+        if (index === 0) {
+            return;
+        };
+        sd += (index - mean) * (index - mean) * elem;
+    })
+    return Math.sqrt(sd / (n - 1));
+}
 
 function drawChart(e) {
     let maxium = e[0];
@@ -316,14 +337,6 @@ function drawChart(e) {
             maxium = elem;
         }
     });
-}
-
-function whoareyou() {
-    // plz tell me who you are because i can't find it
-}
-
-function canPopUp() {
-
 }
 
 // functiong backup
