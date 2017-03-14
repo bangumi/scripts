@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.1.2
+// @version      1.1.3
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.1.2';
+const CURRENT_VERSION = '1.1.3';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -137,6 +137,7 @@ function hidePopup() {
     infoBox.fadeOut();
     infoBoxSeeMore.hide();
     p_scores.text('');
+    div_chart.fadeOut();
     currentMission = '';
 }
 
@@ -189,6 +190,7 @@ function createInfoBox() {
             <div class="fifth_bgm_seeMore">--- 查看更多 ---</div>
             <div class="fifth_bgm_userData">
                 <p class="fifth_bgm_scores"></p>
+                <div class="fifth_bgm_chart"></div>
             </div>
             <div class="fifth_bgm_loading"></div>
         </div>
@@ -202,10 +204,11 @@ function createInfoBox() {
     p_tl = infoBoxUserInfo.find('p.fifth_bgm_tl');
     p_sync = infoBoxUserInfo.find('p.fifth_bgm_sync');
     p_scores = infoBoxUserData.find('p.fifth_bgm_scores');
+    div_chart = infoBoxUserData.find('div.fifth_bgm_chart');
     infoBox.css({
         display: 'none',
         position: 'absolute',
-        opacity: '.85',
+        opacity: '1',
         'background-color': '#fff',
         'border-radius': '5px',
         'box-shadow': '0px 0px 20px #ccc'
@@ -310,13 +313,16 @@ function updateUserData(uid, scores, total) {
     let person = uid === me ? '你' : 'TA';
     let mean = sumUp(scores, true, true) / (total - scores[0]);
     let standardDeviation = calculateSD(scores, mean, total - scores[0]);
-    p_scores.html(`${person}一共看过 ${total} 部动画，并为其中 ${total - scores[0]} 部评过分<br>平均打分为 ${mean.toFixed(2)}，标准差为${standardDeviation.toFixed(2)}`);
+    p_scores.html(`${person}一共看过 ${total} 部动画，并为其中 ${total - scores[0]} 部评过分
+                   <br>
+                   平均打分为 ${mean.toFixed(2)}，标准差为${standardDeviation.toFixed(2)}`);
     let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
     cachedScores[uid] = {
         count: total,
         scores: scores
     };
     localStorage.setItem('fifth_bgm_user_userjs_scores', JSON.stringify(cachedScores));
+    drawChart(scores);
 }
 
 function calculateSD(e, mean, n) {
@@ -324,22 +330,61 @@ function calculateSD(e, mean, n) {
     e.forEach(function (elem, index) {
         if (index === 0) {
             return;
-        };
+        }
         sd += (index - mean) * (index - mean) * elem;
-    })
+    });
     return Math.sqrt(sd / (n - 1));
 }
 
 function drawChart(e) {
     let maxium = e[0];
-    e.forEach(function (elem) {
+    e.forEach(function (elem, index) {
         if (elem > maxium) {
             maxium = elem;
         }
     });
+    // let data = [];
+    div_chart.html('');
+    div_chart.css({
+        height: '120px',
+        margin: '0px',
+        'border-radius': '5px',
+        'border-width': '2px',
+        'border-style': 'solid',
+        'border-color': '#eee'
+    });
+    div_chart.fadeIn();
+    let wid = infoBoxUserData.width() / 61;
+    e.forEach(function (elem, index) {
+        if (index === 0) {
+            return;
+        }
+        let persent = (elem / maxium).toFixed(2) * 100;
+        div_chart.append(`<div id="star${index}" class="chart-bar" style="left: ${(index - 1) * wid * 6 + 5 + wid}px">
+                              <div class="bore" style="height: ${100 - persent}%"></div>
+                              <div class="back" style="height: ${persent}%"></div>
+                              <div class="idx">${index}</div>
+                          </div>`);
+    });
+    div_chart.find('.chart-bar').css({
+        display: 'none',
+        width: `${wid * 5}px`,
+        height: '100px',
+        position: 'absolute',
+        'margin-top': '5px'
+    });
+    div_chart.find('.back').css({
+        'background-color': '#F09199',
+        'border-radius': '3px'
+    });
+    div_chart.find('.idx').css({
+        height: '10px',
+        'text-align': 'center'
+    });
+    div_chart.find('.chart-bar').fadeIn();
 }
 
-// functiong backup
+// function backup
 //
 // ----- 1 -----
 // collect data fetch
