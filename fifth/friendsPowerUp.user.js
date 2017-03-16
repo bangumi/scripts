@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.1.3
+// @version      1.1.4
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.1.3';
+const CURRENT_VERSION = '1.1.4';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -17,6 +17,14 @@ const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 const SUBJECT_TYPE = ['anime', 'book', 'music', 'game', 'real'];
 
 const ACTIONS = ['wish', 'collect', 'do', 'on_hold', 'dropped'];
+
+const ACTION_ORDER = {
+    do: 0,
+    collect: 1,
+    wish: 2,
+    on_hold: 3,
+    dropped: 4
+};
 
 let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -67,10 +75,16 @@ function fetchInfo(uid, adjust = false) {
             latestTL = $(latestTL).find('li:first small.time').text()
                                   .replace(/\s{2,}/g, ' ').replace('d', '天').replace('h', '小时')
                                   .replace('m', '分钟').replace('s', '秒').replace('ago', '前');
+            let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit">[\s\S]*?<\/div>/)[0];
+            let animeCount = [0, 0, 0, 0, 0];
+            anime.match(/\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
+                animeCount[index] = elem.match(/\d{1,}/)[0];
+            });
             userInfo = {
                 uid: uid,
                 name: name,
-                latestTL: latestTL
+                latestTL: latestTL,
+                animeCount: animeCount
             };
             if (uid !== me) {
                 let isFriend = data.match(/<span id="friend_flag">[\s\S]*?<\/span>/)[0];
@@ -157,7 +171,6 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
             'text-align': 'center',
             'font-style': 'oblique'
         });
-        p_tl.text(`你的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
         p_sync.text('');
     }
     else {
@@ -166,9 +179,12 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
             'text-align': 'start',
             'font-style': 'normal'
         });
-        p_tl.text(`TA的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
         p_sync.text(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
     }
+
+    let person = userInfo.uid === me ? '你' : 'TA';
+    p_tl.text(`${person}的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
+    p_aniCount.text(`${person}一共看过了 ${userInfo.animeCount[ACTION_ORDER.collect]} 部动画，抛弃了 ${userInfo.animeCount[ACTION_ORDER.dropped]} 部动画`);
 
     infoBoxLoading.fadeOut();
     infoBoxUserInfo.fadeIn();
@@ -185,6 +201,7 @@ function createInfoBox() {
             <div class="fifth_bgm_userInfo">
                 <p class="fifth_bgm_name"></p>
                 <p class="fifth_bgm_tl"></p>
+                <p class="fifth_bgm_animeCount"></p>
                 <p class="fifth_bgm_sync"></p>
             </div>
             <div class="fifth_bgm_seeMore">--- 查看更多 ---</div>
@@ -202,6 +219,7 @@ function createInfoBox() {
     infoBoxLoading = infoBox.find('div.fifth_bgm_loading');
     p_name = infoBoxUserInfo.find('p.fifth_bgm_name');
     p_tl = infoBoxUserInfo.find('p.fifth_bgm_tl');
+    p_aniCount = infoBoxUserInfo.find('p.fifth_bgm_animeCount');
     p_sync = infoBoxUserInfo.find('p.fifth_bgm_sync');
     p_scores = infoBoxUserData.find('p.fifth_bgm_scores');
     div_chart = infoBoxUserData.find('div.fifth_bgm_chart');
@@ -211,7 +229,8 @@ function createInfoBox() {
         opacity: '1',
         'background-color': '#fff',
         'border-radius': '5px',
-        'box-shadow': '0px 0px 20px #ccc'
+        'box-shadow': '0px 0px 20px #ccc',
+        'z-index': '2'
     });
     infoBox.find('div').css({
         margin: '5px',
@@ -269,29 +288,21 @@ function sumUp(e, isWeighted = false, starredOnly = false) {
     return total;
 }
 
-function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum = 0) {
+function fetchData(uid, type = 'anime', action = 'collect', page = 1) {
     if (uid !== currentMission) {
         return;
     }
+    let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
+    let total = cache[uid].animeCount[ACTION_ORDER.collect];
+    if (page == 1 && cachedScores.hasOwnProperty(uid)) {
+        let currentUserData = cachedScores[uid];
+        if (currentUserData && currentUserData.count == total) {
+            updateUserData(uid, currentUserData.scores, total);
+            return;
+        }
+    }
 
     $.get(`${location.origin}/${type}/list/${uid}/${action}?page=${page}`, function (data) {
-        let total = totalNum;
-        if (!total || total <= 0) {
-            total = data.match(/<ul class="navSubTabs">[\s\S]+?<\/ul>/)[0]
-                               .match(/<span>看过[\s\S]*?\(\d+?\)<\/span>/)[0]
-                               .match(/\d{1,}/)[0];
-            total = parseInt(total, 10);
-        }
-        if (page === 1) {
-            let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
-            if (cachedScores.hasOwnProperty(uid)) {
-                let currentUserData = cachedScores[uid];
-                if (currentUserData && currentUserData.count == total) {
-                    updateUserData(uid, currentUserData.scores, total);
-                    return;
-                }
-            }
-        }
         p_scores.text(`读取中：${page} / ${Math.ceil(total / MAX_SUBJECTS_ON_ONE_PAGE)}`);
         let stars = data.match(/<span class="sstars\d{1,2} starsinfo"><\/span>/g);
         if (stars) {
@@ -300,7 +311,7 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1, totalNum =
             });
         }
         if (MAX_SUBJECTS_ON_ONE_PAGE * page < total) {
-            fetchData(uid, type, action, page + 1, total);
+            fetchData(uid, type, action, page + 1);
         }
         else {
             starsCounts[0] = total - sumUp(starsCounts, false);
