@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.1.5
+// @version      1.1.6
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.1.5';
+const CURRENT_VERSION = '1.1.6';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -25,6 +25,51 @@ const ACTION_ORDER = {
     on_hold: 3,
     dropped: 4
 };
+
+const LANG = [
+    '当你窥视深渊的时候，深渊也在窥视着你...',
+    '警察叔叔，就是这个人！',
+    '道歉的时候，要露出胸部才是常识',
+    '无路赛！无路赛！无路赛！',
+    'RUA!!!',
+    '年轻人好好撸管，不要做白日梦了',
+    '我能怎么办，我也很绝望啊',
+    '真好啊...真好啊...',
+    '这种事根本就不会存在',
+    '<img src="http://bgm.tv/img/smiles/tv/15.gif">',
+    '不被发现就不算犯罪哦~',
+    '我好兴奋啊！！！',
+    '这么可爱一定是男孩子',
+    '今天的风儿好喧嚣啊',
+    '男人变态有什么错！',
+    '在虚构的故事当中寻求真实感的人脑袋一定有问题',
+    'そのあと滅茶苦茶セックスした',
+    '異議あり！',
+    '连我爸爸都没有打过我！',
+    '这个时候只要<span style="background-color: black">微笑</span>bgm38就好了',
+    '德意志科学技术世界第一！',
+    '没有人能在我的BGM里面打败我',
+    '你真是怠惰呢~',
+    '教练，我想打篮球',
+    '小学生真是太棒了！',
+    '和我签订契约，成为魔法少女吧！',
+    '人被杀，就会死',
+    'おとといは兎を見たの。昨日は鹿、今日は…あなた',
+    'niconiconi',
+    '禁則事項です。',
+    '我已经看到结局了',
+    '你为什么这么熟练啊！',
+    '敌羞，吾去脱她衣！',
+    '前方高能反应',
+    '我已经看到结局了',
+    '等战争结束，我就要回老家结婚了',
+    '贫乳是稀有价值',
+    '少女祈祷中...',
+    '今夜は月が綺麗ですね',
+    '呀啦那一卡？',
+    '少女的裙底有什么？',
+    '真実はいつも一つ！'
+];
 
 let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -169,7 +214,8 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
     };
 
     if (userInfo.uid == me) {
-        p_name.html('「当你窥视深渊的时候，深渊也在窥视着你」');
+        const LANG_SELECTED = LANG[Math.floor(Math.random() * LANG.length)];
+        p_name.html(`「  ${LANG_SELECTED}  」`);
         p_name.css({
             'text-align': 'center',
             'font-style': 'oblique'
@@ -245,7 +291,7 @@ function createInfoBox() {
         'background-color': '#fff',
         'border-radius': '5px',
         'box-shadow': '0px 0px 20px #ccc',
-        'z-index': '2'
+        'z-index': '80'
     });
     infoBox.find('div').css({
         margin: '5px',
