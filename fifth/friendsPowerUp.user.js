@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.1.4
+// @version      1.1.5
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.1.4';
+const CURRENT_VERSION = '1.1.5';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -27,8 +27,6 @@ const ACTION_ORDER = {
 };
 
 let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-let cache = {};
 
 let me;
 let body;
@@ -51,6 +49,7 @@ else {
 let missions = {};
 let currentMission = '';
 let userInfo = {};
+let cache = {};
 
 let isDisplaying = false;
 
@@ -61,6 +60,7 @@ let infoBoxSeeMore;
 let infoBoxLoading;
 let p_name;
 let p_tl;
+let p_aniCount;
 let p_sync;
 let p_scores;
 
@@ -75,11 +75,14 @@ function fetchInfo(uid, adjust = false) {
             latestTL = $(latestTL).find('li:first small.time').text()
                                   .replace(/\s{2,}/g, ' ').replace('d', '天').replace('h', '小时')
                                   .replace('m', '分钟').replace('s', '秒').replace('ago', '前');
-            let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit">[\s\S]*?<\/div>/)[0];
             let animeCount = [0, 0, 0, 0, 0];
-            anime.match(/\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
-                animeCount[index] = elem.match(/\d{1,}/)[0];
-            });
+            let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit">[\s\S]*?<\/div>/);
+            if (anime) {
+                anime = anime[0];
+                anime.match(/\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
+                    animeCount[index] = elem.match(/\d{1,}/)[0];
+                });
+            }
             userInfo = {
                 uid: uid,
                 name: name,
@@ -184,11 +187,23 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
 
     let person = userInfo.uid === me ? '你' : 'TA';
     p_tl.text(`${person}的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
-    p_aniCount.text(`${person}一共看过了 ${userInfo.animeCount[ACTION_ORDER.collect]} 部动画，抛弃了 ${userInfo.animeCount[ACTION_ORDER.dropped]} 部动画`);
+    let collect = userInfo.animeCount[ACTION_ORDER.collect];
+    let dropped = userInfo.animeCount[ACTION_ORDER.dropped];
+    if (collect > 0 && dropped > 0) {
+        p_aniCount.text(`${person}一共看过了 ${collect} 部动画，抛弃了 ${dropped} 部动画`);
+    }
+    else if (collect > 0) {
+        p_aniCount.text(`${person}一共看过了 ${collect} 部动画`);
+    }
+    else {
+        p_aniCount.text(`${person}没有看过动画...`);
+    }
 
     infoBoxLoading.fadeOut();
     infoBoxUserInfo.fadeIn();
-    infoBoxSeeMore.fadeIn();
+    if (collect > 0) {
+        infoBoxSeeMore.fadeIn();
+    }
     infoBox.css({
         top: adjust.toTop ? `${oldOffset.top - infoBox.height() + oldSize.height}px` : oldOffset.top,
         left: adjust.toLeft ? `${oldOffset.left - infoBox.width() + oldSize.width}px` : oldOffset.left
@@ -267,9 +282,31 @@ function createInfoBox() {
         else {
             uid = localStorage.getItem('fifth_bgm_user_userjs_me');
         }
-        p_scores.text('读取中...');
         infoBoxUserData.show();
         infoBoxSeeMore.fadeOut();
+
+        let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
+        let total = cache[uid].animeCount[ACTION_ORDER.collect];
+        if (cachedScores.hasOwnProperty(uid)) {
+            let currentUserData = cachedScores[uid];
+            if (currentUserData && currentUserData.count == total) {
+                p_scores.html(`<div class="fifth_bgm_prograss"></div>`);
+                p_scores.find('.fifth_bgm_prograss').css({
+                    height: '10px',
+                    width: '1%',
+                    'background-color': '#F09199',
+                    'margin-bottom': '5px',
+                    'border-radius': '5px'
+                });
+                p_scores.find('.fifth_bgm_prograss').animate({
+                    width: '100%'
+                });
+                setTimeout(function () {
+                    updateUserData(uid, currentUserData.scores, total);
+                }, 500);
+                return;
+            }
+        }
         starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         fetchData(uid);
     });
@@ -292,18 +329,24 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1) {
     if (uid !== currentMission) {
         return;
     }
-    let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
-    let total = cache[uid].animeCount[ACTION_ORDER.collect];
-    if (page == 1 && cachedScores.hasOwnProperty(uid)) {
-        let currentUserData = cachedScores[uid];
-        if (currentUserData && currentUserData.count == total) {
-            updateUserData(uid, currentUserData.scores, total);
-            return;
-        }
-    }
 
+    let total = cache[uid].animeCount[ACTION_ORDER.collect];
     $.get(`${location.origin}/${type}/list/${uid}/${action}?page=${page}`, function (data) {
-        p_scores.text(`读取中：${page} / ${Math.ceil(total / MAX_SUBJECTS_ON_ONE_PAGE)}`);
+        let prograss = page / Math.ceil(total / MAX_SUBJECTS_ON_ONE_PAGE);
+        if (p_scores.find('.fifth_bgm_prograss').length <= 0) {
+            p_scores.html(`<div class="fifth_bgm_prograss"></div>`);
+            p_scores.find('.fifth_bgm_prograss').css({
+                height: '10px',
+                width: `1%`,
+                'background-color': '#F09199',
+                'margin-bottom': '5px',
+                'border-radius': '5px'
+            });
+        }
+        p_scores.find('.fifth_bgm_prograss').animate({
+            width: `${prograss * 100}%`
+        });
+
         let stars = data.match(/<span class="sstars\d{1,2} starsinfo"><\/span>/g);
         if (stars) {
             stars.forEach(function (elem) {
@@ -315,7 +358,9 @@ function fetchData(uid, type = 'anime', action = 'collect', page = 1) {
         }
         else {
             starsCounts[0] = total - sumUp(starsCounts, false);
-            updateUserData(uid, starsCounts, total);
+            setTimeout(function () {
+                updateUserData(uid, starsCounts, total);
+            }, 500);
         }
     });
 }
@@ -324,9 +369,7 @@ function updateUserData(uid, scores, total) {
     let person = uid === me ? '你' : 'TA';
     let mean = sumUp(scores, true, true) / (total - scores[0]);
     let standardDeviation = calculateSD(scores, mean, total - scores[0]);
-    p_scores.html(`${person}一共看过 ${total} 部动画，并为其中 ${total - scores[0]} 部评过分
-                   <br>
-                   平均打分为 ${mean.toFixed(2)}，标准差为${standardDeviation.toFixed(2)}`);
+    p_scores.html(`${person}为 ${total - scores[0]} 部动画评了分，平均分为 ${mean.toFixed(2)}，标准差为${standardDeviation.toFixed(2)}`);
     let cachedScores = JSON.parse(localStorage.getItem('fifth_bgm_user_userjs_scores')) || {};
     cachedScores[uid] = {
         count: total,
