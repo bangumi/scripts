@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         friendsPowerUp
 // @namespace    fifth26.com
-// @version      1.2.0
+// @version      1.2.1
 // @description  好友头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
@@ -9,7 +9,7 @@
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.2.0';
+const CURRENT_VERSION = '1.2.1';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -379,6 +379,9 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
     if (userInfo.uid != me) {
         element_name.html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>  ${userInfo.isFriend ? '已经是' : '还不是'}你的好友`);
         element_sync.html(`你们之间有${userInfo.syncNum}个共同喜好 / 同步率 ${userInfo.syncPercent}`);
+    }
+    else {
+        element_name.html(`<a href="/user/${userInfo.uid}" class="l noPop">${userInfo.name}</a>`);
     }
 
     let person = userInfo.uid === me ? '你' : 'TA';
