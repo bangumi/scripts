@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         friendsPowerUp
+// @name         斯托卡！
 // @namespace    fifth26.com
-// @version      1.2.1
-// @description  好友头像信息增强，了解你的TA
+// @version      1.2.2
+// @description  用户头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
 // @grant        GM_addStyle
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.2.1';
+const CURRENT_VERSION = '1.2.2';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -92,6 +92,7 @@ let starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 let me;
 let body;
+
 if (location.pathname !== '/rakuen') {
     me = $('div.idBadgerNeue a.avatar');
     if (me.length > 0) {
@@ -332,10 +333,12 @@ function fetchInfo(uid, adjust = {toLeft: false, toTop: false}) {
                               .replace('m', '分钟').replace('s', '秒').replace('ago', '前');
         let animeCount = [0, 0, 0, 0, 0];
         let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit">[\s\S]*?<\/div>/);
-        if (anime) {
+        if (anime.length > 0) {
             anime = anime[0];
-            anime.match(/\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
-                animeCount[index] = parseInt(elem.match(/\d{1,}/)[0], 10);
+            anime.match(/(on_hold|do|collect|wish|dropped)">\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
+                let action = elem.match(/(on_hold|do|collect|wish|dropped)/)[0];
+                let count = parseInt(elem.match(/\d{1,}/)[0], 10);
+                animeCount[ACTION_ORDER[action]] = count;
             });
         }
         userInfo = {
@@ -604,6 +607,7 @@ body.on('mouseenter', 'a', function(event){
     if (!element_mainBox) {
         createInfoBox();
     }
+
     hideDOM([
         element_settings,
         element_tsukkomi,
