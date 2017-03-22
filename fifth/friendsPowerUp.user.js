@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         斯托卡！
 // @namespace    fifth26.com
-// @version      1.2.2
+// @version      1.2.3
 // @description  用户头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
@@ -9,7 +9,7 @@
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.2.2';
+const CURRENT_VERSION = '1.2.3';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
@@ -332,7 +332,7 @@ function fetchInfo(uid, adjust = {toLeft: false, toTop: false}) {
                               .replace(/\s{2,}/g, ' ').replace('d', '天').replace('h', '小时')
                               .replace('m', '分钟').replace('s', '秒').replace('ago', '前');
         let animeCount = [0, 0, 0, 0, 0];
-        let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit">[\s\S]*?<\/div>/);
+        let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
         if (anime.length > 0) {
             anime = anime[0];
             anime.match(/(on_hold|do|collect|wish|dropped)">\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
