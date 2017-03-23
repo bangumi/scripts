@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         斯托卡！
 // @namespace    fifth26.com
-// @version      1.2.3
+// @version      1.2.4
 // @description  用户头像信息增强，了解你的TA
 // @author       fifth
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/
@@ -9,13 +9,36 @@
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.2.3';
+const CURRENT_VERSION = '1.2.4';
 
 const LOADING_IMG_URL = 'http://bgm.tv/img/loadingAnimation.gif';
 
 const MAX_SUBJECTS_ON_ONE_PAGE = 24;
 
 const SUBJECT_TYPE = ['anime', 'book', 'music', 'game', 'real'];
+
+const SUBJECT_LANG = {
+    anime: '动画',
+    book: '书籍',
+    music: '音乐',
+    game: '游戏',
+    real: '三次元'
+};
+
+const SUBJECT_ACTION = {
+    anime: '看过',
+    book: '读过',
+    music: '听过',
+    game: '玩过',
+    real: '看过'
+};
+
+/****************************************/
+/*   替换成你想要斯托卡的条目类别的数字    */
+/* 0-anime 1-book 2-music 3-game 4-real */
+/* */const SUBJECT = SUBJECT_TYPE[0];/* */
+/*  修改完保存并清除相应发缓存否则会报错   */
+/****************************************/
 
 const ACTIONS = ['wish', 'collect', 'do', 'on_hold', 'dropped'];
 
@@ -118,7 +141,7 @@ let element_settings;
 let element_tsukkomi;
 let element_name;
 let element_tl;
-let element_animeCount;
+let element_subjectCount;
 let element_sync;
 let element_seeMore;
 let element_scores;
@@ -132,7 +155,7 @@ function createInfoBox() {
             <div id="fifth_bgm_tsukkomi"></div>
             <div id="fifth_bgm_name"></div>
             <div id="fifth_bgm_tl"></div>
-            <div id="fifth_bgm_animeCount"></div>
+            <div id="fifth_bgm_subjectCount"></div>
             <div id="fifth_bgm_sync"></div>
             <div id="fifth_bgm_seeMore"></div>
             <div id="fifth_bgm_scores"></div>
@@ -146,7 +169,7 @@ function createInfoBox() {
     element_tsukkomi = $('div#fifth_bgm_tsukkomi');
     element_name = $('div#fifth_bgm_name');
     element_tl = $('div#fifth_bgm_tl');
-    element_animeCount = $('div#fifth_bgm_animeCount');
+    element_subjectCount = $('div#fifth_bgm_subjectCount');
     element_sync = $('div#fifth_bgm_sync');
     element_seeMore = $('div#fifth_bgm_seeMore');
     element_scores = $('div#fifth_bgm_scores');
@@ -197,7 +220,7 @@ function createInfoBox() {
             font-style: oblique;
             margin-bottom: 5px;
         }
-        #fifth_bgm_animeCount>span {
+        #fifth_bgm_subjectCount>span {
             color: #0084B4;
             float: right;
             cursor: pointer;
@@ -273,7 +296,7 @@ function createInfoBox() {
         ]);
 
         let cachedScores = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.scores)) || {};
-        let total = cache[uid].animeCount[ACTION_ORDER.collect] + cache[uid].animeCount[ACTION_ORDER.dropped];
+        let total = cache[uid].subjectCount[ACTION_ORDER.collect] + cache[uid].subjectCount[ACTION_ORDER.dropped];
         if (!!cachedScores[uid]) {
             let currentUserData = cachedScores[uid];
             if (currentUserData && currentUserData.collectCount + currentUserData.droppedCount == total) {
@@ -286,8 +309,8 @@ function createInfoBox() {
         }
         starsCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-        let allPage = Math.ceil(cache[uid].animeCount[ACTION_ORDER.collect] / MAX_SUBJECTS_ON_ONE_PAGE) + Math.ceil(cache[uid].animeCount[ACTION_ORDER.dropped] / MAX_SUBJECTS_ON_ONE_PAGE);
-        fetchData(uid, 'anime', 'collect', 1, 1, allPage);
+        let allPage = Math.ceil(cache[uid].subjectCount[ACTION_ORDER.collect] / MAX_SUBJECTS_ON_ONE_PAGE) + Math.ceil(cache[uid].subjectCount[ACTION_ORDER.dropped] / MAX_SUBJECTS_ON_ONE_PAGE);
+        fetchData(uid, SUBJECT, 'collect', 1, 1, allPage);
     });
 
     applySettings();
@@ -317,6 +340,31 @@ function showDOM(params, useFade = false) {
     }
 }
 
+function infoCount(data, type = 'anime') {
+    let subject;
+    switch (type) {
+        case 'anime':
+            subject = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
+            break;
+        case 'book':
+            subject = data.match(/<div id="book"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
+            break;
+        case 'music':
+            subject = data.match(/<div id="music"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
+            break;
+        case 'game':
+            subject = data.match(/<div id="game"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
+            break;
+        case 'real':
+            subject = data.match(/<div id="real"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
+            break;
+        default:
+            subject = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
+            break;
+    }
+    return subject;
+}
+
 function fetchInfo(uid, adjust = {toLeft: false, toTop: false}) {
     if (missions[uid]) {
         return;
@@ -331,21 +379,21 @@ function fetchInfo(uid, adjust = {toLeft: false, toTop: false}) {
         latestTL = $(latestTL).find('li:first small.time').text()
                               .replace(/\s{2,}/g, ' ').replace('d', '天').replace('h', '小时')
                               .replace('m', '分钟').replace('s', '秒').replace('ago', '前');
-        let animeCount = [0, 0, 0, 0, 0];
-        let anime = data.match(/<div id="anime"[\s\S]*?<div class="horizontalOptions clearit"[\s\S]*?<\/div>/);
-        if (anime.length > 0) {
-            anime = anime[0];
-            anime.match(/(on_hold|do|collect|wish|dropped)">\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
+        let subjectCount = [0, 0, 0, 0, 0];
+        let subject = infoCount(data, SUBJECT);
+        if (subject.length > 0) {
+            subject = subject[0];
+            subject.match(/(on_hold|do|collect|wish|dropped)">\d{1,}[\u4e00-\u9fa5]{3}/g).forEach(function (elem, index) {
                 let action = elem.match(/(on_hold|do|collect|wish|dropped)/)[0];
                 let count = parseInt(elem.match(/\d{1,}/)[0], 10);
-                animeCount[ACTION_ORDER[action]] = count;
+                subjectCount[ACTION_ORDER[action]] = count;
             });
         }
         userInfo = {
             uid: uid,
             name: name,
             latestTL: latestTL,
-            animeCount: animeCount
+            subjectCount: subjectCount
         };
         if (uid !== me) {
             let isFriend = data.match(/<span id="friend_flag">[\s\S]*?<\/span>/)[0];
@@ -392,21 +440,21 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
     element_tsukkomi.html(`「  ${LANG_SELECTED}  」`);
     element_tl.html(`${person}的最后一条时间胶囊更新时间是在 ${userInfo.latestTL}`);
 
-    let collect = userInfo.animeCount[ACTION_ORDER.collect];
-    let dropped = userInfo.animeCount[ACTION_ORDER.dropped];
+    let collect = userInfo.subjectCount[ACTION_ORDER.collect];
+    let dropped = userInfo.subjectCount[ACTION_ORDER.dropped];
 
     if (collect > 0 && dropped > 0) {
-        element_animeCount.html(`${person}一共看过了 ${collect} 部动画，抛弃了 ${dropped} 部动画`);
+        element_subjectCount.html(`${person}一共${SUBJECT_ACTION[SUBJECT]}了 ${collect} 部${SUBJECT_LANG[SUBJECT]}，抛弃了 ${dropped} 部${SUBJECT_LANG[SUBJECT]}`);
     }
     else if (collect > 0) {
-        element_animeCount.html(`${person}一共看过了 ${collect} 部动画`);
+        element_subjectCount.html(`${person}一共${SUBJECT_ACTION[SUBJECT]}了 ${collect} 部${SUBJECT_LANG[SUBJECT]}`);
     }
     else {
-        element_animeCount.html(`${person}没有看过动画...`);
+        element_subjectCount.html(`${person}没有${SUBJECT_ACTION[SUBJECT]}${SUBJECT_LANG[SUBJECT]}...`);
     }
 
-    element_animeCount.append('<span>设置</span>');
-    let settingBtn = element_animeCount.find('span');
+    element_subjectCount.append('<span>设置</span>');
+    let settingBtn = element_subjectCount.find('span');
     settingBtn.click(function () {
         checkSettings();
         showDOM([
@@ -428,7 +476,7 @@ function updateUserInfo(userInfo, adjust = {toLeft: false, toTop: false}) {
     showDOM([
         element_tsukkomi,
         element_tl,
-        element_animeCount,
+        element_subjectCount,
         element_seeMore
     ]);
     if (userInfo.uid != me) {
@@ -468,12 +516,12 @@ function applySettings() {
     // settings.includeDropped
 }
 
-function fetchData(uid, type = 'anime', action = 'collect', page = 1, currentPage = 1, allPage = 1) {
+function fetchData(uid, type = SUBJECT, action = 'collect', page = 1, currentPage = 1, allPage = 1) {
     if (uid !== currentMission) {
         return;
     }
 
-    let total = cache[uid].animeCount[ACTION_ORDER[action]];
+    let total = cache[uid].subjectCount[ACTION_ORDER[action]];
     $.get(`${location.origin}/${type}/list/${uid}/${action}?page=${page}`, function (data) {
         let prograss = currentPage / allPage;
         element_scores.find('#fifth_bgm_prograss').animate({
@@ -525,7 +573,7 @@ function updateUserData(uid) {
         return;
     }
     let mean = sumUp(scores, true, true) / (total - scores[0]);
-    element_scores.html(`${person}为 ${total - scores[0]} 部动画评了分，平均分为 ${mean.toFixed(2)}`);
+    element_scores.html(`${person}为 ${total - scores[0]} 部${SUBJECT_LANG[SUBJECT]}评了分，平均分为 ${mean.toFixed(2)}`);
     if (settings.calculateSD) {
         element_scores.append(`，标准差为${calculateSD(scores, mean, total).toFixed(2)}`);
     }
@@ -596,7 +644,7 @@ function calculateSD(scores, mean, n) {
 
 body.on('mouseenter', 'a', function(event){
     let self = $(this);
-    if (!self.attr('href').match(/^(https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv))?\/user\/\w+$/)) {
+    if (!self.attr('href') || !self.attr('href').match(/^(https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv))?\/user\/\w+$/)) {
         return;
     }
     let uid = self.attr('href').match(/\w+$/);
@@ -613,7 +661,7 @@ body.on('mouseenter', 'a', function(event){
         element_tsukkomi,
         element_name,
         element_tl,
-        element_animeCount,
+        element_subjectCount,
         element_sync,
         element_seeMore,
         element_scores,
