@@ -6,14 +6,14 @@
 // @grant       GM_getValue
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
 // @require     http://code.jquery.com/jquery-3.1.1.min.js
-// @version     0.2.1
+// @version     0.2.2
 // ==/UserScript==
 
 const OLDEST_YEAR = 2013;
 const CACHE_EXPIRE_SECS = 24 * 3600;
 const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
 const DOWNLOAD_DMHY_URL = "http://share.dmhy.org/topics/list?keyword=";
-const DOWNLOAD_NYAA_URL = "http://www.nyaa.se/?page=search&term=";
+const DOWNLOAD_NYAA_URL = "https://nyaa.si/?page=search&term=";
 const SITE_NAMES = {
   'acfun'   : 'A站',
   'bilibili': 'B站',
