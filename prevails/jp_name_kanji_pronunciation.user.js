@@ -55,7 +55,7 @@ if (RegExp(`^${KANJI_MYOUJI}$`).test(name)) { // 全汉字 无空格, 无法分�
     } else {
         nameAnchor.innerHTML = getRuby(name, kana);
     }
-} else if (RegExp(`^${KANJI_MYOUJI}[ 　]*[\u3040-\u309f][\u3040-\u309f子乃]*`).test(name)) { // 汉字[空格]平假名
+} else if (RegExp(`^${KANJI_MYOUJI}[ 　]*[\u3040-\u309f][\u3040-\u309f子乃]*$`).test(name)) { // 汉字[空格]平假名
     const myouji = name.match(RegExp(KANJI_MYOUJI))[0];
     const namae = name.match(/[\u3040-\u309f][\u3040-\u309f子乃]*/)[0];
     if (namaeKana) {
@@ -71,7 +71,7 @@ if (RegExp(`^${KANJI_MYOUJI}$`).test(name)) { // 全汉字 无空格, 无法分�
     }
 } else if (RegExp(`^${KANJI_MYOUJI}[ 　]*[\u30a0-\u30ff][\u30a0-\u30ff子乃]*$`).test(name)) { // 汉字[空格]片假名
     const myouji = name.match(RegExp(KANJI_MYOUJI))[0];
-    const namae = name.match(/[\u30a0-\u30ff][\u30a0-\u30ff子乃]*/)[0];
+    const namae = name.match(/[\u30a0-\u30ff][\u30a0-\u30ff子乃]*/g).pop(); // "ヶノ" match both KANJI_MYOUJI and \u30a0-\u30ff
     if (namaeKana) {
         nameAnchor.innerHTML = getRuby(myouji, myoujiKana) + ' ' + namae;
     } else {
