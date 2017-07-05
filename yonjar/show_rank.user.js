@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi收藏列表显示Rank
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1
+// @version      0.1.1
 // @description  在用户的收藏列表下显示作品的排名并高亮显示 1000以内背景为绿色 1000~2000为蓝色 2000外为红色 没上榜的为黑色
 // @author       Yonjar
 // @match        http://bgm.tv/*/list/*

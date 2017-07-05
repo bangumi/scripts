@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi评论统计
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1
+// @version      0.1.1
 // @description  显示某主题下的评论情况 有多少用户发表过评论 自己是否评论过 鼠标移到id上查看评论次数
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(ep|character|person|(group|subject)\/topic|rakuen\/topic\/(ep|crt|group|subject|prsn))\/\d+(\?.*)?(#.*)?$/

@@ -18,4 +18,4 @@
 - Rank2000外为红色 
 - 没上榜的显示为"undefined" 背景为黑色
 
-![bangumi收藏列表显示Rank效果](https://ws1.sinaimg.cn/large/aa2135eagy1fh8xup2qlbj20la0r3482.jpg)
+![bangumi收藏列表显示Rank效果](images/snipaste20170705_205646.png)
