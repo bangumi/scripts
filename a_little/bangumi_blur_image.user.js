@@ -3,6 +3,7 @@
 // @namespace   https://github.com/22earth
 // @description a tool for bluring image before upload
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*(upload_img|new)$/
+// @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_blur_image.user.js
 // @version     0.1
 // @grant       GM_addStyle
 // @require     https://raw.githubusercontent.com/flozz/StackBlur/master/dist/stackblur.min.js
@@ -180,7 +181,7 @@
     var fd = new FormData($form)
     fd.set('picfile', dataURItoBlob(dataURL), genString + '.png')
     if (location.href.match(/new$/)) {
-      fd.set('submit', 'Ìí¼ÓÐÂÈËÎï')
+      fd.set('submit', 'æ·»åŠ æ–°äººç‰©')
     }
     var xhr = new XMLHttpRequest()
     xhr.open($form.method.toLowerCase(), $form.action, true)
