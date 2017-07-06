@@ -6,7 +6,7 @@
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_blur_image.user.js
 // @grant       GM_addStyle
 // @require     https://raw.githubusercontent.com/flozz/StackBlur/master/dist/stackblur.min.js
-// @version     0.2
+// @version     0.2.1
 // @note        0.2 add loading and main entry function
 // ==/UserScript==
 
@@ -24,9 +24,10 @@
     } else {
       GM_addStyle([
         '#amount { padding-left: 10px; border: 0; color: #f6931f; font-size: 20px; font-weight: bold; }',
-'#reset { display: inline-block; text-align: center; width: 60px; height: 30px; line-height: 30px; font-size: 18px; background-color: #f09199; text-decoration: none; color: #fff; margin-left: 50px; margin-bottom: 30px; border-radius: 5px; box-shadow:1px 1px 2px #333; }',
-'canvas:active { cursor: crosshair; }',
-'#preview { display: block; }'
+        '#reset { display: inline-block; text-align: center; width: 60px; height: 30px; line-height: 30px; font-size: 18px; background-color: #f09199; text-decoration: none; color: #fff; margin-left: 50px; margin-bottom: 30px; border-radius: 5px; box-shadow:1px 1px 2px #333; }',
+        'canvas:active { cursor: crosshair; }',
+        '#preview { display: block; }',
+        '.blur-loading { width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif"); }'
       ].join(''));
     }
   }
@@ -167,7 +168,8 @@
     $submit.style.display = 'none';
     var $loading = document.createElement('div');
     $loading.classList.add('blur-loading');
-    $form.insertBefore($loading, $submit);
+    var $blurInfo = document.querySelector('.blur-info');
+    $form.parentElement.insertBefore($loading, $blurInfo);
     // ajax 
     var fd = new FormData($form);
     fd.set('picfile', dataURItoBlob(dataURL), genString + '.png');
@@ -234,7 +236,7 @@
       e.preventDefault();
       var dataURL = document.querySelector('#preview').toDataURL('image/png', 1);
       sendFormDataPic(this, dataURL);
-    });
+    }, false);
   }
 
   init();
