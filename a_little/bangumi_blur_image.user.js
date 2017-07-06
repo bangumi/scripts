@@ -4,43 +4,43 @@
 // @description a tool for bluring image before upload
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*(upload_img|new)$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_blur_image.user.js
-// @version     0.1
 // @grant       GM_addStyle
 // @require     https://raw.githubusercontent.com/flozz/StackBlur/master/dist/stackblur.min.js
+// @version     0.2
+// @note        0.2 add loading and main entry function
 // ==/UserScript==
 
-(function() {
-  // gm init dom
+;(function() {
   function addInputFile($target) {
     var $input = document.createElement('input');
-    $input.type = 'file'
+    $input.type = 'file';
     if ($target) {
       $target.parentElement.insertBefore($input, $target.nextElementSibling);
     }
   }
-  const rawHTML = `
-    <label for="amount">Blur width and radius:</label>
-    <input id="amount" type="text" readonly>
-    <br>
-    <input id="slider-width" type="range" value="20" name="radius" min="1" max="100"><canvas></canvas>
-    <br>
-    <input id="slider-radius" type="range" value="10" name="radius" min="1" max="100">
-    <br>
-    <a href="#" id="reset">reset</a>
-  `
   function addStyle(css) {
     if (css) {
-      GM_addStyle(css)
+      GM_addStyle(css);
     } else {
       GM_addStyle([
         '#amount { padding-left: 10px; border: 0; color: #f6931f; font-size: 20px; font-weight: bold; }',
 '#reset { display: inline-block; text-align: center; width: 60px; height: 30px; line-height: 30px; font-size: 18px; background-color: #f09199; text-decoration: none; color: #fff; margin-left: 50px; margin-bottom: 30px; border-radius: 5px; box-shadow:1px 1px 2px #333; }',
 'canvas:active { cursor: crosshair; }',
 '#preview { display: block; }'
-      ].join(''))
+      ].join(''));
     }
   }
   function insertBlurInfo($target) {
+    const rawHTML = `
+    <label for="amount">Blur width and radius:</label>
+    <input id="amount" type="text" readonly>
+    <br>
+    <input id="slider-width" type="range" value="20" name="width" min="1" max="100"><canvas></canvas>
+    <br>
+    <input id="slider-radius" type="range" value="10" name="radius" min="1" max="100">
+    <br>
+    <a href="#" id="reset">reset</a>
+  `;
     var $info = document.createElement('div');
     $info.classList.add('blur-info');
     $info.innerHTML = rawHTML;
@@ -48,15 +48,7 @@
       $target.parentElement.insertBefore($info, $target.nextElementSibling);
     }
   }
-  addStyle()
-  var fs = [].slice.call(document.forms).filter(function(elem) {
-    return elem.querySelector('input[type=file]')
-  })
-  insertBlurInfo(fs[0])  // end add dom and css
-  // blur
-  var $radius = document.querySelector('#slider-radius');
-  var $width = document.querySelector('#slider-width');
-  function changeInfo(e) {
+  function changeInfo($width, $radius) {
     var $info = document.querySelector('#amount');
     var radius = $radius.value;
     var width = $width.value;
@@ -69,7 +61,7 @@
       y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
     };
   }
-  function drawRec() {
+  function drawRec($width) {
     var $canvas = $width.nextElementSibling;
     var ctx = $canvas.getContext('2d');
     var width = Number($width.value);
@@ -79,16 +71,11 @@
     ctx.strokeRect(0.2 * width, 0.2 * width, width, width);
     window.dispatchEvent(new Event('resize'));
   }
-  window.addEventListener('load', function (e) {
-    drawRec();
-    changeInfo();
-  }, false);
-  $radius.addEventListener('change', changeInfo);
-  $width.addEventListener('change', changeInfo);
-  $width.addEventListener('change', drawRec);
   function previewFile($file, $blurInfo) {
     //var $file = document.querySelector('input[type = file]')
     var $canvas = document.createElement('canvas');
+    var $radius = $blurInfo.querySelector('#slider-radius');
+    var $width = $blurInfo.querySelector('#slider-width');
     $canvas.id = 'preview';
     $canvas.width = 8;
     $canvas.height = 10;
@@ -107,7 +94,7 @@
       var ctx = el.getContext('2d');
       el.onmousedown = function (e) {
         isDrawing = true;
-        var pos = getMousePos(el, e)
+        var pos = getMousePos(el, e);
         ctx.moveTo(pos.x, pos.y);
       };
       el.onmousemove = function (e) {
@@ -116,7 +103,7 @@
           //ctx.stroke();
           var radius = Number($radius.value);
           var width = Number($width.value);
-          var pos = getMousePos(el, e)
+          var pos = getMousePos(el, e);
           StackBlur.canvasRGBA(el, pos.x - width / 2, pos.y - width / 2, width, width, radius);
         }
       };
@@ -136,7 +123,7 @@
     }
     $file.addEventListener('change', getImgData, false);
     document.querySelector('#reset').addEventListener('click', function (e) {
-      e.preventDefault()
+      e.preventDefault();
       var event = new Event('change');
       var file = $file.files[0];
       if (file) {
@@ -144,9 +131,7 @@
       }
     });
   }
-  var $file = document.querySelector('input[type = file]');
-  var $blurInfo = document.querySelector('.blur-info');
-  previewFile($file, $blurInfo);
+
   function sendFormDataPic($form, dataURL) {
     var genString = Array.apply(null, Array(5)).map(function(){
       return (function(charset){
@@ -177,25 +162,33 @@
       }
       return new File([u8arr], filename, {type:mime});
     }
+    // loading effect
+    var $submit = $form.querySelector('[type=submit]');
+    $submit.style.display = 'none';
+    var $loading = document.createElement('div');
+    $loading.classList.add('blur-loading');
+    $form.insertBefore($loading, $submit);
     // ajax 
-    var fd = new FormData($form)
-    fd.set('picfile', dataURItoBlob(dataURL), genString + '.png')
+    var fd = new FormData($form);
+    fd.set('picfile', dataURItoBlob(dataURL), genString + '.png');
     if (location.href.match(/new$/)) {
-      fd.set('submit', '添加新人物')
+      fd.set('submit', '添加新人物');
     }
-    var xhr = new XMLHttpRequest()
-    xhr.open($form.method.toLowerCase(), $form.action, true)
+    var xhr = new XMLHttpRequest();
+    xhr.open($form.method.toLowerCase(), $form.action, true);
     xhr.onreadystatechange = function () {
       var _location;
       //console.log(xhr);
       if(xhr.readyState === 2 && xhr.status === 200){
-        _location = xhr.responseURL
+        _location = xhr.responseURL;
+        $loading.style.display = 'none';
+        $submit.style.display = '';
         if(_location) {
           location.assign(_location);
         }
       }
-    }
-    xhr.send(fd)
+    };
+    xhr.send(fd);
     // clone form submit
     /*
      *var $cloneForm = $form.cloneNode(true)
@@ -203,16 +196,46 @@
      *$file.files[0] = dataURLtoFile(dataURL, genString + '.png')
      */
   }
-  fs.length && fs[0].addEventListener('submit', function (e) {
-    var $canvas = document.querySelector('#preview')
-    if (!$canvas) {
-      return undefined;
-    }
-    if ($canvas.width === 8 && $canvas.height === 10) {
-      return undefined;
-    }
-    e.preventDefault()
-    var dataURL = document.querySelector('#preview').toDataURL('image/png', 1);
-    sendFormDataPic(this, dataURL)
-  })
+
+  function init() {
+    // gm init dom
+    addStyle();
+    var fs = [].slice.call(document.forms).filter(function(elem) {
+      return elem.querySelector('input[type=file]');
+    });
+    insertBlurInfo(fs[0]);  // end add dom and css
+    // blur
+    var $radius = document.querySelector('#slider-radius');
+    var $width = document.querySelector('#slider-width');
+    window.addEventListener('load', function (e) {
+      drawRec($width);
+      changeInfo($width, $radius);
+    }, false);
+    var $file = document.querySelector('input[type = file]');
+    var $blurInfo = document.querySelector('.blur-info');
+    $blurInfo.addEventListener('change', function(e) {
+      if (e.target.tagName.toLowerCase() === 'input') {
+        changeInfo($width, $radius);
+      }
+      if (e.target.name === 'width') {
+        drawRec($width);
+      }
+    }, false);
+    previewFile($file, $blurInfo);
+
+    fs.length && fs[0].addEventListener('submit', function (e) {
+      var $canvas = document.querySelector('#preview');
+      if (!$canvas) {
+        return undefined;
+      }
+      if ($canvas.width === 8 && $canvas.height === 10) {
+        return undefined;
+      }
+      e.preventDefault();
+      var dataURL = document.querySelector('#preview').toDataURL('image/png', 1);
+      sendFormDataPic(this, dataURL);
+    });
+  }
+
+  init();
 }());
