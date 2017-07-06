@@ -172,7 +172,9 @@
     $form.parentElement.insertBefore($loading, $blurInfo);
     // ajax 
     var fd = new FormData($form);
-    fd.set('picfile', dataURItoBlob(dataURL), genString + '.png');
+    var $file = $form.querySelector('input[type=file]');
+    var inputFileName = $file.name ? $file.name : 'picfile';
+    fd.set(inputFileName, dataURItoBlob(dataURL), genString + '.png');
     if (location.href.match(/new$/)) {
       fd.set('submit', '添加新人物');
     }
