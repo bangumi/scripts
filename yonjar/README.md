@@ -11,11 +11,11 @@
 ## [bangumi收藏列表显示Rank](https://github.com/bangumi/scripts/blob/master/yonjar/show_rank.user.js?raw=true)
 
 在用户的收藏列表下显示作品的排名并高亮显示		
-**不适配https 请求容易503 待修复**
 
+- 通过点击 "Rank" 按钮显示Rank
 - Rank1000以内背景为绿色 
 - Rank1000~2000为蓝色 
 - Rank2000外为红色 
-- 没上榜的显示为"undefined" 背景为黑色
+- 没上榜的显示为 "undefined" 背景为黑色
 
-![bangumi收藏列表显示Rank效果](images/snipaste20170705_205646.png)
+![bangumi收藏列表显示Rank效果](images/show_rank_demo1.png)
