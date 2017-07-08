@@ -10,7 +10,7 @@
 // @include     /^https?:\/\/erogamescape\.(?:ddo\.jp|dyndns\.org)\/~ap2\/ero\/toukei_kaiseki\/(.*)/
 // @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.3.0
+// @version     0.3.1
 // @note        0.3.0 增加上传人物肖像功能，需要和bangumi_blur_image.user.js一起使用
 // @updateURL   https://raw.githubusercontent.com/22earth/gm_scripts/master/bangumi_new_subject_helper.user.js
 // @run-at      document-end
@@ -18,7 +18,7 @@
 // @grant       GM_getValue
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
-// @require     http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
+// @require     https://cdn.staticfile.org/jquery/2.1.4/jquery.min.js
 // ==/UserScript==
 
 // /^https?:\/\/(ja|en)\.wikipedia\.org\/wiki\/.*$/
