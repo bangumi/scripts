@@ -10,7 +10,8 @@
 // @include     /^https?:\/\/erogamescape\.(?:ddo\.jp|dyndns\.org)\/~ap2\/ero\/toukei_kaiseki\/(.*)/
 // @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.2.3
+// @version     0.3.0
+// @note        0.3.0 增加上传人物肖像功能，需要和bangumi_blur_image.user.js一起使用
 // @updateURL   https://raw.githubusercontent.com/22earth/gm_scripts/master/bangumi_new_subject_helper.user.js
 // @run-at      document-end
 // @grant       GM_setValue
@@ -199,9 +200,24 @@ if (window.top != window.self) return;
         if (charatext.match("CV")) {
           charaData.CV = charatext.replace(/.*CV：|新建角色/g, '');
         }
+        // store img data
+        var $img = $(this).closest('tr').find('td>img');
+        var getBase64Image = function (img) {
+          var canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+
+          var dataURL = canvas.toDataURL("image/png");
+          return dataURL
+        }
+        if ($img.length) {
+          charaData.characterImg = getBase64Image($img[0]);
+        }
         GM_setValue('charaData', JSON.stringify(charaData));
         alert('角色信息已存储,请再次点击');
-        console.log(JSON.stringify(charaData));
         $(this).unbind('click');
         // bind second click's event
         $(this).click(function() {
@@ -324,6 +340,17 @@ if (window.top != window.self) return;
       setTimeout(function (){$('#showrobot').click();},300);
       $('.fill-form').click(function() {
         window.NormaltoWCODE();
+        if ($('#preview')) {
+          var canvas = document.getElementById('preview');
+          var ctx = canvas.getContext('2d');
+          var image = new Image();
+          image.onload = function() {
+            canvas.width = image.width;
+            canvas.height = image.height;
+            ctx.drawImage(image, 0, 0);
+          }
+          image.src = data.characterImg;
+        }
         setTimeout(function() {
           if ($('#subject_infobox')) {
             // ["{{Infobox Crt", "|简体中文名= ", "|别名={", "[第二中文名|]", "[英文名|]", "[日文名|]", "[纯假名|]", "[罗马字|]", "[昵称|]", "}", "|性别= ", "|生日= ", "|血型= ", "|身高= ", "|体重= ", "|BWH= ", "|引用来源= ", "}}"]
@@ -348,7 +375,7 @@ if (window.top != window.self) return;
             infobox.push("|体重= ");
             // deal additional information and remove that has pushed in array
             for (prop in data) {
-              if (!crt_infodict[prop] && ['characterName', 'hiraganaName', 'characterIntro', '日文名'].indexOf(prop) === -1)
+              if (!crt_infodict[prop] && ['characterName', 'hiraganaName', 'characterIntro', '日文名', 'characterImg'].indexOf(prop) === -1)
                 infobox.push("|item=".replace("item", prop) + data[prop]);
             }
             infobox.push("|引用来源= ");

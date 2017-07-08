@@ -6,7 +6,7 @@
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_blur_image.user.js
 // @grant       GM_addStyle
 // @require     https://raw.githubusercontent.com/flozz/StackBlur/master/dist/stackblur.min.js
-// @version     0.2.1
+// @version     0.2.2
 // @note        0.2 add loading and main entry function
 // ==/UserScript==
 
@@ -88,8 +88,10 @@
       $canvas.height = $img.height;
       ctx.drawImage($img, 0, 0);
       window.dispatchEvent(new Event('resize'));  // let img cut tool at right position
-      blur($canvas);
     }, false);
+    blur($canvas);
+    $file.addEventListener('change', loadImgData, false);
+
     function blur(el) {
       var isDrawing;
       var ctx = el.getContext('2d');
@@ -112,7 +114,7 @@
         isDrawing = false;
       };
     }
-    function getImgData() {
+    function loadImgData() {
       var file = $file.files[0];
       var reader = new FileReader();
       reader.addEventListener('load', function () {
@@ -122,13 +124,14 @@
         reader.readAsDataURL(file);
       }
     }
-    $file.addEventListener('change', getImgData, false);
     document.querySelector('#reset').addEventListener('click', function (e) {
-      e.preventDefault();
-      var event = new Event('change');
+      e.preventDefault()
       var file = $file.files[0];
+      var $fillForm = document.querySelector('.fill-form');
       if (file) {
-        $file.dispatchEvent(event);
+        $file.dispatchEvent(new Event('change'));
+      } else if ($fillForm) {
+        $fillForm.dispatchEvent(new Event('click'));
       }
     });
   }
