@@ -5,7 +5,7 @@
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*(upload_img|new)$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_blur_image.user.js
 // @grant       GM_addStyle
-// @version     0.2.3
+// @version     0.2.4
 // @note        0.2 add loading and main entry function
 // ==/UserScript==
 
@@ -793,8 +793,9 @@ module.exports = {
     var $file = $form.querySelector('input[type=file]');
     var inputFileName = $file.name ? $file.name : 'picfile';
     fd.set(inputFileName, dataURItoBlob(dataURL), genString + '.png');
-    if (location.href.match(/new$/)) {
-      fd.set('submit', '添加新人物');
+    var $submit = $form.querySelector('[name=submit]')
+    if ($submit && $submit.name && $submit.value) {
+      fd.set($submit.name, $submit.value)
     }
     var xhr = new XMLHttpRequest();
     xhr.open($form.method.toLowerCase(), $form.action, true);
