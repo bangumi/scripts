@@ -1,0 +1,85 @@
+{
+  "name": "bgm-scripts-mono",
+  "version": "0.1.0",
+  "description": "dev repo for my bangumi.tv user scripts",
+  "main": "index.js",
+  "scripts": {
+    "start": "   node    lib/index.js",
+    "start:ts": "ts-node lib-ts/index.ts",
+    "build": "      rm -rf lib/* && tsc",
+    "build:watch": "rm -rf lib/* && tsc --watch",
+    "dist": "bash dist.sh",
+    "test": "         npm run build && jest --forceExit",
+    "test:coverage": "npm run build && jest --forceExit --coverage",
+    "test:watch": "   npm run build && jest --forceExit --watch",
+    "tslint": "    tslint -c tslint.json       'lib-ts/**/*.ts?(x)'",
+    "tslint:fix": "tslint -c tslint.json --fix 'lib-ts/**/*.ts?(x)'",
+    "dev-server": "  webpack-dev-server --config webpack/dev.js  --hot",
+    "webpack": "     webpack  --watch   --config webpack/dev.js",
+    "webpack:prod": "webpack            --config webpack/prod.js"
+  },
+  "keywords": [
+    "nodejs",
+    "webpack",
+    "bangumi.tv",
+    "TypeScript",
+    "boilerplate"
+  ],
+  "author": "Wang Guan <momocraft@gmail.com>",
+  "license": "WTFPL",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/bangumi/scripts/issues"
+  },
+  "engines": {
+    "node": ">= 6.0.0"
+  },
+  "homepage": "https://github.com/bangumi/scripts/tree/master/mono",
+  "dependencies": {
+    "preact": "^8.1.0",
+    "tslib": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.1",
+    "@types/jest": "^20.0.2",
+    "@types/node": "^8.0.3",
+    "babili-webpack-plugin": "0.1.2",
+    "chai": "^4.0.2",
+    "jest": "^20.0.4",
+    "ts-jest": "^20.0.6",
+    "ts-loader": "^2.2.0",
+    "ts-node": "^3.1.0",
+    "tslint": "^5.4.3",
+    "typescript": "<2.4.0",
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.5.0",
+    "webpack-merge": "^4.1.0",
+    "webpack-visualizer-plugin": "^0.1.11"
+  },
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "roots": [
+      "lib-ts",
+      "lib"
+    ],
+    "testMatch": [
+      "/**/__test__/*.(ts|js|tsx|jsx)",
+      "**/*\\.(spec|test)\\.(ts|js|tsx|jsx)"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx"
+    ],
+    "mapCoverage": true,
+    "coverageReporters": [
+      "json",
+      "lcov",
+      "text",
+      "html"
+    ]
+  }
+}

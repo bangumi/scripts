@@ -1,0 +1,28 @@
+{
+    "__comment": {
+        "##outDir": "remove from tsconfig.json, due to conflict with webpack HMR",
+        "##rootDir": "removed due to the same conflict",
+        "##module": "webpack 2 already supports ES6 import, just use it"
+    },
+    "compilerOptions": {
+        "target": "es5",
+        "noImplicitAny": true,
+        "experimentalDecorators": true,
+        "sourceMap": false,
+        "moduleResolution": "node",
+        "listEmittedFiles": false,
+        "emitDecoratorMetadata": true,
+        "jsx": "react",
+        "pretty": true,
+        "module": "es6",
+        "jsxFactory": "preact.h",
+        "importHelpers": true
+    },
+    "exclude": [
+        "node_modules"
+    ],
+    "compileOnSave": false,
+    "atom": {
+        "rewriteTsconfig": false
+    }
+}
