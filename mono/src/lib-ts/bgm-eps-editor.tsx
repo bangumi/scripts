@@ -1,5 +1,5 @@
 /**
- * bgm-eps-editor: 章节列表编辑器
+ * bgm-decodeEPs-editor: 章节列表编辑器
  */
 import * as preact from "preact";
 
@@ -50,32 +50,46 @@ table.episodes-editor-mono td:nth-child(5) {
 
     function bindEvents() {
 
-        const epsText = document.querySelector("#summary") as HTMLTextAreaElement;
-        if (!epsText) {
+        const summary = document.querySelector("#summary") as HTMLTextAreaElement;
+        if (!summary) {
             console.error("BgmEpisodesEditor: textarea#summary not found");
             return;
         }
 
         const tableContainer = document.createElement("div");
-        epsText.parentElement.insertBefore(tableContainer, epsText);
+        summary.parentElement.insertBefore(tableContainer, summary);
 
-        epsText.addEventListener("input", e => {
+        summary.addEventListener("input", e => {
             if (e.isTrusted)
-                setTimeout(() => updateComponent(form2eps(epsText.value)));
+                setTimeout(() => pushState(summary.value));
         });
-        console.log("bindEvents() 2");
 
-        let eps: Ep[];
+        const states: string[] = [];
 
-        function updateComponent(newEps: Ep[]) {
-            preact.render(<EpList eps={eps = newEps} setEps={updateComponent} />, tableContainer,
-                tableContainer.firstElementChild);
-            epsText.value = eps2form(newEps);
+        function popState() {
+            if (states.length > 1) {
+                states.pop();
+                applyState(states[states.length - 1]);
+            }
         }
 
-        updateComponent(form2eps(epsText.value));
+        function pushState(newState: string) {
+            if (newState !== states[states.length - 1])
+                states.push(newState);
+            while (states.length > 20)
+                states.shift();
+            applyState(newState);
+        }
 
-        console.log("bindEvents() done");
+        function applyState(state: string) {
+            console.log("applying", state);
+            preact.render(<EpList current={state} pushState={pushState} popState={popState} />,
+                tableContainer,
+                tableContainer.firstElementChild);
+            summary.value = encodeEpisodes(decodeEpisodes(state));
+        }
+
+        pushState(summary.value);
     }
 
     // 章节列表中的一项: 章节编号|原文标题|简体中文标题|时长|放送日期
@@ -88,7 +102,7 @@ table.episodes-editor-mono td:nth-child(5) {
     }
 
     /** 将章节列表转换为用于textarea# 的字符串 */
-    const eps2form = (eps: Ep[]) => eps
+    const encodeEpisodes = (decodeEPs: Ep[]) => decodeEPs
         .map(e => [
             e.no || "",
             e.titleRaw || "",
@@ -98,7 +112,7 @@ table.episodes-editor-mono td:nth-child(5) {
         ].join("|"))
         .join("\n");
 
-    const form2eps: (text: string) => Ep[] = text => text
+    const decodeEpisodes: (text: string) => Ep[] = text => text
         .split(/\n+/)
         .map(l => l.trim())
         .filter(l => l)
@@ -108,8 +122,9 @@ table.episodes-editor-mono td:nth-child(5) {
         });
 
     interface EpListProps {
-        setEps(eps: Ep[]): void;
-        eps: Ep[];
+        pushState(newState: string): void;
+        popState(): void;
+        current: string;
     }
 
     const fields: (keyof Ep)[] = ["no", "titleRaw", "titleZh", "duration", "airDate"];
@@ -128,18 +143,33 @@ table.episodes-editor-mono td:nth-child(5) {
             );
         }
 
+        decodeEPs() {
+            return decodeEpisodes(this.props.current);
+        }
+
         tr() {
-            return this.props.eps.map((ep, row) =>
+            return this.decodeEPs().map((ep, row) =>
                 <tr>
                     {fields.map(f =>
                         <td><input
                             pattern="[^|]*"
                             value={ep[f] || ""}
+                            onKeyDown={this.onkeydown}
                             onPaste={this.onPaste(row, f)}
                             onInput={this.onInput(row, f)}
                         />
                         </td>)}
                 </tr>);
+        }
+
+        onkeydown = (ev: KeyboardEvent) => {
+            if (ev.key === "z"
+                && ev.ctrlKey
+                && !ev.altKey
+                && !ev.shiftKey) {
+                ev.preventDefault();
+                this.props.popState();
+            }
         }
 
         onPaste = (row: number, field: keyof Ep) => (ev: ClipboardEvent) => {
@@ -154,21 +184,23 @@ table.episodes-editor-mono td:nth-child(5) {
 
             ev.preventDefault();
 
-            for (let r = row; r < this.props.eps.length && lines.length; r++) {
-                const ep = this.props.eps[r];
+            const eps = this.decodeEPs();
+
+            for (let r = row; r < eps.length && lines.length; r++) {
+                const ep = eps[r];
                 ep[field] = lines.shift();
             }
 
-            this.props.setEps(this.props.eps);
+            this.props.pushState(encodeEpisodes(eps));
         }
 
         onInput = (row: number, field: keyof Ep) => (ev: Event) => {
             const newText = ev && ev.target && (ev.target as HTMLInputElement).value || "";
-            if (newText.includes("|")) return;
+            if (newText.indexOf("|") !== -1) return;
 
-            const ep = this.props.eps[row];
-            ep[field] = newText;
-            this.props.setEps(this.props.eps);
+            const eps = this.decodeEPs();
+            eps[row][field] = newText;
+            this.props.pushState(encodeEpisodes(eps));
         }
 
         render() {
@@ -182,12 +214,9 @@ table.episodes-editor-mono td:nth-child(5) {
     }
 
     export function init() {
-        console.log("RUNNING", window);
         appendStyle();
-        console.log("RUNNING 2", window);
         bindEvents();
-        console.log("RUNNING 3", window);
     }
 }
 
-setTimeout(BgmEpisodesEditor.init());
+setTimeout(BgmEpisodesEditor.init);
