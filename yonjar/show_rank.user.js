@@ -4,9 +4,12 @@
 // @version      0.1.2
 // @description  在用户的收藏列表下显示作品的排名并高亮显示 1000以内背景为绿色 1000~2000为蓝色 2000外为红色 没上榜的为黑色
 // @author       Yonjar
-// @match        bgm.tv/*/list/*
-// @match        bangumi.tv/*/list/*
-// @match        chii.in/*/list/*
+// @match        http://bgm.tv/*/list/*
+// @match        http://bangumi.tv/*/list/*
+// @match        http://chii.in/*/list/*
+// @match        https://bgm.tv/*/list/*
+// @match        https://bangumi.tv/*/list/*
+// @match        https://chii.in/*/list/*
 // @grant        GM_addStyle
 // ==/UserScript==
 
