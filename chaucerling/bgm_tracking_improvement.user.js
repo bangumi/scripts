@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.4.0
+// @version      0.4.1
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -24,12 +24,39 @@ var extra_watching_subjects = {};
 var animes_size = 0,
   reals_size = 0,
   books_size = 0;
+var auto_refresh = false; // 进入首页自动刷新extra项目进度
 
 var watching_list = [];
 var refresh = false;
 var progress_changed = false;
 var subjects_size = 0;
 const LS_SCOPE = 'BTI.extra_subjects';
+
+// const DB_SCOPE = 'BTI';
+// const DB_VERSION = '1';
+// indexedDB
+// In the following line, you should include the prefixes of implementations you want to test.
+// window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+// // DON'T use "var indexedDB = ..." if you're not in a function.
+// // Moreover, you may need references to some window.IDB* objects:
+// window.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction || {READ_WRITE: "readwrite"}; // This line should only be needed if it is needed to support the object's constants for older browsers
+// window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
+// // (Mozilla has never prefixed these objects, so we don't need window.mozIDB*)
+// var db;
+// var request = window.indexedDB.open(DB_SCOPE, DB_VERSION);
+// request.onerror = function(event) {
+//   console.log("access IndexedDB fail");
+// };
+// request.onsuccess = function(event) {
+//   db = event.target.result;
+// };
+// request.onupgradeneeded = function(event){
+//   db = event.target.result;
+//   if(!db.objectStoreNames.contains("subjects")){
+//     db.createObjectStore("subjects", {keyPath:"subject_id"});
+//   }
+// };
+// var transaction = db.transaction("subjects", "readwrite");
 
 function GM_addStyle(style) {
   $('head').append(`<style>${style}</style>`);
@@ -68,6 +95,10 @@ GM_addStyle(`
       text-align: center;
       border-radius: 15px;
       background: #F0F0F0;
+  }
+  .infoWrapper_tv.disabled, .infoWrapper_book.disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
 `);
 
@@ -152,7 +183,7 @@ function get_path_and_size_of_all_type() {
 }
 
 function in_origin_queue(subject_id){
-  return origin_tv_queue.indexOf(subject_id) >= 0 || origin_book_queue.indexOf(subject_id)
+  return origin_tv_queue.indexOf(subject_id) >= 0 || origin_book_queue.indexOf(subject_id);
 }
 
 // 解析在看第一页的数据，获取在看数目和条目html
@@ -217,7 +248,7 @@ function check_get_all_pages_finished() {
 
 function get_subject_progress(subject_id, type) {
   // 在50列表里，不用去详情页抓取进度
-  if (in_origin_queue(subject_id) >= 0) {
+  if (in_origin_queue(subject_id)) {
     // 解析首页html
     var prg_list_html, prg_content_html;
     var html = $(`#subjectPanel_${subject_id}`);
@@ -298,7 +329,8 @@ function check_get_all_extra_subjects_finished() {
     extra_tv_queue: extra_tv_queue,
     animes_size: animes_size,
     reals_size: reals_size,
-    books_size: books_size
+    books_size: books_size,
+    auto_refresh: auto_refresh
   });
 }
 
@@ -348,13 +380,16 @@ function add_extra_subjects() {
     form.submit();
   });
 
-  $('#ti-alert').show();
-  $('#ti-alert').text($('#ti-alert').text().replace(/load.+/, "loading finished.(click to close)"));
-  show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
+  if (localStorage[LS_SCOPE] === undefined) {
+    $('#ti-alert').show();
+    $('#ti-alert').text($('#ti-alert').text().replace(/load.+/, "loading finished.(click to close)"));
+  }
 
   if (refresh === true) {
     $('#ti-pages a.refresh-btn').removeClass('disabled');
     $('#ti-pages a.refresh-btn').html('refresh');
+    $('.infoWrapper_tv').removeClass('disabled');
+    $('.infoWrapper_book').removeClass('disabled');
     refresh = false;
   }
 }
@@ -364,7 +399,7 @@ function create_subject_cell(subject_id) {
   var subject = watching_subjects[subject_id];
   if (subject.type !== 1) {
     $('.infoWrapper_tv').append(`
-      <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='extra clearit infoWrapper tinyMode' style='display:none;'>
+      <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='clearit infoWrapper tinyMode'>
         <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
           <img src='${subject.thumb}' class='grid'>
         </a>
@@ -383,7 +418,7 @@ function create_subject_cell(subject_id) {
     $('#subject_prg_content').append(subject.prg_content_html);
   } else {
     $('.infoWrapper_book').append(`
-      <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='extra clearit infoWrapper tinyMode' style='display:none;'>
+      <div id='subjectPanel_${subject.id}' subject_type='${subject.type}' class='clearit infoWrapper tinyMode'>
         <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
           <img src='${subject.thumb}' class='grid'>
         </a>
@@ -409,55 +444,32 @@ function create_subject_cell(subject_id) {
   }
 }
 
-function show_subjects(subject_type, extra) {
-  console.log(`change_tab, subject_type: ${subject_type}, extra: ${extra}`);
+function show_subjects(subject_type) {
+  console.log(`change_tab, subject_type: ${subject_type}`);
   switch (subject_type) {
     case "0": //all
       $('.infoWrapper_tv').show();
       $('.infoWrapper_book').hide();
-      if (extra) {
-        $('.infoWrapper_tv > div').hide();
-        $('.infoWrapper_tv > div.extra').show();
-      } else {
-        $('.infoWrapper_tv > div').show();
-        $('.infoWrapper_tv > div.extra').hide();
-      }
+      $('.infoWrapper_tv > div').show();
       break;
     case "1": //book
       $('.infoWrapper_tv').hide();
       $('.infoWrapper_book').show();
-      if (extra) {
-        $('.infoWrapper_book > div').hide();
-        $('.infoWrapper_book > div[subject_type="1"].extra').show();
-      } else {
-        $('.infoWrapper_book > div').hide();
-        $('.infoWrapper_book > div[subject_type="1"]').show();
-        $('.infoWrapper_book > div[subject_type="1"].extra').hide();
-      }
+
+      $('.infoWrapper_book > div').hide();
+      $('.infoWrapper_book > div[subject_type="1"]').show();
       break;
     case "2": //anime
       $('.infoWrapper_tv').show();
       $('.infoWrapper_book').hide();
-      if (extra) {
-        $('.infoWrapper_tv > div').hide();
-        $('.infoWrapper_tv > div[subject_type="2"].extra').show();
-      } else {
-        $('.infoWrapper_tv > div').hide();
-        $('.infoWrapper_tv > div[subject_type="2"]').show();
-        $('.infoWrapper_tv > div[subject_type="2"].extra').hide();
-      }
+      $('.infoWrapper_tv > div').hide();
+      $('.infoWrapper_tv > div[subject_type="2"]').show();
       break;
     case "6": //real
       $('.infoWrapper_tv').show();
       $('.infoWrapper_book').hide();
-      if (extra) {
-        $('.infoWrapper_tv > div').hide();
-        $('.infoWrapper_tv > div[subject_type="6"].extra').show();
-      } else {
-        $('.infoWrapper_tv > div').hide();
-        $('.infoWrapper_tv > div[subject_type="6"]').show();
-        $('.infoWrapper_tv > div[subject_type="6"].extra').hide();
-      }
+      $('.infoWrapper_tv > div').hide();
+      $('.infoWrapper_tv > div[subject_type="6"]').show();
       break;
     default:
       break;
@@ -473,20 +485,20 @@ function reset_odd_even() {
 }
 
 // 上限50是动画和三次元加起来的，这里返回的会包含三次元的条目
-function all_ids_on_index() {
-  return $('.infoWrapper_tv > div, .infoWrapper_book > div').map(function(index, element) {
+function all_ids_on_index(html) {
+  return $(html).find('.infoWrapper_tv > div, .infoWrapper_book > div').map(function(index, element) {
     return $(element).attr('id').split("_")[1];
   }).toArray();
 }
 
-function tv_subject_ids_on_index() {
-  return $('.infoWrapper_tv > div').map(function(index, element) {
+function tv_subject_ids_on_index(html) {
+  return $(html).find('.infoWrapper_tv > div').map(function(index, element) {
     return $(element).attr('id').split("_")[1];
   }).toArray();
 }
 
-function book_subject_ids_on_index() {
-  return $('.infoWrapper_book > div').map(function(index, element) {
+function book_subject_ids_on_index(html) {
+  return $(html).find('.infoWrapper_book > div').map(function(index, element) {
     return $(element).attr('id').split("_")[1];
   }).toArray();
 }
@@ -512,9 +524,8 @@ $(document).ready(function() {
   if (location.pathname !== "/") return;
   $("#cloumnSubjectInfo").prepend("<div id='ti-alert'/>");
   $('#cloumnSubjectInfo').prepend(`<div id='ti-pages' class='categoryTab' style='display:none;'>
-    <a type='button' data-page='50' class='focus tab-btn' href='javascript:void(0);'><span>50</span></a>
-    <a type='button' data-page='extra' class='tab-btn' href='javascript:void(0);'><span>extra</span></a>
     <a type='button' data-page='refresh' class='refresh-btn' href='javascript:void(0);'><span>refresh</span></a>
+    <label>进入首页自动刷新extra项目进度 <input class="auto-refresh-input" name="auto_refresh" type="checkbox"/></label>
   </div>`);
 
   var size1 = anime_subjects_size_on_index();
@@ -534,7 +545,7 @@ $(document).ready(function() {
     }
   }
 
-  if (localStorage[LS_SCOPE] !== undefined) {
+  if (auto_refresh == false && localStorage[LS_SCOPE] !== undefined) {
     $('#ti-alert').show();
     var cache = JSON.parse(localStorage[LS_SCOPE]);
     watching_subjects = cache.watching_subjects;
@@ -543,71 +554,87 @@ $(document).ready(function() {
     animes_size = cache.animes_size;
     reals_size = cache.reals_size;
     books_size = cache.books_size;
-    origin_queue = all_ids_on_index();
-    origin_tv_queue = tv_subject_ids_on_index();
-    origin_book_queue = book_subject_ids_on_index();
-    $('#ti-alert').text(`Maybe watching ${animes_size} animes, ${reals_size} reals, ${books_size} books, load form localStorage.(click to close)`);
-    change_mode();
-    add_extra_subjects();
+    auto_refresh = cache.auto_refresh || false;
+    $(`.auto-refresh-input`).prop('checked', auto_refresh);
+    if(!auto_refresh){
+      origin_tv_queue = tv_subject_ids_on_index(document);
+      origin_book_queue = book_subject_ids_on_index(document);
+      $('#ti-alert').text(`Maybe watching ${animes_size} animes, ${reals_size} reals, ${books_size} books, load form localStorage.(click to close)`);
+      change_mode();
+      add_extra_subjects();
+    } else {
+      $('#ti-alert').show();
+      $('#ti-alert').text(`Maybe watching more than 50 animes and reals, ${size3} books, loading to comfirm.(click to close)`);
+      setTimeout(function() {
+        get_watching_list();
+      }, 10);
+    }
   } else {
     $('#ti-alert').show();
     $('#ti-alert').text(`Maybe watching more than 50 animes and reals, ${size3} books, loading to comfirm.(click to close)`);
-
-    // origin_queue = all_ids_on_index();
-    // origin_tv_queue = tv_subject_ids_on_index();
-    // origin_book_queue = book_subject_ids_on_index();
-    console.log(origin_queue);
     setTimeout(function() {
       get_watching_list();
     }, 10);
   }
 });
 
-$(document).on('click', '#ti-alert', function(e) {
+$('#prgManagerMain').on('click', '#ti-alert', function(e) {
   $('#ti-alert').hide();
 });
 
-$(document).on('click', 'a.disabled', function(e) {
+$('#prgManagerMain').on('click', 'a.disabled', function(e) {
   e.preventDefault();
 });
 
-$(document).on('click', '#ti-pages a.tab-btn', function(e) {
-  $('#ti-pages a').removeClass('focus');
-  $(this).addClass('focus');
-  show_subjects($('#prgCatrgoryFilter a.focus').attr('subject_type'), $(this).data('page') === 'extra');
-});
-
-$(document).on('click', '#ti-pages a.refresh-btn', function(e) {
+$('#prgManagerMain').on('click', '#ti-pages a.refresh-btn', function(e) {
   $(this).addClass('disabled');
   $(this).html('refreshing');
 
   localStorage.removeItem(LS_SCOPE);
-  $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
+  $('.infoWrapper_tv').addClass('disabled');
+  $('.infoWrapper_book').addClass('disabled');
+  $('.infoWrapper_tv').html('');
+  $('.infoWrapper_book').html('');
+  // $('#subject_prg_content').html('');
 
   refresh = true;
-  setTimeout(function() {
-    get_watching_list();
-  }, 10);
+  $.get('/', function(data) {
+    var html = data;
+    $('.infoWrapper_tv').html($(html).find('.infoWrapper_tv').html());
+    $('.infoWrapper_book').html($(html).find('.infoWrapper_book').html());
+    $('#subject_prg_content').html($(html).find('#subject_prg_content').html());
+
+    origin_tv_queue = tv_subject_ids_on_index(html);
+    origin_book_queue = book_subject_ids_on_index(html);
+
+    setTimeout(function() {
+      get_watching_list();
+    }, 10);
+  });
 });
 
-$(document).on('click', '#ti-pages a.clear-btn', function(e) {
-  $(this).addClass('disabled');
-  $(this).html('clearing');
-  localStorage.removeItem(LS_SCOPE);
-  $('.infoWrapper_tv > div.extra, .infoWrapper_book > div.extra').remove();
-  $(this).removeClass('disabled');
-  $(this).html('clear');
+// $(document).on('click', '#ti-pages a.clear-btn', function(e) {
+//   $(this).addClass('disabled');
+//   $(this).html('clearing');
+//   localStorage.removeItem(LS_SCOPE);
+//   $(this).removeClass('disabled');
+//   $(this).html('clear');
+// });
+
+$('#prgManagerMain').on('change', '.auto-refresh-input', function(e) {
+  auto_refresh = e.target.checked;
+  progress_changed = true;
 });
 
 $('#prgCatrgoryFilter a').off('click').on('click', function(e) {
   $('#prgCatrgoryFilter a').removeClass('focus');
   $(this).addClass('focus');
-  show_subjects($(this).attr('subject_type'), $('#ti-pages a.focus').data('page') === 'extra');
+  show_subjects($(this).attr('subject_type'));
 });
 
 //restore extra subjects' progress
 $(window).on('pagehide', function(e) {
-  if (localStorage[LS_SCOPE] === undefined || progress_changed === true) return;
+  if (localStorage[LS_SCOPE] === undefined || progress_changed === false) return;
 
   localStorage[LS_SCOPE] = JSON.stringify({
     watching_subjects: watching_subjects,
@@ -615,7 +642,8 @@ $(window).on('pagehide', function(e) {
     extra_tv_queue: extra_tv_queue,
     animes_size: animes_size,
     reals_size: reals_size,
-    books_size: books_size
+    books_size: books_size,
+    auto_refresh: auto_refresh
   });
   console.log('restore localStorage');
 });
@@ -637,7 +665,7 @@ $(document).on('ajaxSuccess', function(event, xhr, options) {
     var subject = watching_subjects[subject_id];
     var index;
     // extra条目进度变更，需要处理队列
-    if (in_origin_queue(subject_id) === -1) {
+    if (!in_origin_queue(subject_id)) {
       console.log(`extra subject ${subject_id} progress change`);
       subject.extra = false;
       subject.prg_content_html = null;
@@ -645,7 +673,7 @@ $(document).on('ajaxSuccess', function(event, xhr, options) {
         index = extra_book_queue.indexOf(subject_id);
         extra_book_queue.splice(index, 1);
         origin_book_queue.unshift(subject_id);
-        origin_book_queue_last_subject_id = origin_book_queue.pop();
+        var origin_book_queue_last_subject_id = origin_book_queue.pop();
         extra_book_queue.push(origin_book_queue_last_subject_id);
         // 请求详情页，更新进度信息
         $.get('/subject/' + subject_id, function(data) {
@@ -664,7 +692,7 @@ $(document).on('ajaxSuccess', function(event, xhr, options) {
             prg_content_html = null;
           }
           var thumb = ($(html).find('a.thickbox.cover').attr('href') || '').replace('/l/', '/g/');
-          watching_subjects[origin_book_queue_last_subject_id] = new Subject({
+          watching_subjects[subject_id] = new Subject({
             id: subject_id,
             title: title,
             progress: progress,
@@ -679,7 +707,7 @@ $(document).on('ajaxSuccess', function(event, xhr, options) {
         index = extra_tv_queue.indexOf(subject_id);
         extra_tv_queue.splice(index, 1);
         origin_tv_queue.unshift(subject_id);
-        origin_tv_queue_last_subject_id = origin_tv_queue.pop();
+        var origin_tv_queue_last_subject_id = origin_tv_queue.pop();
         extra_tv_queue.push(origin_tv_queue_last_subject_id);
         // 请求详情页，更新进度信息
         $.get('/subject/' + subject_id, function(data) {
@@ -698,7 +726,7 @@ $(document).on('ajaxSuccess', function(event, xhr, options) {
             prg_content_html = null;
           }
           var thumb = ($(html).find('a.thickbox.cover').attr('href') || '').replace('/l/', '/g/');
-          watching_subjects[origin_tv_queue_last_subject_id] = new Subject({
+          watching_subjects[subject_id] = new Subject({
             id: subject_id,
             title: title,
             progress: progress,
@@ -714,5 +742,3 @@ $(document).on('ajaxSuccess', function(event, xhr, options) {
     }
   }
 });
-
-// TODO extra更新后，refresh，条目对不上
