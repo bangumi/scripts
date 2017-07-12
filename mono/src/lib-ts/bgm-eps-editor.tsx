@@ -82,7 +82,7 @@ table.episodes-editor-mono td:nth-child(5) {
         }
 
         function applyState(state: string) {
-            console.log("applying", state);
+            // console.log("applying", state);
             preact.render(<EpList current={state} pushState={pushState} popState={popState} />,
                 tableContainer,
                 tableContainer.firstElementChild);

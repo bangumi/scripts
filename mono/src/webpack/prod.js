@@ -24,14 +24,13 @@ module.exports = webpackMerge([
       }),
       new BabiliPlugin({}),
       /* disable uglifyJS in favor of babili, for ES6 support */
-      null &&
-      new webpack.optimize.UglifyJsPlugin({
+      null && new webpack.optimize.UglifyJsPlugin({
         minimize: true,
         compress: {
           warnings: true,
           drop_console: false
         }
-      })
+      }),
     ].filter(v => !!v)
   }
 ]);

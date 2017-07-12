@@ -15,7 +15,7 @@
     "tslint": "    tslint -c tslint.json       'lib-ts/**/*.ts?(x)'",
     "tslint:fix": "tslint -c tslint.json --fix 'lib-ts/**/*.ts?(x)'",
     "dev-server": "  webpack-dev-server --config webpack/dev.js  --hot",
-    "webpack": "     webpack  --watch   --config webpack/dev.js",
+    "webpack": "     webpack            --config webpack/dev.js",
     "webpack:prod": "webpack            --config webpack/prod.js"
   },
   "keywords": [
