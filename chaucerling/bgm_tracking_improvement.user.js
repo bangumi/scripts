@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.4.1
+// @version      0.4.2
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      http://bangumi.tv/
@@ -183,7 +183,7 @@ function get_path_and_size_of_all_type() {
 }
 
 function in_origin_queue(subject_id){
-  return origin_tv_queue.indexOf(subject_id) >= 0 || origin_book_queue.indexOf(subject_id);
+  return origin_tv_queue.indexOf(subject_id) >= 0 || origin_book_queue.indexOf(subject_id) >= 0;
 }
 
 // 解析在看第一页的数据，获取在看数目和条目html
@@ -556,9 +556,9 @@ $(document).ready(function() {
     books_size = cache.books_size;
     auto_refresh = cache.auto_refresh || false;
     $(`.auto-refresh-input`).prop('checked', auto_refresh);
+    origin_tv_queue = tv_subject_ids_on_index(document);
+    origin_book_queue = book_subject_ids_on_index(document);
     if(!auto_refresh){
-      origin_tv_queue = tv_subject_ids_on_index(document);
-      origin_book_queue = book_subject_ids_on_index(document);
       $('#ti-alert').text(`Maybe watching ${animes_size} animes, ${reals_size} reals, ${books_size} books, load form localStorage.(click to close)`);
       change_mode();
       add_extra_subjects();
