@@ -19,3 +19,8 @@
 - 没上榜的显示为 "undefined" 背景为黑色
 
 ![bangumi收藏列表显示Rank效果](images/show_rank_demo1.png)
+
+## [好友动态&全站动态切换](https://github.com/bangumi/scripts/blob/master/yonjar/timeline_switch.user.js?raw=true)
+
+好友动态&全站动态 切换
+!全站动态只有一页
