@@ -2,7 +2,7 @@
 // @name        bangumi anime score compare
 // @namespace   https://github.com/22earth
 // @description show subject score information of douban and MAL in bangumi.tv
-// @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/*$/
+// @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
 // @version     0.1.1
 // @grant       GM_addStyle
