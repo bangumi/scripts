@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name        bangumi anime score compare
+// @name:zh-CN  bangumi动画和豆瓣及MAL评分对比
 // @namespace   https://github.com/22earth
 // @description show subject score information of douban and MAL in bangumi.tv
+// @description:zh-cn bangumi动画页面显示豆瓣和MAL的评分
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
-// @version     0.1.1
+// @version     0.1.2
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
@@ -265,6 +267,8 @@
      */
     let $panel = document.querySelector('.SidePanel.png_bg');
     if ($panel) {
+      // 两位小数
+      siteScoreInfo.averageScore = parseFloat(siteScoreInfo.averageScore).toFixed(2)
       let $div = document.createElement('div')
       $div.classList.add('frdScore')
       $div.classList.add('e-userjs-score-compare')
