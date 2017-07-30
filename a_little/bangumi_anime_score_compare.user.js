@@ -6,11 +6,12 @@
 // @description:zh-cn bangumi动画页面显示豆瓣和MAL的评分
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
-// @version     0.1.2
+// @version     0.1.3
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
 // @require     https://cdn.staticfile.org/fuse.js/2.6.2/fuse.min.js
+// @require     https://cdn.staticfile.org/bluebird/3.5.0/bluebird.min.js
 // ==/UserScript==
 
 (function() {
@@ -93,17 +94,16 @@
     let subjectInfo = {}
     subjectInfo.subjectName = document.querySelector('h1>a').textContent.trim()
     let infoList = document.querySelectorAll('#infobox>li')
-    if (infoList.length) {
-      infoList.forEach(function(el) {
+    if (infoList && infoList.length) {
+      for (let i = 0, len = infoList.length; i < len; i++) {
+        let el = infoList[i]
         if (el.innerHTML.match(/放送开始|上映年度/)) {
           subjectInfo.startDate = dealDate(el.textContent.split(':')[1].trim())
-          return
         }
         if (el.innerHTML.match('播放结束')) {
           subjectInfo.endDate = dealDate(el.textContent.split(':')[1].trim())
-          return
         }
-      })
+      }
     }
     return subjectInfo
   }
