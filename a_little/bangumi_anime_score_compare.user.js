@@ -6,7 +6,7 @@
 // @description:zh-cn bangumi动画页面显示豆瓣和MAL的评分
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
-// @version     0.1.3
+// @version     0.1.4
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
@@ -40,12 +40,11 @@
       GM_addStyle(css);
     }
     else {
-      //.e-userjs-score-ctrl {display:none;color:#f09199;font-weight:800;}
       GM_addStyle(`
       .e-userjs-score-ctrl {color:#f09199;font-weight:800;float:right;}
       .e-userjs-score-ctrl:hover {cursor: pointer;}
       .e-userjs-score-clear {margin-right: 12px;}
-      .e-userjs-score-loading { width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif"); }'
+      .e-userjs-score-loading { width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif"); }
       `)
     }
   }

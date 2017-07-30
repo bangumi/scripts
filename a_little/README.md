@@ -3,8 +3,11 @@
 ## [动画评分对比](bangumi_anime_score_compare.user.js?raw=true)
 在动画页面显示豆瓣和MAL的评分
 
+讨论贴：https://bgm.tv/group/topic/343534
+
 ## [图片模糊打码处理](bangumi_blur_image.user.js?raw=true)
 讨论贴： https://bgm.tv/group/topic/343349
+
 在上传图片的页面提供模糊打码处理的功能
 
 ## [资源辅助搜索](bt_search_for_bgm.user.js?raw=true)
