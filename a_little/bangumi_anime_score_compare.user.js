@@ -7,8 +7,8 @@
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @include     https://movie.douban.com/subject/*
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
-// @version     0.2.0
-// @note        0.2.0 支持豆瓣上显示Bangumi评分,暂时禁用豆瓣上显示MAL的评分功能以及修改匹配方式
+// @version     0.2.1
+// @note        0.2.0 支持豆瓣上显示Bangumi评分,暂时禁用豆瓣上显示MAL的评分功能以及修改过滤方式
 // @TODO        统一豆瓣和Bangumi的缓存数据信息,
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
@@ -37,7 +37,7 @@
   if (window.location.host.match(/bangumi\.tv|bgm\.tv|chii\.in/)) {
     BANGUMI = {
       init: function() {
-        if (!this.isAnimeSubject) return
+        if (!this.isAnimeSubject()) return
         this.initControlDOM(document.querySelector('#panelInterestWrapper h2'))
         toggleLoading();
         checkInfoUpdate();
