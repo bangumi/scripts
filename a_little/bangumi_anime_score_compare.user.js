@@ -7,7 +7,7 @@
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @include     https://movie.douban.com/subject/*
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
-// @version     0.2.1
+// @version     0.2.2
 // @note        0.2.0 支持豆瓣上显示Bangumi评分,暂时禁用豆瓣上显示MAL的评分功能以及修改过滤方式
 // @TODO        统一豆瓣和Bangumi的缓存数据信息,
 // @grant       GM_addStyle
@@ -28,8 +28,8 @@
   const TIMEOUT = 10 * 1000;
 
   let isDouban = false;
-  var DOUBAN = null
-  var BANGUMI = null
+  var DOUBAN = null;
+  var BANGUMI = null;
 
   let tempList = window.location.pathname.match(/subject\/(\d*)/);
   if (!tempList) return;
@@ -37,8 +37,8 @@
   if (window.location.host.match(/bangumi\.tv|bgm\.tv|chii\.in/)) {
     BANGUMI = {
       init: function() {
-        if (!this.isAnimeSubject()) return
-        this.initControlDOM(document.querySelector('#panelInterestWrapper h2'))
+        if (!this.isAnimeSubject()) return;
+        this.initControlDOM(document.querySelector('#panelInterestWrapper h2'));
         toggleLoading();
         checkInfoUpdate();
         const subjectInfo = this.getSubjectInfo();
@@ -56,7 +56,7 @@
         }
       },
       isAnimeSubject: function () {
-        return document.querySelector('.focus.chl.anime')
+        return document.querySelector('.focus.chl.anime');
       },
       initControlDOM: function ($target) {
         const rawHTML = `<a title="强制刷新豆瓣和MAL评分" class="e-userjs-score-ctrl e-userjs-score-fresh">O</a>
@@ -111,11 +111,11 @@
           $panel.appendChild($div);
         }
       }
-    }
+    };
 
-    BANGUMI.init()
+    BANGUMI.init();
   } else if (window.location.host.match(/douban\.com/)) {
-    isDouban = true
+    isDouban = true;
     DOUBAN = {
       init: function () {
         if (this.isAnimeSubject()) {
@@ -124,7 +124,7 @@
           const scoreInfoBangumi = readScoreInfo('bangumi');
           //const scoreInfoMAL = readScoreInfo('mal');
           if (!scoreInfoBangumi) {
-            fetchBangumiDataBySearch(subjectInfo)
+            fetchBangumiDataBySearch(subjectInfo);
           } else {
             this.insertScoreInfo(scoreInfoBangumi.info);
           }
@@ -137,34 +137,38 @@
         }
       },
       isAnimeSubject: function () {
-        let $tags = document.querySelector('.tags-body')
+        let $tags = document.querySelector('.tags-body');
         if ($tags) {
-          return $tags.textContent.match(/动画|动漫/)
+          return $tags.textContent.match(/动画|动漫/);
         }
       },
       getSubjectInfo: function () {
         let subjectInfo = {};
-        subjectInfo.subjectName = document.querySelector('#content h1>span').textContent
-        subjectInfo.startDate = document.querySelector('span[property="v:initialReleaseDate"]').textContent.replace(/\(.*\)/, '')
-        return subjectInfo
+        let $title = document.querySelector('#content h1>span')
+        subjectInfo.subjectName = $title.textContent.replace(/第.季/, '');
+        let realeaseDate = document.querySelector('span[property="v:initialReleaseDate"]')
+        if (realeaseDate) {
+          subjectInfo.startDate = realeaseDate.textContent.replace(/\(.*\)/, '');
+        }
+        return subjectInfo;
       },
       /**
        * @param {Object} siteScoreInfo - averageScore ratingsCount site subjectURL
        */
       insertScoreInfo: function(siteScoreInfo) {
         let $panel = document.querySelector('#interest_sectl');
-        let $friendsRatingWrap = document.querySelector('.friends_rating_wrap')
+        let $friendsRatingWrap = document.querySelector('.friends_rating_wrap');
         if (!$friendsRatingWrap) {
-          $friendsRatingWrap = document.createElement('div')
-          $friendsRatingWrap.className = 'friends_rating_wrap clearbox'
-          $panel.appendChild($friendsRatingWrap)
+          $friendsRatingWrap = document.createElement('div');
+          $friendsRatingWrap.className = 'friends_rating_wrap clearbox';
+          $panel.appendChild($friendsRatingWrap);
         }
         // 小数
         siteScoreInfo.averageScore = parseFloat(siteScoreInfo.averageScore).toFixed(1);
         let $div = document.createElement('div');
         let favicon = siteScoreInfo.site.match('bangumi') ?
           'data:img/jpg;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALJu+f//////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsm75ELJu+cCybvn/sm75/7Ju+f+ybvn//////7Ju+f+ybvn/sm75/7Ju+f+ybvn/sm75/7Ju+f+ybvnAsm75ELJu+cCybvn/sm75/7Ju+f+ybvn/sm75////////////sm75/7Ju+f+ybvn/sm75/7Ju+f+ybvn/sm75/7Ju+cCwaPn/sGj5/9iz/P///////////////////////////////////////////////////////////9iz/P+waPn/rF/6/6xf+v//////////////////////////////////////////////////////////////////////rF/6/6lW+/+pVvv/////////////////////////////////zXn2/////////////////////////////////6lW+/+lTfz/pU38///////Nefb/zXn2/8159v//////zXn2///////Nefb//////8159v/Nefb/zXn2//////+lTfz/okT8/6JE/P//////////////////////2bb8/8159v/Nefb/zXn2/9m2/P//////////////////////okT8/546/f+eOv3//////8159v/Nefb/zXn2////////////////////////////zXn2/8159v/Nefb//////546/f+bMf7/mzH+//////////////////////////////////////////////////////////////////////+bMf7/lyj+wJco/v/Mk/7////////////////////////////////////////////////////////////Mk///lyj+wJQf/xCUH//AlB///5Qf//+UH///lB///5Qf//+aP///mj///5o///+UH///lB///5Qf//+UH///lB//wJQf/xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzXn2/5o////Nefb/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzXn2/wAAAAAAAAAAAAAAAM159v8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzXn2/wAAAAAAAAAAAAAAAAAAAAAAAAAAzXn2/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzXn2/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNefb/AAAAAAAAAAAAAAAA+f8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/j8AAP3fAAD77wAA9/cAAA==' :
-          'data:img/jpg;base64,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'
+          'data:img/jpg;base64,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';
 
         let rawHTML = `<strong class="rating_avg">${siteScoreInfo.averageScore}</strong>
                     <div class="friends">
@@ -173,15 +177,15 @@
                             </a>
                     </div>
                     <a href="${siteScoreInfo.subjectURL}" class="friends_count" target="_blank">${siteScoreInfo.ratingsCount}人评价</a>
-`
-        $div.className = 'rating_content_wrap clearfix e-userjs-score-compare'
-        $div.innerHTML = rawHTML
+`;
+        $div.className = 'rating_content_wrap clearfix e-userjs-score-compare';
+        $div.innerHTML = rawHTML;
         //toggleLoading(true);
         $friendsRatingWrap.appendChild($div);
       },
     };
 
-    DOUBAN.init()
+    DOUBAN.init();
   }
 
   function addStyle(css) {
@@ -214,51 +218,51 @@
   }
 
   function dealDate(dateStr) {
-    return dateStr.replace(/年|月|日|\s/g, '/').replace(/\/$/, '');
+    return dateStr.replace(/年|月|日/g, '/').replace(/\/$/, '');
   }
 
   function fetchBangumiDataBySearch (subjectInfo) {
     if (!subjectInfo || !subjectInfo.startDate) return;
     const startDate = new Date(subjectInfo.startDate);
-    const url = `https://bgm.tv/subject_search/${encodeURIComponent(subjectInfo.subjectName)}?cat=2`
+    const url = `https://bgm.tv/subject_search/${encodeURIComponent(subjectInfo.subjectName)}?cat=2`;
     searchSubjectHTML(url).then((info) => {
-      var rawInfoList = []
+      var rawInfoList = [];
       let $doc = (new DOMParser()).parseFromString(info, "text/html");
-      let items = $doc.querySelectorAll('#browserItemList>li>div.inner')
+      let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
       // get number of page
-      let numOfPage = null
-      let pList = $doc.querySelectorAll('.page_inner>.p')
+      let numOfPage = null;
+      let pList = $doc.querySelectorAll('.page_inner>.p');
       if (pList && pList.length) {
-        numOfPage = parseInt(pList[pList.length-1].href.split('?page=')[1])
+        numOfPage = parseInt(pList[pList.length-1].href.split('?page=')[1]);
       }
-      pList = null
+      pList = null;
       if (items && items.length) {
         for (const item of items) {
-          let $subjectTitle = item.querySelector('h3>a.l')
+          let $subjectTitle = item.querySelector('h3>a.l');
           let itemSubject = {
             subjectTitle: $subjectTitle.textContent.trim(),
             subjectURL: 'https://bgm.tv' + $subjectTitle.getAttribute('href'),
             subjectGreyTitle: item.querySelector('h3>.grey') ?
             item.querySelector('h3>.grey').textContent.trim() : '',
-          }
-          let matchDate = item.querySelector('.info').textContent.match(/\d{4}年\d{1,2}月\d{1,2}日/)
+          };
+          let matchDate = item.querySelector('.info').textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
           if (matchDate) {
-            itemSubject.startDate = dealDate(matchDate[0])
+            itemSubject.startDate = dealDate(matchDate[0]);
           }
-          let $rateInfo = item.querySelector('.rateInfo')
+          let $rateInfo = item.querySelector('.rateInfo');
           if ($rateInfo) {
             if ($rateInfo.querySelector('.fade')) {
-              itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent
-              itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '')
+              itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent;
+              itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '');
             } else {
-              itemSubject.averageScore = '0'
-              itemSubject.ratingsCount = '少于10'
+              itemSubject.averageScore = '0';
+              itemSubject.ratingsCount = '少于10';
             }
           } else {
-            itemSubject.averageScore = '0'
-            itemSubject.ratingsCount = '0'
+            itemSubject.averageScore = '0';
+            itemSubject.ratingsCount = '0';
           }
-          rawInfoList.push(itemSubject)
+          rawInfoList.push(itemSubject);
         }
       } else {
         throw new Error("Empty results");
@@ -271,17 +275,17 @@
       if (!results.length) {
         throw new Error("No match results");
       }
-      console.log('rrrrrr', results);
+      let finalResults = results[0]
       for (const result of results) {
         if (result.startDate) {
-          let d = new Date(result.startDate)
+          let d = new Date(result.startDate);
           if (d.getFullYear() === startDate.getFullYear() && d.getDate() === startDate.getDate()) {
-            finalResults = result
+            finalResults = result;
           }
         }
       }
-      finalResults.site = 'bangumi'
-      DOUBAN.insertScoreInfo(finalResults)
+      finalResults.site = 'bangumi';
+      DOUBAN.insertScoreInfo(finalResults);
       localStorage.setItem(USERJS_PREFIX + 'BANGUMI' + '_' + SUBJECT_BGM_ID, JSON.stringify({
         info: finalResults,
         date: (new Date()).getTime()
@@ -301,52 +305,63 @@
   function fetchBangumiData(subjectInfo, pageNumber, type) {
     if (!subjectInfo || !subjectInfo.startDate) return;
     const startDate = new Date(subjectInfo.startDate);
-    const SUBJECT_TYPE  = type || 'anime'
-    const sort = startDate.getDate() > 15 ? '?sort=date' : ''
-    const page = pageNumber ? `&page=${pageNumber}` : ''
-    const url = `https://bgm.tv/${SUBJECT_TYPE}/browser/airtime/${startDate.getFullYear()}-${startDate.getMonth()+1}${sort}${page}`;
+    const SUBJECT_TYPE  = type || 'anime';
+    const sort = startDate.getDate() > 15 ? 'sort=date' : '';
+    const page = pageNumber ? `page=${pageNumber}` : '';
+    let query = '';
+    if (sort && page) {
+      query = '?' + sort + '&' + page;
+    } else if (sort) {
+      query = '?' + sort;
+    } else if (page) {
+      query = '?' + page;
+    }
+    const url = `https://bgm.tv/${SUBJECT_TYPE}/browser/airtime/${startDate.getFullYear()}-${startDate.getMonth() + 1}${query}`;
+
     searchSubjectHTML(url).then((info) => {
-      var rawInfoList = []
+      var rawInfoList = [];
       let $doc = (new DOMParser()).parseFromString(info, "text/html");
-      let items = $doc.querySelectorAll('#browserItemList>li>div.inner')
+      let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
       // get number of page
-      let numOfPage = null
-      let pList = $doc.querySelectorAll('.page_inner>.p')
-      if (pList && pList.length) {
-        numOfPage = parseInt(pList[pList.length-1].href.split('?page=')[1])
+      let numOfPage = null;
+      let pList = $doc.querySelectorAll('.page_inner>.p');
+      if (pList && pList.length > 1) {
+        let tempNum = parseInt(pList[pList.length - 2].href.match(/page=(\d*)/)[1]);
+        numOfPage = parseInt(pList[pList.length - 1].href.match(/page=(\d*)/)[1]);
+        numOfPage = numOfPage > tempNum ? numOfPage : tempNum;
       }
-      pList = null
+      pList = null;
       //var items = document.querySelectorAll('#browserItemList>li>div.inner')
       if (items && items.length) {
         for (const item of items) {
-          let $subjectTitle = item.querySelector('h3>a.l')
+          let $subjectTitle = item.querySelector('h3>a.l');
           let itemSubject = {
             subjectTitle: $subjectTitle.textContent.trim(),
             subjectURL: 'https://bgm.tv' + $subjectTitle.getAttribute('href'),
             subjectGreyTitle: item.querySelector('h3>.grey') ?
             item.querySelector('h3>.grey').textContent.trim() : '',
-          }
-          let matchDate = item.querySelector('.info').textContent.match(/\d{4}年\d{1,2}月\d{1,2}日/)
+          };
+          let matchDate = item.querySelector('.info').textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
           if (matchDate) {
-            itemSubject.startDate = dealDate(matchDate[0])
+            itemSubject.startDate = dealDate(matchDate[0]);
           }
-          let $rateInfo = item.querySelector('.rateInfo')
+          let $rateInfo = item.querySelector('.rateInfo');
           if ($rateInfo) {
             if ($rateInfo.querySelector('.fade')) {
-              itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent
-              itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '')
+              itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent;
+              itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '');
             } else {
-              itemSubject.averageScore = '0'
-              itemSubject.ratingsCount = '少于10'
+              itemSubject.averageScore = '0';
+              itemSubject.ratingsCount = '少于10';
             }
           } else {
-            itemSubject.averageScore = '0'
-            itemSubject.ratingsCount = '0'
+            itemSubject.averageScore = '0';
+            itemSubject.ratingsCount = '0';
           }
-          rawInfoList.push(itemSubject)
+          rawInfoList.push(itemSubject);
         }
       } else {
-        throw new Error("Empty results");
+        throw new 'empty';
       }
       // filter results
       const opts = {
@@ -354,20 +369,19 @@
       };
       let results = (new Fuse(rawInfoList, opts)).search(subjectInfo.subjectName);
       if (!results.length) {
-        if (items.length === 24 && pageNumber < numOfPage) {
-          fetchBangumiDataBySearch(subjectInfo, pageNumber ? pageNumber+1 : 2)
+        if (items.length === 24 && (!pageNumber || pageNumber < numOfPage)) {
+          return fetchBangumiData(subjectInfo, pageNumber ? pageNumber + 1 : 2);
         }
-        throw new Error("No match results");
+        throw 'notmatched';
       }
-      let finalResults = results[0]
+      let finalResults = results[0];
       for (const result of results) {
         if (result.startDate && new Date(result.startDate) - startDate === 0) {
-          finalResults = result
+          finalResults = result;
         }
       }
-      finalResults.site = 'bangumi'
-      console.log('finalResults ' + pageNumber, finalResults);
-      DOUBAN.insertScoreInfo(finalResults)
+      finalResults.site = 'bangumi';
+      DOUBAN.insertScoreInfo(finalResults);
       localStorage.setItem(USERJS_PREFIX + 'BANGUMI' + '_' + SUBJECT_BGM_ID, JSON.stringify({
         info: finalResults,
         date: (new Date()).getTime()
@@ -382,7 +396,7 @@
     searchSubjectJSON(url).then((info) => {
       if (info && info.subjects && info.subjects.length) {
         const opts = {
-          keys: ['original_title']
+          keys: ['original_title', 'title']
         };
         let year = '';
         if (subjectInfo.startDate) {
@@ -390,7 +404,7 @@
         }
         let results = new Fuse(info.subjects, opts).search(subjectInfo.subjectName);
         if (year) {
-          results = new Fuse(results, {keys: ['year']}).search(year + '')
+          results = new Fuse(results, {keys: ['year']}).search(year + '');
         }
         if (results && results.length) {
           const dURL = `https://api.douban.com/v2/movie/subject/${results[0].id}`;
@@ -438,19 +452,19 @@
       //results = fuse.search(year + '');
       let startDate = null;
       let items = info.categories[0].items;
-      let subject = items[0]
+      let subject = items[0];
       if (subjectInfo.startDate) {
-        startDate = new Date(subjectInfo.startDate)
+        startDate = new Date(subjectInfo.startDate);
         for (const item of items) {
-          let aired = null
+          let aired = null;
           if (item.payload.aired.match('to')) {
-            aired = new Date(item.payload.aired.split('to')[0])
+            aired = new Date(item.payload.aired.split('to')[0]);
           } else {
-            aired = new Date(item.payload.aired)
+            aired = new Date(item.payload.aired);
           }
           if (startDate.getFullYear() === aired.getFullYear() && startDate.getDate() === aired.getDate()) {
-            siteScoreInfo.subjectURL = item.url
-            return searchSubjectHTML(item.url)
+            siteScoreInfo.subjectURL = item.url;
+            return searchSubjectHTML(item.url);
           }
         }
       }
@@ -475,7 +489,7 @@
             throw new Error("Invalid score info");
           }
           if (isDouban) {
-            DOUBAN.insertScoreInfo(siteScoreInfo)
+            DOUBAN.insertScoreInfo(siteScoreInfo);
           } else {
             BANGUMI.insertScoreInfo(siteScoreInfo);
           }

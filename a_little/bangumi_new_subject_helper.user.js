@@ -14,7 +14,7 @@
 // @include     /^https?:\/\/erogamescape\.(?:ddo\.jp|dyndns\.org)\/~ap2\/ero\/toukei_kaiseki\/(.*)/
 // @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.3.1
+// @version     0.3.2
 // @note        0.3.0 增加上传人物肖像功能，需要和bangumi_blur_image.user.js一起使用
 // @note        0.3.1 增加在Getchu上点击检测条目是否功能存在，若条目存在，自动打开条目页面。
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_new_subject_helper.user.js
@@ -147,7 +147,7 @@
     },
     addNode: function () {
       // new subject
-      var $th = $('#soft-title').parent()
+      var $th = $('#soft-title').parent();
       $th.append($('<a>').attr({
         class: 'new-subject',
         target: '_blank',
@@ -174,14 +174,14 @@
     },
     registerEvent: function () {
       $('.e-userjs-search-subject').click(function (e) {
-        e.preventDefault()
-        var subject = JSON.parse(GM_getValue('subjectData'))
+        e.preventDefault();
+        var subject = JSON.parse(GM_getValue('subjectData'));
         var subjectInfo = {
           subjectName: subject.subjectName,
           startDate: subject['発売日']
-        }
-        fetchBangumiData(subjectInfo)
-      })
+        };
+        fetchBangumiData(subjectInfo);
+      });
       $('.new-character').click(function (event) {
         // first click is to storage information
         event.preventDefault();
@@ -235,8 +235,8 @@
           ctx.drawImage(img, 0, 0, img.width, img.height);
 
           var dataURL = canvas.toDataURL("image/png");
-          return dataURL
-        }
+          return dataURL;
+        };
         if ($img.length) {
           charaData.characterImg = getBase64Image($img[0]);
         }
@@ -372,7 +372,7 @@
             canvas.width = image.width;
             canvas.height = image.height;
             ctx.drawImage(image, 0, 0);
-          }
+          };
           image.src = data.characterImg;
         }
         setTimeout(function () {
@@ -697,7 +697,7 @@
   };
 
   function searchSubjectHTML(url) {
-    const TIMEOUT = 10 * 1000
+    const TIMEOUT = 10 * 1000;
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
         method: "GET",
@@ -720,66 +720,66 @@
     });
   }
   function dealDate(dateStr) {
-    return dateStr.replace(/年|月|日|\s/g, '/').replace(/\/$/, '');
+    return dateStr.replace(/年|月|日/g, '/').replace(/\/$/, '');
   }
 
   function fetchBangumiData(subjectInfo, pageNumber, type) {
     if (!subjectInfo || !subjectInfo.startDate) return;
     const startDate = new Date(subjectInfo.startDate);
-    const SUBJECT_TYPE = type || 'game'
-    const sort = startDate.getDate() > 15 ? 'sort=date' : ''
-    const page = pageNumber ? `page=${pageNumber}` : ''
-    let query = ''
+    const SUBJECT_TYPE = type || 'game';
+    const sort = startDate.getDate() > 15 ? 'sort=date' : '';
+    const page = pageNumber ? `page=${pageNumber}` : '';
+    let query = '';
     if (sort && page) {
-      query = '?' + sort + '&' + page
+      query = '?' + sort + '&' + page;
     } else if (sort) {
-      query = '?' + sort
+      query = '?' + sort;
     } else if (page) {
-      query = '?' + page
+      query = '?' + page;
     }
     const url = `https://bgm.tv/${SUBJECT_TYPE}/browser/airtime/${startDate.getFullYear()}-${startDate.getMonth() + 1}${query}`;
-    console.log('uuuuuuuu', url)
+    console.log('uuuuuuuu', url);
     searchSubjectHTML(url).then((info) => {
-      var rawInfoList = []
+      var rawInfoList = [];
       let $doc = (new DOMParser()).parseFromString(info, "text/html");
-      let items = $doc.querySelectorAll('#browserItemList>li>div.inner')
+      let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
       // get number of page
-      let numOfPage = null
-      let pList = $doc.querySelectorAll('.page_inner>.p')
+      let numOfPage = null;
+      let pList = $doc.querySelectorAll('.page_inner>.p');
       if (pList && pList.length > 1) {
-        let tempNum = parseInt(pList[pList.length - 2].href.match(/page=(\d*)/)[1])
-        numOfPage = parseInt(pList[pList.length - 1].href.match(/page=(\d*)/)[1])
-        numOfPage = numOfPage > tempNum ? numOfPage : tempNum
+        let tempNum = parseInt(pList[pList.length - 2].href.match(/page=(\d*)/)[1]);
+        numOfPage = parseInt(pList[pList.length - 1].href.match(/page=(\d*)/)[1]);
+        numOfPage = numOfPage > tempNum ? numOfPage : tempNum;
       }
-      pList = null
+      pList = null;
       //var items = document.querySelectorAll('#browserItemList>li>div.inner')
       if (items && items.length) {
         for (const item of items) {
-          let $subjectTitle = item.querySelector('h3>a.l')
+          let $subjectTitle = item.querySelector('h3>a.l');
           let itemSubject = {
             subjectTitle: $subjectTitle.textContent.trim(),
             subjectURL: 'https://bgm.tv' + $subjectTitle.getAttribute('href'),
             subjectGreyTitle: item.querySelector('h3>.grey') ?
               item.querySelector('h3>.grey').textContent.trim() : '',
-          }
-          let matchDate = item.querySelector('.info').textContent.match(/\d{4}年\d{1,2}月\d{1,2}日/)
+          };
+          let matchDate = item.querySelector('.info').textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
           if (matchDate) {
-            itemSubject.startDate = dealDate(matchDate[0])
+            itemSubject.startDate = dealDate(matchDate[0]);
           }
-          let $rateInfo = item.querySelector('.rateInfo')
+          let $rateInfo = item.querySelector('.rateInfo');
           if ($rateInfo) {
             if ($rateInfo.querySelector('.fade')) {
-              itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent
-              itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '')
+              itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent;
+              itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '');
             } else {
-              itemSubject.averageScore = '0'
-              itemSubject.ratingsCount = '少于10'
+              itemSubject.averageScore = '0';
+              itemSubject.ratingsCount = '少于10';
             }
           } else {
-            itemSubject.averageScore = '0'
-            itemSubject.ratingsCount = '0'
+            itemSubject.averageScore = '0';
+            itemSubject.ratingsCount = '0';
           }
-          rawInfoList.push(itemSubject)
+          rawInfoList.push(itemSubject);
         }
       } else {
         throw new 'empty';
@@ -791,22 +791,23 @@
       let results = (new Fuse(rawInfoList, opts)).search(subjectInfo.subjectName);
       if (!results.length) {
         if (items.length === 24 && (!pageNumber || pageNumber < numOfPage)) {
-          return fetchBangumiData(subjectInfo, pageNumber ? pageNumber + 1 : 2)
+          return fetchBangumiData(subjectInfo, pageNumber ? pageNumber + 1 : 2);
         }
         throw 'notmatched';
       }
-      let finalResults = results[0]
+      let finalResults = results[0];
       for (const result of results) {
         if (result.startDate && new Date(result.startDate) - startDate === 0) {
-          finalResults = result
+          finalResults = result;
         }
       }
-      finalResults.site = 'bangumi'
+      finalResults.site = 'bangumi';
       console.log('搜索结果: ' + pageNumber, finalResults);
-      let $search = $('.e-userjs-search-subject')
-      $search.text('条目存在')
-      $search.unbind('click')
-      GM_openInTab(finalResults.subjectURL)
+      let $search = $('.e-userjs-search-subject');
+      $search.text('条目存在');
+      $search.attr('href', finalResults.subjectURL)
+      $search.unbind('click');
+      GM_openInTab(finalResults.subjectURL);
 
       //return finalResults
       // GM_openInTab(finalResults.subjectURL)
@@ -814,9 +815,9 @@
       .catch((err) => {
         console.log('err', err);
         if (err.match(/notmatched|empty/)) {
-          $('.e-userjs-search-subject').text('条目不存在')
+          $('.e-userjs-search-subject').text('条目不存在');
         } else {
-          $('.e-userjs-search-subject').text('发生错误，请尝试重新点击')
+          $('.e-userjs-search-subject').text('发生错误，请尝试重新点击');
         }
       });
   }
