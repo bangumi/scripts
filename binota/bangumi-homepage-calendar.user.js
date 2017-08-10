@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.1.0
+// @version     0.1.1
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -296,15 +296,21 @@ var Bangumi = function() {
           retval.bio = html.match(/<textarea id="newbio".+?>([\s\S]*)<\/te/m)[1].trim();
           
           retval.network = {};
-          retval.network.psn = html.match(/service\[1\]".+?value="(.*?)"/)[1].trim();
-          retval.network.xbox = html.match(/service\[2\]".+?value="(.*?)"/)[1].trim();
-          retval.network.friendcode = html.match(/service\[3\]".+?value="(.*?)"/)[1].trim();
-          retval.network.steam = html.match(/service\[4\]".+?value="(.*?)"/)[1].trim();
-          retval.network.battle = html.match(/service\[5\]".+?value="(.*?)"/)[1].trim();
-          retval.network.pixiv = html.match(/service\[6\]".+?value="(.*?)"/)[1].trim();
-          retval.network.github = html.match(/service\[7\]".+?value="(.*?)"/)[1].trim();
-          retval.network.twitter = html.match(/service\[8\]".+?value="(.*?)"/)[1].trim();
-          retval.network.instagram = html.match(/service\[9\]".+?value="(.*?)"/)[1].trim();
+          let matchMap = {
+            1: 'psn',
+            2: 'xbox',
+            3: 'friendcode',
+            4: 'steam',
+            5: 'battle',
+            6: 'pixiv',
+            7: 'github',
+            8: 'twitter',
+            9: 'instagram',
+            11: 'ns'
+          };
+          for (let i in matchMap) {
+            retval.network[matchMap[i]] = (html.match(new RegExp(`service\\[${i}\\]".+?value="(.*?)"`)) || [undefined, ''])[1].trim();
+          }
           return retval;
         },
         Setting: function(settings) {
@@ -323,7 +329,8 @@ var Bangumi = function() {
             "network_service[6]": settings.network.pixiv,
             "network_service[7]": settings.network.github,
             "network_service[8]": settings.network.twitter,
-            "network_service[9]": settings.network.instagram
+            "network_service[9]": settings.network.instagram,
+            "network_service[11]": settings.network.ns
           };
           var result = post('/settings', postData);
           return;
