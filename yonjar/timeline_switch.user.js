@@ -14,14 +14,12 @@ let btn = document.createElement('li');
 btn.innerHTML = '<a href="javascript:void(0)">看全站动态</a>';
 btn.addEventListener('click', function () {
 	let timelineContainer = document.querySelector('#timeline ul');
-
 	fetch(location.origin + '/timeline')
 		.then(resp => resp.text())
 		.then(html => {
 			let outer = html.match(/<ul>[\s\S]*?<\/ul>/)[0];
 			timelineContainer.outerHTML = outer;
 		});
-
 	document.querySelector('#tmlPager').outerHTML = '';
 }, false);
 container.appendChild(btn);
