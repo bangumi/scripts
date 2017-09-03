@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi评论统计
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.2
+// @version      0.1.3
 // @description  显示某主题下的评论情况 有多少用户发表过评论 自己是否评论过 鼠标移到id上查看评论次数
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(blog|ep|character|person|(group|subject)\/topic|rakuen\/topic\/(ep|crt|group|subject|prsn))\/\d+(\?.*)?(#.*)?$/
@@ -9,6 +9,7 @@
 // ==/UserScript==
 
 let myName = document.querySelector('#new_comment .reply_author a').textContent;
+let commentList = document.querySelector('#comment_list');
 let commentUsers = document.querySelectorAll('#comment_list div.inner strong a');
 let usersObj = {};
 
@@ -20,9 +21,15 @@ for (let elem of commentUsers){
     usersObj[username]++;
 }
 
-for (let elem of commentUsers){
-    elem.setAttribute('title', `${elem.textContent === myName ? '您' : elem.textContent}在该主题评论了${usersObj[elem.textContent]}次`);
-}
+commentList.addEventListener('mouseover', (e) => {
+    let elem = e.target;
+    if (elem.tagName.toUpperCase() === 'A' && 
+        elem.classList.contains('l') && 
+        !elem.parentNode.classList.contains('message') && 
+        !elem.parentNode.classList.contains('cmt_sub_content')) {
+        elem.setAttribute('title', `${elem.textContent === myName ? '您' : elem.textContent}在该主题评论了${usersObj[elem.textContent]}次`);
+    }
+}, false);
 
 let getLength = (obj) => {
     let count = 0;
