@@ -5,3 +5,6 @@
 讨论帖[戳我](https://bgm.tv/group/topic/342194)
 
 ![装上后的样子](images/subject_members.png)
+
+## [单行本条目页面添加所有单行本信息](subject_series_single.user.js?raw=true)
+
