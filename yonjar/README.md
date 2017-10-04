@@ -24,3 +24,37 @@
 
 好友动态&全站动态 切换
 !全站动态只有一页
+
+## [用户详情爬取](https://github.com/bangumi/scripts/blob/master/yonjar/user_detail.user.js?raw=true)
+
+本脚本不提供实际的功能 但能方便其他用户自行编写脚本
+爬取用户的资料 导出到localstorage
+
+- 收藏的角色
+- 收藏的人物
+- 好友
+- 小组
+
+初次使用要先到设置页`bangumi.tv/settings`进行首次爬取 以后**手动按需更新**
+![用户详情爬取设置](images/user_detail_demo1.png)
+
+如何取出数据:
+
+	let localData = localStorage.getItem('bgm_user_detail_by_yonjar');
+	let user_detail = JSON.parse(localData);
+
+数据结构:
+
+	{
+		uid: "yonjar",    // 用户id
+		characters: ["23","456"],    // 收藏的角色 数组元素为id 下同
+		persons: ["67","1"],    // 收藏的人物
+		friends: ["sai","abc"],    // 好友
+		groups: ["a","u_devs"],    // 小组
+		updateTime: 1506999160287    // 当前数据最后更新时间
+	}
+
+## [bgm角色数目统计](https://github.com/bangumi/scripts/blob/master/yonjar/character_plus.user.js?raw=true)
+
+只是上面"用户详情爬取"脚本的一个demo
+某声优的出演角色页面功能增强
