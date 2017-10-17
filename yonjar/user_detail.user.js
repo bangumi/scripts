@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         user detail
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.1
+// @version      0.1.2
 // @description  抓取用户数据
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/settings.*$/
@@ -98,11 +98,11 @@ let componentInit = () => {
 
     container.innerHTML = `
         <table id="show_table" class="settings" style="text-transform: uppercase;">
-            <tr><td>最近更新 / updateTime:</td><td colspan="2">${localData.updateTime ? new Date(localData.updateTime) : '还没更新过呢'}</td></tr>
-            <tr><td>收藏的角色 / characters:</td><td>${localData.characters ? localData.characters.length : 0}</td><td><button class="update_btn" data_toUpdate="characters">update</button></td></tr>
-            <tr><td>收藏的人物 / persons:</td><td>${localData.persons ? localData.persons.length : 0}</td><td><button class="update_btn" data_toUpdate="persons">update</button></td></tr>
-            <tr><td>好友 / friends:</td><td>${localData.friends ? localData.friends.length : 0}</td><td><button class="update_btn" data_toUpdate="friends">update</button></td></tr>
-            <tr><td>小组 / groups:</td><td>${localData.groups ? localData.groups.length : 0}</td><td><button class="update_btn" data_toUpdate="groups">update</button></td></tr>
+            <tr><td>最近更新 / updateTime:</td><td colspan="2">${localData ? new Date(localData.updateTime) : '还没更新过呢'}</td></tr>
+            <tr><td>收藏的角色 / characters:</td><td>${localData ? localData.characters.length : 0}</td><td><button class="update_btn" data_toUpdate="characters">update</button></td></tr>
+            <tr><td>收藏的人物 / persons:</td><td>${localData ? localData.persons.length : 0}</td><td><button class="update_btn" data_toUpdate="persons">update</button></td></tr>
+            <tr><td>好友 / friends:</td><td>${localData ? localData.friends.length : 0}</td><td><button class="update_btn" data_toUpdate="friends">update</button></td></tr>
+            <tr><td>小组 / groups:</td><td>${localData ? localData.groups.length : 0}</td><td><button class="update_btn" data_toUpdate="groups">update</button></td></tr>
         </table>
     `;
 
@@ -166,11 +166,11 @@ let componentInit = () => {
 
 class User {
     constructor(json){
-        this.uid = json.uid || document.querySelector('#headerNeue2 > div > div.idBadgerNeue > a').href.split('user/')[1];
-        this.charactersList = json.characters || [];
-        this.personsList = json.persons || [];
-        this.friendsList = json.friends || [];
-        this.groupsList = json.groups || [];
+        this.uid = json ? json.uid : document.querySelector('#headerNeue2 > div > div.idBadgerNeue > a').href.split('user/')[1];
+        this.charactersList = json ? json.characters : [];
+        this.personsList = json ? json.persons : [];
+        this.friendsList = json ? json.friends : [];
+        this.groupsList = json ? json.groups : [];
         console.log('US: ' + this.uid + ' init!');
     }
 
