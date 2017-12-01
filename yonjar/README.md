@@ -58,3 +58,7 @@
 
 只是上面"用户详情爬取"脚本的一个demo
 某声优的出演角色页面功能增强
+
+## [bgm话题收藏](https://github.com/bangumi/scripts/blob/master/yonjar/topic_collect.user.js?raw=true)
+
+收藏bangumi小组的话题、用户的日志、条目的讨论

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi评论统计
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.4
+// @version      0.1.5
 // @description  显示某主题下的评论情况 有多少用户发表过评论 自己是否评论过 鼠标移到id上查看评论次数
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(blog|ep|character|person|(group|subject)\/topic|rakuen\/topic\/(ep|crt|group|subject|prsn))\/\d+(\?.*)?(#.*)?$/
@@ -11,7 +11,7 @@
 class commentDetail {
     constructor() {
         this.usersMap = new Map();
-        this.myName = document.querySelector('#new_comment .reply_author a').textContent;
+        this.myName = window.top.document.querySelector('#dock > div > ul > li.first > a');
         this.commentList = document.querySelector('#comment_list');
         this.commentUsers = document.querySelectorAll('#comment_list div.inner strong a');
     }
