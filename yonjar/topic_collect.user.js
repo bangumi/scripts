@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         bangumi话题收藏
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.1
+// @version      0.1.2
 // @description  收藏bangumi的话题
 // @author       Yonjar
-// @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((blog|(group|subject)\/topic)\/\d+(\?.*)?(#.*)?)?$/
+// @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((blog|(group|subject)\/topic|rakuen\/topic\/(group|subject))\/\d+(\?.*)?(#.*)?)?$/
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -91,7 +91,7 @@ class BgmCollections {
 
 class Topic {
     constructor(){
-        this.id = location.pathname.split('topic/')[1] || location.pathname.split('blog/')[1];
+        this.id = location.pathname.match(/\d+/)[0];
         this.path = location.pathname;
         this.title = document.title;
         this.author = (document.querySelector('.postTopic > div.inner > strong > a') || document.querySelector('#pageHeader > h1 > span > a.avatar.l')).textContent;
@@ -130,7 +130,7 @@ class HomePage{
         let col_elem = document.createElement('div');
         let listStr = '';
         for (let col of bc.list) {
-            listStr += `<li><a href="${col.path}" title="楼主: ${col.author}" class="l">${col.title}</a></li>`;
+            listStr += `<li><a href="${col.path}" title="楼主: ${col.author}" class="l" target="_blank">${col.title}</a></li>`;
         }
         col_elem.innerHTML = `
             <div id="yonjar_collection_tpc" class="halfPage sort ui-draggable">
