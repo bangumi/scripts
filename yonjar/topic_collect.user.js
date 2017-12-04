@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi话题收藏
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.2
+// @version      0.1.3
 // @description  收藏bangumi的话题
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((blog|(group|subject)\/topic|rakuen\/topic\/(group|subject))\/\d+(\?.*)?(#.*)?)?$/
@@ -65,7 +65,7 @@ class BgmCollections {
     add(topic){
         this.collections.push(topic);
         this.update();
-        console.log('add ', topic.id);
+        console.log('topic_col:' , 'add ', topic.id);
     }
 
     remove(topic){
@@ -76,7 +76,7 @@ class BgmCollections {
             }
         }
         this.update();
-        console.log('remove ', topic.id);
+        console.log('topic_col:' , 'remove ', topic.id);
     }
 
     has(topic){
@@ -92,7 +92,7 @@ class BgmCollections {
 class Topic {
     constructor(){
         this.id = location.pathname.match(/\d+/)[0];
-        this.path = location.pathname;
+        this.path = this.pathTo(location.pathname);
         this.title = document.title;
         this.author = (document.querySelector('.postTopic > div.inner > strong > a') || document.querySelector('#pageHeader > h1 > span > a.avatar.l')).textContent;
     }
@@ -117,6 +117,10 @@ class Topic {
         let titleElem = document.querySelector('#pageHeader > h1') || document.querySelector('#header > h1');
         titleElem.appendChild(col_btn);
     }
+
+    pathTo(path){
+        return /rakuen/.test(path) ? path.replace(/rakuen\/topic\/(\w+)\/(\d+)/, (match, p1, p2) => `${p1}/topic/${p2}`) : path;
+    }
 }
 
 class HomePage{
@@ -135,7 +139,7 @@ class HomePage{
         col_elem.innerHTML = `
             <div id="yonjar_collection_tpc" class="halfPage sort ui-draggable">
                 <div class="sidePanelHome">
-                    <h2 class="subtitle">收藏话题</h2>
+                    <h2 class="subtitle">收藏话题(${bc.list.length})</h2>
                     <ul class="timeline" style="margin:0 5px">
                         ${bc.list.length < 1 ? '<li>暂无收藏</li>' : listStr}
                     </ul>
