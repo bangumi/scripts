@@ -21,7 +21,7 @@ background-color: #3ed715!important;
 background-color: #FF6600!important;
 }
 .yonjar_bgm_userjs_rank_refuse{
-background-color: red!important;
+background-color: rgba(253, 62, 80, 0.8)!important;
 }
 
 .yonjar_bgm_userjs_rank_undefined{
