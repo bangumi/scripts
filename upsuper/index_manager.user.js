@@ -3,7 +3,7 @@
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/index/\d+(\?.*)?(#.*)?$/
 // @grant       none
-// @version     1.1
+// @version     1.1.1
 // ==/UserScript==
 
 function $(q) { return document.querySelectorAll(q); }
@@ -155,7 +155,7 @@ function saveOrder() {
     if (!item)
       return;
 
-    var url = '/index/related/' + item.id + '/modify';
+    var url = location.origin + '/index/related/' + item.id + '/modify';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.onreadystatechange = function () {
