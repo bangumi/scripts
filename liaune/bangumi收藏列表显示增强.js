@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi收藏列表显示增强
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.4.3
+// @version      0.4.3.1
 // @description  在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排名功能
 // @author       Yonjar，Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|index)/.+$/
