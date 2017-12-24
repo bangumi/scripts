@@ -18,7 +18,7 @@
 
 改编自：[yonjar的脚本](https://github.com/bangumi/scripts/tree/master/yonjar)
 - 显示Rank，站内评分和评分人数，好友评分和评分人数
-- 支持按排名排序、时间排序、站内评分人数排序、好友评分排序（好友评分排序有bug，暂不启用）
-- 采用了localStorage，大大缩短等待时间，减少了不必要的请求
+- 支持按排名排序、时间排序、站内评分人数排序、好友评分排序
+- 采用了localStorage，可查看历史记录，大大缩短等待时间，减少了不必要的请求
 
 
