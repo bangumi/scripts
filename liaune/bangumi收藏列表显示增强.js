@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         bangumi收藏列表显示增强
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.4.3.1
-// @description  在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排名功能
+// @version      0.5.0
+// @description  在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能，鼠标移到排名处可查看历史记录
 // @author       Yonjar，Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|index)/.+$/
 // @grant        GM_addStyle
@@ -21,33 +21,37 @@ background-color: #3ed715!important;
 background-color: #FF6600!important;
 }
 .yonjar_bgm_userjs_rank_refuse{
-background-color: rgba(253, 62, 80, 0.8)!important;
+background-color: #f2050587!important;
 }
 
 .yonjar_bgm_userjs_rank_undefined{
-background-color: black!important;
+background-color: #0000001a!important;
 }
 
+.friend_vote{
+font-size: 10px;
+color:#4260cb;
+}
 .yonjar_bgm_userjs_vote_0{
-background-color: rgba(11, 12, 12, 0.59)!important;
-color:white;
+background-color: rgba(11, 12, 12, 0)!important;
+color:black;
 }
 
 .yonjar_bgm_userjs_vote_500{
-background-color: rgba(128, 255, 255, 0.8)!important;
-color:red;
+background-color: rgba(128, 255, 255, 0)!important;
+color:#eca609;
 }
 .yonjar_bgm_userjs_vote_1000{
-background-color: rgba(128, 144, 255, 0.8)!important;
-color:white;
+background-color: rgba(128, 144, 255, 0)!important;
+color:#18a099;
 }
 .yonjar_bgm_userjs_vote_2000{
-background-color: rgba(209, 80, 205, 0.58)!important;
+background-color: rgba(209, 80, 205, 0)!important;
 color:blue;
 }
 .yonjar_bgm_userjs_vote_4000{
-background-color: rgba(253, 62, 80, 0.8)!important;
-color:white;
+background-color: rgba(253, 62, 80, 0)!important;
+color:red;
 }
 
 .yonjar_bgm_userjs_rank_btn{
@@ -82,31 +86,32 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
 }
 `);
 
-    let itemsList = document.querySelectorAll('#browserItemList li.item');
+    const itemsList = document.querySelectorAll('#browserItemList li.item');
+    let sortstyle = -1, sortstyle1 = 1,sortstyle2 = 1,sortstyle3 = -1,count=0,update=0,refresh=0;
+
     //按排名排序
-    var sortstyle = -1, sortstyle1 = 1,sortstyle2 = 1,sortstyle3 = -1,count=0,update=0;
-    var showBtn = document.createElement('a');
+    const showBtn = document.createElement('a');
     showBtn.addEventListener('click', SortByRank);
     showBtn.className = 'chiiBtn';
     showBtn.href='javascript:;';
     showBtn.textContent = '排名排序';
 
     //按评分人数排序
-    var showBtn1 = document.createElement('a');
+    const showBtn1 = document.createElement('a');
     showBtn1.addEventListener('click', SortByVote);
     showBtn1.className = 'chiiBtn';
     showBtn1.href='javascript:;';
     showBtn1.textContent = '人数排序';
 
     //按好友评价排序
-    var showBtn2 = document.createElement('a');
+    const showBtn2 = document.createElement('a');
     showBtn2.addEventListener('click', SortByFriend);
     showBtn2.className = 'chiiBtn';
     showBtn2.href='javascript:;';
-    showBtn2.textContent = '好友评价排序';
+    showBtn2.textContent = '好友评价';
 
     //按时间排序
-    var showBtn3 = document.createElement('a');
+    const showBtn3 = document.createElement('a');
     showBtn3.addEventListener('click', SortByTime);
     showBtn3.className = 'chiiBtn';
     showBtn3.href='javascript:;';
@@ -115,18 +120,26 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         document.querySelector('#indexCatBox ul.cat').append(showBtn3);
 
     //更新缓存数据
-    var showBtn4 = document.createElement('a');
+    const showBtn4 = document.createElement('a');
     showBtn4.addEventListener('click', Update);
     showBtn4.className = 'chiiBtn';
     showBtn4.href='javascript:;';
     showBtn4.textContent = '更新';
 
     itemsList.forEach( (elem, index) => {
-        var href = elem.querySelector('a.subjectCover').href;
-        var ID = href.split('/subject/')[1];
+        let href = elem.querySelector('a.subjectCover').href;
+        let ID = href.split('/subject/')[1];
+
+        //为每个条目添加单独刷新
+        let showBtn5 = document.createElement('a');
+        showBtn5.className = 'l';
+        showBtn5.href='javascript:;';
+        showBtn5.textContent = '↺';
+        showBtn5.addEventListener('click', FetchStatus.bind(this,href,index),false);
+        elem.querySelector('.inner h3').appendChild(showBtn5);
         if(localStorage.getItem(ID+'Point')){
-            var info = {"rankNum": localStorage.getItem(ID+'Rank'),"Point": localStorage.getItem(ID+'Point'),"votes": localStorage.getItem(ID+'Votes'),"Point_f": localStorage.getItem(ID+'Point_f'),"Votes_f": localStorage.getItem(ID+'Votes_f')};
-            DisplayStatus(index,info);
+            let info = {"rankNum": localStorage.getItem(ID+'Rank'),"Point": localStorage.getItem(ID+'Point'),"votes": localStorage.getItem(ID+'Votes'),"Point_f": localStorage.getItem(ID+'Point_f'),"Votes_f": localStorage.getItem(ID+'Votes_f')};
+            DisplayStatus(ID,index,info);
         }
         else
             FetchStatus(href,index);
@@ -137,9 +150,14 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         update=1;
         count=0;
         itemsList.forEach( (elem, index) => {
-            var href = elem.querySelector('a.subjectCover').href;
+            let href = elem.querySelector('a.subjectCover').href;
             FetchStatus(href,index);
         });
+    }
+
+    function Refresh(href,index){
+        refresh=1;
+        FetchStatus(href,index);
     }
 
     function FetchStatus(href,index){
@@ -154,27 +172,38 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
             let ID = href.split('/subject/')[1];
             //显示排名
             let canMatch = targetStr.match(/<small class="alarm">#(\S+?)<\/small>/);
-            let rankNum =  canMatch ? parseInt(canMatch[1], 10) : 'NULL';
+            let rankNum =  canMatch ? parseInt(canMatch[1], 10) : null;
             if(canMatch)  localStorage.setItem(ID+'Rank',rankNum);
 
             //显示站内评分和评分人数
             let Match1 = targetStr.match(/<span class="number" property="v:average">(\S+?)<\/span>/);
-            let Point = Match1? parseFloat(Match1[1]) : 'NULL';
+            let Point = Match1? parseFloat(Match1[1]) : null;
             if(Match1)  localStorage.setItem(ID+'Point',Point);
             let Match2 = targetStr.match(/<span property="v:votes">(\S+?)<\/span>/);
-            let votes = Match2? parseInt(Match2[1]) : 'NULL';
+            let votes = Match2? parseInt(Match2[1]) : null;
             if(Match2)  localStorage.setItem(ID+'Votes',votes);
 
             //显示好友评分和评分人数
             let Match3 = targetStr.match(/<span class="num">(\S+?)<\/span>/);
-            let Point_f = Match3? parseFloat(Match3[1]).toFixed(1) : 'NULL';
+            let Point_f = Match3? parseFloat(Match3[1]).toFixed(1) : null;
             if(Match3)  localStorage.setItem(ID+'Point_f',Point_f);
             let Match4 = targetStr.match(/class="l">(\S+?) 人评分<\/a>/);
-            let Votes_f = Match4? parseFloat(Match4[1]) : 'NULL';
+            let Votes_f = Match4? parseFloat(Match4[1]) : null;
             if(Match4) localStorage.setItem(ID+'Votes_f',Votes_f);
 
-            var info = {"rankNum": rankNum,"Point": Point,"votes": votes,"Point_f": Point_f,"Votes_f": Votes_f};
-            if(!update)  DisplayStatus(index,info);
+            //加入历史记录
+            let date = new Date();
+            let time = date.getFullYear()+"-" + (date.getMonth()+1) + "-" + date.getDate();
+            let lastime = localStorage.getItem(ID+'Lastime');
+            let Record = time + ' Rank #' + rankNum + ' 评分:'+ Point + ' '+ votes + ' 人评分'+ '\r\n';
+            let History = localStorage.getItem(ID+'Records');
+            if(History) Record = History + Record;
+            if(Match1 && time!=lastime){
+                localStorage.setItem(ID+'Lastime',time);
+                localStorage.setItem(ID+'Records',Record);}
+
+            let info = {"rankNum": rankNum,"Point": Point,"votes": votes,"Point_f": Point_f,"Votes_f": Votes_f};
+            if(!update)  DisplayStatus(ID,index,info);
             else{
                 count+=1;
                 showBtn4.textContent='更新中... (' + count + '/' + itemsList.length +')';
@@ -183,28 +212,32 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         });
     }
 
-    function DisplayStatus(index,info){
-        var rankNum=info["rankNum"],Point=info["Point"],votes=info["votes"],Point_f=info["Point_f"],Votes_f=info["Votes_f"];
+    function DisplayStatus(ID,index,info){
+        let rankNum=info.rankNum,Point=info.Point,votes=info.votes,Point_f=info.Point_f,Votes_f=info.Votes_f;
         //显示排名
         let rankSp = document.createElement('span');
         rankSp.className = 'rank';
-        if (rankNum <= 100 && rankNum >0) {
-            rankSp.classList.add('yonjar_bgm_userjs_rank_excellent');
-        }
-        else if (rankNum <= 1000 && rankNum >0) {
-            rankSp.classList.add('yonjar_bgm_userjs_rank_recommended');
-        }
-        else if (rankNum >= 3000) {
+        if (rankNum >= 3000) {
             rankSp.classList.add('yonjar_bgm_userjs_rank_refuse');
         }
         else if (rankNum >= 2000) {
             rankSp.classList.add('yonjar_bgm_userjs_rank_justsoso');
         }
-        else if (rankNum === 'NULL'|| rankNum ==null) {
+        else if (rankNum >= 1000) {
+        }
+        else if (rankNum >= 100) {
+            rankSp.classList.add('yonjar_bgm_userjs_rank_recommended');
+        }
+        else if ( rankNum >0) {
+            rankSp.classList.add('yonjar_bgm_userjs_rank_excellent');
+        }
+        else {
             rankSp.classList.add('yonjar_bgm_userjs_rank_undefined');
         }
 
         rankSp.innerHTML = `<small>Rank </small>${rankNum}`;
+        let note = localStorage.getItem(ID+'Records');
+        rankSp.setAttribute('title', note);
 
         document.querySelectorAll('#browserItemList .item .inner')[index].insertBefore(rankSp, document.querySelectorAll('#browserItemList .item .inner .info.tip')[index]);
 
@@ -215,8 +248,9 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         PointSm.innerHTML = Point;
         PointSm.setAttribute("class","fade");
         let sstars = document.createElement('span');
-        let Point1 = Point ? parseInt(Point) : 'NULL';
-        sstars.setAttribute("class","sstars"+ Point1+ " starsinfo");
+        let Point1 = Point ? parseInt(Point) : null;
+        if(Point1)
+            sstars.setAttribute("class","sstars"+ Point1+ " starsinfo");
         let tip_j = document.createElement('span');
         tip_j.setAttribute("class","tip_j");
         tip_j.innerHTML = "("+ votes +"人评分)";
@@ -238,16 +272,19 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
 
         //显示好友评分和评分人数
         let Pointfr = document.createElement('small');
+        Point_f = Point_f ? Point_f : '-';
+        Votes_f = Votes_f ? Votes_f :'-';
         Pointfr.innerHTML = "好友评分："+Point_f+"　　"+Votes_f+"人评分";
-        Pointfr.setAttribute("class","fade");
+        Pointfr.setAttribute("class","friend_vote");
         rateInfo.appendChild(Pointfr);
+
 
         //显示排序按钮
         count+=1;
         if(count==itemsList.length && document.querySelector('#indexCatBox ul.cat')){
             document.querySelector('#indexCatBox ul.cat').append(showBtn);
             document.querySelector('#indexCatBox ul.cat').append(showBtn1);
-            //document.querySelector('#indexCatBox ul.cat').append(showBtn2);
+            document.querySelector('#indexCatBox ul.cat').append(showBtn2);
             document.querySelector('#indexCatBox ul.cat').append(showBtn4);
             $('.chiiBtn').css({padding:'0 5px'});
             $('ul.cat li').css({padding:'0 5px 0 0'});
@@ -258,7 +295,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
     function SortByRank() {
         sortstyle = (sortstyle==1)? -1 :1;
         showBtn.textContent = (showBtn.textContent=='排名排序↑') ? '排名排序↓':'排名排序↑';
-        var container = document.querySelector('ul#browserItemList');
+        let container = document.querySelector('ul#browserItemList');
         function ParseRank(rankstring){
             let rank = rankstring.match(/Rank (\d{1,4})/)? rankstring.match(/Rank (\d{1,4})/)[1]: 9999;
             return rank;
@@ -273,7 +310,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
     function SortByVote() {
         sortstyle1 = (sortstyle1==-1)? 1 :-1;
         showBtn1.textContent = (showBtn1.textContent=='人数排序↓') ? '人数排序↑':'人数排序↓';
-        var container = document.querySelector('ul#browserItemList');
+        let container = document.querySelector('ul#browserItemList');
         function ParseVote(votestring){
             let vote = votestring.match(/(\d{1,5})人评分/)? votestring.match(/(\d{1,5})人评分/)[1]: 0;
             return vote;
@@ -287,14 +324,14 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
 
     function SortByFriend() {
         sortstyle2 = (sortstyle2==-1)? 1 :-1;
-        showBtn2.textContent = (showBtn2.textContent=='好友评价排序↓') ? '好友评价排序↑':'好友评价排序↓';
-        var container = document.querySelector('ul#browserItemList');
+        showBtn2.textContent = (showBtn2.textContent=='好友评价↓') ? '好友评价↑':'好友评价↓';
+        let container = document.querySelector('ul#browserItemList');
         function ParseFriendRank(rankstring){
-            let rank = rankstring.match(/(\d{1}.\d{1})/)? rankstring.match(/(\d{1}).\d{1}/)[1]: 0;
-            return parseFloat(rank);
+            let rank = rankstring.match(/(\d+\.\d+?)/)? rankstring.match(/(\d+\.\d+?)/)[1]: 0;
+            return parseInt(rank*10);
         }
         if (container) container.style.cssText = 'display: flex; flex-flow: row wrap;';
-        [].slice.call(document.querySelectorAll('#browserItemList .item .inner .rateInfo .fade'), 0)
+        [].slice.call(document.querySelectorAll('#browserItemList .item .inner .rateInfo .friend_vote'), 0)
             .map(x => [x.textContent, x])
             .sort((x,y) => (ParseFriendRank(x[0]) - ParseFriendRank(y[0]))*sortstyle2)
             .forEach((x,n) => {x[1].parentNode.parentNode.parentNode.style.order = n; x[1].parentNode.parentNode.parentNode.style.width = '100%';});
@@ -303,14 +340,14 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
     function SortByTime() {
         sortstyle3 = (sortstyle3==-1)? 1 :-1;
         showBtn3.textContent = (showBtn3.textContent=='时间排序↓') ? '时间排序↑':'时间排序↓';
-        var container = document.querySelector('ul#browserItemList');
+        let container = document.querySelector('ul#browserItemList');
         function ParseDate(Datestring){
             let yy=Datestring.match(/(\d{4})/)? Datestring.match(/(\d{4})/)[1].toString():'1000';
             let year = Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)? Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)[1].toString(): yy;
             let month = Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)? Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)[3].toString(): '01';
             let day = Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)?Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)[5].toString(): '01';
-            var date= new Date(year+'/'+month+'/'+day);
-            var now = new Date();
+            let date= new Date(year+'/'+month+'/'+day);
+            let now = new Date();
             return now.getTime()-date.getTime();
         }
         if (container) container.style.cssText = 'display: flex; flex-flow: row wrap;';
