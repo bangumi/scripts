@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi收藏列表显示增强
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.5.0
+// @version      0.5.1
 // @description  在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能，鼠标移到排名处可查看历史记录
 // @author       Yonjar，Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|index)/.+$/
@@ -87,7 +87,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
 `);
 
     const itemsList = document.querySelectorAll('#browserItemList li.item');
-    let sortstyle = -1, sortstyle1 = 1,sortstyle2 = 1,sortstyle3 = -1,count=0,update=0,refresh=0;
+    let sortstyle = -1, sortstyle1 = 1,sortstyle2 = 1,sortstyle3 = -1,count=0,update=0;
 
     //按排名排序
     const showBtn = document.createElement('a');
@@ -137,6 +137,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         showBtn5.textContent = '↺';
         showBtn5.addEventListener('click', FetchStatus.bind(this,href,index),false);
         elem.querySelector('.inner h3').appendChild(showBtn5);
+
         if(localStorage.getItem(ID+'Point')){
             let info = {"rankNum": localStorage.getItem(ID+'Rank'),"Point": localStorage.getItem(ID+'Point'),"votes": localStorage.getItem(ID+'Votes'),"Point_f": localStorage.getItem(ID+'Point_f'),"Votes_f": localStorage.getItem(ID+'Votes_f')};
             DisplayStatus(ID,index,info);
@@ -151,13 +152,17 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         count=0;
         itemsList.forEach( (elem, index) => {
             let href = elem.querySelector('a.subjectCover').href;
-            FetchStatus(href,index);
+            let ID = href.split('/subject/')[1];
+            //同一天只更新一次
+            let date = new Date();
+            let time = date.getFullYear()+"-" + (date.getMonth()+1) + "-" + date.getDate();
+            let lastime = localStorage.getItem(ID+'Lastime');
+            if(time != lastime)  FetchStatus(href,index);
+            else {
+                count+=1;
+                showBtn4.textContent='更新中... (' + count + '/' + itemsList.length +')';
+                if(count==itemsList.length){ location.reload(); showBtn4.textContent='更新完毕！';}}
         });
-    }
-
-    function Refresh(href,index){
-        refresh=1;
-        FetchStatus(href,index);
     }
 
     function FetchStatus(href,index){
@@ -170,12 +175,12 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         })
             .then(targetStr => {
             let ID = href.split('/subject/')[1];
-            //显示排名
+            //获取排名
             let canMatch = targetStr.match(/<small class="alarm">#(\S+?)<\/small>/);
             let rankNum =  canMatch ? parseInt(canMatch[1], 10) : null;
             if(canMatch)  localStorage.setItem(ID+'Rank',rankNum);
 
-            //显示站内评分和评分人数
+            //获取站内评分和评分人数
             let Match1 = targetStr.match(/<span class="number" property="v:average">(\S+?)<\/span>/);
             let Point = Match1? parseFloat(Match1[1]) : null;
             if(Match1)  localStorage.setItem(ID+'Point',Point);
@@ -183,7 +188,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
             let votes = Match2? parseInt(Match2[1]) : null;
             if(Match2)  localStorage.setItem(ID+'Votes',votes);
 
-            //显示好友评分和评分人数
+            //获取好友评分和评分人数
             let Match3 = targetStr.match(/<span class="num">(\S+?)<\/span>/);
             let Point_f = Match3? parseFloat(Match3[1]).toFixed(1) : null;
             if(Match3)  localStorage.setItem(ID+'Point_f',Point_f);
