@@ -1,0 +1,47 @@
+// ==UserScript==
+// @name         Bangumi 条目评分排名历史记录
+// @namespace    https://github.com/bangumi/scripts/liaune
+// @version      0.3
+// @description  在浏览条目列表时记录条目的评分排名信息，在Rank上显示；显示条目的好友评分（若有）
+// @author       Liaune
+// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/tag|.+?/browser|subject_search)(/|\?).+/
+// @grant        none
+// ==/UserScript==
+
+(function() {
+
+    const itemsList = document.querySelectorAll('#browserItemList li.item');
+
+    itemsList.forEach( (elem, index) => {
+        let href = elem.querySelector('a.subjectCover').href;
+        let ID = href.split('/subject/')[1];
+        let rank = elem.querySelector('.inner span.rank');
+        let rankNum = rank ? rank.innerHTML.match(/\d{1,5}/) : null;
+        let rate = elem.querySelector('.inner .fade');
+        let Point = rate ? parseFloat(rate.innerHTML) : null;
+        let vote=elem.querySelector('.inner .tip_j');
+        let re = new RegExp("\\d{2,}", "");
+        let Votes = vote ? re.exec(vote.innerHTML) : null;
+        //加入历史记录
+        let date = new Date();
+        let time = date.getFullYear()+"-" + (date.getMonth()+1) + "-" + date.getDate();
+        let lastime = localStorage.getItem(ID+'Lastime');
+        let Record = time + ' Rank #' + rankNum + ' 评分:'+ Point + ' '+ Votes + ' 人评分'+ '\r\n';
+        let History = localStorage.getItem(ID+'Records');
+        if(History) Record = History + Record;
+        if(time != lastime){
+            localStorage.setItem(ID+'Lastime',time);
+            localStorage.setItem(ID+'Records',Record);}
+
+        if(rank) rank.setAttribute('title', localStorage.getItem(ID+'Records'));
+
+        let rateInfo = elem.querySelector('.inner .rateInfo');
+        let Point_f = localStorage.getItem(ID+'Point_f');
+        let Votes_f = localStorage.getItem(ID+'Votes_f');
+        let Pointfr = document.createElement('small');
+        if(Point_f){
+            Pointfr.innerHTML = "好友评分："+Point_f+"　　"+Votes_f+"人评分";
+            Pointfr.setAttribute("class","fade");
+            rateInfo.appendChild(Pointfr);}
+    });
+})();
