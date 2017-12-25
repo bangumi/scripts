@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Bangumi 条目评分排名历史记录
+// @name         bangumi 条目评分排名历史记录
 // @namespace    https://github.com/bangumi/scripts/liaune
 // @version      0.3
 // @description  在浏览条目列表时记录条目的评分排名信息，在Rank上显示；显示条目的好友评分（若有）
