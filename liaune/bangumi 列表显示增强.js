@@ -1,10 +1,11 @@
 // ==UserScript==
-// @name         bangumi收藏列表显示增强
+// @name         bangumi列表显示增强
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.5.1
-// @description  在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能，鼠标移到排名处可查看历史记录
+// @version      0.6.5
+// @description  在有条目列表的页面，显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能，鼠标移到排名处可查看历史记录
 // @author       Yonjar，Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|index)/.+$/
+// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|.+?/tag|.+?/browser|subject_search|index)(/|\?).+$/
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -86,7 +87,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
 }
 `);
 
-    const itemsList = document.querySelectorAll('#browserItemList li.item');
+    let itemsList = document.querySelectorAll('#browserItemList li.item');
     let sortstyle = -1, sortstyle1 = 1,sortstyle2 = 1,sortstyle3 = -1,count=0,update=0;
 
     //按排名排序
@@ -126,26 +127,51 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
     showBtn4.href='javascript:;';
     showBtn4.textContent = '更新';
 
-    itemsList.forEach( (elem, index) => {
-        let href = elem.querySelector('a.subjectCover').href;
-        let ID = href.split('/subject/')[1];
+    //更新缓存数据
+    const showBtn0 = document.createElement('a');
+    showBtn0.addEventListener('click', ShowProcess);
+    showBtn0.className = 'chiiBtn';
+    showBtn0.href='javascript:;';
+    showBtn0.textContent = 'Show';
 
-        //为每个条目添加单独刷新
-        let showBtn5 = document.createElement('a');
-        showBtn5.className = 'l';
-        showBtn5.href='javascript:;';
-        showBtn5.textContent = '↺';
-        showBtn5.addEventListener('click', FetchStatus.bind(this,href,index),false);
-        elem.querySelector('.inner h3').appendChild(showBtn5);
+    const You=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
+    const User =window.location.href.match(/\/list\/(\S+)\//)? window.location.href.match(/\/list\/(\S+)\//)[1]: null;
 
-        if(localStorage.getItem(ID+'Point')){
-            let info = {"rankNum": localStorage.getItem(ID+'Rank'),"Point": localStorage.getItem(ID+'Point'),"votes": localStorage.getItem(ID+'Votes'),"Point_f": localStorage.getItem(ID+'Point_f'),"Votes_f": localStorage.getItem(ID+'Votes_f')};
-            DisplayStatus(ID,index,info);
-        }
-        else
-            FetchStatus(href,index);
+    if(window.location.href.match(/\/index\//)) Process();
+    else {document.querySelector('#browserTools').append(showBtn0);}
 
-    });
+    function ShowProcess(){
+        itemsList = document.querySelectorAll('#browserItemList li.item');
+        showBtn0.style.display='none';
+        Process();
+    }
+    //Main Program
+    function Process(){
+        itemsList.forEach( (elem, index) => {
+            let href = elem.querySelector('a.subjectCover').href;
+            let ID = href.split('/subject/')[1];
+
+            //为每个条目添加单独刷新
+            let showBtn5 = document.createElement('a');
+            showBtn5.className = 'l';
+            showBtn5.href='javascript:;';
+            showBtn5.textContent = '↺';
+            showBtn5.addEventListener('click', FetchStatus.bind(this,href,index),false);
+            elem.querySelector('.inner h3').appendChild(showBtn5);
+
+            //获取用户评分
+            let User_rate=User ? elem.querySelectorAll('.inner .collectInfo span')[0].className: null;
+            let User_Point=User_rate ? (User_rate.match(/sstars(\d+)/)?User_rate.match(/sstars(\d+)/)[1]:null):null;
+            if(User==You && User_Point)  localStorage.setItem(You+'Point'+ID,User_Point);
+            if(localStorage.getItem(ID+'Point')){
+                let info = {"rankNum": localStorage.getItem(ID+'Rank'),"Point": localStorage.getItem(ID+'Point'),"votes": localStorage.getItem(ID+'Votes'),"Point_f": localStorage.getItem(ID+'Point_f'),"Votes_f": localStorage.getItem(ID+'Votes_f')};
+                DisplayStatus(ID,index,info);
+            }
+            else
+                FetchStatus(href,index);
+
+        });
+    }
 
     function Update(){
         update=1;
@@ -244,7 +270,8 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         let note = localStorage.getItem(ID+'Records');
         rankSp.setAttribute('title', note);
 
-        document.querySelectorAll('#browserItemList .item .inner')[index].insertBefore(rankSp, document.querySelectorAll('#browserItemList .item .inner .info.tip')[index]);
+        if(window.location.href.match(/\/(list|index)\//))
+            document.querySelectorAll('#browserItemList .item .inner')[index].insertBefore(rankSp, document.querySelectorAll('#browserItemList .item .inner .info.tip')[index]);
 
         //显示站内评分和评分人数
         let rateInfo = document.createElement('p');
@@ -270,16 +297,20 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         if(votes<500)
             tip_j.classList.add('yonjar_bgm_userjs_vote_0');
 
-        document.querySelectorAll('#browserItemList .item .inner')[index].insertBefore(rateInfo, document.querySelectorAll('#browserItemList .item .inner .info.tip')[index]);
-        rateInfo.appendChild(sstars);
-        rateInfo.appendChild(PointSm);
-        rateInfo.appendChild(tip_j);
+        if(window.location.href.match(/\/(list|index)\//)){
+            document.querySelectorAll('#browserItemList .item .inner')[index].insertBefore(rateInfo, document.querySelectorAll('#browserItemList .item .inner .info.tip')[index]);
+            rateInfo.appendChild(sstars);
+            rateInfo.appendChild(PointSm);
+            rateInfo.appendChild(tip_j);}
+        else rateInfo = document.querySelectorAll('#browserItemList .item .inner .rateInfo')[index];
 
         //显示好友评分和评分人数
         let Pointfr = document.createElement('small');
         Point_f = Point_f ? Point_f : '-';
         Votes_f = Votes_f ? Votes_f :'-';
-        Pointfr.innerHTML = "好友评分："+Point_f+"　　"+Votes_f+"人评分";
+        let Point_My = localStorage.getItem(You+'Point'+ID);
+        let Point_M = Point_My ? "我的评分："+Point_My :'';
+        Pointfr.innerHTML = "好友评分："+Point_f+"　　"+Votes_f+"人评分"+"　　"+Point_M;
         Pointfr.setAttribute("class","friend_vote");
         rateInfo.appendChild(Pointfr);
 
@@ -294,8 +325,12 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
             $('.chiiBtn').css({padding:'0 5px'});
             $('ul.cat li').css({padding:'0 5px 0 0'});
         }
-        else if(count==itemsList.length && document.querySelector('#browserTools'))
+        else if(count==itemsList.length && document.querySelector('#browserTools')){
+            document.querySelector('#browserTools').append(showBtn);
+            document.querySelector('#browserTools').append(showBtn1);
+            document.querySelector('#browserTools').append(showBtn2);
             document.querySelector('#browserTools').append(showBtn4);
+        }
     }
     function SortByRank() {
         sortstyle = (sortstyle==1)? -1 :1;
@@ -333,7 +368,11 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
         let container = document.querySelector('ul#browserItemList');
         function ParseFriendRank(rankstring){
             let rank = rankstring.match(/(\d+\.\d+?)/)? rankstring.match(/(\d+\.\d+?)/)[1]: 0;
-            return parseInt(rank*10);
+            let votes = rankstring.match(/(\d+?)人/)? rankstring.match(/(\d+?)人/)[1]: 0;
+            rank = parseFloat(rank);
+            votes = parseInt(votes);
+            let fixed = rank ? (votes / (votes+10))* rank + (10 / (votes+10)) * 6: 0;
+            return parseInt(fixed*10);
         }
         if (container) container.style.cssText = 'display: flex; flex-flow: row wrap;';
         [].slice.call(document.querySelectorAll('#browserItemList .item .inner .rateInfo .friend_vote'), 0)
