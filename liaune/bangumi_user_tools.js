@@ -2,7 +2,7 @@
 // @name         Bangumi 用户个性化脚本
 // @namespace    https://github.com/bangumi/scripts/liaune
 // @description    “共同爱好对比”“动画推荐”“动画打分统计”
-// @version      1.1
+// @version      1.2
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/(user)\/.*/
 // ==/UserScript==
