@@ -1,10 +1,9 @@
 // ==UserScript==
 // @name         bangumi列表显示增强
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.5
+// @version      0.6.6
 // @description  在有条目列表的页面，显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能，鼠标移到排名处可查看历史记录
 // @author       Yonjar，Liaune
-// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|index)/.+$/
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|.+?/tag|.+?/browser|subject_search|index)(/|\?).+$/
 // @grant        GM_addStyle
 // ==/UserScript==
