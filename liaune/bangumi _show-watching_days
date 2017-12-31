@@ -1,0 +1,70 @@
+// ==UserScript==
+// @name         Bangumi Show Watching Days
+// @namespace   https://github.com/bangumi/scripts/liaune
+// @version      0.2
+// @description  首页显示在看条目的已看天数,收藏页面显示条目的已看天数和完成天数，先去“在看”页面获取日期方可正常使用
+// @author       Liaune
+// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/(.+?/list)?/
+// @grant        none
+// ==/UserScript==
+
+(function() {
+
+    const You=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
+    const User =window.location.href.match(/\/list\/(\S+)\//)? window.location.href.match(/\/list\/(\S+)\//)[1]: null;
+    //在首页显示已看天数
+    if($('#prgSubjectList')){
+        let watchlist = document.querySelectorAll('#prgSubjectList li.clearit');
+        watchlist.forEach( (elem, index) => {
+            let ID_w=elem.querySelector('a.title').href.split('/subject/')[1];
+            if(localStorage.getItem(You+'Time_do'+ID_w)){
+                let date = new Date(localStorage.getItem(You+'Time_do'+ID_w));
+                let now = new Date();
+                let durtime = parseInt((now.getTime() - date.getTime())/(24 * 60 * 60 * 1000));
+                let showdurtime = document.createElement('span');
+                showdurtime.className = 'tip_j';
+                showdurtime.innerHTML = " (已看"+ durtime +"天) ";
+                showdurtime.style.color='blue';
+                if(durtime>=100) showdurtime.style.color='red';
+                elem.append(showdurtime);
+            }
+        });
+    }
+    //在收藏页面获取和显示已看天数和完成天数
+    if($('#browserItemList li.item')){
+        itemsList = document.querySelectorAll('#browserItemList li.item');
+        itemsList.forEach( (elem, index) => {
+            let href = elem.querySelector('a.subjectCover').href;
+            let ID = href.split('/subject/')[1];
+            if(window.location.href.match(/\/list\/(\S+)\/do|on_hold/)){
+                let Time_do = elem.querySelector('.inner .collectInfo span.tip_j')? elem.querySelector('.inner .collectInfo span.tip_j').innerHTML: null;
+                if(Time_do && !localStorage.getItem(User+'Time_do'+ID)) localStorage.setItem(User+'Time_do'+ID,Time_do);
+                let date = new Date(localStorage.getItem(User+'Time_do'+ID));
+                let now = new Date();
+                let durtime = parseInt((now.getTime() - date.getTime())/(24 * 60 * 60 * 1000));
+                let showdurtime = document.createElement('span');
+                showdurtime.className = 'tip_j';
+                showdurtime.innerHTML = " (已看"+ durtime +"天) ";
+                showdurtime.style.color='blue';
+                if(durtime>=100) showdurtime.style.color='red';
+                elem.querySelector('.inner .collectInfo').insertBefore(showdurtime,elem.querySelector('.inner .collectInfo span.tip_i'));
+            }
+            else if(window.location.href.match(/\/list\/(\S+)\/collect/)){
+                let Time_finish = elem.querySelector('.inner .collectInfo span.tip_j')? elem.querySelector('.inner .collectInfo span.tip_j').innerHTML: null;
+                if(Time_finish) localStorage.setItem(User+'Time_finish'+ID,Time_finish);
+                let Time_do = localStorage.getItem(User+'Time_do'+ID);
+                let date = new Date(Time_finish);
+                let date0 = Time_do ? new Date(Time_do): null;
+                let durtime = date0 ? parseInt((date.getTime() - date0.getTime())/(24 * 60 * 60 * 1000)): null;
+                if(durtime){
+                    let showdurtime = document.createElement('span');
+                    showdurtime.className = 'tip_j';
+                    showdurtime.innerHTML = " (历时"+ durtime +"天) ";
+                    showdurtime.style.color='blue';
+                    if(durtime>=100) showdurtime.style.color='red';
+                    elem.querySelector('.inner .collectInfo').insertBefore(showdurtime,elem.querySelector('.inner .collectInfo span.tip_i'));
+                }
+            }
+        });
+    }
+})();
