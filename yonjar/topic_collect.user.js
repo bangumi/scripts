@@ -137,7 +137,7 @@ class HomePage{
             listStr += `<li><a href="${col.path}" title="楼主: ${col.author}" class="l" target="_blank">${col.title}</a></li>`;
         }
         col_elem.innerHTML = `
-            <div id="yonjar_collection_tpc" class="halfPage sort ui-draggable">
+            <div id="yonjar_collection_tpc" class="halfPage">
                 <div class="sidePanelHome">
                     <h2 class="subtitle">收藏话题(${bc.list.length})</h2>
                     <ul class="timeline" style="margin:0 5px">

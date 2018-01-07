@@ -62,3 +62,7 @@
 ## [bgm话题收藏](https://github.com/bangumi/scripts/blob/master/yonjar/topic_collect.user.js?raw=true)
 
 收藏bangumi小组的话题、用户的日志、条目的讨论
+
+## [整合bangumi小组(谷歌自定义)搜索](https://github.com/bangumi/scripts/blob/master/yonjar/google_search.user.js?raw=true)
+
+整合bangumi小组(谷歌自定义)搜索
