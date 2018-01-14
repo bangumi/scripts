@@ -66,3 +66,7 @@
 ## [整合bangumi小组(谷歌自定义)搜索](https://github.com/bangumi/scripts/blob/master/yonjar/google_search.user.js?raw=true)
 
 整合bangumi小组(谷歌自定义)搜索
+
+## [bangumi条目图表增强](https://github.com/bangumi/scripts/blob/master/yonjar/subject_charts.user.js?raw=true)
+
+动画条目下的ep、vote、tags和观看情况数据的简单可视化
