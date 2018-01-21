@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.4
+// @version      1.4.5
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -80,7 +80,7 @@ function main() {
         $('#columnSubjectHomeA').append(`
             <div class="SimpleSidePanel">
               <h2>
-                <a href="${location.href}/${st}?filter=friends" style="color:white;">
+                <a href="${location.href}/${st}?filter=friends">
                   哪些好友${words[st]}？
                 </a>
               </h2>
