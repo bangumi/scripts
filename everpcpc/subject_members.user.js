@@ -5,8 +5,27 @@
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
+// @grant        GM_addStyle
 // @encoding     utf-8
 // ==/UserScript==
+
+GM_addStyle ( `
+    #friend_watch_detail .userContainer strong span.userImage {
+        float: left;
+        margin: 0 0 0 -60px;
+    }
+    #friend_watch_detail div.userContainer {
+        background: white;
+        display: block;
+        position: absolute;
+        border-radius: 5px;
+        box-shadow: 0 0 5px grey;
+        padding: 10px 10px 10px 70px;
+        max-width: 270px;
+        display: none;
+    }
+` );
+
 
 var STATUS = ['wishes', 'collections', 'doings'];
 
@@ -49,14 +68,6 @@ function get_members(members_url, st) {
             $('#friend_' + st).append(createFriendNode(uid, friend));
             $('#friend_watch_detail').append(
                 $(this).attr('id', friend.detail_id)
-                .css('background', 'white')
-                .css('display', 'block')
-                .css('position', 'absolute')
-                .css('border-radius', '5px')
-                .css('box-shadow', '0 0 5px grey')
-                .css('padding','10px')
-                .css('max-width', '360px')
-                .hide()
             );
             $('#' + friend.node_id).mouseover(function(e){
                 $('#' + friend.detail_id)
