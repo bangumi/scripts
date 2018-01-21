@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.6
+// @version      1.4.7
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -14,13 +14,17 @@ GM_addStyle ( `
         float: left;
         margin: 0 0 0 -60px;
     }
+    #friend_watch_detail div.userContainer strong {
+        display: block;
+        border-bottom: 1px solid #CCC;
+    }
     #friend_watch_detail div.userContainer {
         background: white;
         display: block;
         position: absolute;
         border-radius: 5px;
         box-shadow: 0 0 5px grey;
-        padding: 10px 10px 10px 70px;
+        padding: 10px 10px 5px 70px;
         max-width: 270px;
         display: none;
     }
