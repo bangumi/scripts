@@ -2,7 +2,7 @@
 // @name         bangumi条目图表增强
 // @namespace    https://github.com/bangumi/scripts/yonjar
 // @require      http://echarts.baidu.com/dist/echarts.common.min.js
-// @version      0.1.0
+// @version      0.1.1
 // @description  动画条目下的ep、vote、tags和观看情况数据的简单可视化
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/subject\/\d+(\?.*)?(#.*)?$/
@@ -41,40 +41,6 @@ GM_addStyle(`
         .yonjar_chartContainer .header h1{
             text-align: center;
             line-height: 45px;
-        }
-
-        .yonjar_chartContainer .closeBtn{
-            position: fixed;
-            right: 20px;
-            top: 20px;
-            display: inline-block;
-            color: #666;
-            text-shadow: 0px 1px 2px #FFF;
-            text-decoration: none;
-            line-height: 20px;
-            padding: 0 12px;
-            border: 1px solid #DDD;
-            background: -webkit-gradient(linear,left top,left bottom,from(#FCFCFC),to(#F1F1F1));
-            background: -moz-linear-gradient(top,#FCFCFC,#F1F1F1);
-            background: -o-linear-gradient(top,#FCFCFC,#F1F1F1);
-            -webkit-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
-            -moz-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
-            box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
-            -moz-border-radius: 4px;
-            -webkit-border-radius: 4px;
-            border-radius: 4px
-        }
-
-        .yonjar_chartContainer .closeBtn:hover {
-            color: #FFF;
-            text-shadow: none;
-            background: #4F93CF;
-            background: -moz-linear-gradient(top,#6BA6D8,#4F93CF);
-            background: -o-linear-gradient(top,#6BA6D8,#4F93CF);
-            background: -webkit-gradient(linear,left top,left bottom,from(#5FA3DB),to(#72B6E3));
-            -webkit-box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1);
-            -moz-box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1);
-            box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1);
         }
 
         .yonjar_chartContainer .chart{
@@ -173,13 +139,22 @@ class Subject{
     tagsInit(){
         // tags init
         return new Promise(resolve => {
-            let tagsCol = document.querySelector('.subject_tag_section .inner');
-            for (let i = 0; i < tagsCol.children.length; i++){
+            let tags = document.querySelectorAll('.subject_tag_section .inner .l');
+            for (let tag of tags){
                 this._tagsInfoData.data.push({
-                    name: tagsCol.children[i].textContent,
-                    value: tagsCol.children[++i].textContent.match(/\d+/)[0] - 0
+                    name: tag.querySelector('span').textContent,
+                    value: tag.querySelector('small').textContent - 0
                 });
             }
+
+            let removed = this._tagsInfoData.data.splice(9); // 合并tags
+            if (removed.length > 1) {
+                this._tagsInfoData.data.push(removed.reduce((prev, curr) => ({
+                    name: '其他',
+                    value: prev.value + curr.value
+                })));
+            }
+
             console.table(this.tagsInfoData);
             resolve(this.tagsInfoData);
         });
@@ -357,6 +332,7 @@ class Chart{
                             type:'pie',
                             radius : '70%',
                             center: ['50%', '50%'],
+                            roseType : 'radius',
                             data: tagsData.data,
                             label: {
                                 normal: {
