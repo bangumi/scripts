@@ -1,6 +1,7 @@
 const searchBangumiSubject = require('../utils/searchBangumiSubject');
 const getImageBase64 = require('../utils/getImageBase64');
 
+
 ;(function () {
   if (window.top != window.self) return;
   function setDomain() {

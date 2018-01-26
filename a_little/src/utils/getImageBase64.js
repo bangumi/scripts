@@ -20,11 +20,10 @@ function getImageSuffix(url) {
 
 function getImageBase64(url) {
   return gmFetchBinary(url).then((info) => {
-    var bytes = [];
+    var binary = '';
     for (var i = 0; i < info.length; i++) {
-      bytes[i] = info.charCodeAt(i) & 0xff;
+      binary += String.fromCharCode(info.charCodeAt(i) & 0xff);
     }
-    var binary = String.fromCharCode.apply(String, bytes);
     return 'data:image/' + getImageSuffix(url) + ';base64,' + btoa(binary);
   });
 }
