@@ -14,7 +14,7 @@
 // @include     /^https?:\/\/erogamescape\.(?:ddo\.jp|dyndns\.org)\/~ap2\/ero\/toukei_kaiseki\/(.*)/
 // @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.3.5
+// @version     0.3.6
 // @note        0.3.0 增加上传人物肖像功能，需要和bangumi_blur_image.user.js一起使用
 // @note        0.3.1 增加在Getchu上点击检测条目是否功能存在，若条目存在，自动打开条目页面。
 // @note        0.3.3 增加添加Getchu游戏封面的功能，需要和bangumi_blur_image.user.js一起使用
@@ -386,7 +386,7 @@ var getImageBase64 = __webpack_require__(5);
       GM_openInTab($(this).attr('href'));
     }
     function saveCharacterInfo(e) {
-      event.preventDefault();
+      e.preventDefault();
       var s = self.getSubjectInfo();
       GM_setValue('subjectData', JSON.stringify(s));
       console.info('条目信息: ', s);

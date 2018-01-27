@@ -242,7 +242,7 @@ const getImageBase64 = require('../utils/getImageBase64');
       GM_openInTab($(this).attr('href'));
     }
     function saveCharacterInfo(e) {
-      event.preventDefault();
+      e.preventDefault();
       var s = self.getSubjectInfo()
       GM_setValue('subjectData', JSON.stringify(s));
       console.info('条目信息: ', s);
