@@ -14,7 +14,7 @@
 // @include     /^https?:\/\/erogamescape\.(?:ddo\.jp|dyndns\.org)\/~ap2\/ero\/toukei_kaiseki\/(.*)/
 // @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.3.4
+// @version     0.3.5
 // @note        0.3.0 增加上传人物肖像功能，需要和bangumi_blur_image.user.js一起使用
 // @note        0.3.1 增加在Getchu上点击检测条目是否功能存在，若条目存在，自动打开条目页面。
 // @note        0.3.3 增加添加Getchu游戏封面的功能，需要和bangumi_blur_image.user.js一起使用
@@ -167,7 +167,7 @@ var getImageBase64 = __webpack_require__(5);
 ;(function () {
   if (window.top != window.self) return;
   function setDomain() {
-    bgm_domain = prompt('预设bangumi的域名是 "' + 'bangumi.tv' + '". 根据需要输入chii.in或者bgm.tv', 'bangumi.tv');
+    bgm_domain = prompt('预设bangumi的域名是 "' + 'bangumi.tv' + '". 根据需要输入chii.in或者bgm.tv', 'bgm.tv');
     GM_setValue('bgm', bgm_domain);
     return bgm_domain;
   }
@@ -272,7 +272,7 @@ var getImageBase64 = __webpack_require__(5);
       $th.append($('<a>').attr({
         class: 'new-subject',
         target: '_blank',
-        href: 'http://' + bgm_domain + '/new_subject/4'
+        href: '//' + bgm_domain + '/new_subject/4'
       }).text('\u65B0\u5EFA\u6761\u76EE'));
       // search subject
       $th.append($('<a>').attr({
@@ -290,7 +290,7 @@ var getImageBase64 = __webpack_require__(5);
       $('h2.chara-name').append($('<a>').attr({
         class: 'new-character',
         target: '_blank',
-        href: 'http://' + bgm_domain + '/character/new'
+        href: '//' + bgm_domain + '/character/new'
       }).text('\u65B0\u5EFA\u89D2\u8272'));
     },
     getCharacterInfo: function getCharacterInfo(target) {
@@ -378,23 +378,23 @@ var getImageBase64 = __webpack_require__(5);
       });
       //fetchBangumiData(subjectInfo);
     });
-    $('.new-subject').click(function (e) {
+    function saveSubjectInfo(e) {
       e.preventDefault();
       var s = self.getSubjectInfo();
       console.log('条目信息: ', s);
       GM_setValue('subjectData', JSON.stringify(s));
-      //GM_setValue('subjectData', JSON.stringify(self.getSubjectInfo()));
-      alert('条目信息已存储,请再次点击');
-      $(this).unbind('click');
-      $(this).click();
-    });
-    $('.new-character').click(function (event) {
+      GM_openInTab($(this).attr('href'));
+    }
+    function saveCharacterInfo(e) {
       event.preventDefault();
+      var s = self.getSubjectInfo();
+      GM_setValue('subjectData', JSON.stringify(s));
+      console.info('条目信息: ', s);
       GM_setValue('charaData', JSON.stringify(self.getCharacterInfo(this)));
-      alert('角色信息已存储,请再次点击');
-      $(this).unbind('click');
-      $(this).click();
-    });
+      GM_openInTab($(this).attr('href'));
+    }
+    $('.new-subject').click(saveSubjectInfo);
+    $('.new-character').click(saveCharacterInfo);
   }
   var google = {
     init: function init() {

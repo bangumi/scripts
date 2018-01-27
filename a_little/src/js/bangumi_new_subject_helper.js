@@ -7,7 +7,7 @@ const getImageBase64 = require('../utils/getImageBase64');
   function setDomain() {
     bgm_domain = prompt(
       '预设bangumi的域名是 "' + 'bangumi.tv' + '". 根据需要输入chii.in或者bgm.tv',
-      'bangumi.tv'
+      'bgm.tv'
     );
     GM_setValue('bgm', bgm_domain);
     return bgm_domain;
@@ -121,7 +121,7 @@ const getImageBase64 = require('../utils/getImageBase64');
       $th.append($('<a>').attr({
         class: 'new-subject',
         target: '_blank',
-        href: 'http://' + bgm_domain + '/new_subject/4',
+        href:  '//' + bgm_domain + '/new_subject/4',
       }).text('\u65b0\u5efa\u6761\u76ee'));
       // search subject
       $th.append($('<a>').attr({
@@ -139,7 +139,7 @@ const getImageBase64 = require('../utils/getImageBase64');
       $('h2.chara-name').append($('<a>').attr({
         class: 'new-character',
         target: '_blank',
-        href: 'http://' + bgm_domain + '/character/new',
+        href: '//' + bgm_domain + '/character/new',
       }).text('\u65b0\u5efa\u89d2\u8272'));
     },
     getCharacterInfo: function (target) {
@@ -234,23 +234,23 @@ const getImageBase64 = require('../utils/getImageBase64');
         })
       //fetchBangumiData(subjectInfo);
     });
-    $('.new-subject').click(function(e) {
+    function saveSubjectInfo(e) {
       e.preventDefault();
       var s = self.getSubjectInfo()
       console.log('条目信息: ', s);
       GM_setValue('subjectData', JSON.stringify(s));
-      //GM_setValue('subjectData', JSON.stringify(self.getSubjectInfo()));
-      alert('条目信息已存储,请再次点击');
-      $(this).unbind('click');
-      $(this).click();
-    })
-    $('.new-character').click(function (event) {
+      GM_openInTab($(this).attr('href'));
+    }
+    function saveCharacterInfo(e) {
       event.preventDefault();
+      var s = self.getSubjectInfo()
+      GM_setValue('subjectData', JSON.stringify(s));
+      console.info('条目信息: ', s);
       GM_setValue('charaData', JSON.stringify(self.getCharacterInfo(this)));
-      alert('角色信息已存储,请再次点击');
-      $(this).unbind('click');
-      $(this).click();
-    });
+      GM_openInTab($(this).attr('href'));
+    }
+    $('.new-subject').click(saveSubjectInfo)
+    $('.new-character').click(saveCharacterInfo);
   }
   var google = {
     init: function () {
