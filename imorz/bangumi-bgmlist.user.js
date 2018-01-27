@@ -5,9 +5,11 @@
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @require     http://code.jquery.com/jquery-3.1.1.min.js
-// @version     0.2.2
+// @version     0.3.0
 // ==/UserScript==
+
+// Change to false to disable download search links:
+const DOWNLOAD_SEARCH_ENABLED = true;
 
 const OLDEST_YEAR = 2013;
 const CACHE_EXPIRE_SECS = 24 * 3600;
@@ -26,32 +28,19 @@ const SITE_NAMES = {
   'le'      : '乐视',
   'pptv'    : 'PPTV',
   'tudou'   : '土豆',
-  'movie'   : '迅雷'
-}
-
-// Change to false to disable download search links:
-const DOWNLOAD_SEARCH_ENABLED = true;
-
-let $infobox = $('#infobox');
-
-function $a(href, text) {
-  return $('<a>').addClass('l').attr('href', href).text(text);
-}
-
-function currentBgmId() {
-  return location.pathname.match(/\/subject\/(\d+)/)[1];
-}
+  'movie'   : '迅雷',
+  'mgtv'    : '芒果'
+};
+const $ = selector => document.querySelector(selector);
   
-function findOnAirYearMonth(callback) {
-  $infobox.find('.tip').each(function() {
-    var $this = $(this);
-    if ($this.text().startsWith('放送开始')) {
-      var groups = $this.parent().text().match(/(\d{4})年(\d{1,2})月/);
-      if (groups == null)
-        return;
-      callback(parseInt(groups[1]), parseInt(groups[2]));
-    }
-  });
+function getOnAirYearMonth() {
+  let dates = Array.from(document.querySelectorAll('#infobox .tip'))
+    .filter(t => t.textContent.startsWith('放送开始'))
+    .map(t => t.parentElement.textContent.match(/(\d{4})年(\d{1,2})月/))
+    .filter(t => t != null)
+    .map(t => [parseInt(t[1]), parseInt(t[2])]);
+  if (dates) return dates[0];
+  else throw "on-air date not found";
 }
 
 function getCachedValue(key, maxAge=CACHE_EXPIRE_SECS) {
@@ -70,67 +59,75 @@ function setCachedValue(key, value) {
   GM_setValue(key, JSON.stringify(item));
 }
 
-function getBgmList(year, month, callback) {
+async function getBgmList(year, month) {
   const cacheKey = `bgms-${year}-${month}`;
-  const bgms = getCachedValue(cacheKey);
+  let bgms = getCachedValue(cacheKey);
   if (bgms)
-    return callback(bgms);
+    return new Map(Object.entries(bgms));
   const url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
-  $.getJSON(url, function(list) {
-    var bgms = {};
-    for (var key in list) {
-      var bgm = list[key];
-      var id = bgm.bgmId;
-      if (id == undefined)
-        continue;
-      bgms[id] = bgm;
-    }
-    setCachedValue(cacheKey, bgms);
-    callback(bgms);
-  });
+  let resp = await fetch(url);
+  if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
+  let list = await resp.json();
+  bgms = new Map(
+    Object.values(list)
+      .map(b => [`${b.bgmId}`, b])
+      .filter(([bgmId, _]) => bgmId != undefined)
+  );
+  setCachedValue(cacheKey, bgms);
+  return bgms;
 }
 
-function addInfo(title, value) {
-  $title = $('<span>').addClass('tip').text(title + ': ');
-  return $('<li>').append($title).append(value).appendTo($infobox);
+function addInfoRow(title, links) {
+  let tli = document.createElement('template');
+  tli.innerHTML = '<li><span class="tip"></span></li>';
+  let li = tli.content.firstChild;
+  li.firstChild.textContent = `${title}：`;
+  let ta = document.createElement('template');
+  ta.innerHTML = '<a class="l"></a>';
+  let a = ta.content.firstChild;
+  let dot = document.createTextNode("、");
+ 
+  links.forEach(([href, title]) => {
+    a.href = href;
+    a.innerText = title;
+    li.appendChild(a.cloneNode(true));
+    li.appendChild(dot.cloneNode());
+  });
+  li.lastChild.remove();
+  
+  let row = document.importNode(tli.content, true);
+  $("#infobox").appendChild(row);
 }
 
 function addDownloadSearchLinks(bgm) {
   var cn = bgm.titleCN ? bgm.titleCN : bgm.titleJP;
   var en = bgm.titleEN ? bgm.titleEN : bgm.titleJP;
-  addInfo('下载')
-    .append($a(DOWNLOAD_DMHY_URL + cn, '花园')).append('、')
-    .append($a(DOWNLOAD_NYAA_URL + en, 'Nyaa'));
+  addInfoRow('下载',[
+    [DOWNLOAD_DMHY_URL + cn, '花园'],
+    [DOWNLOAD_NYAA_URL + en, 'Nyaa']
+  ]);
 }
 
 function addOnAirSites(bgm) {
-  $info = addInfo('放送站点');
-  var added = false;
-  for (let i in bgm.onAirSite) {
-    const url = bgm.onAirSite[i];
-    const domain = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
-    const siteName = domain in SITE_NAMES ? SITE_NAMES[domain] : domain;
-    if (!siteName)
-      continue;
-    if (added)
-      $info.append("、");
-    $a(url, siteName).appendTo($info);
-    added = true;
-  }
-  if (!added)
-    $info.remove();
+  let links = bgm.onAirSite.map(url => {
+    let site = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
+    let name = site in SITE_NAMES ? SITE_NAMES[site] : site;
+    return [url, name];
+  });
+  if (links)
+    addInfoRow('放送站点', links);
 }
 
-findOnAirYearMonth((year, month) => {
-  if (year < OLDEST_YEAR)
-    return;
-  getBgmList(year, month, (list) => {
-    var bgm = list[currentBgmId()];
-    if (bgm == undefined)
-      return;
-    
-    addOnAirSites(bgm);
-    if (DOWNLOAD_SEARCH_ENABLED)
-      addDownloadSearchLinks(bgm);
-  });
+window.addEventListener('load', async () => {
+  let [year, month] = await getOnAirYearMonth();
+  if (year < OLDEST_YEAR) return;
+  
+  let bgms = await getBgmList(year, month);
+  let id = location.pathname.match(/\/subject\/(\d+)/)[1];
+  let bgm = bgms.get(id);
+  if (!bgm) throw `bangumi #${id} not found in bgmlist`;
+  
+  addOnAirSites(bgm);
+  if (DOWNLOAD_SEARCH_ENABLED)
+    addDownloadSearchLinks(bgm);
 });
