@@ -2,7 +2,7 @@
 // @name        Bangumi 人物名日文汉字标音
 // @include     /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(character|person)\/\d+(\/(collections|works(\/voice)?))?$/
 // @namespace   bangumi.scripts.prevails.mononamerubytag
-// @version     1.0.5
+// @version     1.0.6
 // @author      "Donuts."
 // @grant       none
 // ==/UserScript==
@@ -39,13 +39,14 @@ if (found_h.length) {
 } else return;
 
 const nameAnchor = document.querySelector('.nameSingle > a');
-const name = nameAnchor.innerText.trim();
+const characterName = nameAnchor.innerText.trim();
 
 const KANJI_MYOUJI = '[\u4e00-\u9fa5ヶノ々\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29]+';
 const KANJI_NAMAE = '[\u4e00-\u9fa5々\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29]+';
 
-function gen_ruby(name, kana) {
+function genRuby(name, kana) {
     const [myoujiKana, namaeKana] = kana.split(/\s+/); // namaeKana may be undefined
+    if (namaeKana) kana = myoujiKana + ' ' + namaeKana;
 
     let re;
     if (RegExp(`^${KANJI_MYOUJI}$`).test(name)) { // 全汉字 无空格, 无法分词
@@ -58,8 +59,7 @@ function gen_ruby(name, kana) {
         } else {
             return ruby(name, kana);
         }
-    } else if ((re = RegExp(`^(${KANJI_MYOUJI})\\s*([\u3040-\u309f]+[子乃]?)$`).exec(name)) ||  // 汉字[空格]平假名
-               (re = RegExp(`^(${KANJI_MYOUJI})\\s*([\u30a0-\u30ff]+[子乃]?)$`).exec(name))) {  // 汉字[空格]片假名
+    } else if (!!(re = RegExp(`^(${KANJI_MYOUJI})\\s*(([\u3040-\u309f]+|[\u30a0-\u30ff]+)[子乃]?)$`).exec(name))) { // 汉字[空格]假名
         const myouji = re[1];
         const namae = re[2];
         if (namaeKana) {
@@ -73,10 +73,25 @@ function gen_ruby(name, kana) {
                 return ruby(name, kana);
             }
         }
-    } else return;
+    } else if (!!(re = RegExp(`^([\u3040-\u309f]+|[\u30a0-\u30ff]+)\\s*(${KANJI_NAMAE})$`).exec(name))) { // 假名[空格]汉字
+        const myouji = re[1];
+        const namae = re[2];
+        if (namaeKana) {
+            return myouji + ' ' + ruby(namae, namaeKana);
+        } else {
+            const myoujiIndex = kana.lastIndexOf(myouji);
+            if (myoujiIndex === 0) {
+                const namaeKana = kana.slice(myouji.length);
+                return myouji + ' ' + ruby(namae, namaeKana);
+            } else {
+                return ruby(name, kana);
+            }
+        }
+    } else if (name === '澤村・スペンサー・英梨々') // eriri branch
+        return ruby('澤村', 'さわむら') + '・スペンサー・' + ruby('英梨々', 'えりり');
 }
 
-const out = gen_ruby(name, kana);
+const out = genRuby(characterName, kana);
 if (out) {
     nameAnchor.innerHTML = out;
 }
