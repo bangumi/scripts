@@ -8,4 +8,4 @@
 
 ## [单行本条目页面添加所有单行本信息](subject_series_single.user.js?raw=true)
 
-## [美化他人条目收藏数](beautify_others_collection.js?raw=true)
+## [美化他人条目收藏数](beautify_others_collection.user.js?raw=true)
