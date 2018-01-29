@@ -8,21 +8,21 @@
 // @grant        none
 // ==/UserScript==
 
-lstorage = {
-	save : function(key, jsonData, expirationMin){
-		var expirationMS = expirationMin * 60 * 1000;
-		var record = {value: JSON.stringify(jsonData), timestamp: new Date().getTime() + expirationMS};
-		localStorage.setItem(key, JSON.stringify(record));
-		return jsonData;
-	},
-	load : function(key){
-		var record = JSON.parse(localStorage.getItem(key));
-		if (!record){return false;}
-		return (new Date().getTime() < record.timestamp && JSON.parse(record.value));
-	}
+var lstorage = {
+    save : function(key, jsonData, expirationMin){
+        var expirationMS = expirationMin * 60 * 1000;
+        var record = {value: JSON.stringify(jsonData), timestamp: new Date().getTime() + expirationMS};
+        localStorage.setItem(key, JSON.stringify(record));
+        return jsonData;
+    },
+    load : function(key){
+        var record = JSON.parse(localStorage.getItem(key));
+        if (!record){return false;}
+        return (new Date().getTime() < record.timestamp && JSON.parse(record.value));
+    }
 };
 
-TYPES = ["anime", "game", "book", "music", "real"];
+var TYPES = ["anime", "game", "book", "music", "real"];
 
 function replace_collection(collection) {
     TYPES.forEach(function(type){
@@ -43,10 +43,8 @@ function replace_collection(collection) {
 }
 
 (function() {
-    'use strict';
-
     var self_url = $("#dock div ul li:first a")[0].href;
-    if self_url.endsWith("/login") return;
+    if (self_url.endsWith("/login")) return;
 
     var self_collection = lstorage.load("self_collection");
     if (self_collection) {
