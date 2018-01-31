@@ -5,7 +5,7 @@
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.3.0
+// @version     0.3.1
 // ==/UserScript==
 
 // Change to false to disable download search links:
@@ -63,7 +63,7 @@ async function getBgmList(year, month) {
   const cacheKey = `bgms-${year}-${month}`;
   let bgms = getCachedValue(cacheKey);
   if (bgms)
-    return new Map(Object.entries(bgms));
+    return new Map(bgms);
   const url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
   let resp = await fetch(url);
   if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
@@ -73,7 +73,7 @@ async function getBgmList(year, month) {
       .map(b => [`${b.bgmId}`, b])
       .filter(([bgmId, _]) => bgmId != undefined)
   );
-  setCachedValue(cacheKey, bgms);
+  setCachedValue(cacheKey, [...bgms]);
   return bgms;
 }
 
