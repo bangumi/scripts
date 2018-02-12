@@ -5,7 +5,7 @@
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.3.1
+// @version     0.3.2
 // ==/UserScript==
 
 // Change to false to disable download search links:
@@ -14,7 +14,7 @@ const DOWNLOAD_SEARCH_ENABLED = true;
 const OLDEST_YEAR = 2013;
 const CACHE_EXPIRE_SECS = 24 * 3600;
 const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
-const DOWNLOAD_DMHY_URL = "http://share.dmhy.org/topics/list?keyword=";
+const DOWNLOAD_DMHY_URL = "https://share.dmhy.org/topics/list?keyword=";
 const DOWNLOAD_NYAA_URL = "https://nyaa.si/?page=search&term=";
 const SITE_NAMES = {
   'acfun'   : 'A站',
