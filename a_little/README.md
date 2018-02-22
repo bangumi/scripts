@@ -27,7 +27,7 @@
 2. 关联游戏条目或者人物条目时创建一个表格，点击表格可以辅助搜索。
 3. 为bangumi右上角增加google和baidu站内搜的功能。
 
-## [域名重定向](bangumi_domain_redirector.js?raw=true)
+## [域名重定向](bangumi_domain_redirector.user.js?raw=true)
 重定向番组计划(Bangumi)域名为个人常用域名，方便在外部访问跳转  
 初次使用需要设定域名  
 若希望更改域名可以在greasemonkey菜单里，脚本命令项里更改

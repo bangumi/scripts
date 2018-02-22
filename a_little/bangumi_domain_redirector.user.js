@@ -5,7 +5,8 @@
 // @description:zh-CN 重定向番组计划(Bangumi)域名为个人常用域名
 // @icon        http://bgm.tv/img/favicon.ico
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
-// @version     0.1
+// @author      22earth
+// @version     0.2
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_registerMenuCommand
@@ -36,6 +37,11 @@
   if (index > -1) domains.splice(index, 1);
   if (host.match(new RegExp(domains.join('|')))) {
     var URI = current_url.replace(/((?:bgm|bangumi)\.tv|chii\.in)/, bgm_domain);
+    if (/bgm\.tv/.test(bgm_domain)) {
+      URI = URI.replace('http:', 'https:');
+    } else if (/bangumi\.tv/.test(bgm_domain)) {
+      URI = URI.replace('https:', 'http:');
+    }
     window.location.href = URI;
   }
   if (GM_registerMenuCommand) {
