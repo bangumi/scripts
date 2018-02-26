@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Unlimited Pages
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.2
+// @version      0.3
 // @description  自动加载下页
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
@@ -14,7 +14,7 @@
     var timeToFailure = 10;//Seconds to wait for a response from the next page before attempting to fetch the page again.
 
 
-    var mainTable, bottomDoc, nextPage, timeout = 0, pending = false, totalPages = 0, loadAll = false, Autoload = false, loadAllLink=null;
+    var mainTable, bottomDoc, nextPage, timeout = 0, pending = false, totalPages = 0, loadAll = 0, Autoload = false, loadAllLink=null;
 
     mainTable = getMainTable(document);
     bottomDoc = getBottomPager(document);
@@ -25,13 +25,14 @@
     {
         //Move bottom pager out of where additional content will be loaded
         //bottomDoc.parentNode.removeChild(bottomDoc);
+        //mainTable.parentNode.appendChild(bottomDoc);
 
         var resultBadge = document.querySelector(".page_inner a:last-child");
         var resultMatcher;
         totalPages = resultBadge? resultBadge.href.replace(/.*(\?|&)page=([0-9]+).*/,'$2'): null;
 
         let AutoloadLink = document.createElement("a");
-        mainTable.appendChild(AutoloadLink);
+        mainTable.parentNode.appendChild(AutoloadLink);
         AutoloadLink.className = "p";
         AutoloadLink.style = 'float:right';
         AutoloadLink.textContent = "Auto Load Pages";
@@ -41,15 +42,16 @@
             testScrollPosition();
         };
 
-       /* loadAllLink = mainTable.appendChild( document.createElement("a") );
+        loadAllLink = document.createElement("a");
+        mainTable.parentNode.appendChild(loadAllLink);
         loadAllLink.className = "p";
         loadAllLink.style = 'float:right';
         loadAllLink.textContent = "Load All Pages";
         loadAllLink.onclick = function(){
-            loadAll = !loadAll;
-            loadAllLink.textContent = loadAll ? "Stop Loading All Pages" : "Load All Pages";
+            loadAll = (loadAll==1)? 0 :1;
+            loadAllLink.textContent = (loadAll==1) ? "Stop Loading All Pages" : "Load All Pages";
             testScrollPosition();
-        };*/
+        };
         //Adjust buffer height
         scrollBuffer += window.innerHeight;
 
@@ -73,11 +75,23 @@
                 ///group/forum
                 function(src){ src = src.querySelectorAll('#columnA .topic_list tbody')[1]; return src ? src : null; },
 
+                //blog
+                function(src){ src = src.querySelector('#news_list'); return src ? src : null; },
+
+                //timeline
+                function(src){ src = src.querySelector('#tmlContent #timeline'); return src ? src : null; },
+
                 //index
                 function(src){ src = src.querySelector('#timeline ul'); return src ? src : null; },
 
-                //blog
-                function(src){ src = src.querySelector('#news_list'); return src ? src : null; }
+                //group/all
+                function(src){ src = src.querySelector('#memberGroupList'); return src ? src : null; },
+
+                //tags
+                function(src){ src = src.querySelector('#tagList'); return src ? src : null; },
+
+                //subject/reviews
+                function(src){ src = src.querySelector('#entry_list'); return src ? src : null; },
             ];
 
         for( var i = 0; i < tableFun.length; i++ )
@@ -94,7 +108,8 @@
         var result = null, pagerFun =
             [
 
-                function(src){ src = src.querySelector(".page_inner"); return src ? src : null; }
+                function(src){ src = src.querySelector(".page_inner"); return src ? src : null; },
+
             ];
 
         for( var i = 0; i < pagerFun.length; i++ )
@@ -108,8 +123,13 @@
     }
 
     function getNextPage(pager){
+        if(!pager) return null;
         let current = pager.querySelector('.p_cur');
-        return $(current).next('a.p') ? $(current).next('a.p').attr('href'):null;
+        if(current)
+            return $(current).next('a.p') ? $(current).next('a.p').attr('href'):null;
+        let next = pager.querySelectorAll('a.p')[1] ? pager.querySelectorAll('a.p')[1] : pager.querySelectorAll('a.p')[0];
+        if(next)
+            return next.href;
 
     }
 
@@ -151,7 +171,8 @@
         bottomDoc.innerHTML = bottomPage.innerHTML;
 
         //Append new page
-        mainTable.innerHTML+= newTable.innerHTML;
+        //mainTable.innerHTML+= newTable.innerHTML;
+        $(mainTable).append(newTable.innerHTML);
 
         //Check for the next page, and disable the script if there isn't one.
         nextPage = getNextPage(bottomPage);
