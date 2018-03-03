@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Moveable Thickbox
 // @namespace    https://github.com/bangumi/scripts/inchei
-// @version      1.0.0
+// @version      1.0.1
 // @description  使bangumi的thickbnox可移动
 // @author       inchei
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
@@ -9,17 +9,17 @@
 // @require https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js
 // @require https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
 // ==/UserScript==
-GM_addStyle(`
+GM_addStyle( `
     #TB_title {
         cursor: move;
         transition: all 0 ease 0;
         -webkit-transition: all 0 ease 0;
     }
-`);
+` );
 (function() {
     var TB = document.querySelectorAll(".thickbox");
     var winHref = window.location.href;
-    var winHrefKey = new RegExp("^https?://((bgm|bangumi).tv|chii.in)/(.*(wish|collect|do|on_hold|dropped))?$");
+    var winHrefKey = new RegExp("^https?://((bgm|bangumi).tv|chii.in)/(.*(wish|collect|do|on_hold|dropped|works))?$");
     for (var i = 0; i < TB.length; i++) {
         TB[i].addEventListener("click", function() {
             if (winHrefKey.test(winHref))
