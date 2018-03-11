@@ -72,7 +72,7 @@ var post = function() {
 var Calendar = function() {
   var config = (typeof arguments[0] === 'undefined') ? {} : arguments[0];
   this._config = {
-    'colours': (typeof config.colour === 'undefined') ? COLOURS : config.colours,
+    'colours': (typeof config.colours === 'undefined') ? COLOURS : config.colours,
     'shape': (typeof config.shape === 'undefined') ? SHAPE : config.shape,
     'shape_size': (typeof config.shape === 'undefined') ? SHAPE_SIZE : config.shape_size,
     'weekname': (typeof config.weekname === 'undefined') ? WEEKNAME_JAPANESE : config.weekname,
