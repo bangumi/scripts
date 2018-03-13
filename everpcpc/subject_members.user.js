@@ -20,7 +20,6 @@ GM_addStyle ( `
     }
     #friend_watch_detail div.userContainer {
         background: white;
-        display: block;
         position: absolute;
         border-radius: 5px;
         box-shadow: 0 0 5px grey;
