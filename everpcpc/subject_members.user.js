@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.7
+// @version      1.4.8
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -57,8 +57,15 @@ function createFriendNode(uid, friend) {
         </a>`);
 }
 
+function createMoreNode(st) {
+    return $(`
+        <a class="avatar" href="${location.href}/${st}?filter=friends">
+          <span class="avatarNeue ll" style="margin:16px 0 0 0; padding:1px 9px" >-></span>
+        </a>`);
+}
 
 function get_members(members_url, st) {
+    var members_box_id = '#friend_' + st;
     $.get(members_url, function(data) {
         $('.userContainer', $(data)).each(function() {
             var friend = new Object({});
@@ -69,7 +76,7 @@ function get_members(members_url, st) {
             friend.name = elem.text().trim();
             // use small avatar
             friend.img = elem.find('.avatar').attr('src').replace('/lain.bgm.tv/pic/user/m/','/lain.bgm.tv/pic/user/s/');
-            $('#friend_' + st).append(createFriendNode(uid, friend));
+            $(members_box_id).append(createFriendNode(uid, friend));
             $('#friend_watch_detail').append(
                 $(this).attr('id', friend.detail_id)
             );
@@ -82,6 +89,9 @@ function get_members(members_url, st) {
                 $('#' + friend.detail_id).hide();
             });
         });
+        if ($(members_box_id).children().length == 20) {
+            $(members_box_id).append(createMoreNode(st));
+        }
     });
 }
 
