@@ -66,6 +66,7 @@ function createMoreNode(st) {
 function get_members(members_url, st) {
     var members_box_id = '#friend_' + st;
     $.get(members_url, function(data) {
+        var counter = 0;
         $('.userContainer', $(data)).each(function() {
             var friend = new Object({});
             var elem = $($(this).find('a.avatar'));
@@ -87,8 +88,9 @@ function get_members(members_url, st) {
             }).mouseout(function(e){
                 $('#' + friend.detail_id).hide();
             });
+            counter ++;
         });
-        if ($(members_box_id).children().length == 20) {
+        if (counter >= 20) {
             $(members_box_id).append(createMoreNode(st));
         }
     });
