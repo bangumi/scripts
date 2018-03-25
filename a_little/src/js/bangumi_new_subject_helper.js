@@ -365,7 +365,7 @@ const getImageBase64 = require('../utils/getImageBase64');
       setTimeout(function () { $('#showrobot').click(); }, 300);
       $('.fill-form').click(function () {
         window.NormaltoWCODE();
-        if ($('#preview')) {
+        if ($('#preview').length) {
           var canvas = document.getElementById('preview');
           var ctx = canvas.getContext('2d');
           var image = new Image();
