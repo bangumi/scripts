@@ -6,19 +6,25 @@ function dealDate(dateStr) {
   return dateStr.replace(/年|月|日/g, '/').replace(/\/$/, '');
 }
 
+function htmlToElement(html) {
+  var template = document.createElement('template');
+  template.innerHTML = html;
+  return template.content.firstChild;
+}
 /**
  * @return {array}
  */
 function dealRawHTML(info) {
   var rawInfoList = [];
   let $doc = (new DOMParser()).parseFromString(info, "text/html");
+  
   let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
   // get number of page
   let numOfPage = 1;
   let pList = $doc.querySelectorAll('.page_inner>.p');
   if (pList && pList.length) {
-    let tempNum = parseInt(pList[pList.length - 2].href.match(/page=(\d*)/)[1]);
-    numOfPage = parseInt(pList[pList.length - 1].href.match(/page=(\d*)/)[1]);
+    let tempNum = parseInt(pList[pList.length - 2].getAttribute('href').match(/page=(\d*)/)[1]);
+    numOfPage = parseInt(pList[pList.length - 1].getAttribute('href').match(/page=(\d*)/)[1]);
     numOfPage = numOfPage > tempNum ? numOfPage : tempNum;
   }
   if (items && items.length) {
@@ -55,16 +61,36 @@ function dealRawHTML(info) {
   return [rawInfoList, numOfPage];
 }
 
+/**
+ * 搜索bgm条目
+ * @param {Object} subjectInfo
+ * @param {number} typeNumber
+ */
 function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
-  if (!subjectInfo || !subjectInfo.startDate) throw 'no date info';
-  const startDate = new Date(subjectInfo.startDate);
-  typeNumber = typeNumber || 4; // 4 game
-  const url = `https://bgm.tv/subject_search/${encodeURIComponent(subjectInfo.subjectName)}?cat=${typeNumber}`;
+  var startDate;
+  if (subjectInfo && subjectInfo.startDate) {
+    startDate = subjectInfo.startDate;
+  }
+  typeNumber = typeNumber || 'all';
+  var query = subjectInfo.subjectName;
+  console.log(subjectInfo);
+  // if (subjectInfo.isbn13) {
+  //   query = subjectInfo.isbn13;
+  // }
+  if (subjectInfo.isbn) {
+    query = subjectInfo.isbn;
+  }
+  if (!query) {
+    console.info('Query string is empty');
+    return Promise.resolve();
+  }
+  const url = `https://bgm.tv/subject_search/${encodeURIComponent(query)}?cat=${typeNumber}`;
+  console.info('seach bangumi subject URL: ', url);
   return gmFetch(url).then((info) => {
     var [rawInfoList, numOfPage] = dealRawHTML(info);
     return filterResults(rawInfoList, subjectInfo.subjectName, {
       keys: ['subjectTitle', 'subjectGreyTitle'],
-      startDate: subjectInfo.startDate
+      startDate: startDate
     });
   });
 }
