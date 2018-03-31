@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.1
+// @version     0.0.2
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -1583,6 +1583,9 @@ function getItemData(itemConfig) {
   }
   if ($t) {
     return dealRawText($t.innerText, [itemConfig.keyWord], itemConfig);
+  } else if (!$t && itemConfig.otherRules && itemConfig.otherRules.length) {
+    var rule = itemConfig.otherRules.pop();
+    return getItemData(Object.assign(itemConfig, rule));
   }
 }
 /**
@@ -1730,7 +1733,10 @@ amazonSubjectModel.itemList.push({
   category: 'date'
 }, {
   name: '作者',
-  selector: '#bylineInfo .author span.a-size-medium'
+  selector: '#bylineInfo .author span.a-size-medium',
+  otherRules: [{
+    selector: '#bylineInfo .author > a'
+  }]
 }, {
   name: '出版社',
   selector: '#detail_bullets_id .bucket .content',

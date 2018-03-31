@@ -50,7 +50,12 @@ amazonSubjectModel.itemList.push(
   },
   {
     name: '作者',
-    selector: '#bylineInfo .author span.a-size-medium'
+    selector: '#bylineInfo .author span.a-size-medium',
+    otherRules: [
+      {
+        selector: '#bylineInfo .author > a'
+      }
+    ]
   },
   {
     name: '出版社',

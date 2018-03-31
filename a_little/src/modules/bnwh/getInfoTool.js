@@ -87,6 +87,9 @@ function getItemData(itemConfig) {
   }
   if ($t) {
     return dealRawText($t.innerText, [itemConfig.keyWord], itemConfig);
+  } else if (!$t && itemConfig.otherRules && itemConfig.otherRules.length) {
+    let rule = itemConfig.otherRules.pop()
+    return getItemData(Object.assign(itemConfig, rule));
   }
 }
 /**
