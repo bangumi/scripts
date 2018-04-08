@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bgm-eps-editor
 // @namespace    https://github.com/bangumi/scripts/tree/master/mono
-// @version      5
+// 6version      6
 // @description  章节列表编辑器
 // @author       mono <momocraft@gmail.com>
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/subject\/\d+\/ep\/edit_batch/
@@ -74,6 +74,43 @@
 /************************************************************************/
 /******/ ({
 
+/***/ "./lib-ts/bgm-eps-editor-variable.ts":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["a"] = getSetting;
+function getSetting() {
+    var sideContent = document.getElementById("columnB").textContent;
+    if (/章节编号/.exec(sideContent)) {
+        return new EpisodeEditor();
+    }
+    else if (/曲目编号/.exec(sideContent)) {
+        return new TrackEditor();
+    }
+    throw new Error("cannot decide which editor to use");
+}
+var EpisodeEditor = (function () {
+    function EpisodeEditor() {
+        this.getStyleText = function () { return episodeStyleText; };
+        this.getColumnHeads = function () { return "章节编号|原文标题|简体中文标题|时长|放送日期".split("|"); };
+        this.getColumnOrder = function () { return ["no", "titleRaw", "titleZh", "duration", "airDate"]; };
+    }
+    return EpisodeEditor;
+}());
+var TrackEditor = (function () {
+    function TrackEditor() {
+        this.getStyleText = function () { return trackStyleText; };
+        this.getColumnHeads = function () { return "光盘编号|曲目编号|原文标题|简体中文标题|时长".split("|"); };
+        this.getColumnOrder = function () { return ["discNo", "titleNo", "titleRaw", "titleZh", "duration"]; };
+    }
+    return TrackEditor;
+}());
+var episodeStyleText = "\ntable.episodes-editor-mono {\n    table-layout: fixed;\n    width: 45em;\n}\n\ntable.episodes-editor-mono input {\n    width: 100%;\n}\n\ntable.episodes-editor-mono input:invalid {\n    background-color: pink;\n}\n\ntable.episodes-editor-mono th:nth-child(1),\ntable.episodes-editor-mono td:nth-child(1) {\n    width: 2em;\n}\n\ntable.episodes-editor-mono th:nth-child(2),\ntable.episodes-editor-mono td:nth-child(2),\ntable.episodes-editor-mono th:nth-child(3),\ntable.episodes-editor-mono td:nth-child(3) {\n    width: 10em;\n}\n\ntable.episodes-editor-mono th:nth-child(4),\ntable.episodes-editor-mono td:nth-child(4) {\n    width: 3.5em;\n}\n\ntable.episodes-editor-mono th:nth-child(5),\ntable.episodes-editor-mono td:nth-child(5) {\n    width: 4em;\n}\n".trim();
+var trackStyleText = "\ntable.episodes-editor-mono {\n    table-layout: fixed;\n    width: 45em;\n}\n\ntable.episodes-editor-mono input {\n    width: 100%;\n}\n\ntable.episodes-editor-mono input:invalid {\n    background-color: pink;\n}\n\ntable.episodes-editor-mono th:nth-child(1),\ntable.episodes-editor-mono td:nth-child(1),\ntable.episodes-editor-mono th:nth-child(2),\ntable.episodes-editor-mono td:nth-child(2) {\n    width: 2em;\n}\n\ntable.episodes-editor-mono th:nth-child(3),\ntable.episodes-editor-mono td:nth-child(3),\ntable.episodes-editor-mono th:nth-child(4),\ntable.episodes-editor-mono td:nth-child(4) {\n    width: 12em;\n}\n\ntable.episodes-editor-mono th:nth-child(5),\ntable.episodes-editor-mono td:nth-child(5) {\n    width: 4em;\n}\n".trim();
+
+
+/***/ }),
+
 /***/ "./lib-ts/bgm-eps-editor.tsx":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -82,16 +119,19 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tslib__ = __webpack_require__("./node_modules/tslib/tslib.es6.js");
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_preact__ = __webpack_require__("./node_modules/preact/dist/preact.js");
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_preact___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_preact__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__bgm_eps_editor_variable__ = __webpack_require__("./lib-ts/bgm-eps-editor-variable.ts");
 
 /**
  * bgm-decodeEPs-editor: 章节列表编辑器
  */
 
-var BgmEpisodesEditor;
-(function (BgmEpisodesEditor) {
+
+function BgmEpisodesEditor(setting) {
+    var columns = setting.getColumnOrder();
+    var headers = setting.getColumnHeads();
     function appendStyle() {
         var style = document.createElement("style");
-        style.textContent = "\ntable.episodes-editor-mono {\n    table-layout: fixed;\n    width: 45em;\n}\n\ntable.episodes-editor-mono input {\n    width: 100%;\n}\n\ntable.episodes-editor-mono input:invalid {\n    background-color: pink;\n}\n\ntable.episodes-editor-mono th:nth-child(1),\ntable.episodes-editor-mono td:nth-child(1) {\n    width: 3em;\n}\n\ntable.episodes-editor-mono th:nth-child(2),\ntable.episodes-editor-mono td:nth-child(2),\ntable.episodes-editor-mono th:nth-child(3),\ntable.episodes-editor-mono td:nth-child(3) {\n    width: 10em;\n}\n\ntable.episodes-editor-mono th:nth-child(4),\ntable.episodes-editor-mono td:nth-child(4) {\n    width: 2.5em;\n}\n\ntable.episodes-editor-mono th:nth-child(5),\ntable.episodes-editor-mono td:nth-child(5) {\n    width: 4em;\n}\n".trim();
+        style.textContent = setting.getStyleText();
         document.head.appendChild(style);
     }
     function bindEvents() {
@@ -129,32 +169,28 @@ var BgmEpisodesEditor;
     }
     /** 将章节列表转换为用于textarea# 的字符串 */
     var encodeEpisodes = function (decodeEPs) { return decodeEPs
-        .map(function (e) { return [
-        e.no || "",
-        e.titleRaw || "",
-        e.titleZh || "",
-        e.duration || "",
-        e.airDate || ""
-    ].join("|"); })
+        .map(function (e) { return columns.map(function (c) { return e[c] || ""; }).join("|"); })
         .join("\n"); };
     var decodeEpisodes = function (text) { return text
         .split(/\n+/)
         .map(function (l) { return l.trim(); })
         .filter(function (l) { return l; })
         .map(function (l) {
-        var _a = l.split("|"), no = _a[0], titleRaw = _a[1], titleZh = _a[2], duration = _a[3], airDate = _a[4];
-        return { no: no, titleRaw: titleRaw, titleZh: titleZh, duration: duration, airDate: airDate };
+        var values = l.split("|");
+        return values.reduce(function (row, v, index) {
+            return ((row[columns[index]] = v), row);
+        }, {});
     }); };
-    var fields = ["no", "titleRaw", "titleZh", "duration", "airDate"];
     var EpList = (function (_super) {
         __WEBPACK_IMPORTED_MODULE_0_tslib__["a" /* __extends */](EpList, _super);
         function EpList() {
             var _this = _super !== null && _super.apply(this, arguments) || this;
             _this.onkeydown = function (ev) {
-                if (ev.key === "z"
-                    && ev.ctrlKey
+                var isUndo = (ev.key === "z"
+                    && xor(ev.ctrlKey, ev.metaKey)
                     && !ev.altKey
-                    && !ev.shiftKey) {
+                    && !ev.shiftKey);
+                if (isUndo) {
                     ev.preventDefault();
                     _this.props.popState();
                 }
@@ -185,12 +221,7 @@ var BgmEpisodesEditor;
             return _this;
         }
         EpList.prototype.th = function () {
-            return (__WEBPACK_IMPORTED_MODULE_1_preact__["h"]("tr", null,
-                __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("th", null, "\u7AE0\u8282\u7F16\u53F7"),
-                __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("th", null, "\u539F\u6587\u6807\u9898"),
-                __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("th", null, "\u7B80\u4F53\u4E2D\u6587\u6807\u9898"),
-                __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("th", null, "\u65F6\u957F"),
-                __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("th", null, "\u653E\u9001\u65E5\u671F")));
+            return (__WEBPACK_IMPORTED_MODULE_1_preact__["h"]("tr", null, headers.map(function (h) { return __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("th", null, h); })));
         };
         EpList.prototype.decodeEPs = function () {
             return decodeEpisodes(this.props.current);
@@ -198,7 +229,7 @@ var BgmEpisodesEditor;
         EpList.prototype.tr = function () {
             var _this = this;
             return this.decodeEPs().map(function (ep, row) {
-                return __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("tr", null, fields.map(function (f) {
+                return __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("tr", null, columns.map(function (f) {
                     return __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("td", null,
                         __WEBPACK_IMPORTED_MODULE_1_preact__["h"]("input", { pattern: "[^|]*", value: ep[f] || "", onKeyDown: _this.onkeydown, onPaste: _this.onPaste(row, f), onInput: _this.onInput(row, f) }));
                 }));
@@ -211,13 +242,15 @@ var BgmEpisodesEditor;
         };
         return EpList;
     }(__WEBPACK_IMPORTED_MODULE_1_preact__["Component"]));
-    function init() {
+    return function init() {
         appendStyle();
         bindEvents();
-    }
-    BgmEpisodesEditor.init = init;
-})(BgmEpisodesEditor || (BgmEpisodesEditor = {}));
-setTimeout(BgmEpisodesEditor.init);
+    };
+}
+setTimeout(function () { return BgmEpisodesEditor(__WEBPACK_IMPORTED_MODULE_2__bgm_eps_editor_variable__["a" /* getSetting */]())(); });
+function xor(b1, b2) {
+    return !!(~~b1 ^ ~~b2);
+}
 
 
 /***/ }),

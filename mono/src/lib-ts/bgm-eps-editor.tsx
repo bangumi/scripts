@@ -2,49 +2,18 @@
  * bgm-decodeEPs-editor: 章节列表编辑器
  */
 import * as preact from "preact";
+import { EditorSetting, getSetting } from "./bgm-eps-editor-variable";
 
 declare const $$webpack_dev: boolean;
 
-namespace BgmEpisodesEditor {
+function BgmEpisodesEditor<T extends { [key: string]: string; }>(setting: EditorSetting<T>) {
+
+    const columns = setting.getColumnOrder();
+    const headers = setting.getColumnHeads();
 
     function appendStyle() {
         const style = document.createElement("style");
-        style.textContent = `
-table.episodes-editor-mono {
-    table-layout: fixed;
-    width: 45em;
-}
-
-table.episodes-editor-mono input {
-    width: 100%;
-}
-
-table.episodes-editor-mono input:invalid {
-    background-color: pink;
-}
-
-table.episodes-editor-mono th:nth-child(1),
-table.episodes-editor-mono td:nth-child(1) {
-    width: 3em;
-}
-
-table.episodes-editor-mono th:nth-child(2),
-table.episodes-editor-mono td:nth-child(2),
-table.episodes-editor-mono th:nth-child(3),
-table.episodes-editor-mono td:nth-child(3) {
-    width: 10em;
-}
-
-table.episodes-editor-mono th:nth-child(4),
-table.episodes-editor-mono td:nth-child(4) {
-    width: 2.5em;
-}
-
-table.episodes-editor-mono th:nth-child(5),
-table.episodes-editor-mono td:nth-child(5) {
-    width: 4em;
-}
-`.trim();
+        style.textContent = setting.getStyleText();
         document.head.appendChild(style);
     }
 
@@ -92,33 +61,20 @@ table.episodes-editor-mono td:nth-child(5) {
         pushState(summary.value);
     }
 
-    // 章节列表中的一项: 章节编号|原文标题|简体中文标题|时长|放送日期
-    interface Ep {
-        no: string;
-        titleRaw: string;
-        titleZh: string;
-        duration: string;
-        airDate: string;
-    }
-
     /** 将章节列表转换为用于textarea# 的字符串 */
-    const encodeEpisodes = (decodeEPs: Ep[]) => decodeEPs
-        .map(e => [
-            e.no || "",
-            e.titleRaw || "",
-            e.titleZh || "",
-            e.duration || "",
-            e.airDate || ""
-        ].join("|"))
+    const encodeEpisodes = (decodeEPs: T[]) => decodeEPs
+        .map(e => columns.map(c => e[c] || "").join("|"))
         .join("\n");
 
-    const decodeEpisodes: (text: string) => Ep[] = text => text
+    const decodeEpisodes: (text: string) => T[] = text => text
         .split(/\n+/)
         .map(l => l.trim())
         .filter(l => l)
         .map(l => {
-            const [no, titleRaw, titleZh, duration, airDate] = l.split("|");
-            return { no, titleRaw, titleZh, duration, airDate };
+            const values = l.split("|");
+            return values.reduce((row, v, index) =>
+                ((row[columns[index]] = v), row),
+                {} as T);
         });
 
     interface EpListProps {
@@ -127,18 +83,12 @@ table.episodes-editor-mono td:nth-child(5) {
         current: string;
     }
 
-    const fields: (keyof Ep)[] = ["no", "titleRaw", "titleZh", "duration", "airDate"];
-
     class EpList extends preact.Component<EpListProps, never> {
 
         th() {
             return (
                 <tr>
-                    <th>章节编号</th>
-                    <th>原文标题</th>
-                    <th>简体中文标题</th>
-                    <th>时长</th>
-                    <th>放送日期</th>
+                    {headers.map(h => <th>{h}</th>)}
                 </tr>
             );
         }
@@ -150,7 +100,7 @@ table.episodes-editor-mono td:nth-child(5) {
         tr() {
             return this.decodeEPs().map((ep, row) =>
                 <tr>
-                    {fields.map(f =>
+                    {columns.map(f =>
                         <td><input
                             pattern="[^|]*"
                             value={ep[f] || ""}
@@ -163,16 +113,17 @@ table.episodes-editor-mono td:nth-child(5) {
         }
 
         onkeydown = (ev: KeyboardEvent) => {
-            if (ev.key === "z"
-                && ev.ctrlKey
+            const isUndo = (ev.key === "z"
+                && xor(ev.ctrlKey, ev.metaKey)
                 && !ev.altKey
-                && !ev.shiftKey) {
+                && !ev.shiftKey);
+            if (isUndo) {
                 ev.preventDefault();
                 this.props.popState();
             }
         }
 
-        onPaste = (row: number, field: keyof Ep) => (ev: ClipboardEvent) => {
+        onPaste = (row: number, field: keyof T) => (ev: ClipboardEvent) => {
 
             const newText = ev && ev.clipboardData && ev.clipboardData.getData("text") || "";
             if (!newText)
@@ -194,7 +145,7 @@ table.episodes-editor-mono td:nth-child(5) {
             this.props.pushState(encodeEpisodes(eps));
         }
 
-        onInput = (row: number, field: keyof Ep) => (ev: Event) => {
+        onInput = (row: number, field: keyof T) => (ev: Event) => {
             const newText = ev && ev.target && (ev.target as HTMLInputElement).value || "";
             if (newText.indexOf("|") !== -1) return;
 
@@ -213,10 +164,14 @@ table.episodes-editor-mono td:nth-child(5) {
         }
     }
 
-    export function init() {
+    return function init() {
         appendStyle();
         bindEvents();
-    }
+    };
 }
 
-setTimeout(BgmEpisodesEditor.init);
+setTimeout(() => BgmEpisodesEditor(getSetting())());
+
+function xor(b1: boolean, b2: boolean) {
+    return !!(~~b1 ^ ~~b2);
+}
