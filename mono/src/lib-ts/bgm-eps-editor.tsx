@@ -6,7 +6,7 @@ import { EditorSetting, getSetting } from "./bgm-eps-editor-variable";
 
 declare const $$webpack_dev: boolean;
 
-function BgmEpisodesEditor<T extends { [key: string]: string; }>(setting: EditorSetting<T>) {
+function initEditor<T extends { [key: string]: string; }>(setting: EditorSetting<T>) {
 
     const columns = setting.getColumnOrder();
     const headers = setting.getColumnHeads();
@@ -170,7 +170,7 @@ function BgmEpisodesEditor<T extends { [key: string]: string; }>(setting: Editor
     };
 }
 
-setTimeout(() => BgmEpisodesEditor(getSetting())());
+setTimeout(initEditor(getSetting()));
 
 function xor(b1: boolean, b2: boolean) {
     return !!(~~b1 ^ ~~b2);

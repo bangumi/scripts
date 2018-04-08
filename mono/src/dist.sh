@@ -8,4 +8,5 @@ npm run webpack
 for entry in bgm-eps-editor ; do
   cat header/$entry.js prod/$entry.min.js > ../$entry.min.user.js
   cat header/$entry.js dev/$entry.js      > ../$entry.user.js
+  cat header/$entry.js loader/$entry.js   > ../$entry.loader.js
 done
