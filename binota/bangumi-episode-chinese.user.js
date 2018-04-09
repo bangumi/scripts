@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bec
 // @description Show Chinese episode name in episode page.
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/ep\/\d+/
-// @version     0.1.0
+// @version     0.1.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 'use strict';
@@ -62,6 +62,9 @@ var writeTitle = function() {
     $('h2.title').innerHTML = $('h2.title').innerHTML.replace('<small', ` / ${title} <small`);
     document.title = document.title.replace(/ \/ /, ` | ${title} / `);
   }
+}
+
+var writeEpisodeList = function() {
 
   //Write title of episode list
   var list = $a('.sideEpList li a');
@@ -70,12 +73,12 @@ var writeTitle = function() {
     let liTitle = episodes.getTitle(liId);
     if(liTitle !== '') list[i].innerHTML += ' / ' + liTitle;
   }
-  return;
 }
 
 //check cache:
 if(storage.get(subject)) {
   writeTitle();
+  writeEpisodeList();
 } else {
   //Query API
   GM_xmlhttpRequest({
@@ -91,8 +94,9 @@ if(storage.get(subject)) {
         }
         episodes.setTitle(ep.id, ep.name_cn);
       }
-
+      
       episodes.save();
+      writeEpisodeList();
     }
   });
 }
