@@ -16,7 +16,7 @@
         "pretty": true,
         "module": "es6",
         "jsxFactory": "preact.h",
-        "importHelpers": true
+        "importHelpers": false
     },
     "exclude": [
         "node_modules"
