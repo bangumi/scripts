@@ -57,7 +57,10 @@ var get = function (url, sync) {
     req.open('GET', url, !sync);
     req.send(null);
 
-    if (req.status === 200) return req.responseText;
+    if (sync) {
+      if (req.status === 200) resolve(req.responseText);
+      else reject();
+    }
   });
 };
 var post = function() {
