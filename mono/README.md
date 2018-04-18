@@ -4,6 +4,8 @@
 
 ## [章节列表的表格编辑器](bgm-eps-editor.min.user.js?raw=true)
 
+(已经上传开发者平台: https://bgm.tv/dev/app/166 )
+
 ![Screenshot](screenshots/bgm-eps-editor.png)
 
 - 表格编辑器中的数据和原本的文本编辑器联动 (编辑一边时另一边会同时更新)
