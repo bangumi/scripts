@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.1.1
+// @version     0.1.2
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -44,14 +44,21 @@ const DEFAULT_CONFIG = {
 var formhash = '';
   
 var $ = function() { return document.querySelector(arguments[0]); };
-var get = function() {
-  var url = arguments[0];
-  var sync = (typeof arguments[1] === 'undefined') ? true : arguments[1];
-  var req = new XMLHttpRequest();
-  req.open('GET', url, false);
-  req.send(null);
- 
-  if(req.status === 200) return req.responseText;
+var get = function (url, sync) {
+  return new Promise((resolve, reject) => {
+    var sync = (typeof sync === 'undefined') ? true : sync;
+    var req = new XMLHttpRequest();
+    req.onload = () => {
+      if (req.status === 200)
+        return resolve(req.responseText);
+      else
+        return reject();  
+    };
+    req.open('GET', url, !sync);
+    req.send(null);
+
+    if (req.status === 200) return req.responseText;
+  });
 };
 var post = function() {
   var url = arguments[0];
@@ -68,6 +75,8 @@ var post = function() {
   
   if(req.status === 200) return req.responseText;
 };
+
+var wait = time => new Promise((resolve, reject) => setTimeout(resolve, time));
 
 var Calendar = function() {
   var config = (typeof arguments[0] === 'undefined') ? {} : arguments[0];
@@ -204,11 +213,11 @@ var Bangumi = function() {
   return {
     User: {
       Timeline: {
-        Get: function() {
+        Get: async function() {
           var page = (typeof arguments[0] === 'undefined') ? 1 : arguments[0];
           var type = (typeof arguments[1] === 'undefined') ? 'all' : arguments[2];
           console.log(`Timeline Page: ${page}`);
-          var html = get(`/user/${USER}/timeline?type=${type}&page=${page}&ajax=1`).trim();
+          var html = (await get(`/user/${USER}/timeline?type=${type}&page=${page}&ajax=1`, false)).trim();
           if(html.length <= 0) return false;
           var nodes = html.match(/<h4 class="Header">.+?<\/h4>\s+<ul>[\s\S]+?<\/ul>/gm);
           var retval = {};
@@ -241,12 +250,12 @@ var Bangumi = function() {
         }
       },
       Wiki: {
-        Get: function() {
+        Get: async function() {
           var page = (typeof arguments[0] === 'undefined') ? 1 : arguments[0];
           var type = (typeof arguments[1] === 'undefined') ? '' : arguments[2];
           console.log(`Wiki, Page: ${page}`);
           var type_url = type ? `/${type}` : '';
-          var html = get(`/user/${USER}/wiki${type_url}?page=${page}`);
+          var html = (await get(`/user/${USER}/wiki${type_url}?page=${page}`, false)).trim();
           if(html.length <= 0) return false;
           
           var list = html.match(/<li class="line.+?>[\s\S]+?<\/li>/gm);
@@ -264,8 +273,8 @@ var Bangumi = function() {
         }
       },
       Blog: {
-        Get: function(id) {
-          var html = get(`/blog/${id}/edit`);
+        Get: async function(id) {
+          var html = await get(`/blog/${id}/edit`, false);
           var retval = {};
           try {
             retval.formhash = html.match(/formhash" value="(.+?)"/)[1];
@@ -284,8 +293,8 @@ var Bangumi = function() {
         }
       },
       Settings: {
-        Get: function() {
-          var html = get('/settings');
+        Get: async function() {
+          var html = await get('/settings', false);
           var retval = {};
           formhash = html.match(/formhash" value="(.*?)"/)[1];
 
@@ -361,7 +370,7 @@ var Storage = function(driver) {
     return key;
   };
 };
-var Application = function() {
+var Application = async function() {
   if(typeof USER === "undefined") return;
   
   var storage = new Storage(localStorage);
@@ -381,7 +390,7 @@ var Application = function() {
     //first run
 
     //check user page for backup
-    var page = get(`/user/${USER}`);
+    var page = await get(`/user/${USER}`, false);
     var matches = page.match(/#bhc_backup_(.+?)"/);
     if(matches) {
       //restore backup and continue
@@ -432,9 +441,10 @@ var Application = function() {
   var checkBreakPoint = (lastUpdate) ? (new Date(lastUpdate - NSECS_IN_DAY)) : (new Date(now.getTime() - (NSECS_IN_DAY * (DAYS_IN_YEAR + 1))));
 
   //Check
-  var getPage = function(get, calendar, tag) {
-    for(let i = 1; ; i++) {
-      var page = get(i);
+  var getPage = async function(get, calendar, tag) {
+    for (let i = 1; ; i++) {
+      // wait some time let Ukagaka show the message completely;
+      var page = await Promise.all([get(i), wait(200)]).then(([resultA, noResult]) => resultA);
       if(!page) return;
       client.Ukagaka.Say(tag`${i}`);
       for(let j in page) {
@@ -446,7 +456,7 @@ var Application = function() {
 
   var newTmlCalendar, newWikiCalendar;
   if(config.show_tml === true) {
-    getPage(function(i) { return client.User.Timeline.Get(i); },
+    await getPage(function(i) { return client.User.Timeline.Get(i); },
             tmlCalendar,
             function(string, values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计时空管理局的数据，目前在统计第 ${values} 页...`; });
     newTmlCalendar = `[size=16]Timeline 统计图[/size]
@@ -457,7 +467,7 @@ ${tmlCalendar.generate()}
     newTmlCalendar = '';
   }
   if(config.show_wiki === true) {
-    getPage(function(i) { return client.User.Wiki.Get(i); },
+    await getPage(function(i) { return client.User.Wiki.Get(i); },
             wikiCalendar,
             function(strings, values) { return `正在为你更新 BHC 统计图，<br>这可能会需要一点时间...<br>正在统计你的维基编辑记录，目前正在统计第 ${values} 页...`; });
     newWikiCalendar = `[size=16]Wiki 编辑统计图[/size]
@@ -484,14 +494,14 @@ ${newTmlCalendar}${newWikiCalendar}[color=transparent][color=${FONT_COLOUR}]Powe
     case LOC_BIO:
       //Update Homepage
       client.Ukagaka.Say('正在为你更新个人主页...');
-      var settings = client.User.Settings.Get();
+      var settings = await client.User.Settings.Get();
       var realbio = settings.bio.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '').trim();
       settings.bio = `${realbio}\n${bhc_content}`;
       client.User.Settings.Setting(settings);
       client.Ukagaka.Say(`更新好了，<a href="${DOMAIN}/user/${USER}">前往个人主页看看吧</a>！`);
       break;
     case LOC_BLOG:
-      var blog = client.User.Blog.Get(config.blog_id);
+      var blog = await client.User.Blog.Get(config.blog_id);
       var realblog = blog.content.replace(/\[color=transparent\]\[bhc\]\[\/color\][\s\S]+\[\/bhc\]\[\/color\]/m, '').trim();
       blog.content = `${realblog}\n${bhc_content}`;
       client.User.Blog.Write(config.blog_id, blog);
@@ -499,6 +509,7 @@ ${newTmlCalendar}${newWikiCalendar}[color=transparent][color=${FONT_COLOUR}]Powe
   }
   storage.remove('lock');
 };
+
 var Configure = function() {
   var that = this;
   var storage = new Storage(localStorage);
@@ -662,10 +673,10 @@ var Configure = function() {
   this.reGenerate = function() {
     var now = new Date();
     storage.set('lastUpdate', now.getTime() - NSECS_IN_DAY);
-    BHC = new Application();
+    BHC = Application.call({});
   };
 };
 
-var BHC = new Application();
+var BHC = Application.call({});
 if(document.location.pathname == `/user/${USER}`) var configure = new Configure();
 
