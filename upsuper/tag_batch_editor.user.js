@@ -2,8 +2,7 @@
 // @name        Bangumi 标签批量管理
 // @namespace   org.upsuper.bangumi
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/(anime|book|music|game|real)/list/.+$/
-// @version     4.0
-// @grant       GM_addStyle
+// @version     4.1
 // ==/UserScript==
 
 const TIMEOUT = 3000;
@@ -46,7 +45,8 @@ if (username !== urlPieces[5]) {
 let urlBase = urlPieces.slice(0, 7).join('/');
 
 // insert style
-GM_addStyle(`
+let style = document.createElement('style');
+style.textContent = `
 @font-face {
   font-family: '_u FontAwesome';
   src: url('https://netdna.bootstrapcdn.com/font-awesome/3.2.1/font/fontawesome-webfont.woff') format('woff');
@@ -61,6 +61,7 @@ GM_addStyle(`
 }
 .__u_add::before {
   content: '+';
+  font-weight: bold;
 }
 .__u_set_priv::before {
   /* icon eye closed */
@@ -86,12 +87,12 @@ GM_addStyle(`
 }
 #wrapperNeue .__u_top_btn {
   padding: 3px 0;
-  color: #fff;
+  color: #555;
   margin: -2px 3px 0 0;
   font-size: 12px;
 }
 #wrapperNeue .__u_top_btn:first-of-type {
-  margin-right: -7px;
+  margin-right: -1px;
 }
 #wrapperNeue .__u_tag_btn {
   padding: 4px 0;
@@ -103,7 +104,8 @@ GM_addStyle(`
   top: 0; border: 0 none;
   width: 100%; height: 1px;
 }
-`);
+`;
+document.head.appendChild(style);
 
 // add progress bar
 let $pb = $c('progress', {
