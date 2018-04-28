@@ -2,15 +2,15 @@
 // @name        Bangumi 国内放送站点链接
 // @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
-// @grant       GM_setValue
-// @grant       GM_getValue
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.3.2
+// @version     0.3.3
 // ==/UserScript==
 
 const OLDEST_YEAR = 2013;
-const CACHE_EXPIRE_SECS = 24 * 3600;
-const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
+// The original link (without cache control):
+// const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
+// Reverse proxy with cache:
+const BGMLIST_URL = 'https://bgmlist.sorz.org/bangumi/$Y/$M.json';
 const SITE_NAMES = {
   'acfun'   : 'A站',
   'bilibili': 'B站',
@@ -38,29 +38,9 @@ function getOnAirYearMonth() {
   else throw "on-air date not found";
 }
 
-function getCachedValue(key, maxAge=CACHE_EXPIRE_SECS) {
-  const item = JSON.parse(GM_getValue(key, "{}"));
-  if (!item.cache_store_at ||
-      Date.now() - item.cache_store_at > maxAge * 1000)
-    return;
-  return item.value;
-}
-
-function setCachedValue(key, value) {
-  const item = {
-    'cache_store_at': Date.now(),
-    'value': value
-  };
-  GM_setValue(key, JSON.stringify(item));
-}
-
 async function getBgmList(year, month) {
-  const cacheKey = `bgms-${year}-${month}`;
-  let bgms = getCachedValue(cacheKey);
-  if (bgms)
-    return new Map(bgms);
   const url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
-  let resp = await fetch(url);
+  let resp = await fetch(url, { referrerPolicy: "no-referrer" });
   if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
   let list = await resp.json();
   bgms = new Map(
@@ -68,7 +48,6 @@ async function getBgmList(year, month) {
       .map(b => [`${b.bgmId}`, b])
       .filter(([bgmId, _]) => bgmId != undefined)
   );
-  setCachedValue(cacheKey, [...bgms]);
   return bgms;
 }
 
@@ -115,3 +94,4 @@ window.addEventListener('load', async () => {
   
   addOnAirSites(bgm);
 });
+
