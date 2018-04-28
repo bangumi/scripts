@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Bangumi 国内放送站点链接
-// @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点及下载搜索链接
+// @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -8,14 +8,9 @@
 // @version     0.3.2
 // ==/UserScript==
 
-// Change to false to disable download search links:
-const DOWNLOAD_SEARCH_ENABLED = true;
-
 const OLDEST_YEAR = 2013;
 const CACHE_EXPIRE_SECS = 24 * 3600;
 const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
-const DOWNLOAD_DMHY_URL = "https://share.dmhy.org/topics/list?keyword=";
-const DOWNLOAD_NYAA_URL = "https://nyaa.si/?page=search&term=";
 const SITE_NAMES = {
   'acfun'   : 'A站',
   'bilibili': 'B站',
@@ -99,15 +94,6 @@ function addInfoRow(title, links) {
   $("#infobox").appendChild(row);
 }
 
-function addDownloadSearchLinks(bgm) {
-  var cn = bgm.titleCN ? bgm.titleCN : bgm.titleJP;
-  var en = bgm.titleEN ? bgm.titleEN : bgm.titleJP;
-  addInfoRow('下载',[
-    [DOWNLOAD_DMHY_URL + cn, '花园'],
-    [DOWNLOAD_NYAA_URL + en, 'Nyaa']
-  ]);
-}
-
 function addOnAirSites(bgm) {
   let links = bgm.onAirSite.map(url => {
     let site = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
@@ -128,6 +114,4 @@ window.addEventListener('load', async () => {
   if (!bgm) throw `bangumi #${id} not found in bgmlist`;
   
   addOnAirSites(bgm);
-  if (DOWNLOAD_SEARCH_ENABLED)
-    addDownloadSearchLinks(bgm);
 });
