@@ -44,25 +44,7 @@ const DEFAULT_CONFIG = {
 var formhash = '';
   
 var $ = function() { return document.querySelector(arguments[0]); };
-var get = function (url, sync) {
-  return new Promise((resolve, reject) => {
-    var sync = (typeof sync === 'undefined') ? true : sync;
-    var req = new XMLHttpRequest();
-    req.onload = () => {
-      if (req.status === 200)
-        return resolve(req.responseText);
-      else
-        return reject();  
-    };
-    req.open('GET', url, !sync);
-    req.send(null);
-
-    if (sync) {
-      if (req.status === 200) resolve(req.responseText);
-      else reject();
-    }
-  });
-};
+var get = url => fetch(url, { credentials: 'same-origin' }).then(response => response.text());
 var post = function() {
   var url = arguments[0];
   var data = (typeof arguments[1] === 'undefined') ? {} : arguments[1];
