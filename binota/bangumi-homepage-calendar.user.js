@@ -202,7 +202,7 @@ var Bangumi = function() {
           var page = (typeof arguments[0] === 'undefined') ? 1 : arguments[0];
           var type = (typeof arguments[1] === 'undefined') ? 'all' : arguments[2];
           console.log(`Timeline Page: ${page}`);
-          var html = (await get(`/user/${USER}/timeline?type=${type}&page=${page}&ajax=1`, false)).trim();
+          var html = (await get(`/user/${USER}/timeline?type=${type}&page=${page}&ajax=1`)).trim();
           if(html.length <= 0) return false;
           var nodes = html.match(/<h4 class="Header">.+?<\/h4>\s+<ul>[\s\S]+?<\/ul>/gm);
           var retval = {};
@@ -240,7 +240,7 @@ var Bangumi = function() {
           var type = (typeof arguments[1] === 'undefined') ? '' : arguments[2];
           console.log(`Wiki, Page: ${page}`);
           var type_url = type ? `/${type}` : '';
-          var html = (await get(`/user/${USER}/wiki${type_url}?page=${page}`, false)).trim();
+          var html = (await get(`/user/${USER}/wiki${type_url}?page=${page}`)).trim();
           if(html.length <= 0) return false;
           
           var list = html.match(/<li class="line.+?>[\s\S]+?<\/li>/gm);
@@ -259,7 +259,7 @@ var Bangumi = function() {
       },
       Blog: {
         Get: async function(id) {
-          var html = await get(`/blog/${id}/edit`, false);
+          var html = await get(`/blog/${id}/edit`);
           var retval = {};
           try {
             retval.formhash = html.match(/formhash" value="(.+?)"/)[1];
@@ -279,7 +279,7 @@ var Bangumi = function() {
       },
       Settings: {
         Get: async function() {
-          var html = await get('/settings', false);
+          var html = await get('/settings');
           var retval = {};
           formhash = html.match(/formhash" value="(.*?)"/)[1];
 
@@ -375,7 +375,7 @@ var Application = async function() {
     //first run
 
     //check user page for backup
-    var page = await get(`/user/${USER}`, false);
+    var page = await get(`/user/${USER}`);
     var matches = page.match(/#bhc_backup_(.+?)"/);
     if(matches) {
       //restore backup and continue
