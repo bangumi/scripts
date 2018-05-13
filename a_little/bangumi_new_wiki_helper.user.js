@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.3
+// @version     0.0.4
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -486,7 +486,12 @@ function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
         _dealRawHTML2 = _slicedToArray(_dealRawHTML, 2),
         rawInfoList = _dealRawHTML2[0],
         numOfPage = _dealRawHTML2[1];
+    // 使用ISBN 搜索时，不再使用名称过滤
 
+
+    if (subjectInfo.isbn) {
+      return rawInfoList[0];
+    }
     return filterResults(rawInfoList, subjectInfo.subjectName, {
       keys: ['subjectTitle', 'subjectGreyTitle'],
       startDate: startDate

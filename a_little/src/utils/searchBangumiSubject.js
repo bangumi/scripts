@@ -88,6 +88,10 @@ function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
   console.info('seach bangumi subject URL: ', url);
   return gmFetch(url).then((info) => {
     var [rawInfoList, numOfPage] = dealRawHTML(info);
+    // 使用ISBN 搜索时，不再使用名称过滤
+    if (subjectInfo.isbn) {
+      return rawInfoList[0];
+    }
     return filterResults(rawInfoList, subjectInfo.subjectName, {
       keys: ['subjectTitle', 'subjectGreyTitle'],
       startDate: startDate
