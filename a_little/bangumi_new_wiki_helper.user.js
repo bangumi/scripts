@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.2
+// @version     0.0.3
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -1711,14 +1711,14 @@ amazonSubjectModel.itemList.push({
   keyWord: '',
   category: 'subject_title'
 }, {
-  name: 'ISBN',
+  name: 'JAN',
   selector: '#detail_bullets_id .bucket .content',
   subSelector: 'li',
   keyWord: 'ISBN-10',
   separator: ':',
   category: 'ISBN'
 }, {
-  name: 'ISBN-13',
+  name: 'ISBN',
   selector: '#detail_bullets_id .bucket .content',
   subSelector: 'li',
   keyWord: 'ISBN-13',
