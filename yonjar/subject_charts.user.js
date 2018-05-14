@@ -332,7 +332,7 @@ class Chart{
                             type:'pie',
                             radius : '70%',
                             center: ['50%', '50%'],
-                            roseType : 'radius',
+                            roseType : 'area',
                             data: tagsData.data,
                             label: {
                                 normal: {
