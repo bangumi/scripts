@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.4
+// @version     0.0.5
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -482,13 +482,8 @@ function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
   var url = 'https://bgm.tv/subject_search/' + encodeURIComponent(query) + '?cat=' + typeNumber;
   console.info('seach bangumi subject URL: ', url);
   return gmFetch(url).then(function (info) {
-    var _dealRawHTML = dealRawHTML(info),
-        _dealRawHTML2 = _slicedToArray(_dealRawHTML, 2),
-        rawInfoList = _dealRawHTML2[0],
-        numOfPage = _dealRawHTML2[1];
+    var rawInfoList = dealRawHTML(info)[0] || [];
     // 使用ISBN 搜索时，不再使用名称过滤
-
-
     if (subjectInfo.isbn) {
       return rawInfoList[0];
     }
@@ -517,10 +512,10 @@ function fetchBangumiDataByDate(subjectInfo, pageNumber, type, allInfoList) {
 
   console.log('uuuuuuuu', url);
   return gmFetch(url).then(function (info) {
-    var _dealRawHTML3 = dealRawHTML(info),
-        _dealRawHTML4 = _slicedToArray(_dealRawHTML3, 2),
-        rawInfoList = _dealRawHTML4[0],
-        numOfPage = _dealRawHTML4[1];
+    var _dealRawHTML = dealRawHTML(info),
+        _dealRawHTML2 = _slicedToArray(_dealRawHTML, 2),
+        rawInfoList = _dealRawHTML2[0],
+        numOfPage = _dealRawHTML2[1];
 
     pageNumber = pageNumber || 1;
 
