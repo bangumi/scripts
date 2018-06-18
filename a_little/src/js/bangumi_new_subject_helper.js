@@ -153,7 +153,7 @@ const getImageBase64 = require('../utils/getImageBase64');
         charaData['日文名'] = name;
       } else {
         let name = target.previousSibling.textContent;
-        charaData['日文名'] = name.split(/（|\(/)[0];
+        charaData['日文名'] = name.split(/（|\(|\sCV|新建角色/)[0];
         charaData.characterName = charaData['日文名'].replace(/\s/, '');
       }
       var $p = $target.closest('dt');
