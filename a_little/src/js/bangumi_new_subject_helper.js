@@ -145,43 +145,40 @@ const getImageBase64 = require('../utils/getImageBase64');
     getCharacterInfo: function (target) {
       var charaData = {};
       var $target = $(target);
-      var name = $target.parent().find('charalist').text();
-      charaData.characterName = name.replace(/\s/, '');
-      charaData['日文名'] = name;
-      var $p = $target.parent().parent().parent();
-      var intro = $p.next('dd');
-      charaData.characterIntro = intro.text();
-      var node = intro.children().eq(0);
-      //separately deal BWH
-      if (node.text().match(/B.*W.*H\d\d/))
-        charaData['スリーサイズ'] = node.text().match(/B.*W.*H\d\d/);
-      // remove flag g to improve ability
-      if (node || node.text().match('：')) {
-        node.text().split(/\s|\n/).forEach(function (element) {
-          if (!element.length)
-            return;
-          var alist = element.trim().split('：');
-          if (alist.length === 2 && alist[0] !== 'スリーサイズ')
-            charaData[alist[0]] = alist[1];
-        });
+
+      var $charaName = $(target).parent();
+      if ($charaName.find('charalist').length) {
+        let name = $charaName.find('charalist').text();
+        charaData.characterName = name.replace(/\s/, '');
+        charaData['日文名'] = name;
+      } else {
+        let name = target.previousSibling.textContent;
+        charaData['日文名'] = name.split(/（|\(/)[0];
+        charaData.characterName = charaData['日文名'].replace(/\s/, '');
       }
-      /*
-        var templist = node.text().match(/1.*cm|B.*W.*H\d\d|\d{1,2}月\d{1,2}日|\w型/);
-        if (templist) {
-          templist = node.text().match(/1.*cm|B.*W.*H\d\d|\d{1,2}月\d{1,2}日|\w型/g);
-          charaData['身高'] = templist[0];
-          charaData.BWH = templist[1];
-          charaData['生日'] = templist[2];
-          charaData['血型'] = templist[3];
-          charaData.characterIntro = introtext.replace(/.*\n/,'');
+      var $p = $target.closest('dt');
+      var $intro = $p.next('dd');
+      var $clonedIntro = $intro.clone();
+      $clonedIntro.children('span[style^="font-weight"]').remove();
+      charaData.characterIntro = $clonedIntro.text().trim();
+
+      $intro.children('span[style^="font-weight"]').each(function (idx, elem) {
+        var t = $(elem).text()
+        var alist = t.trim().split(/：|:/);
+        if (alist.length === 2) charaData[alist[0]] = alist[1];
+        if (alist.length > 2) {
+          t.split(/\s/).forEach(function (element) {
+            var alist = element.trim().split(/：|:/);
+            if (alist.length === 2) charaData[alist[0]] = alist[1];
+          })
         }
-        */
+      }); 
       // get hiragana name, cv
       var charatext = $p.text();
       if (charatext.match(/（(.*)）/))
         charaData.hiraganaName = charatext.match(/（(.*)）/)[1];
       if (charatext.match("CV")) {
-        charaData.CV = charatext.replace(/.*CV：|新建角色/g, '');
+        charaData.CV = charatext.replace(/.*CV[：:]|新建角色/g, '');
       }
       // store img data
       var $img = $target.closest('tr').find('td>img');
@@ -381,6 +378,7 @@ const getImageBase64 = require('../utils/getImageBase64');
             // ["{{Infobox Crt", "|简体中文名= ", "|别名={", "[第二中文名|]", "[英文名|]", "[日文名|]", "[纯假名|]", "[罗马字|]", "[昵称|]", "}", "|性别= ", "|生日= ", "|血型= ", "|身高= ", "|体重= ", "|BWH= ", "|引用来源= ", "}}"]
             var infobox = ["{{Infobox Crt", "|简体中文名= ", "|别名={", "[第二中文名|]", "[英文名|]"];
             var crt_infodict = {
+              '年齢': '年龄',
               '誕生日': '生日',
               '血液型': '血型',
               '身長': '身高',
