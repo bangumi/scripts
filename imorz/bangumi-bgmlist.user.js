@@ -3,52 +3,47 @@
 // @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.3.3
+// @version     0.4.0
 // ==/UserScript==
 
-const OLDEST_YEAR = 2013;
-// The original link (without cache control):
-// const BGMLIST_URL = 'https://bgmlist.com/tempapi/bangumi/$Y/$M/json';
-// Reverse proxy with cache:
-const BGMLIST_URL = 'https://bgmlist.sorz.org/bangumi/$Y/$M.json';
-const SITE_NAMES = {
-  'acfun'   : 'A站',
-  'bilibili': 'B站',
-  'tucao'   : 'C站',
-  'sohu'    : '搜狐',
-  'youku'   : '优酷',
-  'qq'      : '腾讯',
-  'iqiyi'   : '爱奇艺',
-  'letv'    : '乐视',
-  'le'      : '乐视',
-  'pptv'    : 'PPTV',
-  'tudou'   : '土豆',
-  'movie'   : '迅雷',
-  'mgtv'    : '芒果'
-};
+const BGMLIST_URL = 'https://bgmlist.sorz.org/data/items/$Y/$M.json';
+const SITES_INFO_URL = 'https://bgmlist.sorz.org/data/sites/onair.json';
+const FETCH_PARAMS = { referrerPolicy: "no-referrer" };
+
 const $ = selector => document.querySelector(selector);
-  
+
+
+// return on-air date [year, month] of bgm in current page
 function getOnAirYearMonth() {
-  let dates = Array.from(document.querySelectorAll('#infobox .tip'))
-    .filter(t => t.textContent.startsWith('放送开始'))
-    .map(t => t.parentElement.textContent.match(/(\d{4})年(\d{1,2})月/))
-    .filter(t => t != null)
-    .map(t => [parseInt(t[1]), parseInt(t[2])]);
-  if (dates) return dates[0];
-  else throw "on-air date not found";
+  const date = Array.from(document.querySelectorAll('#infobox .tip'))
+    .find(t => t.textContent.match(/^(放送开始|上映年度)/));
+  if (date == undefined) throw "on-air date not found";
+  let [_, year, month] = date.parentElement.textContent
+    .match(/(\d{4})年(\d{1,2})月/);
+  month = month.padStart(2, '0');
+  return [year, month];
 }
 
+// return full bgm list on given on-air date
 async function getBgmList(year, month) {
   const url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
-  let resp = await fetch(url, { referrerPolicy: "no-referrer" });
+  const resp = await fetch(url, FETCH_PARAMS);
   if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
   let list = await resp.json();
   bgms = new Map(
-    Object.values(list)
-      .map(b => [`${b.bgmId}`, b])
-      .filter(([bgmId, _]) => bgmId != undefined)
+    list.map(bgm => {
+      if (!bgm.sites) return;
+      const site = bgm.sites.find(s => s.site == 'bangumi');
+      if (site) return [site.id, bgm];
+    }).filter(b => b)
   );
   return bgms;
+}
+
+async function getSiteInfo() {
+  const resp = await fetch(SITES_INFO_URL, FETCH_PARAMS);
+  if (!resp.ok) throw "fail to fetch site infos: " + resp.status;
+  return await resp.json();
 }
 
 function addInfoRow(title, links) {
@@ -73,25 +68,25 @@ function addInfoRow(title, links) {
   $("#infobox").appendChild(row);
 }
 
-function addOnAirSites(bgm) {
-  let links = bgm.onAirSite.map(url => {
-    let site = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
-    let name = site in SITE_NAMES ? SITE_NAMES[site] : site;
-    return [url, name];
-  });
+function addOnAirSites(bgm, sites) {
+  const links = bgm.sites.map(({site, id}) => {
+    const info = sites[site];
+    if (!info) return;
+    const url = info.urlTemplate.replace('{{id}}', id);
+    return [url, info.title];
+  }).filter(u => u);
   if (links)
     addInfoRow('放送站点', links);
 }
 
 window.addEventListener('load', async () => {
-  let [year, month] = await getOnAirYearMonth();
-  if (year < OLDEST_YEAR) return;
+  const bgmId = location.pathname.match(/\/subject\/(\d+)/)[1];
+  const [year, month] = getOnAirYearMonth();
+  const bgm = (await getBgmList(year, month)).get(bgmId);
+
+  if (!bgm) throw `bangumi #${bgmId} not found in bgmlist`;
   
-  let bgms = await getBgmList(year, month);
-  let id = location.pathname.match(/\/subject\/(\d+)/)[1];
-  let bgm = bgms.get(id);
-  if (!bgm) throw `bangumi #${id} not found in bgmlist`;
-  
-  addOnAirSites(bgm);
+  const sites = await getSiteInfo();
+  addOnAirSites(bgm, sites);
 });
 
