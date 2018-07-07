@@ -3,7 +3,7 @@
 // @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.4.0
+// @version     0.4.1
 // ==/UserScript==
 
 const BGMLIST_URL = 'https://bgmlist.sorz.org/data/items/$Y/$M.json';
@@ -79,7 +79,7 @@ function addOnAirSites(bgm, sites) {
     addInfoRow('放送站点', links);
 }
 
-window.addEventListener('load', async () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const bgmId = location.pathname.match(/\/subject\/(\d+)/)[1];
   const [year, month] = getOnAirYearMonth();
   const bgm = (await getBgmList(year, month)).get(bgmId);
