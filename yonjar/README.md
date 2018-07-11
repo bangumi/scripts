@@ -70,3 +70,7 @@
 ## [bangumi条目图表增强](https://github.com/bangumi/scripts/blob/master/yonjar/subject_charts.user.js?raw=true)
 
 动画条目下的ep、vote、tags和观看情况数据的简单可视化
+
+## [bangumi评论显示是否为好友](https://github.com/bangumi/scripts/blob/master/yonjar/who_is_my_friend.user.js?raw=true)
+
+在主题下的评论高亮自己的好友的用户名, 本脚本功能依赖[user_detail.user.js](https://github.com/bangumi/scripts/blob/master/yonjar/user_detail.user.js?raw=true), 请先安装设置
