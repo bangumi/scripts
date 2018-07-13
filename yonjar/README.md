@@ -74,3 +74,7 @@
 ## [bangumi评论显示是否为好友](https://github.com/bangumi/scripts/blob/master/yonjar/who_is_my_friend.user.js?raw=true)
 
 在主题下的评论高亮自己的好友的用户名, 本脚本功能依赖[user_detail.user.js](https://github.com/bangumi/scripts/blob/master/yonjar/user_detail.user.js?raw=true), 请先安装设置
+
+## [bangumi危险名单](https://github.com/bangumi/scripts/blob/master/yonjar/dangerous_list.user.js?raw=true)
+
+标记用户 暂无屏蔽功能

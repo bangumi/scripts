@@ -20,4 +20,4 @@ commentUsers.forEach( e => {
         e.style.color = '#a9975b';
         e.style.border = 'solid 1px #ebd280';
     }
-})
+});
