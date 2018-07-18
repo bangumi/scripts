@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi危险名单
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.1
+// @version      0.1.2
 // @description  bangumi危险名单
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(user|blog|ep|character|person|(group|subject)\/topic|rakuen\/topic\/(ep|crt|group|subject|prsn))\/\S+(\?.*)?(#.*)?$/
@@ -86,7 +86,7 @@ class User {
 
 (function(){
     let cur_url = location.href;
-    if (/^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/user\/\S+$/.test(cur_url)) {
+    if (/^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/user\/[^\/]+$/.test(cur_url)) {
         let user = new User();
         user.init();
         return;
