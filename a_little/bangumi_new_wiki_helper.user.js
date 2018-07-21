@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.5
+// @version     0.0.6
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -198,6 +198,10 @@ function setDomain() {
   GM_setValue('bgm', bgm_domain);
   return bgm_domain;
 }
+function setProtocol() {
+  var p = prompt('\u9884\u8BBE\u7684 bangumi \u9875\u9762\u534F\u8BAE\u662Fhttps \u6839\u636E\u9700\u8981\u8F93\u5165 http', 'https');
+  GM_setValue('E_USERJS_protocol', p);
+}
 var bgm_domain = GM_getValue('bgm') || '';
 if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
   bgm_domain = setDomain();
@@ -205,6 +209,7 @@ if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
 }
 if (GM_registerMenuCommand) {
   GM_registerMenuCommand('\u8BBE\u7F6E\u57DF\u540D', setDomain, 'b');
+  GM_registerMenuCommand("新建条目页面(http 或者 https)", setProtocol, 'h');
 }
 var addStyle = function addStyle(css) {
   if (css) {
@@ -228,7 +233,12 @@ function injectScript(fn, data) {
 function changeDomain(url, domain) {
   if (url.match(domain)) return url;
   if (domain === 'bangumi.tv') {
-    return url.replace('https', 'http').replace('bgm.tv', domain);
+    // bangumi.tv https 和 http 登录状态不统一。采取的临时方案
+    var p = GM_getValue('E_USERJS_protocol');
+    if (p && p === 'http') {
+      return url.replace(/^https/, 'http').replace('bgm.tv', domain);
+    }
+    return url.replace('bgm.tv', domain);
   }
 }
 

@@ -13,6 +13,13 @@ function setDomain() {
   GM_setValue('bgm', bgm_domain);
   return bgm_domain;
 }
+function setProtocol() {
+  var p = prompt(
+    `预设的 bangumi 页面协议是https 根据需要输入 http`,
+    'https'
+  );
+  GM_setValue('E_USERJS_protocol', p);
+}
 var bgm_domain = GM_getValue('bgm') || '';
 if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
   bgm_domain = setDomain();
@@ -20,6 +27,7 @@ if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
 }
 if (GM_registerMenuCommand) {
   GM_registerMenuCommand("\u8bbe\u7f6e\u57df\u540d", setDomain, 'b');
+  GM_registerMenuCommand("新建条目页面(http 或者 https)", setProtocol, 'h');
 }
 var addStyle = function (css) {
   if (css) {
@@ -49,7 +57,12 @@ function injectScript(fn, data) {
 function changeDomain(url, domain) {
   if (url.match(domain)) return url;
   if (domain === 'bangumi.tv') {
-    return url.replace('https', 'http').replace('bgm.tv', domain);
+    // bangumi.tv https 和 http 登录状态不统一。采取的临时方案
+    let p = GM_getValue('E_USERJS_protocol');
+    if (p && p === 'http') {
+      return url.replace(/^https/, 'http').replace('bgm.tv', domain);
+    }
+    return url.replace('bgm.tv', domain);
   }
 }
 
