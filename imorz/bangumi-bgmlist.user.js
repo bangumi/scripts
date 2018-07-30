@@ -3,7 +3,7 @@
 // @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.4.1
+// @version     0.4.2
 // ==/UserScript==
 
 const BGMLIST_URL = 'https://bgmlist.sorz.org/data/items/$Y/$M.json';
@@ -75,18 +75,25 @@ function addOnAirSites(bgm, sites) {
     const url = info.urlTemplate.replace('{{id}}', id);
     return [url, info.title];
   }).filter(u => u);
-  if (links)
+  if (links.length)
     addInfoRow('放送站点', links);
+  else
+    throw 'not available on-air site';
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const bgmId = location.pathname.match(/\/subject\/(\d+)/)[1];
-  const [year, month] = getOnAirYearMonth();
-  const bgm = (await getBgmList(year, month)).get(bgmId);
+  try {
+    const bgmId = location.pathname.match(/\/subject\/(\d+)/)[1];
+    const [year, month] = getOnAirYearMonth();
+    const bgm = (await getBgmList(year, month)).get(bgmId);
 
-  if (!bgm) throw `bangumi #${bgmId} not found in bgmlist`;
-  
-  const sites = await getSiteInfo();
-  addOnAirSites(bgm, sites);
+    if (!bgm)
+      throw `#${bgmId} not found in bgmlist-${year}-${month}`;
+
+    const sites = await getSiteInfo();
+    addOnAirSites(bgm, sites);
+  } catch (err) {
+    console.log(`[bgmlist] ${err}`);
+  }
 });
 
