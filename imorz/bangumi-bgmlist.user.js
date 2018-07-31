@@ -3,7 +3,8 @@
 // @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.4.2
+// @version     0.4.3
+// @run-at      document-body
 // ==/UserScript==
 
 const BGMLIST_URL = 'https://bgmlist.sorz.org/data/items/$Y/$M.json';
@@ -30,7 +31,7 @@ async function getBgmList(year, month) {
   const resp = await fetch(url, FETCH_PARAMS);
   if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
   let list = await resp.json();
-  bgms = new Map(
+  let bgms = new Map(
     list.map(bgm => {
       if (!bgm.sites) return;
       const site = bgm.sites.find(s => s.site == 'bangumi');
@@ -55,7 +56,7 @@ function addInfoRow(title, links) {
   ta.innerHTML = '<a class="l"></a>';
   let a = ta.content.firstChild;
   let dot = document.createTextNode("、");
- 
+
   links.forEach(([href, title]) => {
     a.href = href;
     a.innerText = title;
@@ -63,7 +64,7 @@ function addInfoRow(title, links) {
     li.appendChild(dot.cloneNode());
   });
   li.lastChild.remove();
-  
+
   let row = document.importNode(tli.content, true);
   $("#infobox").appendChild(row);
 }
