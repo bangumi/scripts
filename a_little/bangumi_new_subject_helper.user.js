@@ -6,15 +6,10 @@
 // @description:zh-cn 辅助创建Bangumi黄油条目
 // @include     http://www.getchu.com/soft.phtml?id=*
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
-// @include     http://bangumi.tv/subject/*/add_related/person
-// @include     http://bangumi.tv/subject/*/edit_detail
-// @include     https://bgm.tv/subject/*/add_related/person
-// @include     https://bgm.tv/subject/*/edit_detail
-// @include     https://cse.google.com/cse/home?cx=008561732579436191137:pumvqkbpt6w
 // @include     /^https?:\/\/erogamescape\.(?:ddo\.jp|dyndns\.org)\/~ap2\/ero\/toukei_kaiseki\/(.*)/
 // @include     http://122.219.133.135/~ap2/ero/toukei_kaiseki/*
 // @include     http://www.dmm.co.jp/dc/pcgame/*
-// @version     0.3.9
+// @version     0.3.11
 // @note        0.3.0 增加上传人物肖像功能，需要和bangumi_blur_image.user.js一起使用
 // @note        0.3.1 增加在Getchu上点击检测条目是否功能存在，若条目存在，自动打开条目页面。
 // @note        0.3.3 增加添加Getchu游戏封面的功能，需要和bangumi_blur_image.user.js一起使用
@@ -30,7 +25,6 @@
 // @require     https://cdn.staticfile.org/fuse.js/2.6.2/fuse.min.js
 // ==/UserScript==
 
-// /^https?:\/\/(ja|en)\.wikipedia\.org\/wiki\/.*$/
 
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -323,6 +317,10 @@ var getImageBase64 = __webpack_require__(5);
             if (alist.length === 2) charaData[alist[0]] = alist[1];
           });
         }
+        var c = t.match(/(?:スリーサイズ.)(B.*W.*H\d\d)/);
+        if (c && c.length > 1) {
+          charaData['スリーサイズ'] = c[1];
+        }
       });
       // get hiragana name, cv
       var charatext = $p.text();
@@ -396,21 +394,7 @@ var getImageBase64 = __webpack_require__(5);
     $('.new-subject').click(saveSubjectInfo);
     $('.new-character').click(saveCharacterInfo);
   }
-  var google = {
-    init: function init() {
-      var selfInvokeScript = document.createElement("script");
-      selfInvokeScript.innerHTML = "(" + google.fillForm.toString() + ")(" + GM_getValue('subjectData') + ");";
-      document.body.appendChild(selfInvokeScript);
-    },
-    fillForm: function fillForm(data) {
-      // need google api load, to get elements you can use getAllElements()
-      // https://developers.google.com/custom-search/docs/element#cse-element
-      window.onload = function () {
-        var element = google.search.cse.element.getElement("standard0");
-        element.execute(data.subjectName);
-      };
-    }
-  };
+
   var bangumi = {
     init: function init() {
       addStyle();
@@ -445,8 +429,7 @@ var getImageBase64 = __webpack_require__(5);
       setTimeout(function () {
         $('#showrobot').click();
       }, 300);
-      console.log($('.fill-form').text());
-      $('.fill-form').click(function () {
+      var handleClick = function handleClick() {
         window.NormaltoWCODE();
         setTimeout(function () {
           if ($('#subject_infobox')) {
@@ -473,34 +456,19 @@ var getImageBase64 = __webpack_require__(5);
             window.WCODEtoNormal();
           }
         }, 1000);
-      });
-    },
-    // another way to fill form, this way is directly
-    fillFormAnother: function fillFormAnother(data) {
-      var pNode = $('.settings .inputtext').eq(0);
-      if (data.subjectName && pNode) {
-        pNode.val(data.subjectName);
-      }
-      if (data.subjectStory) {
-        $('#subject_summary').val(data.subjectStory);
-      }
-      setTimeout(function () {
-        $('#showrobot').click();
-      }, 300);
-      console.log($('.fill-form').text());
-      $('.fill-form').click(function () {
-        var inputtext = $('#infobox_normal').find('.inputtext.prop');
-        if (data['ジャンル']) {
-          inputtext.eq(3).get(0).value = data['ジャンル'];
-        }
-        if (data['発売日']) {
-          inputtext.eq(6).get(0).value = data['発売日'];
-        }
-        if (data['ブランド']) {
-          $('#infobox_normal').find('.inputtext.id').eq(9).attr('value', '开发');
-          inputtext.eq(9).attr('value', data['ブランド']);
-        }
-      });
+      };
+      $('.fill-form').click(handleClick);
+      var autoFillForm = function autoFillForm(handler) {
+        var config = { attributes: true, childList: true, subtree: true };
+        var callback = function callback() {
+          handler();
+          window.E_USERJS_OBSERVER.disconnect();
+        };
+        var targetNode = document.querySelector('#infobox_normal');
+        window.E_USERJS_OBSERVER = new MutationObserver(callback);
+        E_USERJS_OBSERVER.observe(targetNode, config);
+      };
+      autoFillForm(handleClick);
     },
     fillFormCharacter: function fillFormCharacter(data) {
       var pNode = $('.settings .inputtext').eq(0);
@@ -513,7 +481,7 @@ var getImageBase64 = __webpack_require__(5);
       setTimeout(function () {
         $('#showrobot').click();
       }, 300);
-      $('.fill-form').click(function () {
+      var handleClick = function handleClick() {
         window.NormaltoWCODE();
         if ($('#preview').length) {
           var canvas = document.getElementById('preview');
@@ -528,7 +496,6 @@ var getImageBase64 = __webpack_require__(5);
         }
         setTimeout(function () {
           if ($('#subject_infobox')) {
-            // ["{{Infobox Crt", "|简体中文名= ", "|别名={", "[第二中文名|]", "[英文名|]", "[日文名|]", "[纯假名|]", "[罗马字|]", "[昵称|]", "}", "|性别= ", "|生日= ", "|血型= ", "|身高= ", "|体重= ", "|BWH= ", "|引用来源= ", "}}"]
             var infobox = ["{{Infobox Crt", "|简体中文名= ", "|别名={", "[第二中文名|]", "[英文名|]"];
             var crt_infodict = {
               '年齢': '年龄',
@@ -559,21 +526,19 @@ var getImageBase64 = __webpack_require__(5);
             window.WCODEtoNormal();
           }
         }, 1000);
-        /*
-         * solution one: fill basic information
-         var $text = $('.inputtext.prop');
-         $text.eq(4).val(data['日文名']);
-         if (data.hiraganaName)
-         $text.eq(5).val(data.hiraganaName);
-         var alist = ['性别', '生日', '血型', '身高', '体重', 'BWH', '引用来源'];
-         var inputtext = $text.filter(':gt(7)');
-         alist.forEach(function(element, index) {
-         if (data[element]) {
-         inputtext.eq(index).val(data[element]);
-         }
-         });
-         */
-      });
+      };
+      $('.fill-form').click(handleClick);
+      var autoFillForm = function autoFillForm(handler) {
+        var config = { attributes: true, childList: true, subtree: true };
+        var callback = function callback() {
+          handler();
+          window.E_USERJS_OBSERVER.disconnect();
+        };
+        var targetNode = document.querySelector('#infobox_normal');
+        window.E_USERJS_OBSERVER = new MutationObserver(callback);
+        E_USERJS_OBSERVER.observe(targetNode, config);
+      };
+      autoFillForm(handleClick);
     },
     addNode: function addNode() {
       $('<span>').attr({ class: 'fill-form' }).text('填表').insertAfter($('.settings .alarm').eq(0));
@@ -667,14 +632,18 @@ var getImageBase64 = __webpack_require__(5);
         this.creadIcon({ href: "https://cse.google.com/cse/home?cx=008561732579436191137:pumvqkbpt6w", target: "_blank", class: 'search-google' }, "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB5klEQVQ4jYWTzWsTYRCH9yLYePL/EAlisEQvtlC13irUVagHBUX0omAv3oQqHiooTeiiudTvtaiIVZGqlHoRtB+StrE9yYK0mw8ipLG7mcnjIdmYL8nA7/bOM/Obd8YwmsL3/T0iYqnqmqr6Va2KyDgQbn5fCyAkIgk6hIhYjuN0tUueBSh7HsXJh+TOD5HuP4B7KEru7Ek2n05Q9rwAMtMACSqru07ujInbG2mr/PDF+k7Ga56DytnTg7i9EdJH9lO4F8P/Po+fXKSQiJM9NYA4P5sdhQ0RsQBK83fIDOzD7evGTy60mldtN4+4oaprAPIlgvcqRPHBhU5zrGNqylBVH6D0cQel6W2UM28aHvWMFFp01f4TALx/gA+hCiA91RFw5VEjYBXg9+ddZKd38nJx9L8tX3u+Rc9IgdGprQCwYlQ3jG/LNzlsH6XbHmTOXWpJTv1S+m5UOphNSTDEMQMIA3jic/ztJfY+OUbUNrm9MMHXjSRz7jJ3kzb99y0OXs9zLlGkXK5APc/bHSySBbCxmcGsQtrJfHGL9Xw5qB6rbaLjOF0iMgPgqc/jH68Zej9M9JlJ1DY58e4yiaVJiqWtIPkTsL3hHqoQq8PXIyKxluSmwwqLSFxVU6rqVbUiImM1z3XxF/9k+3A9su/8AAAAAElFTkSuQmCC").insertBefore($('#headerSearch .search'));
       },
       registerEvent: function registerEvent() {
-        $('.search-baidu').mouseover(function () {
-          if ($('#search_text').val()) {
-            $(this).attr('href', "http://www.baidu.com/s?&ie=UTF-8&oe=UTF-8&cl=3&rn=100&wd=%20%20" + encodeURIComponent($("#search_text").val()) + " site:bangumi.tv");
+        $('.search-baidu').click(function (e) {
+          var v = $('#search_text').val();
+          if (v) {
+            e.preventDefault();
+            GM_openInTab('http://www.baidu.com/s?&ie=UTF-8&oe=UTF-8&cl=3&rn=100&wd=%20%20' + (encodeURIComponent(v) + " site:bangumi.tv"));
           }
         });
-        $('.search-google').mouseover(function () {
-          if ($('#search_text').val()) {
-            GM_setValue({ "subjectData": JSON.stringify({ subjectName: $('#search_text').val() }) });
+        $('.search-google').click(function (e) {
+          var v = $('#search_text').val();
+          if (v) {
+            e.preventDefault();
+            GM_openInTab('https://cse.google.com/cse/publicurl?cx=008561732579436191137:pumvqkbpt6w&query=' + encodeURIComponent(v));
           }
         });
       }
@@ -867,15 +836,12 @@ var getImageBase64 = __webpack_require__(5);
   };
 
   var init = function init() {
-    var re = new RegExp(['getchu', 'google', 'bangumi', 'bgm', 'chii', 'erogamescape', 'dmm', '219\.66', 'wikipedia'].join('|'));
+    var re = new RegExp(['getchu', 'bangumi', 'bgm', 'chii', 'erogamescape', 'dmm', '219\.66', 'wikipedia'].join('|'));
     var page = document.location.href.match(re);
     if (page) {
       switch (page[0]) {
         case 'getchu':
           getchu.init();
-          break;
-        case 'google':
-          google.init();
           break;
         case 'erogamescape':
           erogamescape.init();
