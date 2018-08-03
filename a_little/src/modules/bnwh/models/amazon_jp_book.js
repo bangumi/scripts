@@ -25,7 +25,7 @@ amazonSubjectModel.itemList.push(
     category: 'subject_title'
   },
   {
-    name: 'JAN',
+    name: 'ASIN',
     selector: '#detail_bullets_id .bucket .content',
     subSelector: 'li',
     keyWord: 'ISBN-10',

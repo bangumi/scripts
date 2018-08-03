@@ -148,6 +148,10 @@ var bangumi = {
         case 'new_subject':
           var $t = document.querySelector('form[name=create_subject] [name=subject_title]').parentElement
           this.insertBtn($t);
+          setTimeout(() => {
+            var subjectData = JSON.parse(GM_getValue('subjectData'));
+            fillInfoBox(subjectData);
+          }, 300);
           break;
         case 'add_related':
           // this.addRelated();

@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.6
+// @version     0.0.7
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -325,6 +325,10 @@ var bangumi = {
         case 'new_subject':
           var $t = document.querySelector('form[name=create_subject] [name=subject_title]').parentElement;
           this.insertBtn($t);
+          setTimeout(function () {
+            var subjectData = JSON.parse(GM_getValue('subjectData'));
+            fillInfoBox(subjectData);
+          }, 300);
           break;
         case 'add_related':
           // this.addRelated();
@@ -1721,7 +1725,7 @@ amazonSubjectModel.itemList.push({
   keyWord: '',
   category: 'subject_title'
 }, {
-  name: 'JAN',
+  name: 'ASIN',
   selector: '#detail_bullets_id .bucket .content',
   subSelector: 'li',
   keyWord: 'ISBN-10',
