@@ -262,6 +262,8 @@ async function handleClick(config, checkFlag) {
       subjectCover = await getImageBase64(coverInfo.coverURL);
     }
     var subType = getInfoTool.getSubType(config.subType);
+    // 重置自动填表
+    GM_setValue('disableAutofill', 0);
     GM_setValue('subjectData', JSON.stringify({
       subjectInfoList: subjectInfoList,
       subjectCover: subjectCover,
@@ -323,11 +325,16 @@ var bangumi = {
       addStyle();
       switch (page[0]) {
         case 'new_subject':
+          // 非添加新书页面返回
+          if (!/new_subject\/1/.test(document.location.pathname)) return;
           var $t = document.querySelector('form[name=create_subject] [name=subject_title]').parentElement;
           this.insertBtn($t);
+          var disableAutofill = GM_getValue('disableAutofill');
+          if (disableAutofill) return;
           setTimeout(function () {
             var subjectData = JSON.parse(GM_getValue('subjectData'));
             fillInfoBox(subjectData);
+            GM_setValue('disableAutofill', 1);
           }, 300);
           break;
         case 'add_related':
@@ -354,6 +361,20 @@ var bangumi = {
       var subjectData = JSON.parse(GM_getValue('subjectData'));
       fillInfoBox(subjectData);
     }, false);
+
+    var $cancel = $s.cloneNode();
+    $cancel.innerHTML = '取消';
+    $cancel.addEventListener('click', function () {
+      document.querySelectorAll('input[name=platform]').forEach(function (element) {
+        element.checked = false;
+      });
+      var $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+      $wikiMode.click();
+      document.querySelector('#subject_infobox').value = '{{Infobox animanga/Manga\n|\u4E2D\u6587\u540D=\n|\u4F5C\u8005= * \n|\u51FA\u7248\u793E= *\n|\u4EF7\u683C=\n|\u4F5C\u753B=\n|\u5176\u4ED6\u51FA\u7248\u793E=\n|\u8FDE\u8F7D\u6742\u5FD7=\n|\u53D1\u552E\u65E5=\n|\u9875\u6570=\n|\u8BDD\u6570=\n|\u5176\u4ED6=\n}}\n      ';
+      document.querySelector('#columnInSubjectA [name=subject_title]').value = '';
+      document.querySelector('#subject_summary').value = '';
+    });
+    $t.appendChild($cancel);
   }
 };
 

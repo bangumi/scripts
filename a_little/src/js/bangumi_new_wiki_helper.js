@@ -84,6 +84,8 @@ async function handleClick(config, checkFlag) {
       subjectCover = await getImageBase64(coverInfo.coverURL);
     }
     var subType = getInfoTool.getSubType(config.subType);
+    // 重置自动填表
+    GM_setValue('disableAutofill', 0);
     GM_setValue('subjectData', JSON.stringify({
       subjectInfoList,
       subjectCover,
@@ -146,11 +148,16 @@ var bangumi = {
       addStyle();
       switch (page[0]) {
         case 'new_subject':
+          // 非添加新书页面返回
+          if (!/new_subject\/1/.test(document.location.pathname)) return;
           var $t = document.querySelector('form[name=create_subject] [name=subject_title]').parentElement
           this.insertBtn($t);
+          const disableAutofill = GM_getValue('disableAutofill');
+          if (disableAutofill) return;
           setTimeout(() => {
-            var subjectData = JSON.parse(GM_getValue('subjectData'));
+            let subjectData = JSON.parse(GM_getValue('subjectData'));
             fillInfoBox(subjectData);
+            GM_setValue('disableAutofill', 1);
           }, 300);
           break;
         case 'add_related':
@@ -224,6 +231,33 @@ var bangumi = {
       let subjectData = JSON.parse(GM_getValue('subjectData'));
       fillInfoBox(subjectData);
     }, false);
+
+    var $cancel = $s.cloneNode();
+    $cancel.innerHTML = '清空';
+    $cancel.addEventListener('click', () => {
+    document.querySelectorAll('input[name=platform]').forEach(element => {
+      element.checked = false;
+    });
+    var $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+    $wikiMode.click();
+    document.querySelector('#subject_infobox').value = `{{Infobox animanga/Manga
+|中文名=
+|作者= * 
+|出版社= *
+|价格=
+|作画=
+|其他出版社=
+|连载杂志=
+|发售日=
+|页数=
+|话数=
+|其他=
+}}
+      `;
+      document.querySelector('#columnInSubjectA [name=subject_title]').value = '';
+      document.querySelector('#subject_summary').value = '';
+    });
+    $t.appendChild($cancel);
   }
 }
 
