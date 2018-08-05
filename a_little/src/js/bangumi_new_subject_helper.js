@@ -263,6 +263,8 @@ const getImageBase64 = require('../utils/getImageBase64');
       if (page) {
         switch (page[0]) {
           case 'new_subject':
+            // 非添加新书页面返回
+            if (!/new_subject\/4/.test(document.location.pathname)) return;
             this.newSubject();
             break;
           case 'add_related':
@@ -311,6 +313,7 @@ const getImageBase64 = require('../utils/getImageBase64');
             infobox.push("}}");
             $('#subject_infobox').val(infobox.join('\n'));
             window.WCODEtoNormal();
+            $('[name=subject_nsfw]').attr('checked', true);
           }
         }, 1000);
       };
