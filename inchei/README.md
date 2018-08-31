@@ -15,3 +15,7 @@
 使繁体搜索页面跳转到简体搜索页面，避免搜索不到准确的内容。
 
 ![预览](https://i.loli.net/2018/08/25/5b80e3b420470.gif)
+
+## [bangumi thickbox 计数](https://greasyfork.org/zh-TW/scripts/371758-bangumi-thickbox-counter)
+
+显示吐槽箱剩余的字数（目前只可用于 subject 页）。

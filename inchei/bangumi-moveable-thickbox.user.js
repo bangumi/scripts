@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Bangumi Moveable Thickbox
-// @namespace    https://github.com/bangumi/scripts/inchei
-// @version      1.0.1
-// @description  使bangumi的thickbnox可移动
+// @namespace    https://github.com/bangumi/scripts/tree/master/inchei
+// @version      1.0.2
+// @description  使 bangumi 的 thickbnox 可移動
+// @icon         https://bgm.tv/img/favicon.ico
 // @author       inchei
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
-// @grant       GM_addStyle
-// @require https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js
-// @require https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
+// @grant        GM_addStyle
+// @require      https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js
+// @require      https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js
 // ==/UserScript==
 GM_addStyle( `
     #TB_title {
@@ -22,8 +23,10 @@ GM_addStyle( `
     var winHrefKey = new RegExp("^https?://((bgm|bangumi).tv|chii.in)/(.*(wish|collect|do|on_hold|dropped|works))?$");
     for (var i = 0; i < TB.length; i++) {
         TB[i].addEventListener("click", function() {
-            if (winHrefKey.test(winHref))
+            if (winHrefKey.test(winHref)) {
+                //應對<iframe>坐標不同而使用了外挂的無奈之舉，歡迎改進
                 $("#TB_window").draggable();
+            }
             else {
                 var params = {
                     left: 0,
@@ -84,6 +87,5 @@ GM_addStyle( `
                 startDrag(oBar, oBox);
             }
         });
-
     }
 })();
