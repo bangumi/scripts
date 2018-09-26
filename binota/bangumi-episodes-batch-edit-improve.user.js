@@ -14,7 +14,7 @@ const $ = selector => document.querySelector(selector);
 const $a = selector => document.querySelectorAll(selector);
 
 const chunk = (input, size) => input.reduce((arr, item, idx) => idx % size === 0 ? [...arr, [item]] : [...arr.slice(0, -1), [...arr.slice(-1)[0], item]], []);
-const say = str => window.chiiLib.ukagaka.presentSpeech(str);
+const say = str => unsafeWindow.chiiLib.ukagaka.presentSpeech(str);
 
 const baseUrl = `${window.location.pathname.match(/^\/subject\/\d+\/ep/).find(() => true)}/edit_batch`;
 const csrfToken = $('[name=formhash]').value;
