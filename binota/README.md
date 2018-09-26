@@ -1,6 +1,10 @@
 # [binota](https://bgm.tv/user/binota)
 如果没特别标注的话，我的脚本一律用 MIT License。
 
+## [章节批量编辑增强 BEBEI](bangumi-episodes-batch-edit-imporve.user.js?raw=true)
+讨论帖[戳我](https://bgm.tv/group/topic/347039)
+一次可编辑超过 20 个章节
+
 ## [修正放送的绿色格子时间 BGBI ](bangumi-green-block-improve.user.js?raw=true)
 讨论帖[戳我](https://bgm.tv/group/topic/341661)
 
