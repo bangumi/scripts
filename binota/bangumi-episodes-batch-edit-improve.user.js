@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bebei
 // @description 章节批量编辑增强
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/subject\/\d+\/ep(\/edit_batch)?/
-// @version     0.1.0
+// @version     0.1.1
 // @grant       none
 // @author      BinotaLIU
 // ==/UserScript==
