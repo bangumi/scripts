@@ -12,7 +12,7 @@
 - 在表格编辑器中粘贴多行文本时, 会覆盖当前和下方的单元格 (类似Excel)
 - 表格编辑器和文本编辑器一样可多次撤销
 
-[压缩build](bgm-eps-editor.min.user.js) / [未压缩build](bgm-eps-editor.user.js)
+[未压缩build](bgm-eps-editor.user.js) / 如需要压缩build可以clone后自行webpack
 
 ## 如何编译
 
