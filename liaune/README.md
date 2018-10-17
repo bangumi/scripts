@@ -48,8 +48,15 @@
 讨论页面：https://bgm.tv/group/topic/347970
 
 - 在角色和人物后面显示❤收藏图标，方便快捷地收藏角色
-- 前往自己的角色收藏页面，点击“收藏”可以将已收藏的角色添加到localstorage
-- 使用之前可以先安装 [User Detail](https://github.com/bangumi/scripts/tree/master/yonjar#user-content-%E7%94%A8%E6%88%B7%E8%AF%A6%E6%83%85%E7%88%AC%E5%8F%96)，因为采用了相同的localstorage
+- 前往自己的角色收藏页面，点击“收藏”可以将已收藏的角色添加到 localstorage
+- 使用之前可以先安装 [User Detail](https://github.com/bangumi/scripts/tree/master/yonjar#user-content-%E7%94%A8%E6%88%B7%E8%AF%A6%E6%83%85%E7%88%AC%E5%8F%96)，因为采用了相同的 localstorage
+
+## [好友统计](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%E5%A5%BD%E5%8F%8B%E7%BB%9F%E8%AE%A1.user.js)
+
+- 显示好友的最近一条Timeline时间，显示总好友数、活跃好友数，3天内有更新Timeline的：Active，100天内有更新Timeline的：Alive，100天以上没更新Timeline的：M.I.T(Missing In Time)；
+- 显示好友的注册时间，08-10：Senior，11-13：Junior，14-16：Sophomore，17-：Freshman；
+- 显示好友与自己的共同爱好数量和同步率，根据一定的公式计算出高同步率的好友。
+
 
 ## [Endless MAGI](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20Endless%20MAGI.user.js)
 
