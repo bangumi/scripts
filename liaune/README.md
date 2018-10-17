@@ -57,8 +57,24 @@
 - 显示好友的注册时间，08-10：Senior，11-13：Junior，14-16：Sophomore，17-：Freshman；
 - 显示好友与自己的共同爱好数量和同步率，根据一定的公式计算出高同步率的好友。
 
+## [Bangumi Show Watching Days](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%20show%20watching%20days.user.js)
+
+- 首页显示在看条目的已看天数,收藏页面显示条目的已看天数和完成天数，开始看的时间可以修改和保存
+- 先去“在看”页面或Timeline获取时间方可正常使用
+
+## [Bangumi Table List](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20table%20list.user.js)
+
+- 在条目列表点击表格图标可以表格形式显示列表
+
+## [条目评分排名历史记录](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%E6%9D%A1%E7%9B%AE%E8%AF%84%E5%88%86%E6%8E%92%E5%90%8D%E5%8E%86%E5%8F%B2%E8%AE%B0%E5%BD%95.user.js)
+
+- 在浏览条目列表时记录条目的评分排名信息，在Rank上显示
+
+## [目录条目名中文化](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%E7%9B%AE%E5%BD%95%E6%9D%A1%E7%9B%AE%E5%90%8D%E4%B8%AD%E6%96%87%E5%8C%96.user.js)
+
+- 目录条目名中文化，暂时不支持人物和章节
 
 ## [Endless MAGI](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20Endless%20MAGI.user.js)
 
--为已完成终极试炼的人开启无尽试炼
+- 为已完成终极试炼的人开启无尽试炼
 
