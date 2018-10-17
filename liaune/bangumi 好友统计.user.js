@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi 好友统计
 // @namespace    https://bgm.tv/user/liaune
-// @version      0.3
+// @version      0.4
 // @description  显示好友的最近一条Timeline时间，显示总好友数、活跃好友数，3天内有更新Timeline的：Active，100天内有更新Timeline的：Alive，100天以上没更新Timeline的：M.I.T(Missing In Time)；显示好友的注册时间，08-10：Senior，11-13：Junior，14-16：Sophomore，17-：Freshman；显示好友与自己的共同爱好数量和同步率，根据一定的公式计算出高同步率的好友。
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/user\/.*\/(friends|rev_friends)
@@ -38,8 +38,9 @@ background-color: rgba(255, 214, 218, 0.8)!important;
 color:blue;
 }
 `);
-    let active_friends=0, alive_friends=0, dead_friends=0, similar_friends=0,count_simi=0,senior=0,junior=0,sophomore=0,freshman=0,sortstyle=1,update=0,count=0,args=0;
-    const itemsList = document.querySelectorAll('#memberUserList  li.user');
+
+    let active_friends=0, alive_friends=0, dead_friends=0, similar_friends=0,count_simi=0,count_commen=0,senior=0,junior=0,sophomore=0,freshman=0,sortstyle=1,update=0,count=0,args=0;
+    let itemsList = document.querySelectorAll('#memberUserList  li.user');
     document.querySelector('#friend_flag').innerHTML =itemsList.length+"个好友&nbsp;&nbsp;&nbsp;";
     //统计好友活跃状态
     const showBtn = document.createElement('a');
@@ -74,6 +75,13 @@ color:blue;
     showBtn4.className = 'chiiBtn';
     showBtn4.href='javascript:;';
     showBtn4.textContent = '更新';
+    //共同评分与差异度
+    const showBtn5 = document.createElement('a');
+    showBtn5.addEventListener('click', showCommenRate.bind(), false);
+    showBtn5.className = 'chiiBtn';
+    showBtn5.href='javascript:;';
+    showBtn5.textContent = '评分差异度';
+    document.querySelector('#friend_flag').append(showBtn5);
 
     function Update(){
         update=1;
@@ -100,6 +108,9 @@ color:blue;
                 let Similar = dateString.match(/(\d+)/)[1];
                 let Similarity = Percent / (170*Math.pow(Similar,-0.35));
                 return parseInt(Similarity*100);}
+            else if(dateString.match(/差异/)){
+                let Similarity = dateString.match(/(\d{1,2}\.\d{1,2})/)[1];
+                return parseInt(Similarity*100);}
             else{
                 let d = dateString.match(/(\d{1,2})d/)?dateString.match(/(\d{1,2})d/)[1]:0;
                 let h = dateString.match(/(\d{1,2})h/)?dateString.match(/(\d{1,2})h/)[1]:0;
@@ -108,13 +119,25 @@ color:blue;
                 return time;
             }
         }
-        [].slice.call(document.querySelectorAll('li.user span.rank:last-child small'), 0)
+        /*  [].slice.call(document.querySelectorAll('li.user span.rank:last-child small'), 0)
             .map(x => [x.textContent, x])
             .sort((x,y) => (myParseDate(x[0]) - myParseDate(y[0]))*sortstyle)
-            .forEach((x,n) => x[1].parentNode.parentNode.parentNode.style.order = n);
+            .forEach((x,n) => x[1].parentNode.parentNode.parentNode.style.order = n);*/
+        let arr=[];
+        for(i=0;i<itemsList.length;i++)   arr[i]=itemsList[i];
+        arr.sort(function(li1,li2){
+            let n1=li1.querySelector('span.rank:last-child small')? myParseDate(li1.querySelector('span.rank:last-child small').textContent): null;
+            let n2=li2.querySelector('span.rank:last-child small')? myParseDate(li2.querySelector('span.rank:last-child small').textContent): null;
+            return (n1-n2)*sortstyle;
+        });
+        for(i=0; i<arr.length; i++)
+        {
+            $('#memberUserList').append(arr[i]);
+        }
     }
 
     function showsignup(){
+        itemsList = document.querySelectorAll('#memberUserList  li.user');
         showBtn1.style.display="none";
         showBtn3.style.display="none";
         args=2;
@@ -166,6 +189,7 @@ color:blue;
     }
 
     function ShowTime(){
+        itemsList = document.querySelectorAll('#memberUserList  li.user');
         showBtn.style.display="none";
         showBtn3.style.display="none";
         args=1;
@@ -225,8 +249,10 @@ color:blue;
     }
 
     function showSimilar(){
+        itemsList = document.querySelectorAll('#memberUserList  li.user');
         showBtn2.style.display="none";
         showBtn3.style.display="none";
+        similar_friends=0;
         args=3;
         if(!update) showBtn4.style.display="none";
         itemsList.forEach( (elem, index) => {
@@ -277,6 +303,39 @@ color:blue;
                     showBtn4.style.display="inline-block";
                     document.querySelector('#friend_flag').append(showBtn4);}
             }
+        });
+    }
+
+    function showCommenRate(){
+        itemsList = document.querySelectorAll('#memberUserList  li.user');
+        showBtn5.style.display="none";
+        showBtn3.style.display="none";
+        similar_friends=0;
+        itemsList.forEach( (elem, index) => {
+            let href = elem.querySelector('a.avatar').href;
+            let ID = href.split('/user/')[1];
+            if(localStorage.getItem(ID+'CommenRated')){
+                let show_Commen =  document.createElement('span');
+                show_Commen.className = 'rank';
+                let CommenRated = localStorage.getItem(ID+'CommenRated');
+                let RateDiff = localStorage.getItem(ID+'RateDiff');
+                if(CommenRated >=20 && RateDiff<=1) {
+                    show_Commen.style.color='blue';
+                    show_Commen.style.fontWeight='bold';
+                    similar_friends+=1;
+                }
+                let show_CommenRated = ''+CommenRated+' / 差异：'+RateDiff+'';
+                show_Commen.innerHTML = `<p></p><small>${show_CommenRated}</small>`;
+                document.querySelector('#friend_flag').childNodes[0].nodeValue =itemsList.length+"个好友   "+" 评分相似的好友:"+similar_friends+' ';
+                elem.querySelector('div.userContainer').append(show_Commen);
+            }
+            count_commen+=1;
+            if(count_commen==itemsList.length){
+                showBtn3.textContent = '排序';
+                showBtn3.style.display="inline-block";
+                document.querySelector('#friend_flag').append(showBtn3);
+            }
+
         });
     }
 })();
