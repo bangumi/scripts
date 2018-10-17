@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         Bangumi Unlimited Pages
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.3
+// @version      0.5
 // @description  自动加载下页
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
-// @grant        GM_addStyle
 // ==/UserScript==
 
 (function() {
@@ -50,6 +49,7 @@
         loadAllLink.onclick = function(){
             loadAll = (loadAll==1)? 0 :1;
             loadAllLink.textContent = (loadAll==1) ? "Stop Loading All Pages" : "Load All Pages";
+            loadAllLink.setAttribute("style"," position: fixed;top: 500px;left: 50px");
             testScrollPosition();
         };
         //Adjust buffer height
@@ -92,6 +92,12 @@
 
                 //subject/reviews
                 function(src){ src = src.querySelector('#entry_list'); return src ? src : null; },
+
+                //comments
+                function(src){ src = src.querySelector('#comment_box'); return src ? src : null; },
+
+                //person characters
+                function(src){ src = src.querySelector('#columnCrtBrowserB .browserCrtList'); return src ? src : null; },
             ];
 
         for( var i = 0; i < tableFun.length; i++ )
