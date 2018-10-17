@@ -21,4 +21,11 @@
 - 支持按排名排序、时间排序、站内评分人数排序、好友评分排序
 - 采用了localStorage，可查看历史记录，大大缩短等待时间，减少了不必要的请求
 
+## [bangumi自动加载下页](https://github.com/bangumi/scripts/raw/master/liaune/bangumi_unlimited_pages.user.js)
+
+讨论页面：https://bgm.tv/group/topic/344601
+
+在有分页的页面，滚动到最下方，点击‘Auto Load Pages’，即可通过鼠标滚轮自动加载下一页；点击‘Load All Pages’，可自动加载所有分页，再次点击可停止
+新加载的页面不会自动加载其他脚本
+
 
