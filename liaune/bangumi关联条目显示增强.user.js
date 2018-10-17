@@ -68,12 +68,6 @@ border-radius: 4px
     const itemsList2 = document.querySelectorAll('#columnSubjectHomeB  ul.coversSmall li');
     const TotalItems=itemsList.length + itemsList2.length;
 
-    //修改柱状图高度
-    let votes_subject = document.querySelectorAll('.horizontalChart li a .count');
-    let vote_subject = new Array(); for(i=0;i<votes_subject.length;i++) vote_subject[i]=votes_subject[i].textContent.match(/\d+/)?votes_subject[i].textContent.match(/\d+/)[0]:0;
-    let largest=0; for(i=0;i<vote_subject.length;i++) {if(parseInt(vote_subject[i])>largest) largest=parseInt(vote_subject[i]);}
-    for(i=0;i<votes_subject.length;i++){height=parseFloat(parseInt(vote_subject[i])/largest*100).toFixed(2).toString(); votes_subject[i].style.height=height+'%';}
-
     //更新缓存数据
     const showBtn = document.createElement('a');
     showBtn.addEventListener('click', Update);
@@ -96,12 +90,14 @@ border-radius: 4px
             let href = elem.querySelector('a.avatar').href;
             let href1 = href.replace(/subject/,"update");
             let ID = href.split('/subject/')[1];
-            if(localStorage.getItem(ID+'Votes') && !update)
-                DisplayRank(localStorage.getItem(ID+'Rank'),index,1);
+            if(localStorage.getItem('Subject'+ID+'Status') && !update){
+                let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
+                DisplayRank(info.rankNum,index,1);
+            }
             else ShowRank(href,index,1);
             if(localStorage.getItem(ID+'Interest') && !update)
                 DisplayCollect(localStorage.getItem(ID+'Interest'),index,1);
-            else if(localStorage.getItem(ID+'Votes')>20 || !localStorage.getItem(ID+'Votes')) ShowCollect(href1,index,1);
+            else  ShowCollect(href1,index,1);
         });
 
         itemsList2.forEach( (elem, index) => {
@@ -110,13 +106,30 @@ border-radius: 4px
             let href = elem.querySelector('a').href;
             let href1 = href.replace(/subject/,"update");
             let ID = href.split('/subject/')[1];
-            if(localStorage.getItem(ID+'Votes') && !update)
-                DisplayRank(localStorage.getItem(ID+'Rank'),index,0);
+            if(localStorage.getItem('Subject'+ID+'Status') && !update){
+                let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
+                DisplayRank(info.rankNum,index,0);
+            }
             else ShowRank(href,index,0);
             if(localStorage.getItem(ID+'Interest') && !update)
                 DisplayCollect(localStorage.getItem(ID+'Interest'),index,0);
-            else if(localStorage.getItem(ID+'Votes')>20 || !localStorage.getItem(ID+'Votes')) ShowCollect(href1,index,0);
+            else  ShowCollect(href1,index,0);
 
+        });
+
+        let thisItem = window.location.href.replace(/subject/,"update");
+        fetch(thisItem,{credentials: "include"})
+            .then(data => {
+            return new Promise(function (resovle, reject) {
+                let targetStr = data.text();
+                resovle(targetStr);
+            });
+        })
+            .then(targetStr => {
+            let Match = targetStr.match(/"GenInterestBox\('(\S+?)'\)" checked="checked"/);
+            let interest = Match ? Match[1] : null;
+            let ID = thisItem.split('/update/')[1];
+            if(Match)  localStorage.setItem(ID+'Interest',interest);
         });
     }
 
@@ -145,7 +158,7 @@ border-radius: 4px
     function DisplayCollect(interest,index,args){
         let avatarNeue,pictureFrameGroup;
         if(args) avatarNeue = document.querySelectorAll('#columnSubjectHomeB  ul.browserCoverMedium li')[index].querySelector('span.avatarNeue');
-        else pictureFrameGroup = document.querySelectorAll('#columnSubjectHomeB  ul.coversSmall li')[index].querySelector('span.pictureFrameGroup');
+        else pictureFrameGroup = document.querySelectorAll('#columnSubjectHomeB  ul.coversSmall li')[index].querySelector('span.avatarNeue');
         if(interest=='wish'){
             if(args) avatarNeue.classList.add('wish');
             else pictureFrameGroup.classList.add('wish');
@@ -177,14 +190,27 @@ border-radius: 4px
             });
         })
             .then(targetStr => {
+            let ID = href.split('/subject/')[1];
+            //获取排名
             let canMatch = targetStr.match(/<small class="alarm">#(\S+?)<\/small>/);
             let rankNum =  canMatch ? parseInt(canMatch[1], 10) : null;
-            let ID = href.split('/subject/')[1];
-            if(canMatch)  localStorage.setItem(ID+'Rank',rankNum);
+
+            //获取站内评分和评分人数
+            let Match1 = targetStr.match(/<span class="number" property="v:average">(\S+?)<\/span>/);
+            let Point = Match1? parseFloat(Match1[1]) : null;
 
             let Match2 = targetStr.match(/<span property="v:votes">(\S+?)<\/span>/);
             let votes = Match2? parseInt(Match2[1]) : null;
-            if(Match2)  localStorage.setItem(ID+'Votes',votes);
+
+            //获取好友评分和评分人数
+            let Match3 = targetStr.match(/<span class="num">(\S+?)<\/span>/);
+            let Point_f = Match3? parseFloat(Match3[1]).toFixed(1) : null;
+
+            let Match4 = targetStr.match(/class="l">(\S+?) 人评分<\/a>/);
+            let Votes_f = Match4? parseFloat(Match4[1]) : null;
+
+            let info = {"rankNum": rankNum,"Point": Point,"Votes": votes,"Point_f": Point_f,"Votes_f": Votes_f};
+            localStorage.setItem('Subject'+ID+'Status',JSON.stringify(info));
 
             if(!update) DisplayRank(rankNum,index,args);
             else{
