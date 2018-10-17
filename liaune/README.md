@@ -1,8 +1,19 @@
 # [liaune](https://bgm.tv/user/liaune)
 
-## [bangumi关联条目显示增强](https://greasyfork.org/zh-CN/scripts/36607-bangumi%E5%85%B3%E8%81%94%E6%9D%A1%E7%9B%AE%E6%98%BE%E7%A4%BA%E5%A2%9E%E5%BC%BA)
+## [条目列表显示增强](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%E5%88%97%E8%A1%A8%E6%98%BE%E7%A4%BA%E5%A2%9E%E5%BC%BA.user.js)
 
-讨论页面：http://bgm.tv/group/topic/344547
+讨论页面：https://bgm.tv/group/topic/344034
+
+在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排名功能
+
+源于：[yonjar的脚本](https://github.com/bangumi/scripts/tree/master/yonjar)
+- 显示Rank，站内评分和评分人数，好友评分和评分人数
+- 支持按排名排序、时间排序、评分人数排序、好友评分排序
+- 采用了localStorage，可查看历史记录，大大缩短等待时间，减少了不必要的请求
+
+## [关联条目显示增强](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%E5%85%B3%E8%81%94%E6%9D%A1%E7%9B%AE%E6%98%BE%E7%A4%BA%E5%A2%9E%E5%BC%BA.user.js)
+
+讨论页面：https://bgm.tv/group/topic/344547
 
 显示条目页面关联条目的完成情况
 
@@ -10,22 +21,37 @@
 - 在关联条目下方显示Rank（若有）
 - 使用了localstorage，需要更新数据时请点击上方的“更新”按钮
 
-## [bangumi收藏列表显示增强](https://greasyfork.org/zh-CN/scripts/34234-bangumi%E6%94%B6%E8%97%8F%E5%88%97%E8%A1%A8%E6%98%BE%E7%A4%BA%E5%A2%9E%E5%BC%BA)
-
-讨论页面：http://bgm.tv/group/topic/344034
-
-在用户的收藏列表和目录页面下显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排名功能
-
-改编自：[yonjar的脚本](https://github.com/bangumi/scripts/tree/master/yonjar)
-- 显示Rank，站内评分和评分人数，好友评分和评分人数
-- 支持按排名排序、时间排序、站内评分人数排序、好友评分排序
-- 采用了localStorage，可查看历史记录，大大缩短等待时间，减少了不必要的请求
-
-## [bangumi自动加载下页](https://github.com/bangumi/scripts/raw/master/liaune/bangumi_unlimited_pages.user.js)
+## [自动加载下页](https://github.com/bangumi/scripts/raw/master/liaune/bangumi_unlimited_pages.user.js)
 
 讨论页面：https://bgm.tv/group/topic/344601
 
-在有分页的页面，滚动到最下方，点击‘Auto Load Pages’，即可通过鼠标滚轮自动加载下一页；点击‘Load All Pages’，可自动加载所有分页，再次点击可停止
-新加载的页面不会自动加载其他脚本
+- 在有分页的页面，滚动到最下方，点击‘Auto Load Pages’，即可通过鼠标滚轮自动加载下一页；点击‘Load All Pages’，可自动加载所有分页，再次点击可停止
+- 新加载的页面不会自动加载其他脚本
+- Edge会乱码
 
+## [只看未完成条目](https://github.com/bangumi/scripts/raw/master/liaune/%E5%8F%AA%E7%9C%8B%E6%9C%AA%E5%AE%8C%E6%88%90%E6%9D%A1%E7%9B%AE.user.js)
+
+讨论页面：http://bgm.tv/group/topic/346158
+
+- 显示列表条目的完成状态，以不同的颜色区分。
+- 只看未完成条目，隐藏已完成和抛弃的列表条目，再次点击可完全显示。
+
+## [条目列表排序](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%E6%9D%A1%E7%9B%AE%E5%88%97%E8%A1%A8%E6%8E%92%E5%BA%8F.user.js)
+
+讨论页面：https://bgm.tv/group/topic/347962
+
+- 对条目列表进行按排名、人数、时间排序
+- 点击按人数和时间排序后，会出现筛选输入框，输入选择范围即可对当前列表进行筛选。注意输入正确的时间格式，如：xxxx 或 xxxx-xx-xx
+
+## [角色收藏](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%E8%A7%92%E8%89%B2%E6%94%B6%E8%97%8F.user.js)
+
+讨论页面：https://bgm.tv/group/topic/347970
+
+- 在角色和人物后面显示❤收藏图标，方便快捷地收藏角色
+- 前往自己的角色收藏页面，点击“收藏”可以将已收藏的角色添加到localstorage
+- 使用之前可以先安装 [User Detail](https://github.com/bangumi/scripts/tree/master/yonjar#user-content-%E7%94%A8%E6%88%B7%E8%AF%A6%E6%83%85%E7%88%AC%E5%8F%96)，因为采用了相同的localstorage
+
+## [Endless MAGI](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20Endless%20MAGI.user.js)
+
+-为已完成终极试炼的人开启无尽试炼
 
