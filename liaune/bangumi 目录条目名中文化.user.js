@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name        Bangumi-Index-ch
+// @name        Bangumi 目录条目名中文化
 // @namespace    https://github.com/bangumi/scripts/liaune
 // @author       upsuper，Liaune
 // @description  Bangumi 目录条目名中文化
 // @include     /^https?:\/\/((bgm|bangumi)\.tv|chii\.in)\/index\/\d+/
-// @version     1.0
+// @version     1.1
 // @grant       none
 // ==/UserScript==
 
@@ -12,9 +12,9 @@
 
   var localStorage = window.localStorage,
   localPrefix = 'ChineseName_',
-  // displayMode: 0 => Display Chinese
-  //            : 1 => Show Chinese as tip
-  displayMode = parseInt(localStorage[localPrefix + 'mode']);
+  // displayMode: 0 => Display Origin Name as subhead
+  //            : 1 => Show Origin Name as tip
+  displayMode = 0;
 
   function $(q) { return document.querySelector(q); }
   function $a(q) { return document.querySelectorAll(q); }
@@ -94,9 +94,13 @@
     displayChineseName($anchors, function (ch) {
       if (!ch) return;
       if (displayMode) {
-        this.title = ch;
-      } else {
+        this.innerHTML = ch;
         this.title = this.textContent;
+      } else {
+        let subhead = document.createElement('small');
+        subhead.className='grey';
+        subhead.innerHTML = this.textContent;
+        this.parentNode.appendChild(subhead);
         this.innerHTML = ch;
 
       }
