@@ -20,10 +20,13 @@
     itemsList.forEach( (elem, index) => {
       let topic = elem.querySelector('.inner a.avatar');
       let id = topic.href.split('/group/')[1]; 
+      let num = elem.querySelector('.inner small').innerText.match(/\d+/);
       if(parseInt(id)<newest-1000) 
         $(`<span style="color: white;background-color:black;border-radius: 4px;">坟</span>`).insertAfter(elem.querySelector('.inner small'));
       else if(parseInt(id)>=newest-5)
         $(`<span style="color: white;background-color:#ff3ba1;border-radius: 4px;">新</span>`).insertAfter(elem.querySelector('.inner small'));
+      if(parseInt(id)>=newest-250 && parseInt(num)>100)
+        $(`<span style="color: white;background-color:red;border-radius: 4px;">火</span>`).insertAfter(elem.querySelector('.inner small'));
     });
   }
   
