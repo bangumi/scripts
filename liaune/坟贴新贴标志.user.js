@@ -25,7 +25,7 @@
         $(`<span style="color: white;background-color:black;border-radius: 4px;">坟</span>`).insertAfter(elem.querySelector('.inner small'));
       else if(parseInt(id)>=newest-5)
         $(`<span style="color: white;background-color:#ff3ba1;border-radius: 4px;">新</span>`).insertAfter(elem.querySelector('.inner small'));
-      if(parseInt(id)>=newest-250 && parseInt(num)>100)
+      if(parseInt(id)>=newest-600 && parseInt(num)>100)
         $(`<span style="color: white;background-color:red;border-radius: 4px;">火</span>`).insertAfter(elem.querySelector('.inner small'));
     });
   }
