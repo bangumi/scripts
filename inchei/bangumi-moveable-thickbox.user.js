@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Moveable Thickbox
 // @namespace    https://github.com/bangumi/scripts/tree/master/inchei
-// @version      1.0.2
+// @version      1.0.3
 // @description  使 bangumi 的 thickbnox 可移動
 // @icon         https://bgm.tv/img/favicon.ico
 // @author       inchei
@@ -19,11 +19,10 @@ GM_addStyle( `
 ` );
 (function() {
     var TB = document.querySelectorAll(".thickbox");
-    var winHref = window.location.href;
-    var winHrefKey = new RegExp("^https?://((bgm|bangumi).tv|chii.in)/(.*(wish|collect|do|on_hold|dropped|works))?$");
+    var winHrefKey = new RegExp("^https?://((bgm|bangumi).tv|chii.in)/subject/*");
     for (var i = 0; i < TB.length; i++) {
         TB[i].addEventListener("click", function() {
-            if (winHrefKey.test(winHref)) {
+            if (!winHrefKey.test(window.location.href)) {
                 //應對<iframe>坐標不同而使用了外挂的無奈之舉，歡迎改進
                 $("#TB_window").draggable();
             }
