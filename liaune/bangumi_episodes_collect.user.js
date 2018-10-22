@@ -23,7 +23,7 @@
         localData = JSON.parse(localStorage.getItem('bgm_index_collected'));
 
     if(document.location.href.match(/settings/)){
-        $("#header ul").append('<li><a id="epcolletSetBtn" href="javascript:void(0);"><span>章节收藏</span></a></li>');
+        $("#header > ul").append('<li><a id="epcolletSetBtn" href="javascript:void(0);"><span>章节收藏</span></a></li>');
         $("#epcolletSetBtn").on("click", function() {
             $("#header").find("[class='selected']").removeClass("selected");
             $("#epcolletSetBtn").addClass("selected");
