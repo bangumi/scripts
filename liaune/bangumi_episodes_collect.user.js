@@ -32,72 +32,74 @@
             if(ep_index.ep_music) ep_music = ep_index.ep_music;
             if(ep_index.ep_real) ep_real = ep_index.ep_real;
             let  html = '<form>' +
-				   '<span class="text">' +
-				   '<table align="center" width="98%" cellspacing="0" cellpadding="5" class="settings">' +
-				   '<tbody>' +
-				   '<tr><td valign="top" width="23%">动画章节收藏目录</td>' +
-				   '<td valign="top"><input id="ep_anime" class="inputtext" type="text" value="' + ep_anime + '"></td></tr>' +
-				   '<tr><td valign="top" width="23%">音乐章节收藏目录</td>' +
-				   '<td valign="top"><input id="ep_music" class="inputtext" type="text" value="' + ep_music + '"></td></tr>' +
-				   '<tr><td valign="top" width="23%">三次元章节收藏目录</td>' +
-				   '<td valign="top"><input id="ep_real" class="inputtext" type="text" value="' + ep_real + '"></td></tr>' +
-				   '<td valign="top"><input id="submitBtn" class="inputBtn" value="确定" readonly unselectable="on" style="width:26px">' +
-				   '<a id="alert_submit" style="color: #F09199; font-size: 14px; padding: 20px"></a></td></tr>' +
-				   '</tbody></table>' +
-				   '</span>' +
-				   '</form>';
-        	$("#columnA").html(html);
-        	$("input[readonly]").on('focus', function() {
-			    $(this).trigger('blur');
-			});
-	        $("#submitBtn").on("click", function() {
-	        	ep_index.ep_anime = $("#ep_anime").attr("value");
-	        	ep_index.ep_music = $("#ep_music").attr("value");
-	        	ep_index.ep_real = $("#ep_real").attr("value");
+                '<span class="text">' +
+                '<table align="center" width="98%" cellspacing="0" cellpadding="5" class="settings">' +
+                '<tbody>' +
+                '<tr><td valign="top" width="23%">动画章节收藏目录</td>' +
+                '<td valign="top"><input id="ep_anime" class="inputtext" type="text" value="' + ep_anime + '"></td></tr>' +
+                '<tr><td valign="top" width="23%">音乐章节收藏目录</td>' +
+                '<td valign="top"><input id="ep_music" class="inputtext" type="text" value="' + ep_music + '"></td></tr>' +
+                '<tr><td valign="top" width="23%">三次元章节收藏目录</td>' +
+                '<td valign="top"><input id="ep_real" class="inputtext" type="text" value="' + ep_real + '"></td></tr>' +
+                '<td valign="top"><input id="submitBtn" class="inputBtn" value="确定" readonly unselectable="on" style="width:26px">' +
+                '<a id="alert_submit" style="color: #F09199; font-size: 14px; padding: 20px"></a></td></tr>' +
+                '</tbody></table>' +
+                '</span>' +
+                '</form>';
+            $("#columnA").html(html);
+            $("input[readonly]").on('focus', function() {
+                $(this).trigger('blur');
+            });
+            $("#submitBtn").on("click", function() {
+                ep_index.ep_anime = $("#ep_anime").attr("value");
+                ep_index.ep_music = $("#ep_music").attr("value");
+                ep_index.ep_real = $("#ep_real").attr("value");
                 localStorage.setItem('bgm_index_collected_ep',JSON.stringify(ep_index));
                 alert('保存成功！');
-	        });
+            });
 
         });
     }
 
     if(document.location.href.match(/ep\/\d+/)){
-        let epid = location.href.split('/ep/')[1].toString();
-        let showBtn = document.createElement('a');showBtn.className = 'l';showBtn.href='javascript:;';showBtn.textContent = '❤';
-        document.querySelector('#columnEpA h2.title').insertBefore(showBtn,document.querySelector('#columnEpA h2 small'));
+        let epid = location.href.match(/ep\/(\d+)/)[1].toString();
         let epclass = 'ep_'+ document.querySelector('#navMenuNeue a.focus').href.match(/(anime|music|real)/)[1];
         if(localData[epclass].includes(epid)){
+            let showBtn = document.createElement('a');showBtn.className = 'l';showBtn.href='javascript:;';showBtn.textContent = '❤';
+            document.querySelector('#columnEpA').insertBefore(showBtn,document.querySelector('#columnEpA h2'));
             let flag = 1;
-            $(showBtn).css({"font-size":"12px","color":"red"});
+            $(showBtn).css({"font-size":"18px","color":"red"});
             showBtn.addEventListener('click',function(){
                 flag = flag==1?0:1;
                 if(flag){
                     if(ep_index[epclass]!="")
                         $.post(ep_index[epclass]+"/add_related", {add_related: location.origin+"/ep/"+ epid, formhash: securitycode, submit: '添加新关联'});
                     localData[epclass].push(epid);
-                    $(showBtn).css({"font-size":"12px","color":"red"});
+                    $(showBtn).css({"font-size":"18px","color":"red"});
                 }
                 else{
                     localData[epclass].splice(localData[epclass].indexOf(epid),1);
-                    $(showBtn).css({"font-size":"12px","color":"grey"});
+                    $(showBtn).css({"font-size":"18px","color":"grey"});
                 }
                 localStorage.setItem('bgm_index_collected',JSON.stringify(localData));
             });
         }
         else{
+            let showBtn = document.createElement('a');showBtn.className = 'l';showBtn.href='javascript:;';showBtn.textContent = '❤';
+            document.querySelector('#columnEpA').insertBefore(showBtn,document.querySelector('#columnEpA h2'));
             let flag = 0;
-            $(showBtn).css({"font-size":"12px","color":"grey"});
-            showBtn.addEventListener('click', function(){
+            $(showBtn).css({"font-size":"18px","color":"grey"});
+            showBtn.addEventListener('click',function(){
                 flag = flag==1?0:1;
                 if(flag){
                     if(ep_index[epclass]!="")
                         $.post(ep_index[epclass]+"/add_related", {add_related: location.origin+"/ep/"+ epid, formhash: securitycode, submit: '添加新关联'});
                     localData[epclass].push(epid);
-                    $(showBtn).css({"font-size":"12px","color":"red"});
+                    $(showBtn).css({"font-size":"18px","color":"red"});
                 }
                 else{
                     localData[epclass].splice(localData[epclass].indexOf(epid),1);
-                    $(showBtn).css({"font-size":"12px","color":"grey"});
+                    $(showBtn).css({"font-size":"18px","color":"grey"});
                 }
                 localStorage.setItem('bgm_index_collected',JSON.stringify(localData));
             });
