@@ -51,6 +51,14 @@
 - 前往自己的角色收藏页面，点击“收藏”可以将已收藏的角色添加到 localstorage
 - 使用之前可以先安装 [User Detail](https://github.com/bangumi/scripts/tree/master/yonjar#user-content-%E7%94%A8%E6%88%B7%E8%AF%A6%E6%83%85%E7%88%AC%E5%8F%96)，因为采用了相同的 localstorage
 
+## [章节收藏](https://github.com/bangumi/scripts/raw/master/liaune/bangumi_episodes_collect.user.js)
+
+讨论页面：https://bgm.tv/group/topic/348036
+
+- 在章节页面标题后面添加收藏到自己的目录的图标，将动画、音乐、三次元的章节收藏到对应的目录
+- **使用之前请到个人设置页面定义目录地址**
+- **取消收藏并不能将章节从目录中移除，要移除需要前往目录删除**
+
 ## [好友统计](https://github.com/bangumi/scripts/raw/master/liaune/bangumi%20%E5%A5%BD%E5%8F%8B%E7%BB%9F%E8%AE%A1.user.js)
 
 - 显示好友的最近一条Timeline时间，显示总好友数、活跃好友数，3天内有更新Timeline的：Active，100天内有更新Timeline的：Alive，100天以上没更新Timeline的：M.I.T(Missing In Time)；
