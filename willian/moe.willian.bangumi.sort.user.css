@@ -1,0 +1,24 @@
+#prgManagerHeader ul#prgManagerOrder li a span {
+
+}
+#prgManagerHeader ul#prgManagerOrder li a.focus span {
+    filter: invert();
+}
+
+/* https://www.flaticon.com/free-icons/sort */
+
+/* https://icons8.com/icon/69920/sort-by-modified-date */
+#prgManagerHeader ul#prgManagerOrder li a#switchSmartOrder span {
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKaSURBVGhD7dlLyExhHMfxcS2KolxzS5SFpNwtWBAKZaVkI0VZocRCoiQrKynKQiyssLF0CRsJWdkQSRayQIhy/f6m+ff+Oz3nvPM+zTznHJ1ffXqb55xnen5zzsycM2+rSZMmTf6rrMYujGk/KidrsR0j2o8isgJ/8BdXNVBCtsDWcEoDMdkHPYG81kAJ0eJtDfc0EBNf5I0GIjIeczAJMafGadgaHmggJjFFtNhNuIL3sPnyDXexFxPRTUopsg7PYXOKfMFhjEZRkhbRUTgH23conmAG8pKsiF7Rm7D9jD5prmMbFkMfoVqUjkR233dYiFCSFNGRuAbbx/zCDoQyFy+QnfMWoSOTpMhR2HbvOIqyCD+RnfcI2fdM34voVAgt5gfGwTIbKrah/WggN5CdK8fg0/cioVNK9Kr6PIXGdbot0EAnh5CdK9+h7x5L34vcgm3zHsLnFWzbMg10cgB+nvmNybD0vYi+M2yb9wmjYFkFfXodbD8ayCWE5l+AT5I3+0XYdm83ijIdX5Gdp+u5CfBJUmQsdCrZPkZHZSlC0QfBfWTn6PLFn3qWJEUUXQyGLku0sBOYh2HQK70TL5HdV2/wjQglWRFFi8x78w9GF5Z6H+UlaRFlJPZDp5XNKaJLmMuYiqIkL2KZAn1HPIPN9XQEzmIJuklpRXz0fbAGW7Ee8zEcQ0klivQiTRGfpkgP0xTxaYr0MD0psgf2JB9xpAT6HczWcBtRWQl7kio4g+jk3Vun9gHTEB3d7ekQ38HjCH4x+hkotE8R3e+cx0yUGl9kswbqmqZI1VLLIsuh+w7PF9FPrNnt+gGjctE/Tru91ZWTqGy6LVPpEpbBytSihCWvTK1KWFTmM2pdwmJlal3CMqvzt49ptf4B0C4sGC5Wg58AAAAASUVORK5CYII=) no-repeat top;
+    background-size: 20px 20px;
+}
+#prgManagerHeader ul#prgManagerOrder li a#switchNormalOrder span {
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAHySURBVGhD7Zg9LwRBHIcPkSA6lXj5DApv0VBQ0ZLoNAoRnUQhKhGJRCQqjVqhEJ0GEY3CN1AIrQIlEfx+e/tPJnP7cju3tzN7mSd5snbudrLP7U1uV8Xj8Xhaiim4AruDPTtMwyXYEewZMAF/4R8844AFFqCcwx4HTFiDnIA+cyAneuERvIL8pJPgycs53HHABDXkhQM5wIh7KPPy096AcexDeS+PM6IZIXPwB8q8NCnG2RCyCKNiZqCOUyH8Om3CtmCvSlTMDtRxJkRdE6cwLobbUajjRIi+sGlUzBdcDvZqsR4SFSHqMQPhNgqrIUkRoh4Th7WQeiIo1wRvf9KwEpIlIm5N6BQewhu6WyjvjzNLBLFyRfrgJZRjdLNGEGtrZBXKMaomEcRayAj8hnIcNY0g1kJIFxyD57CRCFJYCK/AevXPGhjTSAQpLOQA8s41LqZRCglph6+QrzMm7WnPhEJCBiEfgY/hJAeagNXFnic+RMWH5IgPUWmZEPUG8B1uWVB9NLiGRvC3QSZxwUNozAWMmrRo32A/NKYT8hLfwEcD1ZN5Csey+ABP4BC0ihoyz4Gy4kNco5Qh43BWUw3ZDsdUe6Bz8D+HH1A9+SR3obPUG+N0hJAWU4oIIS6mVBECYz5hqSMEiSl1hDAcbptIpfIPemrPlazYnP4AAAAASUVORK5CYII=) no-repeat top;
+    background-size: 20px 20px;
+}
+#prgManagerHeader ul#prgManagerOrder li a span {
+    display: block;
+    text-indent: -9999px;
+    height: 18px;
+    width: 20px;
+}

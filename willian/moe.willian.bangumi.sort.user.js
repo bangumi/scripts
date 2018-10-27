@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Sort Index
 // @namespace    moe.willian.bangumi.sort
-// @version      0.4.0
+// @version      0.4.2
 // @description  Sort Bangumi Slots
 // @author       Willian
 // @match        http*://bgm.tv/
@@ -192,7 +192,7 @@ function bangumi_sort_index(){
 
             const orderUI = jQuery('<ul id="prgManagerOrder" class="categoryTab clearit rr"></ul>');
     
-            const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="添加順序" data-key="normal"><span>標準</span></a></li>');
+            const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="修改順序" data-key="normal"><span>標準</span></a></li>');
             const smartUI  = jQuery('<li><a href="javascript:void(0);" id="switchSmartOrder"  title="智障順序" data-key="smart" ><span>智能</span></a></li>');
     
             normalUI.appendTo(orderUI);
