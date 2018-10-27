@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         Bangumi Sort Index
 // @namespace    moe.willian.bangumi.sort
-// @version      0.3
+// @version      0.4.0
 // @description  Sort Bangumi Slots
 // @author       Willian
 // @match        http*://bgm.tv/
-// @grant        Bangumi Users
 // @run-at       document-end
 // ==/UserScript==
 
@@ -125,10 +124,7 @@ function bangumi_sort_index(){
     const now = new Date();
     const perpared = now.addHours(perpareDuraion);
 
-    let mode = '';
-
     let odd = true;
-
     const reset = function resetOddEven(){
         odd = true;
     };
@@ -139,20 +135,20 @@ function bangumi_sort_index(){
         odd = !odd;
     };
 
-    const smart = function smartOrderIt(){
+    const smart = function smartOrderIt(mode = 'smart'){
         let notCondidate = [];
 
-        let ordered = original.map(div => {
+        const ordered = Array.from(original).map(div => {
             div.remove();
             let someEps = div.querySelectorAll('.prg_list .load-epinfo');
             if(mode == 'smart'){
                 // remove watched
-                someEps = someEps.filter(d => !d.classList.contains("epBtnWatched"));
+                someEps = Array.from(someEps).filter(d => !d.classList.contains("epBtnWatched"));
             }
 
             if(someEps.length){
                 const rel = someEps[0].getAttribute('rel');
-                let castDate = $(rel).querySelectorAll('span.tip')
+                let castDate = Array.from($(rel).querySelector('span.tip').childNodes)
                     .filter(e => e.nodeType == Node.TEXT_NODE)
                     .map(e => e.textContent)
                     .filter(t => t.includes(castKeyword));
@@ -199,38 +195,30 @@ function bangumi_sort_index(){
             const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="添加順序" data-key="normal"><span>標準</span></a></li>');
             const smartUI  = jQuery('<li><a href="javascript:void(0);" id="switchSmartOrder"  title="智障順序" data-key="smart" ><span>智能</span></a></li>');
     
-            if(!localStorage['index-sort-order']){
-                localStorage['index-sort-order'] = 'smart';
-            }
-            mode = localStorage['index-sort-order'];
-    
             normalUI.appendTo(orderUI);
             smartUI.appendTo(orderUI);
             orderUI.appendTo(prgManagerHeader);
             
-    
-            switch(mode){
-                case 'smart':
-                    smart();
-                    smartUI.find('a').addClass('focus');
-                    break;
-    
-                case 'normal':
-                default:
-                    break;
+            if(!localStorage['index-sort-order']){
+                localStorage['index-sort-order'] = 'smart';
             }
+            
             const optionUIs = orderUI.find('li');
-    
             optionUIs.click(function(){
-                
-                localStorage['index-sort-order'] = this.dataset.key;
-                switch(this.dataset.key){
+                optionUIs.find('a').removeClass('focus');
+
+                const a = this.querySelector('a');
+                const mode = a.dataset.key;
+                localStorage['index-sort-order'] = mode;
+                switch(mode){
                     case 'smart': smart(); break;
                     case 'normal': default: normal(); break;
                 }
-                optionUIs.find('a').removeClass('focus');
-                this.querySelector('a').classList.add('focus');
+                a.classList.add('focus');
             });
+            
+            const mode = localStorage['index-sort-order'];
+            optionUIs.find(`a[data-key=${mode}]`).click();
         }
     }
 
