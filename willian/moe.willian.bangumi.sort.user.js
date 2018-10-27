@@ -4,7 +4,10 @@
 // @version      0.4.2
 // @description  Sort Bangumi Slots
 // @author       Willian
-// @match        http*://bgm.tv/
+// @include     http://bangumi.tv/
+// @include     http://bgm.tv/
+// @include     https://bgm.tv/
+// @include     http://chii.in/
 // @run-at       document-end
 // ==/UserScript==
 
