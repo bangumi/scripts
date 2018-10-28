@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Sort Index
 // @namespace    moe.willian.bangumi.sort
-// @version      0.4.2
+// @version      0.4.3
 // @description  Sort Bangumi Slots
 // @author       Willian
 // @include     http://bangumi.tv/
@@ -207,21 +207,31 @@ function bangumi_sort_index(){
             }
             
             const optionUIs = orderUI.find('li');
-            optionUIs.click(function(){
+            const click = function onClick(mode){
                 optionUIs.find('a').removeClass('focus');
-
-                const a = this.querySelector('a');
-                const mode = a.dataset.key;
+                const firstTime = Boolean(mode);
+                if(firstTime){
+                    
+                }else{
+                    mode = this.querySelector('a').dataset.key;
+                }
+                
                 localStorage['index-sort-order'] = mode;
                 switch(mode){
-                    case 'smart': smart(); break;
-                    case 'normal': default: normal(); break;
+                    case 'smart':  smart();  break;
+                    case 'normal': 
+                    default: 
+                        if(!firstTime){ 
+                            normal();
+                        } 
                 }
                 a.classList.add('focus');
-            });
+            }
+
+            optionUIs.click(click);
             
             const mode = localStorage['index-sort-order'];
-            optionUIs.find(`a[data-key=${mode}]`).click();
+            click(mode);
         }
     }
 
