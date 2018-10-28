@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Sort Index
 // @namespace    moe.willian.bangumi.sort
-// @version      0.4.3
+// @version      0.5.0
 // @description  Sort Bangumi Slots
 // @author       Willian
 // @include     http://bangumi.tv/
@@ -121,6 +121,10 @@ function bangumi_sort_index(){
 
     const infobox = $('#cloumnSubjectInfo > .infoWrapper_tv');
     const original = infobox.querySelectorAll('[id^=subjectPanel_]');
+
+    const listbox = $('#listWrapper ul#prgSubjectList');
+    const list_original = listbox.querySelectorAll('#prgSubjectList > li');
+
     const prgManagerHeader = $('#prgManagerHeader');
     const prgManagerMain = $('#prgManagerMain');
 
@@ -138,11 +142,10 @@ function bangumi_sort_index(){
         odd = !odd;
     };
 
-    const smart = function smartOrderIt(mode = 'smart'){
+    const getOrder = function getFlatModeUIsInOrderOf(mode = 'smart'){
         let notCondidate = [];
 
         const ordered = Array.from(original).map(div => {
-            div.remove();
             let someEps = div.querySelectorAll('.prg_list .load-epinfo');
             if(mode == 'smart'){
                 // remove watched
@@ -171,6 +174,44 @@ function bangumi_sort_index(){
             return null;
         }).filter(d=>d).sort((a, b) => a.orderTime - b.orderTime);
 
+        return [ordered, notCondidate];
+    };
+    const reorder = function getListModeUIsWithFlatUI(ordered){
+        let orderDict = {};
+        ordered.map((div, i)=>{
+            const node = div.querySelector('.header .headerInner h3 a');
+            if(node){
+                console.log(i, node.dataset.subjectId);
+                orderDict[node.dataset.subjectId] = i;
+            }
+        });
+
+        let notCondidate = [];
+        const reordered = Array.from(list_original).map(div => {
+            const node = div.querySelector('.title.textTip')
+            if(node){
+                const id = node.dataset.subjectId;
+                if(id && orderDict.hasOwnProperty(id)){
+                    div.orderIndice = orderDict[id];
+                    return div;
+                }
+            }
+            notCondidate.push(div);
+            return null;
+        }).filter(d=>d).sort((a, b) => a.orderIndice - b.orderIndice);
+
+        console.log(reordered, notCondidate);
+
+        return [reordered, notCondidate];
+    };
+
+    const smart = function smartOrderIt(){
+        const [ordered , notCondidate] = getOrder('smart');
+
+        for(const div of original){
+            div.remove();
+        }
+
         reset();
         for(const div of ordered){
             append(div);
@@ -178,7 +219,21 @@ function bangumi_sort_index(){
         for(const div of notCondidate){
             append(div);
         }
-    }
+
+        //
+        const [reordered, reNotCondidate] = reorder(ordered);
+
+        for(const div of list_original){
+            div.remove();
+        }
+
+        for(const div of reordered){
+            listbox.appendChild(div);
+        }
+        for(const div of reNotCondidate){
+            listbox.appendChild(div);
+        }
+    };
     const normal = function normalOrderIt(){
         for(const div of original){
             div.remove();
@@ -188,51 +243,65 @@ function bangumi_sort_index(){
         for(const div of original){
             append(div);
         }
+
+        //
+        for(const div of list_original){
+            div.remove();
+        }
+
+        for(const div of list_original){
+            listbox.appendChild(div);
+        }
     };
     const onLoad = function onLoad(){
         /* jshint jquery: true */
-        if(prgManagerMain.classList.contains('tinyModeWrapper')){
+        // prgManagerMain.classList.contains('tinyModeWrapper')
 
-            const orderUI = jQuery('<ul id="prgManagerOrder" class="categoryTab clearit rr"></ul>');
-    
-            const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="修改順序" data-key="normal"><span>標準</span></a></li>');
-            const smartUI  = jQuery('<li><a href="javascript:void(0);" id="switchSmartOrder"  title="智障順序" data-key="smart" ><span>智能</span></a></li>');
-    
-            normalUI.appendTo(orderUI);
-            smartUI.appendTo(orderUI);
-            orderUI.appendTo(prgManagerHeader);
-            
-            if(!localStorage['index-sort-order']){
-                localStorage['index-sort-order'] = 'smart';
-            }
-            
-            const optionUIs = orderUI.find('li');
-            const click = function onClick(mode){
-                optionUIs.find('a').removeClass('focus');
-                const firstTime = Boolean(mode);
-                if(firstTime){
-                    
-                }else{
-                    mode = this.querySelector('a').dataset.key;
-                }
-                
-                localStorage['index-sort-order'] = mode;
-                switch(mode){
-                    case 'smart':  smart();  break;
-                    case 'normal': 
-                    default: 
-                        if(!firstTime){ 
-                            normal();
-                        } 
-                }
-                a.classList.add('focus');
-            }
+        const orderUI = jQuery('<ul id="prgManagerOrder" class="categoryTab clearit rr"></ul>')[0];
 
-            optionUIs.click(click);
-            
-            const mode = localStorage['index-sort-order'];
-            click(mode);
+        const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="修改順序" data-key="normal"><span>標準</span></a></li>')[0];// jQ
+        const smartUI  = jQuery('<li><a href="javascript:void(0);" id="switchSmartOrder"  title="智障順序" data-key="smart" ><span>智能</span></a></li>')[0];// jQ
+
+        orderUI.appendChild(normalUI);
+        orderUI.appendChild(smartUI);
+
+        prgManagerHeader.appendChild(orderUI);
+        
+        if(!localStorage['index-sort-order']){
+            localStorage['index-sort-order'] = 'smart';
         }
+        
+        const optionUIs = jQuery(orderUI).find('li');
+        const click = function onClick(mode){
+            optionUIs.find('a').removeClass('focus'); //jQ
+            let a;
+
+            const firstTime = (typeof mode == 'string');
+            if(firstTime){
+                a = orderUI.querySelector(`a[data-key=${mode}]`);
+            }else{
+                a = this.querySelector(`a`);
+                mode = a.dataset.key;
+            }
+            
+            localStorage['index-sort-order'] = mode;
+            switch(mode){
+                case 'smart':  smart();  break;
+                case 'normal':
+                default: 
+                    if(!firstTime){ 
+                        normal();
+                    } 
+            }
+
+            if(a) a.classList.add('focus');
+        };
+
+        optionUIs.click(click);
+        
+        const mode = localStorage['index-sort-order'];
+        click(mode);
+        
     }
 
     onLoad();
