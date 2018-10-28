@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Sort Index
 // @namespace    moe.willian.bangumi.sort
-// @version      0.5.0
+// @version      0.7.0
 // @description  Sort Bangumi Slots
 // @author       Willian
 // @include     http://bangumi.tv/
@@ -142,33 +142,59 @@ function bangumi_sort_index(){
         odd = !odd;
     };
 
+    const getDate = function getDateTimeFromRel(rel){
+        let castDate = Array.from($(rel).querySelector('span.tip').childNodes)
+            .filter(e => e.nodeType == Node.TEXT_NODE)
+            .map(e => e.textContent)
+            .filter(t => t.includes(castKeyword));
+        if(castDate.length){
+            castDate = castDate[0];
+            castDate = castDate.replace(`${castKeyword}:`, '');
+            castDate = new Date(castDate);
+            return castDate;
+        }else{
+            throw Error(`Cannot get date from rel: ${rel}`);
+        }
+    };
+
     const getOrder = function getFlatModeUIsInOrderOf(mode = 'smart'){
         let notCondidate = [];
 
         const ordered = Array.from(original).map(div => {
             let someEps = div.querySelectorAll('.prg_list .load-epinfo');
+            let targetEp;
             if(mode == 'smart'){
                 // remove watched
                 someEps = Array.from(someEps).filter(d => !d.classList.contains("epBtnWatched"));
+                if(someEps.length){
+                    targetEp = someEps[0];
+                }
+            }else if(mode == 'update'){
+                someEps = Array.from(someEps).filter(ep => {
+                    const rel = ep.getAttribute('rel');
+                    try{
+                        const castDate = getDate(rel);
+                        return castDate < perpared;
+                    }catch(e){}
+                    return false;
+                });
+                if(someEps.length){
+                    targetEp = someEps.pop();
+                }
             }
 
-            if(someEps.length){
-                const rel = someEps[0].getAttribute('rel');
-                let castDate = Array.from($(rel).querySelector('span.tip').childNodes)
-                    .filter(e => e.nodeType == Node.TEXT_NODE)
-                    .map(e => e.textContent)
-                    .filter(t => t.includes(castKeyword));
-                if(castDate.length){
-                    castDate = castDate[0];
-                    castDate = castDate.replace(`${castKeyword}:`, '');
-                    castDate = new Date(castDate);
+            if(targetEp){
+                const rel = targetEp.getAttribute('rel');
+                try{
+                    const castDate = getDate(rel);
                     const orderTime = perpared - castDate;
                     if(orderTime > 0){
                         div.orderTime = orderTime;
                         return div;
                     }
-                }
+                }catch(e){}
             }
+            
             // Fallback
             notCondidate.push(div);
             return null;
@@ -181,7 +207,6 @@ function bangumi_sort_index(){
         ordered.map((div, i)=>{
             const node = div.querySelector('.header .headerInner h3 a');
             if(node){
-                console.log(i, node.dataset.subjectId);
                 orderDict[node.dataset.subjectId] = i;
             }
         });
@@ -200,13 +225,10 @@ function bangumi_sort_index(){
             return null;
         }).filter(d=>d).sort((a, b) => a.orderIndice - b.orderIndice);
 
-        console.log(reordered, notCondidate);
-
         return [reordered, notCondidate];
     };
-
-    const smart = function smartOrderIt(){
-        const [ordered , notCondidate] = getOrder('smart');
+    const orderIt = function smartOrUpdateOrderIt(mode){
+        const [ordered , notCondidate] = getOrder(mode);
 
         for(const div of original){
             div.remove();
@@ -259,11 +281,13 @@ function bangumi_sort_index(){
 
         const orderUI = jQuery('<ul id="prgManagerOrder" class="categoryTab clearit rr"></ul>')[0];
 
-        const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="修改順序" data-key="normal"><span>標準</span></a></li>')[0];// jQ
-        const smartUI  = jQuery('<li><a href="javascript:void(0);" id="switchSmartOrder"  title="智障順序" data-key="smart" ><span>智能</span></a></li>')[0];// jQ
+        const normalUI = jQuery('<li><a href="javascript:void(0);" id="switchNormalOrder" title="修改順序" data-key="normal"><span>標準</span></a></li>')[0];
+        const smartUI  = jQuery('<li><a href="javascript:void(0);" id="switchSmartOrder"  title="智障順序" data-key="smart" ><span>智能</span></a></li>')[0];
+        const updateUI = jQuery('<li><a href="javascript:void(0);" id="switchUpdateOrder" title="更新順序" data-key="update"><span>更新</span></a></li>')[0];
 
         orderUI.appendChild(normalUI);
         orderUI.appendChild(smartUI);
+        orderUI.appendChild(updateUI);
 
         prgManagerHeader.appendChild(orderUI);
         
@@ -286,12 +310,10 @@ function bangumi_sort_index(){
             
             localStorage['index-sort-order'] = mode;
             switch(mode){
-                case 'smart':  smart();  break;
-                case 'normal':
-                default: 
-                    if(!firstTime){ 
-                        normal();
-                    } 
+                case 'smart':  orderIt('smart');  break;
+                case 'update': orderIt('update');  break;
+                case 'normal': default: 
+                    if(!firstTime) normal();
             }
 
             if(a) a.classList.add('focus');
