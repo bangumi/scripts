@@ -4,7 +4,7 @@
 // @author       liaune
 // @description  简易修改收藏条目
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/\S+\/(collect).*$/
-// @version     1.0
+// @version     1.1
 // @grant       none
 // ==/UserScript==
 
@@ -49,7 +49,7 @@
                  $(elem).find('.collectInfo').append(tags1);
             }
             tags1.addEventListener('blur',function(){
-                $.post('/subject/' + itemid + '/interest/update?gh=' + securitycode, { status: 'collect', rating: rating.value, tags: tags1.value });
+                $.post('/subject/' + itemid + '/interest/update?gh=' + securitycode, { status: 'collect', rating: rating.value, tags: tags1.value.trim() });
             });
             //comment
             if($(elem).find('.text').length === 0)
@@ -57,7 +57,7 @@
             let comment = $(elem).find('.text')[0];
             $(comment).attr('contenteditable', 'true');
             comment.addEventListener('blur',function(){
-                $.post('/subject/' + itemid + '/interest/update?gh=' + securitycode, { status: 'collect',rating: rating.value,comment: $(comment).text().trim()});
+                $.post('/subject/' + itemid + '/interest/update?gh=' + securitycode, { status: 'collect',rating: rating.value,tags: tags1.value.trim(),comment: $(comment).text().trim()});
             });
         });
     });
