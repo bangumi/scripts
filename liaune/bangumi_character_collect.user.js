@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         角色收藏
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      1.3
+// @version      1.3.1
 // @description  收藏并将角色收藏添加到 bgm_user_detail_by_yonjar
 // @author       Liaune
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/.*
@@ -20,7 +20,8 @@ border-radius: 5px;
 }
 `);
 (function() {
-    var localData,securitycode,UID;
+    let localData,securitycode,UID;
+    let now = new Date();
     UID=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
     securitycode = $('#badgeUserPanel a')[11].href.split('/logout/')[1].toString();
     if(!localStorage.getItem('bgm_user_detail_by_yonjar'))
