@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name        Bangumi_Collect_Easy_Edit
+// @name        Bangumi-Collect-Easy-Edit
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
 // @author       liaune
 // @description  简易修改收藏条目
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/\S+\/(collect).*$/
-// @version     1.1
+// @version     1.2
 // @grant       none
 // ==/UserScript==
 
@@ -12,7 +12,12 @@
     let You=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
     let User =window.location.href.match(/\/list\/(\S+)\//)? window.location.href.match(/\/list\/(\S+)\//)[1]: null;
     if(You != User) return;
-    const securitycode = $('#badgeUserPanel a')[11].href.split('/logout/')[1].toString();
+    let securitycode;
+    let badgeUserPanel=document.querySelectorAll('#badgeUserPanel a');
+    badgeUserPanel.forEach( (elem, index) => {
+        if(elem.href.match(/logout/))
+            securitycode = elem.href.split('/logout/')[1].toString();
+    });
     $('#browserTools').append('<a id="modifyCollect" class="chiiBtn" href="#">Edit</a>');
     let totalItems = 0,savedItems = 0;
     $('#modifyCollect').click(function() {
