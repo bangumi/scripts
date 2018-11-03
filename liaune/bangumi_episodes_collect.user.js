@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi episodes collect
 // @namespace    https://github.com/bangumi/scripts/edit/master/liaune
-// @version      1.2
+// @version      1.3
 // @description  在章节页面标题后面添加收藏到自己的目录的图标，将动画、音乐、三次元的章节收藏到对应的目录，使用之前请先到个人设置页面定义目录地址。（取消收藏并不能将章节从目录中移除，要移除需要前往目录删除）
 // @author       Liaune
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/.*
@@ -15,7 +15,12 @@
     else
         ep_index = {"ep_anime":"","ep_music":"","ep_real":""};
 
-    let securitycode = $('#badgeUserPanel a')[11].href.split('/logout/')[1].toString();
+    let securitycode;
+    let badgeUserPanel=document.querySelectorAll('#badgeUserPanel a');
+    badgeUserPanel.forEach( (elem, index) => {
+        if(elem.href.match(/logout/))
+            securitycode = elem.href.split('/logout/')[1].toString();
+    });
     let localData;
     if(!JSON.parse(localStorage.getItem('bgm_index_collected')))
         localData = {"ep_anime":[],"ep_music":[],"ep_real":[]};
