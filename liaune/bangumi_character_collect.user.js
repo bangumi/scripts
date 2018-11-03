@@ -19,7 +19,6 @@ border-width: 2px;
 border-radius: 5px;
 }
 `);
-(function() {
     let localData,securitycode,UID;
     UID=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
     let badgeUserPanel=document.querySelectorAll('#badgeUserPanel a');
@@ -398,5 +397,4 @@ border-radius: 5px;
             }
         });
     }
-
 })();
