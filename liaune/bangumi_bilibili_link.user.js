@@ -161,7 +161,6 @@ background-position: -712px -170px;
                         if(link){
                             $(elem).find('.inner h3').append('<a href='+link+' target="_blank" class="l"><i class="media-icon"></i></a>');
                             link_list.anime[id] = link.match(/(\d+)/)[1];
-                            delete link_list.media[id];
                             localStorage.setItem('bangumi_bilibili_link',JSON.stringify(link_list));}
                     });
                 }
@@ -216,7 +215,6 @@ background-position: -712px -170px;
                     if(link){
                         $(elem).find('.inner h3').append('<a href='+link+' target="_blank" class="l"><i class="media-icon"></i></a>');
                         link_list.anime[id] = link.match(/(\d+)/)[1];
-                        delete link_list.media[id];
                         localStorage.setItem('bangumi_bilibili_link',JSON.stringify(link_list));}
                 });
             }
