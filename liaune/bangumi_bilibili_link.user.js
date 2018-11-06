@@ -194,7 +194,7 @@ background-position: -712px -170px;
                             $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');
                         }
                         else if($(comment).text().trim()==''){
-                            delete link_list.media[id];  delete link_list.video[id];}
+                            delete link_list.anime[id]; delete link_list.media[id];  delete link_list.video[id];}
                         localStorage.setItem('bangumi_bilibili_link',JSON.stringify(link_list));
                         $(this).remove();
                     });
