@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi_bilibili_link
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.1
+// @version      0.2
 // @description  为 Bangumi 动画条目添加bilibili播放链接图标
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/*
@@ -80,7 +80,7 @@ background-position: -712px -170px;
             .map(t => [parseInt(t[1]), parseInt(t[2])]);
             if (dates) [year, month] = dates[0];
         }
-        //if (year < OLDEST_YEAR) return;
+        if (year < OLDEST_YEAR) return;
         let bgms = await getBgmList(year, month);
         let bgm = bgms.get(id);
         if (!bgm) throw `bangumi #${id} not found in bgmlist`;
@@ -110,8 +110,7 @@ background-position: -712px -170px;
             $("#columnA").html(html);
             $("#submitBtn").on("click", function() {
                 data = $("#data_content").attr("value");
-                console.log(data);
-                //localStorage.setItem('bangumi_bilibili_link',data);
+                localStorage.setItem('bangumi_bilibili_link',data);
                 alert('保存成功！');
             });
         });
