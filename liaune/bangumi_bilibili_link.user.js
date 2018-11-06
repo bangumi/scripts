@@ -170,7 +170,9 @@ background-position: -712px -170px;
                 $(elem).find('.edit-icon')[0].addEventListener('click',function(){
                     $(elem).find('.inner').append('<div id="comment_box"><div class="item"><div style="float:none;" class="text_main_even"><div class="text"><br></div><div class="text_bottom"></div></div></div></div>');
                     let comment = $(elem).find('.text')[0];
-                    if(link_list.media[id])
+                    if(link_list.anime[id])
+                        comment.textContent = 'https://bangumi.bilibili.com/anime/'+link_list.anime[id];
+                    else if(link_list.media[id])
                         comment.textContent = 'https://www.bilibili.com/bangumi/media/md'+link_list.media[id];
                     else if(link_list.video[id])
                         comment.textContent = 'https://www.bilibili.com/video/av'+link_list.video[id];
