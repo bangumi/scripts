@@ -30,7 +30,7 @@ background-position: -534px -1047px;
 }
 .edit-icon{
 position: relative;
-z-index: 999;
+z-index: 2;
 display: inline-block;
 background-image: url(https://i.loli.net/2018/11/04/5bdef15ba9076.png);
 background-size: 800px 1222px;
