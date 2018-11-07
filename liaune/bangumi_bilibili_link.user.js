@@ -12,7 +12,7 @@
     GM_addStyle(`
 .media-icon{
 position: relative;
-z-index: 999;
+z-index: 2;
 display: inline-block;
 background-image: url(https://i.loli.net/2018/11/04/5bdef15ba9076.png);
 width: 17px;
@@ -21,7 +21,7 @@ background-position: -919px -88px;
 }
 .video-icon{
 position: relative;
-z-index: 999;
+z-index: 2;
 display: inline-block;
 background-image: url(https://i.loli.net/2018/11/04/5bdef15ba9076.png);
 width: 19px;
