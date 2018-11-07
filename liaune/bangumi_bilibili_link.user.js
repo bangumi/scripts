@@ -167,8 +167,10 @@ background-position: -712px -170px;
                 if(!$(elem).find('.edit-icon').length)
                     $(elem).find('.inner h3').append('<a href="javascript:;" class="l"><i class="edit-icon"></i></a>');
                 $(elem).find('.edit-icon')[0].addEventListener('click',function(){
-                    $(elem).find('.inner').append('<div id="comment_box"><div class="item"><div style="float:none;" class="text_main_even"><div class="text"><br></div><div class="text_bottom"></div></div></div></div>');
-                    let comment = $(elem).find('.text')[0];
+                    let comment_box = document.createElement('div');comment_box.id = "comment_box";
+                    $(comment_box).html('<div class="item"><div style="float:none;" class="text_main_even"><div class="text"><br></div><div class="text_bottom"></div></div></div>');
+                    $(elem).find('.inner').append(comment_box);
+                    let comment = $(comment_box).find('.text')[0];
                     if(link_list.anime[id])
                         comment.textContent = 'https://bangumi.bilibili.com/anime/'+link_list.anime[id];
                     else if(link_list.media[id])
