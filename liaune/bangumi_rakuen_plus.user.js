@@ -9,7 +9,6 @@
 // ==/UserScript==
 
 (function() {
-    $('iframe#right').attr('src','/dollars');
     $('#rakuenTab').find('.timelineTabs').append(`<li>
 <a href="/dollars" class="top" target="right">更多</a>
 <ul>
