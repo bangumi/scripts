@@ -1,6 +1,8 @@
 .willian-retina-img-fix {
     background-position: center;
     background-size: cover;
+}
+.willian-retina-img-border {
     outline-offset: -3px;
     outline: 2px solid white;
 }
@@ -14,4 +16,8 @@
 }
 .willian-size-3{
     width: 100%;
+}
+.willian-size-4{
+    width: 48px;
+    height: 48px;
 }
