@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Retina Index
 // @namespace    moe.willian.bangumi.retina
-// @version      0.9.9
+// @version      1.0.0
 // @description  Retinize Index Page for retina
 // @author       Willian
 // @include     http://bangumi.tv/
@@ -11,6 +11,7 @@
 // @run-at       document-end
 // ==/UserScript==
 
+const empty_image = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
 function retinize(){
     const $ = q => document.querySelector(q);
     const $All = q => document.querySelectorAll(q);
@@ -26,7 +27,7 @@ function retinize(){
             src = src.replace(re, '$1c$2');
 
             img.classList.add('willian-retina-img-fix', 'willian-size-1' ,'willian-retina-img-border');
-            img.removeAttribute('src');
+            img.setAttribute('src', empty_image);
 
             img.style['background-image'] = `url(${src})`;
         }
@@ -40,7 +41,7 @@ function retinize(){
             src = src.replace(re, '$1c$2');
 
             img.classList.add('willian-retina-img-fix', 'willian-size-2','willian-retina-img-border');
-            img.removeAttribute('src');
+            img.setAttribute('src', empty_image);
 
             img.style['background-image'] = `url(${src})`;
         }
@@ -65,7 +66,7 @@ function retinize(){
             src = src.replace(re, '$1c$2');
 
             img.classList.add('willian-retina-img-fix', 'willian-size-4');
-            img.removeAttribute('src');
+            img.setAttribute('src', empty_image);
 
             img.style['background-image'] = `url(${src})`;
         }
