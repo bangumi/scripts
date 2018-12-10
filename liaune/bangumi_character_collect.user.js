@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         角色收藏
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      1.3.3
+// @version      1.3.4
 // @description  收藏并将角色收藏添加到 bgm_user_detail_by_yonjar
 // @author       Liaune
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/.*
@@ -23,7 +23,7 @@ border-radius: 5px;
     UID=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
     let badgeUserPanel=document.querySelectorAll('#badgeUserPanel a');
     badgeUserPanel.forEach( (elem, index) => {
-        if(elem.href.match(/logout/)) 
+        if(elem.href.match(/logout/))
             securitycode = elem.href.split('/logout/')[1].toString();
     });
     let now = new Date();
@@ -38,11 +38,11 @@ border-radius: 5px;
         showBtn.addEventListener('click', function(){
             if(localData.characters.indexOf(charaId)== -1){
                 localData.characters.push(charaId);
-                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                 showBtn.className='break';showBtn.textContent='取消收藏';}
             else{
                 localData.characters.splice(localData.characters.indexOf(charaId),1);
-                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                 showBtn.className='';showBtn.textContent='加入收藏';}
             localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -54,11 +54,11 @@ border-radius: 5px;
         showBtn.addEventListener('click', function(){
             if(localData.persons.indexOf(personID)== -1){
                 localData.persons.push(personID);
-                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                 showBtn.className='break';showBtn.textContent='取消收藏';}
             else{
                 localData.persons.splice(localData.persons.indexOf(personID),1);
-                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                 showBtn.className='';showBtn.textContent='加入收藏';}
             localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -115,11 +115,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.characters.push(charaId);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.characters.splice(localData.characters.indexOf(charaId),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -138,11 +138,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.characters.push(charaId);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.characters.splice(localData.characters.indexOf(charaId),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -163,11 +163,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.persons.push(personID);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.persons.splice(localData.persons.indexOf(personID),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -185,11 +185,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.persons.push(personID);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.persons.splice(localData.persons.indexOf(personID),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -221,11 +221,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.characters.push(charaId);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.characters.splice(localData.characters.indexOf(charaId),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -242,11 +242,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.characters.push(charaId);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.characters.splice(localData.characters.indexOf(charaId),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -269,11 +269,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.persons.push(personID);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.persons.splice(localData.persons.indexOf(personID),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -290,11 +290,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.persons.push(personID);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.persons.splice(localData.persons.indexOf(personID),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -317,11 +317,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.characters.push(charaId);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.characters.splice(localData.characters.indexOf(charaId),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -338,11 +338,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.characters.push(charaId);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.characters.splice(localData.characters.indexOf(charaId),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/character/"+charaId+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -365,11 +365,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.persons.push(personID);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.persons.splice(localData.persons.indexOf(personID),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
@@ -386,11 +386,11 @@ border-radius: 5px;
                     flag = flag==1?0:1;
                     if(flag){
                         localData.persons.push(personID);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"red"});}
                     else{
                         localData.persons.splice(localData.persons.indexOf(personID),1);
-                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET","https://bgm.tv/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
+                        let xmlhttp=new XMLHttpRequest();xmlhttp.open("GET",location.origin+"/person/"+personID+"/erase_collect?gh="+securitycode+"",true);xmlhttp.send();
                         $(showBtn).css({"font-size":"12px","color":"grey"});}
                     localStorage.setItem('bgm_user_detail_by_yonjar',JSON.stringify(localData));
                 });
