@@ -1,13 +1,10 @@
 // ==UserScript==
 // @name         Bangumi Retina Index
 // @namespace    moe.willian.bangumi.retina
-// @version      1.0.0
+// @version      1.0.1
 // @description  Retinize Index Page for retina
 // @author       Willian
-// @include     http://bangumi.tv/
-// @include     http://bgm.tv/
-// @include     https://bgm.tv/
-// @include     http://chii.in/
+// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)//
 // @run-at       document-end
 // ==/UserScript==
 
