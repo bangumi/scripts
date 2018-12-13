@@ -1,13 +1,10 @@
 // ==UserScript==
 // @name         Bangumi Sort Index
 // @namespace    moe.willian.bangumi.sort
-// @version      0.7.0
+// @version      0.7.1
 // @description  Sort Bangumi Slots
 // @author       Willian
-// @include     http://bangumi.tv/
-// @include     http://bgm.tv/
-// @include     https://bgm.tv/
-// @include     http://chii.in/
+// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)//
 // @run-at       document-end
 // ==/UserScript==
 
