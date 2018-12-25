@@ -1,6 +1,6 @@
 # [infinityloop](http://bangumi.tv/user/infinityloop)
 
-## [🌙Bangumi.tv夜间模式](https://github.com/bangumi/scripts/blob/master/infinityloop/bangumi-night-mode.user.js)
+## [🌙Bangumi.tv夜间模式](https://github.com/bangumi/scripts/raw/master/infinityloop/bangumi-night-mode.user.js)
 
 [![Install with TamperMonkey](https://img.shields.io/badge/Install%20with-TamperMonkey-00adad.svg)][Install with TamperMonkey]
 [![Install with Stylish](https://img.shields.io/badge/Install%20with-Stylish-00adad.svg)][Install with Stylish]
@@ -17,5 +17,5 @@
 ⭐不对任何元素除了颜色以外的改变和调整  
 
 
-[Install with TamperMonkey]: https://github.com/bangumi/scripts/blob/master/infinityloop/bangumi-night-mode.user.js
+[Install with TamperMonkey]: https://github.com/bangumi/scripts/raw/master/infinityloop/bangumi-night-mode.user.js
 [Install with Stylish]: https://userstyles.org/styles/139310/bangumi-tv
