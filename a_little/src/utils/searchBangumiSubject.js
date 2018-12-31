@@ -88,8 +88,8 @@ function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
   console.info('seach bangumi subject URL: ', url);
   return gmFetch(url).then((info) => {
     var rawInfoList = dealRawHTML(info)[0] || [];
-    // 使用ISBN 搜索时，不再使用名称过滤
-    if (subjectInfo.isbn) {
+    // 使用ISBN 搜索时, 并且结果只有一条时，不再使用名称过滤
+    if (subjectInfo.isbn && rawInfoList && rawInfoList.length === 1) {
       return rawInfoList[0];
     }
     return filterResults(rawInfoList, subjectInfo.subjectName, {
