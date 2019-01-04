@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.0.9
+// @version     0.1.0
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -615,9 +615,9 @@ module.exports = delayPromise;
 
 function filterResults(items, searchstring, opts) {
   if (!items) return;
-  var results = new Fuse(items, opts).search(searchstring);
+  var results = new Fuse(items, Object.assign({}, opts)).search(searchstring);
   if (!results.length) return;
-  if (opts.startdate) {
+  if (opts.startDate) {
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
@@ -626,7 +626,7 @@ function filterResults(items, searchstring, opts) {
       for (var _iterator = results[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
         var result = _step.value;
 
-        if (result.startdate && new date(result.startdate) - new date(opts.startdate) === 0) {
+        if (result.startDate && new Date(result.startDate) - new Date(opts.startDate) === 0) {
           return result;
         }
       }
