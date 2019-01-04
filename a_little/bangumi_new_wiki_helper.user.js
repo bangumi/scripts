@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.1.0
+// @version     0.1.1
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -310,9 +310,12 @@ var amazon = {
       var config = configModels[configKey];
       handleClick(config, false);
     }, false);
-    $search.addEventListener('click', function () {
+    $search.addEventListener('click', async function () {
+      if ($search.innerHTML !== '新建并查重') return;
+      $search.innerHTML = '查重中...';
       var config = configModels[configKey];
-      handleClick(config, true);
+      await handleClick(config, true);
+      $search.innerHTML = '新建并查重';
     }, false);
   }
 };

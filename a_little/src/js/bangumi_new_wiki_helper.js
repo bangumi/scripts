@@ -133,9 +133,12 @@ var amazon = {
       var config = configModels[configKey];
       handleClick(config, false);
     }, false);
-    $search.addEventListener('click', () => {
+    $search.addEventListener('click', async () => {
+      if ($search.innerHTML !== '新建并查重') return;
+      $search.innerHTML = '查重中...';
       var config = configModels[configKey];
-      handleClick(config, true);
+      await handleClick(config, true);
+      $search.innerHTML = '新建并查重';
     }, false);
   }
 }
