@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi_bilibili_link
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.3
+// @version      0.4
 // @description  为 Bangumi 动画条目添加bilibili播放链接图标
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/*
@@ -38,8 +38,13 @@ width: 11px;
 height: 11px;
 background-position: -712px -170px;
 }
+ul.browserFull h3 {
+width:500px;
+}
 `);
-    const BGMLIST_URL = 'https://bgmlist.sorz.org/bangumi/$Y/$M.json';
+    const BGMLIST_URL = 'https://bgmlist.sorz.org/data/items/$Y/$M.json';
+    const SITES_INFO_URL = 'https://bgmlist.sorz.org/data/sites/onair.json';
+    const FETCH_PARAMS = { referrerPolicy: "no-referrer" };
     let link_list;
     if(localStorage.getItem('bangumi_bilibili_link'))
         link_list = JSON.parse(localStorage.getItem('bangumi_bilibili_link'));
@@ -51,44 +56,58 @@ background-position: -712px -170px;
         Datestring = Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/);
         let year = Datestring ? Datestring[1].toString(): yy;
         let month = Datestring ? Datestring[3].toString(): null;
+        month = month.padStart(2, '0');
         if (month) return [year, month];
         else throw "on-air date not found";
     }
     async function getBgmList(year, month) {
         const url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
-        let resp = await fetch(url, { referrerPolicy: "no-referrer" });
+        const resp = await fetch(url, FETCH_PARAMS);
         if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
         let list = await resp.json();
         let bgms = new Map(
-            Object.values(list)
-            .map(b => [`${b.bgmId}`, b])
-            .filter(([bgmId, _]) => bgmId != undefined)
+            list.map(bgm => {
+                if (!bgm.sites) return;
+                const site = bgm.sites.find(s => s.site == 'bangumi');
+                if (site) return [site.id, bgm];
+            }).filter(b => b)
         );
         return bgms;
+    }
+
+    async function getSiteInfo() {
+        const resp = await fetch(SITES_INFO_URL, FETCH_PARAMS);
+        if (!resp.ok) throw "fail to fetch site infos: " + resp.status;
+        return await resp.json();
+    }
+
+    function getYearMonth() {
+        const date = Array.from(document.querySelectorAll('#infobox .tip'))
+        .find(t => t.textContent.match(/^(放送开始|上映年度)/));
+        if (date == undefined) throw "on-air date not found";
+        let [_, year, month] = date.parentElement.textContent
+        .match(/(\d{4})年(\d{1,2})月/);
+        month = month.padStart(2, '0');
+        return [year, month];
     }
 
     async function get_ItemList_link(elem,id){
         let [year, month] = [0,0];
         if(elem.querySelector('.inner .info'))
             [year, month] = getOnAirYearMonth(elem.querySelector('.inner .info').textContent);
-        else{
-            let dates = Array.from(document.querySelectorAll('#infobox .tip'))
-            .filter(t => t.textContent.startsWith('放送开始'))
-            .map(t => t.parentElement.textContent.match(/(\d{4})年(\d{1,2})月/))
-            .filter(t => t != null)
-            .map(t => [parseInt(t[1]), parseInt(t[2])]);
-            if (dates) [year, month] = dates[0];
-        }
+        else
+            [year, month] = getYearMonth();
+        console.log(year,month);
+        if(year<2018) throw "year too early";
         let bgms = await getBgmList(year, month);
         let bgm = bgms.get(id);
+        console.log(bgm);
         if (!bgm) throw `bangumi #${id} not found in bgmlist`;
         let link;
-        bgm.onAirSite.map(url => {
-            let site = url.match(/https?:\/\/\w+\.(\w+)\./)[1];
+        bgm.sites.map(({site, id}) => {
             if(site == 'bilibili')
-                link = url;
+                link = 'https://bangumi.bilibili.com/anime/'+ id;
         });
-        //console.log(link);
         if (!link) throw "fail to get bilibili ";
         return link;
     }
@@ -120,11 +139,11 @@ background-position: -712px -170px;
         let id = location.href.match(/subject\/(\d+)/)[1];
         if(link_list.anime[id])
             $(elem).find('.nameSingle').append('<a href=https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');
-        else if(link_list.media[id])
+        if(link_list.media[id])
             $(elem).find('.nameSingle').append('<a href=https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');
-        else if(link_list.video[id])
+        if(link_list.video[id])
             $(elem).find('.nameSingle').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');
-        else{
+        if(!(link_list.anime[id] || link_list.media[id])){
             get_ItemList_link(elem,id).then(link => {
                 if(link){
                     $(elem).find('.nameSingle').append('<a href='+link+' target="_blank" class="l"><i class="media-icon"></i></a>');
@@ -150,13 +169,13 @@ background-position: -712px -170px;
                 if(link_list.anime[id]){
                     if(!$(elem).find('.media-icon').length) {
                         $(elem).find('.inner h3').append('<a href=https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');}}
-                else if(link_list.media[id]){
+                if(link_list.media[id]){
                     if(!$(elem).find('.media-icon').length) {
                         $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');}}
-                else if(link_list.video[id]){
+                if(link_list.video[id]){
                     if(!$(elem).find('.video-icon').length) {
                         (link_list.video[id]);$(elem).find('.inner h3').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');}}
-                else{
+                if(!(link_list.anime[id] || link_list.media[id])){
                     get_ItemList_link(elem,id).then(link => {
                         if(link){
                             $(elem).find('.inner h3').append('<a href='+link+' target="_blank" class="l"><i class="media-icon"></i></a>');
@@ -172,30 +191,36 @@ background-position: -712px -170px;
                     $(elem).find('.inner').append(comment_box);
                     let comment = $(comment_box).find('.text')[0];
                     if(link_list.anime[id])
-                        comment.textContent = 'https://bangumi.bilibili.com/anime/'+link_list.anime[id];
-                    else if(link_list.media[id])
-                        comment.textContent = 'https://www.bilibili.com/bangumi/media/md'+link_list.media[id];
-                    else if(link_list.video[id])
-                        comment.textContent = 'https://www.bilibili.com/video/av'+link_list.video[id];
+                        comment.textContent += 'https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' ';
+                    if(link_list.media[id])
+                        comment.textContent += 'https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' ';
+                    if(link_list.video[id])
+                        comment.textContent += 'https://www.bilibili.com/video/av'+link_list.video[id]+' ';
                     $(comment).attr('contenteditable', 'true');
                     comment.addEventListener('blur',function(){
-                        let match = $(comment).text().trim().match(/(ss|md|av|anime\/)\d+/);
-                        let anime_id = match ? match[0].match(/anime\/(\d+)/):null;
-                        let media_id = match ? match[0].match(/(ss|md)(\d+)/):null;
-                        let video_id = match ? match[0].match(/av(\d+)/):null;
+                        let content = $(comment).text().trim().split(' ');
+                        let anime_id, media_id, video_id;
+                        for(let i=0;i<content.length;i++){
+                            let match = content[i].match(/(ss|md|av|anime\/)\d+/);
+                            anime_id = match ? match[0].match(/anime\/(\d+)/):null;
+                            media_id = match ? match[0].match(/(ss|md)(\d+)/):null;
+                            video_id = match ? match[0].match(/av(\d+)/):null;}
                         if(anime_id){
                             link_list.anime[id] = anime_id[1];
-                            $(elem).find('.inner h3').append('<a href=https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');
+                            if(!$(elem).find('.media-icon').length) {
+                                $(elem).find('.inner h3').append('<a href=https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');}
                         }
-                        else if(media_id){
+                        if(media_id){
                             link_list.media[id] = media_id[2];
-                            $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');
+                            if(!$(elem).find('.media-icon').length) {
+                                $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');}
                         }
-                        else if(video_id){
+                        if(video_id){
                             link_list.video[id] = video_id[1];
-                            $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');
+                            if(!$(elem).find('.video-icon').length) {
+                                $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');}
                         }
-                        else if($(comment).text().trim()==''){
+                        if($(comment).text().trim()==''){
                             delete link_list.anime[id]; delete link_list.media[id];  delete link_list.video[id];}
                         localStorage.setItem('bangumi_bilibili_link',JSON.stringify(link_list));
                         $(this).remove();
@@ -208,11 +233,11 @@ background-position: -712px -170px;
             let id = href.split('/subject/')[1];
             if(link_list.anime[id]){
                 $(elem).find('.inner h3').append('<a href=https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');}
-            else if(link_list.media[id])
+            if(link_list.media[id])
                 $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');
-            else if(link_list.video[id])
+            if(link_list.video[id])
                 $(elem).find('.inner h3').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');
-            else{
+            if(!(link_list.anime[id] || link_list.media[id])){
                 get_ItemList_link(elem,id).then(link => {
                     if(link){
                         $(elem).find('.inner h3').append('<a href='+link+' target="_blank" class="l"><i class="media-icon"></i></a>');
@@ -230,9 +255,9 @@ background-position: -712px -170px;
             let id = href.split('/subject/')[1];
             if(link_list.anime[id]){
                 $(elem).find('.headerInner h3,.tinyHeader').append('<a href=https://bangumi.bilibili.com/anime/'+link_list.anime[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');}
-            else if(link_list.media[id])
+            if(link_list.media[id])
                 $(elem).find('.headerInner h3,.tinyHeader').append('<a href=https://www.bilibili.com/bangumi/media/md'+link_list.media[id]+' target="_blank" class="l"><i class="media-icon"></i></a>');
-            else if(link_list.video[id])
+            if(link_list.video[id])
                 $(elem).find('.headerInner h3,.tinyHeader').append('<a href=https://www.bilibili.com/video/av'+link_list.video[id]+' target="_blank" class="l"><i class="video-icon"></i></a>');
         });
     }
