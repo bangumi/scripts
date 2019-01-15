@@ -70,10 +70,11 @@ function addInfoRow(title, links) {
 }
 
 function addOnAirSites(bgm, sites) {
-  const links = bgm.sites.map(({site, id}) => {
+  const links = bgm.sites.map(({site, id, url}) => {
     const info = sites[site];
     if (!info) return;
-    const url = info.urlTemplate.replace('{{id}}', id);
+    if (!url)
+      url = info.urlTemplate.replace('{{id}}', id);
     return [url, info.title];
   }).filter(u => u);
   if (links.length)
