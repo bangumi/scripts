@@ -3,7 +3,7 @@
 // @description 为 Bangumi 动画条目页左侧添加来自 bgmlist.tv 的国内放送站点链接
 // @namespace   org.sorz.bangumi
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
-// @version     0.4.3
+// @version     0.4.4
 // @run-at      document-body
 // ==/UserScript==
 
