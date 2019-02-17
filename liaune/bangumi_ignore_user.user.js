@@ -23,10 +23,11 @@
 
     //设置
     if(document.location.href.match(/settings\/privacy/)){
+        blacklist = [];
         $('a').each(function (){
             let match = this.href.match(/(\d+)&gh/);
             let ID = match ? match[1].toString() : null;
-            if(ID && !blacklist.includes(ID)){
+            if(ID){
                 blacklist.push(ID);
                 localStorage.setItem('bangumi_user_blacklist',JSON.stringify(blacklist));
             }
