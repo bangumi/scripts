@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Bangumi-Index-Batch-Edit
+// @name        bangumi_index_batch_edit
 // @namespace    https://github.com/bangumi/scripts/blob/master/liaune
 // @author       Liaune
 // @description  批量添加目录条目，直接修改条目排序和评论，批量保存已修改的条目，按当前列表顺序排序
