@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bgm timeline switch
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.2
+// @version      0.1.3
 // @description  bgm 好友动态&全站动态切换
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(timeline)?$/
