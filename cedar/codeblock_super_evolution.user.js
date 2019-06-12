@@ -12,40 +12,41 @@
 // ==/UserScript==
 
 (function () {
+  'use strict';
 
   GM_addStyle(`
 #code-block-settings {
-	margin-top: 20px;
-	font-size: 16px;
+  margin-top: 20px;
+  font-size: 16px;
 }
 #code-block-settings input {
-	margin-top: 10px;
-	height: 24px;
-	line-height: 24px;
-	border: 1px solid #aaa;
-	outline: none;
-	padding: 0 5px;
-	font-size: 16px;
+  margin-top: 10px;
+  height: 24px;
+  line-height: 24px;
+  border: 1px solid #aaa;
+  outline: none;
+  padding: 0 5px;
+  font-size: 16px;
 }
 #code-block-settings span {
-	margin-right: 10px;
+  margin-right: 10px;
 }
 #code-block-settings a {
-	cursor: pointer;
+  cursor: pointer;
 }
 .code-block-settings-save {
-	margin-right: 10px;
-	cursor: pointer;
-	display: inline-block;
+  margin-right: 10px;
+  cursor: pointer;
+  display: inline-block;
 }
 .code-block-settings-save+span {
-	display: inline-block;
-	width: 16px;
-	height: 8px;
-	border: 5px solid limegreen;
-	border-top: none;
-	border-right: none;
-	transform: rotate(-45deg);
+  display: inline-block;
+  width: 16px;
+  height: 8px;
+  border: 5px solid limegreen;
+  border-top: none;
+  border-right: none;
+  transform: rotate(-45deg);
 }
 `);
 
