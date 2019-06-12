@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        吐槽列表排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltercomments
-// @version     1.4
+// @version     1.4.1
 // @description 排序与筛选吐槽列表
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*comments.*/
@@ -136,11 +136,14 @@
   const $sortByScoreButton   = $chiiButton.clone().text("评分顺序").on('click', sortByScore.sort);
   const $sortByDateButton    = $chiiButton.clone().text("时间顺序").on('click', sortByDate.sort);
   const $sortByUserIdButton  = $chiiButton.clone().text("注册顺序").on('click', sortByUserId.sort);
+  const $filterToggleButton  = $chiiButton.clone().text("筛选").css("float", "right").on('click', function() {
+    $(this.parentElement.nextElementSibling).slideToggle("fast");
+  })
 
   $(commentBox).before($(
     document.createElement('div')).append(
       $resetButton, $sortByCommentButton, $sortByScoreButton,
-      $sortByDateButton, $sortByUserIdButton
+      $sortByDateButton, $sortByUserIdButton, $filterToggleButton
   ));
 
   // === filter functions ===
@@ -216,6 +219,7 @@
 }) ();
 
 /** version:
+ *  ver 1.4.1   增加筛选按钮, 默认隐藏筛选界面
  *  ver 1.4     可以按字数, 时间, 评分, UID范围筛选!
  *  ver 1.3     优化代码结构.
  *  ver 1.2     可以按注册顺序排序.
