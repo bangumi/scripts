@@ -16,6 +16,23 @@
 
 站内讨论https://bgm.tv/group/topic/350630
 
+## [代码块超进化！](codeblock_super_evolution.user.js?raw=true)
+
+针对Code块生效.
+
+功能:
+* 删除空行
+* 设置字号
+* 折叠隐藏
+* 增加标题
+* 定制字体
+
+启用后请务必前往站内讨论页阅读使用教程!
+
+对应组件https://bgm.tv/dev/app/1049
+
+站内讨论https://bgm.tv/group/topic/350757
+
 ## [图片加载失败指示](add_image_alt.user.js?raw=true)
 
 对应组件https://bgm.tv/dev/app/1056
