@@ -1,39 +1,34 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.0.1
+// @version     1.1
 // @description 统计简评字数
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
-// @grant       GM_addStyle
 // ==/UserScript==
 
-GM_addStyle(`
-#wordcountwrapper {
-  margin: 0 0 8px 0;
-}
-#wordcountwrapper>span {
-  padding: 0 5px;
-}
-`);
-
 const total = 200;
-var counter = $("#comment").val().length;
-$("#collectBoxForm>.clearit").before(
-	`<div id="wordcountwrapper"><span id="wordcounter">${counter}</span>/<span>${total}</span></div>`
-);
+let $comment = $('#comment');
+const getCount = () => $comment.val().length;
+
+let $total = $(document.createElement('span')).css('padding', '0 5px').text(total);
+let $wordcounter = $total.clone().text(getCount());
+let $wordcounterWrapper = $(document.createElement('div'))
+	.css('margin-bottom', '8px').append($wordcounter, '/', $total);
+$("#collectBoxForm").children('.clearit').last().before($wordcounterWrapper);
 
 // "input" event for paste action on mobile.
-$("#comment").on('blur keyup input', function() {
-	counter = $("#comment").val().length;
-	$("#wordcounter").text(counter);
-	if(counter > total)
-		$("#wordcounter").css("color","red");
+$comment.on('blur keyup input', function() {
+	let count = getCount();
+	$wordcounter.text(count);
+	if(count > total)
+		$wordcounter.css("color","red");
 	else
-		$("#wordcounter").css("color","");
+		$wordcounter.css("color","");
 });
 
 /** version:
+ *  ver 1.1     实现方法优化
  *  ver 1.0.1   修改metadata(@include @namespace)
  *  ver 1.0     初始版本.
  */
