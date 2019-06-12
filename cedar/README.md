@@ -1,8 +1,14 @@
 # [Cedar](https://bgm.tv/user/313469)
 
-所有脚本都有对应组件, 可以到超合金组件页面搜索我的昵称进行了解.
+所有脚本都有对应组件, 脚本下方会标出组件链接, 也可以到超合金组件页面搜索我的昵称进行了解.
 
-为了方便编辑和统一内容, 脚本用法图例和详情请查阅站内讨论帖. 在此只作简要叙述.
+为了方便编辑和统一内容, 脚本用法图例和详情请查阅对应的站内讨论帖. 在此只作简要叙述.
+
+## [简评字数统计](comment_word_counter.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/592
+
+站内讨论https://bgm.tv/group/topic/347071
 
 ## [吐槽列表排序与筛选](sort_and_filter_comments.user.js?raw=true)
 
