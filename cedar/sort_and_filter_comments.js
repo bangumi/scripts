@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        吐槽列表排序
 // @namespace   tv.bgm.cedar.sortcomments
-// @version     1.0
+// @version     1.1
 // @description 排序吐槽列表
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*comments.*/
@@ -12,6 +12,7 @@
 
   let commentInDescendOrder = true;
   let dateInDescendOrder = false;
+  let scoreInDescendOrder = true;
   let $commentBox = $('#comment_box');
   const getComments = () => Array.prototype.slice.call(document.querySelectorAll('#comment_box div.item'));
 
@@ -21,17 +22,21 @@
   const resetButton = $sortButton.clone();
   const sortByCommentButton = $sortButton.clone();
   const sortByDateButton = $sortButton.clone();
+  const sortByScoreButton = $sortButton.clone();
 
   resetButton.on('click', resetOrder).text("初始顺序");
   sortByCommentButton.on('click', sortByCommentWordCount).text("字数顺序");
+  sortByScoreButton.on('click', sortByScore).text("评分顺序");
   sortByDateButton.on('click', sortByDate).text("时间顺序");
-  $commentBox.before(resetButton, sortByCommentButton, sortByDateButton);
+  $commentBox.before(resetButton, sortByCommentButton, sortByScoreButton, sortByDateButton);
 
   function resetOrder() {
     dateInDescendOrder = true;
     sortByDate();
     commentInDescendOrder = true;
+    scoreInDescendOrder = true;
     sortByCommentButton.text("字数顺序");
+    sortByScoreButton.text("评分顺序");
     sortByDateButton.text("时间顺序");
   }
 
@@ -45,6 +50,20 @@
     $commentBox.append(comments);
     sortByCommentButton.text(commentInDescendOrder? "字数顺序↓": "字数顺序↑");
     commentInDescendOrder = !commentInDescendOrder;
+  }
+
+  function sortByScore() {
+    let comments = getComments();
+    comments.sort((left, right) => {
+      let leftN = left.querySelector('.starsinfo');
+      leftN = leftN? leftN.className.slice(6,8): 0;
+      let rightN = right.querySelector('.starsinfo');
+      rightN = rightN? rightN.className.slice(6,8): 0;
+      return scoreInDescendOrder? rightN - leftN: leftN - rightN;
+    });
+    $commentBox.append(comments);
+    sortByScoreButton.text(scoreInDescendOrder? "评分顺序↓": "评分顺序↑");
+    scoreInDescendOrder = !scoreInDescendOrder;
   }
 
   function sortByDate() {
@@ -76,3 +95,8 @@
     }
   }
 }) ();
+
+/** version:
+ *  ver 1.1     可以按评分顺序排序.
+ *  ver 1.0     初始版本.
+ */
