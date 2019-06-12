@@ -4,7 +4,7 @@
 // @version     1.1
 // @description 隐藏登出按钮. 可从设置页登出.
 // @author      Cedar
-// @include     *
+// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*#post_\d+$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*#;$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*\?.*/
