@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        评分人数统计plus
 // @namespace   tv.bgm.cedar.countVotes
-// @version     1.2
+// @version     1.2.1
 // @description 通过鼠标选择各分段条形图统计不同分数的打分人数与占比
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
@@ -20,6 +20,7 @@
 #ChartWarpper>.chart_desc {
   background-color: transparent;
   opacity: 1;
+  pointer-events: none;
 }
 .horizontalChart .chart-column-selected a .count {
   /*background: #2D7BB2;*/
