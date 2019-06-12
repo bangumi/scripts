@@ -10,6 +10,26 @@
 
 站内讨论https://bgm.tv/group/topic/347071
 
+## [登出按钮隐藏](hide_logout.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/657
+
+站内讨论https://bgm.tv/group/topic/350630
+
+## [图片加载失败指示](add_image_alt.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/1056
+
+站内讨论https://bgm.tv/group/topic/350758
+
+## [开发者平台跳转超合金组件](jump_to_gadgets.user.js?raw=true)
+
+在开发者平台页面(/dev/app)的导航栏添加按钮, 一键跳转到超合金组件(/settings/gadgets)
+
+对应组件https://bgm.tv/dev/app/1065
+
+也许是因为这个组件太小了, 审核一直没过..链接放这儿作备用吧
+
 ## [吐槽列表排序与筛选](sort_and_filter_comments.user.js?raw=true)
 
 对应组件https://bgm.tv/dev/app/1057
