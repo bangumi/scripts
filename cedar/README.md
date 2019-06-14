@@ -70,3 +70,13 @@
 对应组件https://bgm.tv/dev/app/1064
 
 站内讨论https://bgm.tv/group/topic/350821
+
+## [折叠Bangumi](spoilerFakeBBcode.user.js?raw=true)
+
+在客户端提供折叠功能.
+
+**启用后请务必阅读站内讨论.**
+
+对应组件https://bgm.tv/dev/app/1086
+
+站内讨论https://bgm.tv/group/topic/351033
