@@ -80,3 +80,9 @@
 对应组件https://bgm.tv/dev/app/1086
 
 站内讨论https://bgm.tv/group/topic/351033
+
+## [首页与超展开条目/小组屏蔽](homepage_rakuen_blacklist.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/1097
+
+站内讨论https://bgm.tv/group/topic/351130
