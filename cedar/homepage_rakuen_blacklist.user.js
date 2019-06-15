@@ -4,7 +4,7 @@
 // @version     1.0
 // @description 根据指定关键词或ID屏蔽首页热门条目与小组讨论
 // @author      Cedar
-// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
+// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen.*$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/settings/privacy$/
 // @grant       GM_addStyle
@@ -24,6 +24,9 @@
 	transform: rotate(-45deg);
 }
 `);
+
+  let storageKey = 'bangumi_homepage_rakuen_blacklist';
+  let blacklist = JSON.parse(localStorage[storageKey] || "{}");
 
   if (location.pathname == "/settings/privacy") {
     let formtable =
@@ -83,17 +86,17 @@
   let idParser, titleParser;
 
   if (location.pathname == "/") {
-    group   = document.querySelectorAll('#home_grp_tpc .sideTpcList>:not(.tools)');
+    group = document.querySelectorAll('#home_grp_tpc .sideTpcList>:not(.tools)');
     subject = document.querySelectorAll('#home_subject_tpc .sideTpcList>li');
 
-    idParser    = e => e.querySelector('p a').href.split('/').pop();
+    idParser = e => e.querySelector('p a').href.split('/').pop();
     titleParser = e => e.querySelector('.inner>a').innerHTML;
   }
   else if (location.pathname.startsWith("/rakuen")) {
-    group   = document.querySelectorAll('[id^="item_group_"]');
+    group = document.querySelectorAll('[id^="item_group_"]');
     subject = document.querySelectorAll('[id^="item_subject_"]');
 
-    idParser    = e => e.querySelector('.row>a').href.split('/').pop();
+    idParser = e => e.querySelector('.row>a').href.split('/').pop();
     titleParser = e => e.querySelector('.inner>a').innerHTML;
   }
 
