@@ -7,6 +7,7 @@
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen.*$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/settings/privacy$/
+// @grant       GM_addStyle
 // ==/UserScript==
 
 (function () {
