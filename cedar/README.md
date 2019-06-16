@@ -4,6 +4,8 @@
 
 为了方便编辑和统一内容, 脚本用法图例和详情请查阅对应的站内讨论帖. 在此只作简要叙述.
 
+当然, 复杂的组件会多写两句.
+
 ## [简评字数统计](comment_word_counter.user.js?raw=true)
 
 对应组件https://bgm.tv/dev/app/592
@@ -27,7 +29,7 @@
 * 增加标题
 * 定制字体
 
-启用后请务必前往站内讨论页阅读使用教程!
+**启用后请务必前往站内讨论页阅读使用教程!**
 
 对应组件https://bgm.tv/dev/app/1049
 
@@ -45,7 +47,9 @@
 
 对应组件https://bgm.tv/dev/app/1065
 
-也许是因为这个组件太小了, 审核一直没过..链接放这儿作备用吧
+站内讨论https://bgm.tv/group/topic/351145
+
+也许是因为这个组件太小了, 审核一直没过..我把对应组件的链接放这儿作备用吧
 
 ## [吐槽列表排序与筛选](sort_and_filter_comments.user.js?raw=true)
 
@@ -55,7 +59,7 @@
 * 日期顺序
 * 注册排序
 
-想排序多个页面, 请配合[liaune](https://bgm.tv/user/liaune)的 脚本/组件 bangumi_unlimited_pages.user.js 使用.
+想排序多个页面, 请配合[liaune](https://bgm.tv/user/liaune)的 脚本/组件 bangumi_unlimited_pages.user.js 使用. 详见站内讨论.
 
 对应组件https://bgm.tv/dev/app/1057
 
