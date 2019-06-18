@@ -66,7 +66,7 @@ ${generateTableRow('小组ID', 'groupIDs', blacklist.groupIDs)
 
   function filterItems(elemList, elemParser, keywordList, strictMode=false) {
     // Note: elemParser should return a string.
-    if (!keywordList.length) return;
+    if (!keywordList || !keywordList.length) return;
     for (let e of elemList) {
       const s = elemParser(e);
       if (keywordList.some(strictMode? (k => s === k): (k => s.includes(k))))
@@ -93,9 +93,9 @@ ${generateTableRow('小组ID', 'groupIDs', blacklist.groupIDs)
   }
 
   // group
-  filterItems(group, idParser, blacklist.groupIDs || [], true);
-  filterItems(group, titleParser, blacklist.groupTitleKeywords || []);
+  filterItems(group, idParser, blacklist.groupIDs, true);
+  filterItems(group, titleParser, blacklist.groupTitleKeywords);
   // subject
-  filterItems(subject, idParser, blacklist.subjectIDs || [], true);
-  filterItems(subject, titleParser, blacklist.subjectTitleKeywords || []);
+  filterItems(subject, idParser, blacklist.subjectIDs, true);
+  filterItems(subject, titleParser, blacklist.subjectTitleKeywords);
 })();
