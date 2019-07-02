@@ -6,7 +6,7 @@
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/index/\d+$/
-// @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/.*(browser|tag|subject_search|list)[?/].+$/
+// @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/.*(browser|tag|subject_search|list).*$/
 // ==/UserScript==
 
 (function() {
