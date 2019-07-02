@@ -6,18 +6,26 @@
     outline-offset: -3px;
     outline: 2px solid white;
 }
-.willian-size-1{
+.willian-size-52{
     width: 52px;
     height: 52px;
 }
-.willian-size-2{
-    width: 37px;
-    height: 37px;
-}
-.willian-size-3{
-    width: 100%;
-}
-.willian-size-4{
+.willian-size-48{
     width: 48px;
     height: 48px;
 }
+.willian-size-37{
+    width: 37px;
+    height: 37px;
+}
+.willian-size-20{
+    width: 20px;
+    height: 20px;
+}
+.willian-size-not-decided{
+
+}
+.willian-size-100pa{
+    width: 100%;
+}
+
