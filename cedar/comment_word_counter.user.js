@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.2
+// @version     1.2.1
 // @description 统计简评字数
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
@@ -23,8 +23,7 @@
 			.css('margin-bottom', '8px').append($wordcounter, '/', $total);
 		$("#collectBoxForm", dom).children('.clearit').last().before($wordcounterWrapper);
 
-		// "input" event for paste action on mobile.
-		$comment.on('blur keyup input', function() {
+		$comment.on('blur input', function() {
 			let count = getCount();
 			$wordcounter.text(count);
 			if(count > total) $wordcounter.css("color","red");
@@ -33,8 +32,9 @@
 	}
 
 	function loop() {
-		let ready = $('#TB_iframeContent').length && $('#comment', $('#TB_iframeContent').contents()).length;
-		if(ready) createWordCounter($('#TB_iframeContent').contents());
+		let $iframe = $('#TB_iframeContent');
+		let ready = $iframe.length && $('#comment', $iframe.contents()).length;
+		if(ready) createWordCounter($iframe.contents());
 		else window.requestAnimationFrame(loop);
 	}
 
@@ -43,6 +43,7 @@
 }) ();
 
 /** version:
+ *  ver 1.2.1   少量优化
  *  ver 1.2     支持个人收藏, 目录, Tag, 搜索和排行榜页面
  *  ver 1.1     实现方法优化
  *  ver 1.0.1   修改metadata(@include @namespace)
