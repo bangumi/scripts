@@ -75,11 +75,12 @@
     fetch(url, {credentials: "omit"})
       .then(r => r.text())
       .then(html => {
-      let parser = new DOMParser();
-      let doc = parser.parseFromString(html, 'text/html');
-      let globalTmlContent = doc.getElementById('tmlContent');
-      tmlContent.innerHTML = globalTmlContent.innerHTML;
-    })
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(html, 'text/html');
+        let globalTmlContent = doc.getElementById('tmlContent');
+        tmlContent.innerHTML = globalTmlContent.innerHTML;
+        if(chiiLib) chiiLib.tml.prepareAjax();
+      });
   }
 
   function toggle_globalTLtabs(e) {
