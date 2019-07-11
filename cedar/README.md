@@ -95,4 +95,4 @@
 
 对应组件https://bgm.tv/dev/app/1136
 
-站内讨论 (暂未更新)
+站内讨论https://bgm.tv/group/topic/351500
