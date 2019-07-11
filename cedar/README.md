@@ -90,3 +90,9 @@
 对应组件https://bgm.tv/dev/app/1097
 
 站内讨论https://bgm.tv/group/topic/351130
+
+## [全站&好友动态切换完全版](timeline_perfect_switcher.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/1136
+
+站内讨论 (暂未更新)
