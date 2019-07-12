@@ -1,15 +1,18 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.2.1
+// @version     1.3
 // @description 统计简评字数
 // @author      Cedar
+// @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/$/
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/index/\d+$/
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/.*(browser|tag|list|update|subject_search).*$/
 // ==/UserScript==
 
 /**include解释:
+ * none:   首页
+ * subject:条目页
  * index:  目录
  * brower: 分类浏览和排行榜
  * tag:    标签页
@@ -49,13 +52,15 @@
 	}
 
 	if(location.pathname.startsWith("/subject/")) createWordCounter()
+	else if(location.pathname == "/") $('.progress_percent_text').children('a').on('click', function() {window.requestAnimationFrame(loop)})
 	else $('a.thickbox').on('click', function() {window.requestAnimationFrame(loop)})
 }) ();
 
 /** version:
- *  ver 1.2.1   少量优化
- *  ver 1.2     支持个人收藏, 目录, Tag, 搜索和排行榜页面
- *  ver 1.1     实现方法优化
- *  ver 1.0.1   修改metadata(@include @namespace)
- *  ver 1.0     初始版本.
+ *  ver 1.3    支持首页
+ *  ver 1.2.1  少量优化
+ *  ver 1.2    支持个人收藏, 目录, Tag, 搜索和排行榜页面
+ *  ver 1.1    实现方法优化
+ *  ver 1.0.1  修改metadata(@include @namespace)
+ *  ver 1.0    初始版本.
  */
