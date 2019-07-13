@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         全站动态&好友动态切换完全版
 // @namespace    tv.bgm.cedar.timelinePerfectSwitcher
-// @version      1.0
+// @version      1.0.1
 // @description  完美切换全站动态&好友动态. 全标签页适配. 长按可修改默认行为.
 // @author       Cedar
-// @include      /^https?://((bgm|bangumi)\.tv|chii\.in)/(timeline)?$/
+// @include      /^https?://((bgm|bangumi)\.tv|chii\.in)/(timeline)?(\?.*)?$/
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -15,7 +15,6 @@
 #columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-focus,
 #columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-on {
   color: white;
-  /*background: dodgerblue;*/
   background: #4F93CF;
 }
 #columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-off {
@@ -24,14 +23,15 @@
 }
 `);
 
+  // 好友动态对应的按钮
   let $TLtabsWrapper = $('#timelineTabs');
   let $TLtabs = $TLtabsWrapper.children('li');
 
-  // 注意设置 event listener 时适配触屏
-  // 全站动态的对应按钮
+  // (注意设置 event listener 时适配触屏)
+  // 全站动态对应的按钮
   let $globalTLtabs = $TLtabs.clone().hide();
-  $globalTLtabs.children('a').removeAttr('id').removeClass('focus');
-  $globalTLtabs.find('a:not(.top)').on('click touchend', switch_globalTLtabs); // :not(.top)剔除的是"更多"按钮. 它是个菜单, 不应该添加.
+  $globalTLtabs.find('a:not(.top)').removeAttr('id').removeClass('focus')  // 用:not(.top)剔除"更多"按钮. 它只是个菜单.
+    .on('click touchend', switch_globalTLtabs);
   $TLtabsWrapper.append($globalTLtabs);
 
   // 切换按钮. 用于切换全站动态与好友动态
@@ -44,13 +44,13 @@
   // 如果长按切换按钮, 可以修改默认设置
   let longPressTimer;
   $globalTLSwitchBtn.on('mousedown touchstart', function(e) {
-    e.preventDefault();
-    longPressTimer = setTimeout(() => {localStorage.setItem("global_timeline_switch_on", confirm("默认切换为全站动态？"))}, 750);
-  })
+      e.preventDefault();
+      longPressTimer = setTimeout(() => {localStorage.setItem("global_timeline_switch_on", confirm("默认切换为全站动态？"))}, 750);
+    })
     .on('mouseleave mouseup touchend', function(e) {
-    e.preventDefault();
-    clearTimeout(longPressTimer);
-  })
+      e.preventDefault();
+      clearTimeout(longPressTimer);
+    })
 
   // 读取设置判断是否默认显示全站动态
   let default_global = localStorage.getItem("global_timeline_switch_on") || 'false';
@@ -58,8 +58,9 @@
 
   function switch_globalTLtabs(e) {
     e.preventDefault();
-    set_globalTL_focus(e.target);
-    fetch_global_timeline(e.target.href);
+    // 要用currentTarget而不是target, 单击"更多"菜单下的按钮时可能会按到 a>span 上..
+    set_globalTL_focus(e.currentTarget);
+    fetch_global_timeline(e.currentTarget .href);
   }
 
   function set_globalTL_focus(el) {
@@ -88,6 +89,7 @@
     $globalTLSwitchBtn.toggleClass('global-timeline-on global-timeline-off');
     $globalTLtabs.toggle();
     $TLtabs.toggle();
+
     let globalOn = $globalTLSwitchBtn.hasClass('global-timeline-on');
     if(globalOn) { // toggled to on
       $globalTLSwitchBtn.text('全站动态');
