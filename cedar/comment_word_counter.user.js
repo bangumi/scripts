@@ -7,7 +7,7 @@
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/$/
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/index/\d+$/
-// @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/.*(browser|tag|list|update|subject_search).*$/
+// @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/.*(browser|tag|list|subject_search).*$/
 // ==/UserScript==
 
 /**include解释:
@@ -17,7 +17,7 @@
  * brower: 分类浏览和排行榜
  * tag:    标签页
  * list:   个人收藏
- * update: 更新页(比如/update/124341)
+ * update: 更新页(比如/update/124341 组件无效 放弃支持)
  * subject_search: 搜索页
  */
 
