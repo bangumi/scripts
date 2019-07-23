@@ -8,13 +8,12 @@
 // @run-at       document-end
 // ==/UserScript==
 
-const lowerLimit = 3;
-const factor = 5;
+// const lowerLimit = 3;
+const factor = 10;
 
 // median
 function median(values) {
     values = values.slice(0).sort( function(a, b) {return a - b; } );
-
     return middle(values);
 }
 
@@ -82,7 +81,8 @@ function onAir(){
                         .map(b=>getComment(b.getAttribute('rel')))
                         .sort()
                 )
-                const threshold = Math.min(medium/factor, lowerLimit);
+                // const threshold = Math.max(medium/factor, lowerLimit);
+                const threshold = medium/factor;
 
                 for(const btn of airs){
                     console.log(getComment(btn.getAttribute('rel')), threshold);
