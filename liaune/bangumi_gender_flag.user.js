@@ -45,8 +45,8 @@ transform: scale(0.8) translate(1px, -4px);
         gender_data = {"male":[],"female":[]};
     if(location.href.match(/user\/[^\/]+$/)){
         let id = location.href.split('/').pop();
-        let male_flag = document.createElement('span'); male_flag.href='javascript:;'; male_flag.textContent = '♂';
-        let female_flag = document.createElement('span'); female_flag.href='javascript:;'; female_flag.textContent = '♀';
+        let male_flag = document.createElement('span'); male_flag.textContent = '♂';
+        let female_flag = document.createElement('span'); female_flag.textContent = '♀';
         if(gender_data.male.includes(id)){
             male_flag.className = "male_flag";
             $("h1.nameSingle .inner a").after($(male_flag));
