@@ -6,7 +6,7 @@
 // @icon        http://bgm.tv/img/favicon.ico
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.2
+// @version     0.3
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_registerMenuCommand
@@ -37,11 +37,13 @@
   if (index > -1) domains.splice(index, 1);
   if (host.match(new RegExp(domains.join('|')))) {
     var URI = current_url.replace(/((?:bgm|bangumi)\.tv|chii\.in)/, bgm_domain);
-    if (/bgm\.tv/.test(bgm_domain)) {
-      URI = URI.replace('http:', 'https:');
-    } else if (/bangumi\.tv/.test(bgm_domain)) {
-      URI = URI.replace('https:', 'http:');
-    }
+    // 强制使用 https
+    URI = URI.replace('http:', 'https:');
+    // if (/bgm\.tv/.test(bgm_domain)) {
+    //   URI = URI.replace('http:', 'https:');
+    // } else if (/bangumi\.tv/.test(bgm_domain)) {
+    //   URI = URI.replace('http:', 'https:');
+    // }
     window.location.href = URI;
   }
   if (GM_registerMenuCommand) {
