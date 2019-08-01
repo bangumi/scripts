@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi用户性别标识
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.1
+// @version      0.2
 // @description  在用户主页标记性别，在用户名的旁边显示性别标识
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/.*
@@ -45,21 +45,13 @@ transform: scale(0.8) translate(1px, -4px);
         gender_data = {"male":[],"female":[]};
     if(location.href.match(/user\/[^\/]+$/)){
         let id = location.href.split('/').pop();
-        let male_flag = document.createElement('span'); male_flag.textContent = '♂';
-        let female_flag = document.createElement('span'); female_flag.textContent = '♀';
+        let male_flag = document.createElement('span');  male_flag.textContent = '♂'; male_flag.className = "un_flag"; $("h1.nameSingle .inner a").after($(male_flag));
+        let female_flag = document.createElement('span'); female_flag.textContent = '♀'; female_flag.className = "un_flag"; $("h1.nameSingle .inner a").after($(female_flag));
         if(gender_data.male.includes(id)){
             male_flag.className = "male_flag";
-            $("h1.nameSingle .inner a").after($(male_flag));
         }
-        else if(gender_data.female.includes(id)){
+        if(gender_data.female.includes(id)){
             female_flag.className = "female_flag";
-            $("h1.nameSingle .inner a").after($(female_flag));
-        }
-        else{
-            male_flag.className = "un_flag";
-            female_flag.className = "un_flag";
-            $("h1.nameSingle .inner a").after($(male_flag));
-            $("h1.nameSingle .inner a").after($(female_flag));
         }
         male_flag.addEventListener('click', function(){
             if(gender_data.male.includes(id)){
@@ -86,14 +78,14 @@ transform: scale(0.8) translate(1px, -4px);
             }
         });
     }
-    let all = $('a.l')
+    let all = $('a.l');
     for (let i = 0; i < all.length; i++) {
-        let id = all[i].href.split('/').pop()
+        let id = all[i].href.split('/user/').pop();
         if (gender_data.male.includes(id)) {
-            $(all[i]).after($(`<span class="male_flag">♂</span>`))
+            $(all[i]).after($(`<span class="male_flag">♂</span>`));
         }
-        else if (gender_data.female.includes(id)) {
-            $(all[i]).after($(`<span class="female_flag">♀</span>`))
+        if (gender_data.female.includes(id)) {
+            $(all[i]).after($(`<span class="female_flag">♀</span>`));
         }
     }
 })();
