@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        折叠Bangumi
 // @namespace   tv.bgm.cedar.spoilerFakeBBcode
-// @version     1.0
+// @version     1.0.1
 // @description 折叠Bangumi
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*(topic|ep|blog|comments|character).*/
@@ -39,13 +39,10 @@
     .css('margin', '5px')
     .on("click", function(e) {$(this.nextElementSibling).fadeToggle("fast")});
 
-  //const validHead = /^\s*(!?)\*===+\s*((.*?)\s*===+\*\1\s*)?$/;
-  //const validTail = /^\s*(!?)\*===+\*\1\s*$/;
-  //const getTitle = s => s.replace(validHead, "$3");
-  const keywords = /spoiler|fold|hide/;
-  const validHead = /^\s*\[(spoiler|fold|hide)(=(.*))?\]\s*$/;
-  const validTail = /^\s*\[\/(spoiler|fold|hide)\]\s*$/
-  const getTitle = s => s.replace(validHead, "$3");
+  const keywords = /spoiler|fold|hide/i;
+  const validHead = /^\s*\[(spoiler|fold|hide)(=(.*))?\]\s*$/i;
+  const validTail = /^\s*\[\/(spoiler|fold|hide)\]\s*$/i;
+  const getTitle = s => s.match(validHead)[3];
   const isBr = el => el && el.nodeType === Node.ELEMENT_NODE && el.tagName === "BR";
 
   function collapse(content) {
