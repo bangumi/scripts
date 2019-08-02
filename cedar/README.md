@@ -96,3 +96,9 @@
 对应组件https://bgm.tv/dev/app/1136
 
 站内讨论https://bgm.tv/group/topic/351500
+
+## [本页楼层跳转支持](make_internal_link.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/1164
+
+站内讨论https://bgm.tv/group/topic/351881
