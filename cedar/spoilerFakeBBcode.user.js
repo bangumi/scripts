@@ -93,11 +93,10 @@
     }
   }
 
-  const collapseAll = nodes => {for(let c of nodes) collapse(c)};
   //所有回复
-  collapseAll(document.querySelectorAll(".message, .cmt_sub_content"));
+  document.querySelectorAll(".message, .cmt_sub_content").forEach(collapse);
   if (window.location.pathname.includes("blog"))  //日志
-    collapseAll(document.querySelectorAll(".blog_entry"));
+    document.querySelectorAll(".blog_entry").(collapse);
   else if (window.location.pathname.includes("topic")) //小组
-    collapseAll(document.querySelectorAll(".topic_content"));
+    document.querySelectorAll(".topic_content").forEach(collapse);
 }) ();
