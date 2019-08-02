@@ -96,7 +96,7 @@
   //所有回复
   document.querySelectorAll(".message, .cmt_sub_content").forEach(collapse);
   if (window.location.pathname.includes("blog"))  //日志
-    document.querySelectorAll(".blog_entry").(collapse);
+    document.querySelectorAll(".blog_entry").forEach(collapse);
   else if (window.location.pathname.includes("topic")) //小组
     document.querySelectorAll(".topic_content").forEach(collapse);
 }) ();
