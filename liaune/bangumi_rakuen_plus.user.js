@@ -1,17 +1,18 @@
 // ==UserScript==
 // @name         bangumi_rakuen_plus
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.0
+// @version      1.1
 // @description  为超展开菜单加入更多探索功能，如：dollars、timeline、magi、wiki等
 // @author       Liaune
 // @include        /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/rakuen
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function() { 
     $('#rakuenTab').find('.timelineTabs').append(`<li>
-<a href="/dollars" class="top" target="right">更多</a>
+<a href="/rakuen/home" class="top" target="right">更多</a>
 <ul>
+<li><a href="/" target="right">首页</a></li>
 <li><a href="/dollars" target="right">Dollars</a></li>
 <li><a href="/timeline" target="right">时空管理局</a></li>
 <li><a href="/magi" target="right">MAGI 问答</a></li>
