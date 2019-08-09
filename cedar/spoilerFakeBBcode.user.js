@@ -4,16 +4,19 @@
 // @version     1.1
 // @description 折叠Bangumi
 // @author      Cedar
-// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*(topic|ep|blog|comments|character).*/
+// @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*(ep|blog|group|subject|comments|character).*/
+// @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/rakuen/topic/.*/
 // @grant       GM_addStyle
 // ==/UserScript==
 
 /** include解释:
- *  topic    : 小组帖子 & 条目讨论
  *  ep       : 单集评论
  *  blog     : 日志
+ *  group    : 小组主题
+ *  subject  : 条目讨论
  *  comments : 目录评论页
  *  character: 角色页
+ *  rakuen/topic/: 超展开
  */
 
 (function() {
@@ -99,8 +102,8 @@ html[data-theme='dark'] .spoiler-content {
 
   //所有回复
   document.querySelectorAll(".message, .cmt_sub_content").forEach(collapse);
-  if (window.location.pathname.includes("blog"))  //日志
+  if (location.pathname.includes("blog"))  //日志
     document.querySelectorAll(".blog_entry").forEach(collapse);
-  else if (window.location.pathname.includes("topic")) //小组
+  else if (location.pathname.includes("group") || location.pathname.includes("subject")) //小组主题 & 条目讨论
     document.querySelectorAll(".topic_content").forEach(collapse);
 }) ();
