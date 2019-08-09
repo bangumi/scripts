@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        折叠Bangumi
 // @namespace   tv.bgm.cedar.spoilerFakeBBcode
-// @version     1.0.1
+// @version     1.1
 // @description 折叠Bangumi
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*(topic|ep|blog|comments|character).*/
@@ -24,6 +24,13 @@
   padding: 10px;
   border: 2px solid #EEE;
   background-color: #FEFBFC;
+  border-radius: 5px;
+}
+
+html[data-theme='dark'] .spoiler-content {
+  padding: 10px;
+  border: 2px solid #444;
+  background-color: #302E30;
   border-radius: 5px;
 }
 `};
