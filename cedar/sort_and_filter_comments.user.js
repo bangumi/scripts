@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        吐槽列表排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltercomments
-// @version     1.4.1
+// @version     1.4.2
 // @description 排序与筛选吐槽列表
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*comments.*/
@@ -58,7 +58,7 @@
 
   // === parsers ===
   const parseLen   = el => el.querySelector('p').innerText.length;
-  const parseScore = el => {let e = el.querySelector('.starsinfo'); return e? parseInt(e.className.slice(6,8)): 0;};
+  const parseScore = el => {let e = el.querySelector('.starlight'); return e? parseInt(e.classList[1].slice(5)): 0;};
   const parseDate  = el => parseDateString(el.querySelector('small').innerText.slice(2));
 
   function parseUserId(el) {
@@ -219,6 +219,7 @@
 }) ();
 
 /** version:
+ *  ver 1.4.2   适配新的星星样式
  *  ver 1.4.1   增加筛选按钮, 默认隐藏筛选界面
  *  ver 1.4     可以按字数, 时间, 评分, UID范围筛选!
  *  ver 1.3     优化代码结构.
