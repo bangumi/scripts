@@ -22,38 +22,38 @@
  */
 
 (function() {
-	'use strict';
+  'use strict';
 
-	function createWordCounter(dom=document) {
-		const total = 200;
-		let $comment = $('#comment', dom);
-		const getCount = () => $comment.val().length;
+  function createWordCounter(dom=document) {
+    const total = 200;
+    let $comment = $('#comment', dom);
+    const getCount = () => $comment.val().length;
 
-		let $total = $(document.createElement('span')).css('padding', '0 5px').text(total);
-		let $wordcounter = $total.clone().text(getCount());
-		let $wordcounterWrapper = $(document.createElement('div'))
-			.css('margin-bottom', '8px').append($wordcounter, '/', $total);
-		$("#collectBoxForm", dom).children('.clearit').last().before($wordcounterWrapper);
+    let $total = $(document.createElement('span')).css('padding', '0 5px').text(total);
+    let $wordcounter = $total.clone().text(getCount());
+    let $wordcounterWrapper = $(document.createElement('div'))
+      .css('margin-bottom', '8px').append($wordcounter, '/', $total);
+    $("#collectBoxForm", dom).children('.clearit').last().before($wordcounterWrapper);
 
-		$comment.on('blur input', function() {
-			let count = getCount();
-			$wordcounter.text(count);
-			if(count > total) $wordcounter.css("color","red");
-			else $wordcounter.css("color","");
-		});
-	}
+    $comment.on('blur input', function() {
+      let count = getCount();
+      $wordcounter.text(count);
+      if(count > total) $wordcounter.css("color","red");
+      else $wordcounter.css("color","");
+    });
+  }
 
-	function loop() {
-		let $iframe = $('#TB_iframeContent');
-		let ready = $iframe.length && $('#comment', $iframe.contents()).length;
-		if(ready) createWordCounter($iframe.contents());
-		else setTimeout(window.requestAnimationFrame, 100, loop);
-		//else window.requestAnimationFrame(loop);
-	}
+  function loop() {
+    let $iframe = $('#TB_iframeContent');
+    let ready = $iframe.length && $('#comment', $iframe.contents()).length;
+    if(ready) createWordCounter($iframe.contents());
+    else setTimeout(window.requestAnimationFrame, 100, loop);
+    //else window.requestAnimationFrame(loop);
+  }
 
-	if(location.pathname.startsWith("/subject/")) createWordCounter()
-	else if(location.pathname == "/") $('.progress_percent_text').children('a').on('click', function() {window.requestAnimationFrame(loop)})
-	else $('a.thickbox').on('click', function() {window.requestAnimationFrame(loop)})
+  if(location.pathname.startsWith("/subject/")) createWordCounter()
+  else if(location.pathname == "/") $('.progress_percent_text').children('a').on('click', function() {window.requestAnimationFrame(loop)})
+  else $('a.thickbox').on('click', function() {window.requestAnimationFrame(loop)})
 }) ();
 
 /** version:
