@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         全站动态&好友动态切换完全版
 // @namespace    tv.bgm.cedar.timelinePerfectSwitcher
-// @version      1.0.1
+// @version      1.0.2
 // @description  完美切换全站动态&好友动态. 全标签页适配. 长按可修改默认行为.
 // @author       Cedar
 // @include      /^https?://((bgm|bangumi)\.tv|chii\.in)/(timeline)?(\?.*)?$/
@@ -73,14 +73,15 @@
   function fetch_global_timeline(url) {
     let tmlContent = document.getElementById('tmlContent');
     tmlContent.innerHTML = '<div class="loading"><img src="/img/loadingAnimation.gif" /></div>';
-    fetch(url, {credentials: "omit"})
+    fetch(url+'&ajax=1', {credentials: "omit"})
       .then(r => r.text())
       .then(html => {
-        let parser = new DOMParser();
-        let doc = parser.parseFromString(html, 'text/html');
-        let globalTmlContent = doc.getElementById('tmlContent');
-        tmlContent.innerHTML = globalTmlContent.innerHTML;
-        if(chiiLib) chiiLib.tml.prepareAjax();
+        tmlContent.innerHTML = html;
+        chiiLib.tml.prepareAjax();
+      })
+      .catch(() => {
+        $("#robot_speech_js").html(AJAXtip['error']);
+        $("#robot").animate({opacity: 1}, 1000).fadeOut(500);
       });
   }
 
