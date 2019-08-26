@@ -36,7 +36,7 @@
     descendOrderFirst,  //sort by descend order first if true
     parentNode,  //all Nodes under parentNode will get sorted
     itemParser,  //should return something that parse items to feed 'compareFunction'
-    afterSort    //afterSort(inDescendOrder) will be called after sorted. inDescendOrder indicate nodes are sorted in which order
+    afterSort    //afterSort(inDescendOrder) will be called after sort. inDescendOrder indicate nodes are sorted in which order
   }) {
     let inDescendOrder = descendOrderFirst;
     const setDescendOrder = order => inDescendOrder = order;
@@ -44,7 +44,7 @@
       let compareFn;
       if (inDescendOrder) compareFn = (lft, ryt) => itemParser(ryt) - itemParser(lft);
       else compareFn = (lft, ryt) => itemParser(lft) - itemParser(ryt);
-      [].slice.call(parentNode.children)
+      Array.from(parentNode.children)
         .map(x => parentNode.removeChild(x))
         .sort(compareFn)
         .forEach(x => parentNode.appendChild(x));
@@ -125,7 +125,7 @@
     $sortByScoreButton.text("评分顺序");
     $sortByDateButton.text("时间顺序");
     $sortByUserIdButton.text("注册顺序");
-    [].slice.call(commentBox.children).forEach(item => item.classList.remove('unknown-registration-time'));
+    Array.from(commentBox.children).forEach(item => item.classList.remove('unknown-registration-time'));
   }
 
   // === buttons ===
@@ -148,7 +148,7 @@
 
   // === filter functions ===
   function filtering({elParserList, lftParserList, rytParserList}) {
-    let c = [].slice.call(commentBox.children).map(x => commentBox.removeChild(x))
+    let c = Array.from(commentBox.children).map(x => commentBox.removeChild(x));
     c.forEach(el => {
         for (let i = 0; i < elParserList.length; i++) {
           let n = elParserList[i](el);
@@ -158,7 +158,7 @@
           }
         }
         el.style.display = 'block';
-    })
+    });
     c.forEach(x => commentBox.appendChild(x));
   }
 
@@ -200,7 +200,7 @@
   const $dateFilter    = FilterElemFactory({ titleStr: '时间', filterFunc: filterAll, inputType: "datetime-local", min: '1970-01-01T00:00', max: '2999-01-01T00:00'});
   const $useridFilter  = FilterElemFactory({ titleStr: 'UID',  filterFunc: filterAll, inputType: "number", min: 0, max: 99999999, width: '70px'});
 
-  // === reset filters button ===
+  // === reset-all-filter button ===
   function resetInputs() {
     for (let f of [$commentFilter, $scoreFilter, $useridFilter])
       f.left.val(''), f.right.val('');
@@ -210,16 +210,16 @@
     let d = new Date(); // Note: d.getMonth() starts with 0.
     $dateFilter.right.val(`${pz('0000', d.getFullYear())}-${pz('00', d.getMonth()+1)}-${pz('00', d.getDate())}T${pz('00', d.getHours())}:${pz('00', d.getMinutes())}`)
   }
-  const $clearFilterButton = $chiiButton.clone().text("重置").on('click', () => {resetInputs(); filterAll();});
+  const $resetFilterButton = $chiiButton.clone().text("重置").on('click', () => {resetInputs(); filterAll();});
 
   resetInputs();
   $(commentBox).before(
-    $(document.createElement('div')).hide().append($commentFilter.wrap, $scoreFilter.wrap, $useridFilter.wrap, $dateFilter.wrap, $clearFilterButton)
+    $(document.createElement('div')).hide().append($commentFilter.wrap, $scoreFilter.wrap, $useridFilter.wrap, $dateFilter.wrap, $resetFilterButton)
   );
 }) ();
 
 /** version:
- *  ver 1.4.2   适配新的星星样式
+ *  ver 1.4.2   适配新的星星样式, 少量优化
  *  ver 1.4.1   增加筛选按钮, 默认隐藏筛选界面
  *  ver 1.4     可以按字数, 时间, 评分, UID范围筛选!
  *  ver 1.3     优化代码结构.
