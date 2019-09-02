@@ -66,19 +66,22 @@ function dealRawHTML(info) {
  * @param {Object} subjectInfo
  * @param {number} typeNumber
  */
-function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
+function fetchBangumiDataBySearch(subjectInfo, typeNumber, queryStr) {
   var startDate;
   if (subjectInfo && subjectInfo.startDate) {
     startDate = subjectInfo.startDate;
   }
   typeNumber = typeNumber || 'all';
-  var query = subjectInfo.subjectName;
+  // 去掉末尾的括号加上引号搜索
+  var query = (subjectInfo.subjectName || '').trim()
+    .replace(/（.+）|\(.+\)$/, '');
+  query = `"${query}"`;
   console.log(subjectInfo);
   // if (subjectInfo.isbn13) {
   //   query = subjectInfo.isbn13;
   // }
-  if (subjectInfo.isbn) {
-    query = subjectInfo.isbn;
+  if (queryStr) {
+    query = queryStr;
   }
   if (!query) {
     console.info('Query string is empty');
