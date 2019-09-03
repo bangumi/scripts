@@ -97,17 +97,22 @@ async function handleClick(config, checkFlag) {
 
 
 async function checkSubjectExist(queryInfo, newSubjectType) {
-  let searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
-  console.info('First: search result of bangumi: ', searchResult);
+  let searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn13);
+  console.info(`First: search result of bangumi: `, searchResult);
   if (searchResult && searchResult.subjectURL) {
     return searchResult;
-  } 
-  if (queryInfo.isbn) {
-    queryInfo.isbn = undefined;
-    searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
-    console.info('Second: search result of bangumi: ', searchResult);
+  }
+
+  searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn);
+  console.info('Second: search result of bangumi: ', searchResult);
+  if (searchResult && searchResult.subjectURL) {
     return searchResult;
   }
+
+  // 默认使用名称搜索
+  searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
+  console.info('Third: search result of bangumi: ', searchResult);
+  return searchResult;
 }
 var amazon = {
   init: function () {

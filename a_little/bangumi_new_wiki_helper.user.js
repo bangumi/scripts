@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.1.1
+// @version     0.1.3
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -274,17 +274,22 @@ async function handleClick(config, checkFlag) {
 }
 
 async function checkSubjectExist(queryInfo, newSubjectType) {
-  var searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
+  var searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn13);
   console.info('First: search result of bangumi: ', searchResult);
   if (searchResult && searchResult.subjectURL) {
     return searchResult;
   }
-  if (queryInfo.isbn) {
-    queryInfo.isbn = undefined;
-    searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
-    console.info('Second: search result of bangumi: ', searchResult);
+
+  searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn);
+  console.info('Second: search result of bangumi: ', searchResult);
+  if (searchResult && searchResult.subjectURL) {
     return searchResult;
   }
+
+  // 默认使用名称搜索
+  searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
+  console.info('Third: search result of bangumi: ', searchResult);
+  return searchResult;
 }
 var amazon = {
   init: function init() {
@@ -499,19 +504,21 @@ function dealRawHTML(info) {
  * @param {Object} subjectInfo
  * @param {number} typeNumber
  */
-function fetchBangumiDataBySearch(subjectInfo, typeNumber) {
+function fetchBangumiDataBySearch(subjectInfo, typeNumber, queryStr) {
   var startDate;
   if (subjectInfo && subjectInfo.startDate) {
     startDate = subjectInfo.startDate;
   }
   typeNumber = typeNumber || 'all';
-  var query = subjectInfo.subjectName;
+  // 去掉末尾的括号加上引号搜索
+  var query = (subjectInfo.subjectName || '').trim().replace(/（.+）|\(.+\)$/, '');
+  query = '"' + query + '"';
   console.log(subjectInfo);
   // if (subjectInfo.isbn13) {
   //   query = subjectInfo.isbn13;
   // }
-  if (subjectInfo.isbn) {
-    query = subjectInfo.isbn;
+  if (queryStr) {
+    query = queryStr;
   }
   if (!query) {
     console.info('Query string is empty');

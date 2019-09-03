@@ -102,3 +102,11 @@
 对应组件https://bgm.tv/dev/app/1164
 
 站内讨论https://bgm.tv/group/topic/351881
+
+## 楼层回复宽度拉伸与美化
+
+暂无脚本 请前往组件页面启用组件
+
+对应组件https://bangumi.tv/dev/app/1207
+
+站内讨论https://bgm.tv/group/topic/352335
