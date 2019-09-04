@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi话题收藏
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.3
+// @version      0.1.4
 // @description  收藏bangumi的话题
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((blog|(group|subject)\/topic|rakuen\/topic\/(group|subject))\/\d+(\?.*)?(#.*)?)?$/
@@ -43,44 +43,66 @@ GM_addStyle(`
         -moz-box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1);
         box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
     }
+    .btn_del{
+        background: transparent url(/img/ico/icons.gif) no-repeat scroll -2px -33px;
+        display: block;
+        height: 13px;
+        text-indent: -999em;
+        width: 13px;
+        -moz-opacity: 0.8;
+        opacity: 0.8;
+        filter: alpha(opacity=80);
+        overflow: hidden;
+        float: right;
+    }
+    .btn_del:hover {
+        background-position: -2px -46px;
+    }
     `);
 
-
 class BgmCollections {
-    constructor(){
-        if (!localStorage.getItem('bgm_collections_by_yonjar')) {
-            localStorage.setItem('bgm_collections_by_yonjar', JSON.stringify([]));
+    constructor() {
+        if (!localStorage.getItem("bgm_collections_by_yonjar")) {
+            localStorage.setItem(
+                "bgm_collections_by_yonjar",
+                JSON.stringify([])
+            );
         }
-        this.collections = JSON.parse(localStorage.getItem('bgm_collections_by_yonjar'));
+        this.collections = JSON.parse(
+            localStorage.getItem("bgm_collections_by_yonjar")
+        );
     }
 
-    get list(){
+    get list() {
         return this.collections;
     }
 
-    update(){
-        localStorage.setItem('bgm_collections_by_yonjar', JSON.stringify(this.collections));
+    update() {
+        localStorage.setItem(
+            "bgm_collections_by_yonjar",
+            JSON.stringify(this.collections)
+        );
     }
 
-    add(topic){
+    add(topic) {
         this.collections.push(topic);
         this.update();
-        console.log('topic_col:' , 'add ', topic.id);
+        console.log("topic_col:", "add ", topic.id);
     }
 
-    remove(topic){
-        for (let i = 0; i < this.collections.length; i++){
+    remove(topic) {
+        for (let i = 0; i < this.collections.length; i++) {
             if (this.collections[i].id === topic.id) {
                 this.collections.splice(i, 1);
                 break;
             }
         }
         this.update();
-        console.log('topic_col:' , 'remove ', topic.id);
+        console.log("topic_col:", "remove ", topic.id);
     }
 
-    has(topic){
-        for (let li of this.collections){
+    has(topic) {
+        for (let li of this.collections) {
             if (li.id === topic.id) {
                 return true;
             }
@@ -90,67 +112,93 @@ class BgmCollections {
 }
 
 class Topic {
-    constructor(){
+    constructor() {
         this.id = location.pathname.match(/\d+/)[0];
         this.path = this.pathTo(location.pathname);
         this.title = document.title;
-        this.author = (document.querySelector('.postTopic > div.inner > strong > a') || document.querySelector('#pageHeader > h1 > span > a.avatar.l')).textContent;
+        this.author = (
+            document.querySelector(".postTopic > div.inner > strong > a") ||
+            document.querySelector("#pageHeader > h1 > span > a.avatar.l")
+        ).textContent;
     }
 
-    init(){
+    init() {
         let bc = new BgmCollections();
-        let col_btn = document.createElement('button');
-        col_btn.classList.add('rr');
-        col_btn.classList.add('yonjar_bgm_topic_col_btn');
-        col_btn.innerText = bc.has(this) ? '取消收藏' : '收藏';
-        col_btn.addEventListener('click', () => {
+        let col_btn = document.createElement("button");
+        col_btn.classList.add("rr");
+        col_btn.classList.add("yonjar_bgm_topic_col_btn");
+        col_btn.innerText = bc.has(this) ? "取消收藏" : "收藏";
+        col_btn.addEventListener("click", () => {
             if (bc.has(this)) {
                 bc.remove(this);
-                col_btn.innerText = '收藏';
-            }
-            else {
+                col_btn.innerText = "收藏";
+            } else {
                 bc.add(this);
-                col_btn.innerText = '取消收藏';
+                col_btn.innerText = "取消收藏";
             }
         });
 
-        let titleElem = document.querySelector('#pageHeader > h1') || document.querySelector('#header > h1');
+        let titleElem =
+            document.querySelector("#pageHeader > h1") ||
+            document.querySelector("#header > h1");
         titleElem.appendChild(col_btn);
     }
 
-    pathTo(path){
-        return /rakuen/.test(path) ? path.replace(/rakuen\/topic\/(\w+)\/(\d+)/, (match, p1, p2) => `${p1}/topic/${p2}`) : path;
+    pathTo(path) {
+        return /rakuen/.test(path)
+            ? path.replace(
+                  /rakuen\/topic\/(\w+)\/(\d+)/,
+                  (match, p1, p2) => `${p1}/topic/${p2}`
+              )
+            : path;
     }
 }
 
-class HomePage{
-    constructor(){
-        this.sideInner = document.querySelector('#columnHomeB > div.sideInner');
-        this.home_announcement = document.querySelector('#home_announcement');
+class HomePage {
+    constructor() {
+        this.sideInner = document.querySelector("#columnHomeB > div.sideInner");
+        this.home_announcement = document.querySelector("#home_announcement");
     }
 
-    init(){
+    init() {
         let bc = new BgmCollections();
-        let col_elem = document.createElement('div');
-        let listStr = '';
+        let col_elem =
+            document.querySelector("#yonjar_collection_tpc") ||
+            document.createElement("div");
+        let listStr = "";
         for (let col of bc.list) {
-            listStr += `<li><a href="${col.path}" title="楼主: ${col.author}" class="l" target="_blank">${col.title}</a></li>`;
+            listStr += `
+                <li>
+                    <a href="${col.path}" title="楼主: ${col.author}" class="l" target="_blank">${col.title}</a>
+                    <a title="取消收藏" data-del-id="${col.id}" class="btn_del" style="display: block;">del</a>
+                </li>
+            `;
         }
         col_elem.innerHTML = `
             <div id="yonjar_collection_tpc" class="halfPage">
                 <div class="sidePanelHome">
                     <h2 class="subtitle">收藏话题(${bc.list.length})</h2>
                     <ul class="timeline" style="margin:0 5px">
-                        ${bc.list.length < 1 ? '<li>暂无收藏</li>' : listStr}
+                        ${bc.list.length < 1 ? "<li>暂无收藏</li>" : listStr}
                     </ul>
                 </div>
             </div>
         `;
+
         this.sideInner.insertBefore(col_elem, this.home_announcement);
+
+        col_elem.addEventListener("click", e => {
+            let curr = e.target;
+            console.log(curr.dataset);
+            if (curr.className === "btn_del") {
+                bc.remove({ id: curr.dataset.delId });
+                this.init();
+            }
+        });
     }
 }
 
-(function () {
+(function() {
     let cur_url = location.href;
     if (/^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/$/.test(cur_url)) {
         let hp = new HomePage();
