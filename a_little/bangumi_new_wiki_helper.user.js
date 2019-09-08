@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.1.3
+// @version     0.1.4
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -273,7 +273,10 @@ async function handleClick(config, checkFlag) {
   }
 }
 
-async function checkSubjectExist(queryInfo, newSubjectType) {
+async function checkSubjectExist() {
+  var queryInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var newSubjectType = arguments[1];
+
   var searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn13);
   console.info('First: search result of bangumi: ', searchResult);
   if (searchResult && searchResult.subjectURL) {
@@ -300,8 +303,11 @@ var amazon = {
     this.insertBtn($title, configKey);
   },
   getConfigKey: function getConfigKey() {
-    var $nav = document.querySelector('#nav-subnav .nav-a-content');
-    if (/本/.test($nav.textContent)) return 'amazon_jp_book';
+    var $nav = document.querySelector('#nav-subnav .nav-a-content') || {};
+    var $navAll = document.querySelector('#wayfinding-breadcrumbs_container') || {};
+    // kindle 没有图书信息
+    if (/kindle/i.test($navAll.textContent) || /kindle/i.test($nav.textContent)) return;
+    if (/本/.test($nav.textContent) || /本|コミック/.test($navAll.textContent)) return 'amazon_jp_book';
   },
   insertBtn: function insertBtn($t, configKey) {
     var $s = document.createElement('span');

@@ -96,7 +96,7 @@ async function handleClick(config, checkFlag) {
 }
 
 
-async function checkSubjectExist(queryInfo, newSubjectType) {
+async function checkSubjectExist(queryInfo = {}, newSubjectType) {
   let searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn13);
   console.info(`First: search result of bangumi: `, searchResult);
   if (searchResult && searchResult.subjectURL) {
@@ -123,8 +123,11 @@ var amazon = {
     this.insertBtn($title, configKey);
   },
   getConfigKey: function () {
-    var $nav = document.querySelector('#nav-subnav .nav-a-content')
-    if (/本/.test($nav.textContent)) return 'amazon_jp_book';
+    var $nav = document.querySelector('#nav-subnav .nav-a-content') || {};
+    var $navAll = document.querySelector('#wayfinding-breadcrumbs_container') || {};
+    // kindle 没有图书信息
+    if (/kindle/i.test($navAll.textContent) || /kindle/i.test($nav.textContent)) return;
+    if (/本/.test($nav.textContent) || /本|コミック/.test($navAll.textContent)) return 'amazon_jp_book';
   },
   insertBtn: function ($t, configKey) {
     var $s = document.createElement('span');

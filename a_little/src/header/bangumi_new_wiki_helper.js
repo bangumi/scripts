@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.1.3
+// @version     0.1.4
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
