@@ -13,7 +13,6 @@
 table.gridtable {
 font-family: verdana,arial,sans-serif;
 font-size:11px;
-color:#333333;
 border-width: 1px;
 border-color: #a9c6c9;
 border-collapse: collapse;
@@ -35,10 +34,10 @@ border-color: #a9c6c9;
     const showBtn = document.createElement('li');
     const table = document.createElement('a');
     table.addEventListener('click', ShowTable);
-    table.style.backgroundImage="url(//lain.bgm.tv/pic/photo/l/17/7f/133075_9C090.jpg)";
-    table.style.backgroundSize= "contain";
+    $(table).css({"background-repeat": "no-repeat","background-image": "url(//lain.bgm.tv/pic/photo/l/17/7f/133075_9C090.jpg)","background-size": "20px 13px","background-position": "2px 2px"});
     table.href='javascript:;';
-    document.querySelector('#browserTypeSelector').insertBefore(showBtn, document.querySelectorAll('#browserTypeSelector li')[0]);
+    if(document.querySelectorAll('#browserTypeSelector li')[0])
+        document.querySelector('#browserTypeSelector').insertBefore(showBtn, document.querySelectorAll('#browserTypeSelector li')[0]);
     showBtn.appendChild(table);
 
     const You=document.querySelectorAll('#headerNeue2 .idBadgerNeue a.avatar')[0].href.split('/user/')[1];
@@ -76,10 +75,7 @@ border-color: #a9c6c9;
                 let title = elem.querySelectorAll('.inner h3 a')[0].innerHTML;
                 let name = elem.querySelectorAll('.inner h3 small.grey')[0] ? elem.querySelectorAll('.inner h3 small.grey')[0].innerHTML : title;
                 let date = elem.querySelectorAll('.inner .info')[0].textContent;
-                let ep = date.match(/(\d+)话/) ? date.match(/(\d+)话/)[1] :null;
-                if(ep) localStorage.setItem(ID+'Eps',ep);
-                ep = ep? ep : (localStorage.getItem(ID+'Eps') ? localStorage.getItem(ID+'Eps') : '');
-                if(ep=='null') ep='';
+                let ep = date.match(/(\d+)话/) ? date.match(/(\d+)话/)[1] :'';
                 function ParseDate(Datestring){
                     let yy=Datestring.match(/(\d{4})/)? Datestring.match(/(\d{4})/)[1].toString():'';
                     let year = Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)? Datestring.match(/(\d{4})(年|-)(\d{1,2})(月|-)(\d{1,2})/)[1].toString(): yy;
@@ -95,8 +91,8 @@ border-color: #a9c6c9;
                 let Votes = info ? info.Votes :'';
                 let Point_f = info ? info.Point_f : '';
                 let Votes_f = info ? info.Votes_f :'';
-                let User_rate=User ? elem.querySelectorAll('.inner .collectInfo span')[0].className: null;
-                let User_Point=User_rate ? (User_rate.match(/sstars(\d+)/)?User_rate.match(/sstars(\d+)/)[1]:''):'';
+                let User_rate=elem.querySelectorAll('.inner .collectInfo .starlight')[0] ? elem.querySelectorAll('.inner .collectInfo .starlight')[0].className: null;
+                let User_Point=User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:''):'';
                 let My_Point=localStorage.getItem(You+'Point'+ID) ? localStorage.getItem(You+'Point'+ID) :'';
                 if(My_Point=='null') My_Point='';
                 if(My_Point!=='' && User_Point!==''){
@@ -110,7 +106,7 @@ border-color: #a9c6c9;
                     if(User && User!=You){
                         tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rankNum}</td><td>${Point}</td><td>${Votes}</td><td>${Point_f}</td><td>${Votes_f}</td><td>${My_Point}</td><td>${User_Point}</td><td>${comment}</td>`;
                         if(My_Point!=='' && User_Point!=='' && Math.pow((My_Point-User_Point),2)>4){tr.style.color="#ff0000";}
-                        if(My_Point!=='' && User_Point!=='' && Math.pow((Point-User_Point),2)>1 && My_Point==User_Point){tr.style.color="#0000ff";}
+                        if(My_Point!=='' && User_Point!=='' && Math.pow((Point-User_Point),2)>1 && My_Point==User_Point){tr.style.color="#2ea6ff";}
                         //if(User_Point!=='' && User_Point-Point>1){tr.style.color="#ff00ff";}
                         //if(User_Point!=='' && Point-User_Point>1){tr.style.color="#c59c01";}
                     }
