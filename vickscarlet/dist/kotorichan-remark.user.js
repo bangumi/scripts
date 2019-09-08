@@ -9,47 +9,41 @@
 // @require      https://code.jquery.com/jquery-3.4.1.min.js
 // @grant        GM_addStyle
 // ==/UserScript==
-// jshint esversion: 6
 
 var kotorichan_app;
 
 (function(app){
 'use strict';
 
-    const $ = window.$;
-    const VERSION = "0.1.0";
-    /**
-     * 备注插件
-     * @class Remark
-     * @data m_remarks {
-     *      relationship_emui:{
-     *          FRIEND:0,
-     *          UNFAMILIAR:1,
-     *          Friend:0,
-     *          Unfamiliar:1,
-     *      },
-     *      people:{
-     *          $id$: {
-     *              k: relationship
-     *              n: name
-     *          }
-     *      },
-     *      blocks:{}
-     * }
-     */
-    class Remark {
-        constructor() {
-            this.m_remarks = null;
-            this.m_changes = null;
-        }
+const $ = window.$;
+const VERSION = "0.1.0";
+/**
+ * 备注插件
+ * @class Remark
+ * @data m_remarks {
+ *      relationship_emui:{
+ *          FRIEND:0,
+ *          UNFAMILIAR:1,
+ *      },
+ *      people:{
+ *          $id$: {
+ *              m: remark
+ *              u: usedName
+ *          }
+ *      },
+ *      blocks:{}
+ * }
+ */
+class Remark {
+    constructor() {
+        this.m_remarks = null;
+        this.m_changes = null;
     }
-
-    let _proto_ = Remark.prototype;
 
     /**
      * 初始化
      */
-    _proto_.init = function() {
+    init() {
         // console.log($,$$);
         if(typeof $ == "undefined"){
             // console.log('kotorichan remark init error');
@@ -63,14 +57,14 @@ var kotorichan_app;
         this.__initUI();
         this.__startParsePage();
         return true;
-    };
+    }
 
 
     /**
      * 刷新好友列表信息
      * @param {function} onFlushOver 刷新完成后回调
      */
-    _proto_.flushFriendsInfomation = function(onFlushOver) {
+    flushFriendsInfomation(onFlushOver) {
         // console.log("kotorichan_app.Remark.flushFriendsInfomation");
         this.__ajaxGetFriendPage(res => {
             this.__clearFriends();
@@ -87,12 +81,12 @@ var kotorichan_app;
             if(onFlushOver) onFlushOver(res);
             // kotorichan_app.remark.showFriendsRemark();
         });
-    };
+    }
 
     /**
      * 循环刷新好友数据 5分钟一次
      */
-    _proto_.checkLoop = function(){
+    checkLoop(){
         // console.log("kotorichan_app.Remark.checkLoop");
         let loop = () => {
             console.log("kotorichan_app.Remark.checkLoop loop");
@@ -103,12 +97,12 @@ var kotorichan_app;
         };
         setInterval(loop,300000);
         loop();
-    };
+    }
 
     /**
      * 开始解析页面
      */
-    _proto_.__startParsePage = function() {
+    __startParsePage() {
         const url = window.location.href;
         const matchs = {
             /**
@@ -204,6 +198,11 @@ var kotorichan_app;
              * @link https://bgm.tv/group/groupid
              */
             group: /^https?:\/\/(bgm.tv|bangumi.tv|chii.in)\/group\/[0-9a-zA-Z_-].+(\/forum)?/g,
+            /**
+             * 超展开讨论
+             * @link https://bgm.tv/rakuen/topic/(group|subject|ep|prsn|crt)/topicid
+             */
+            rakuenTopic: /^https?:\/\/(bgm.tv|bangumi.tv|chii.in)\/rakuen\/topic\/(group|subject|ep|prsn|crt)\/[0-9]+/g,
         };
         for(var page in matchs){
             const match = matchs[page];
@@ -226,7 +225,8 @@ var kotorichan_app;
                 case 'epCommon':
                 case 'groupTopic':
                 case 'character':
-                case 'subjectTopic': {
+                case 'subjectTopic':
+                case 'rakuenTopic': {
                     this.__parseDisscussLikePage();
                     return;
                 }
@@ -263,12 +263,12 @@ var kotorichan_app;
                 default: break;
             }
         }
-    };
+    }
 
     /**
      * 解析主页
      */
-    _proto_.__parseHomePage = function() {
+    __parseHomePage() {
         console.log('主页');
         $('#timeline ul li').each((idx, target) => {
             let block = $(target);
@@ -314,12 +314,12 @@ var kotorichan_app;
             });
             head.attr('href','javascript:void(0)');
         });
-    };
+    }
 
     /**
      * 解析用户页面
      */
-    _proto_.__parseUserPage = function() {
+    __parseUserPage() {
         console.log('用户页');
         $('#headerProfile').each((idx, target) => {
             let block = $(target);
@@ -344,12 +344,12 @@ var kotorichan_app;
             });
             hover.attr('href','javascript:void(0)');
         });
-    };
+    }
 
     /**
      * 解析频道/日志
      */
-    _proto_.__parseChannelBlog = function() {
+    __parseChannelBlog() {
         console.log('频道/日志');
         $('#news_list .item').each((idx, target) => {
             let block = $(target);
@@ -390,12 +390,12 @@ var kotorichan_app;
             });
             nameTarget.attr('href','javascript:void(0)');
         });
-    };
+    }
 
     /**
      * 解析类似讨论页的页面
      */
-    _proto_.__parseDisscussLikePage = function() {
+    __parseDisscussLikePage() {
         console.log('类似讨论页的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -421,12 +421,12 @@ var kotorichan_app;
         };
         $('#comment_list > div.row_reply').each(process);
         $('#comment_list div.topic_sub_reply > div').each(process);
-    };
+    }
 
     /**
      * 解析类似吐槽箱的页面
      */
-    _proto_.__parseCommonBoxLikePage = function() {
+    __parseCommonBoxLikePage() {
         console.log('类似吐槽箱的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -451,12 +451,12 @@ var kotorichan_app;
             hover.attr('href','javascript:void(0)');
         };
         $('#comment_box > div.item').each(process);
-    };
+    }
 
     /**
      * 解析类似评论的页面
      */
-    _proto_.__parseReviewLikePage = function() {
+    __parseReviewLikePage() {
         console.log('类似评论的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -481,12 +481,12 @@ var kotorichan_app;
             hover.attr('href','javascript:void(0)');
         };
         $('#entry_list > div.item').each(process);
-    };
+    }
 
     /**
      * 解析类似讨论版的页面
      */
-    _proto_.__parseBoardLikePage = function() {
+    __parseBoardLikePage() {
         console.log('类似讨论版的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -506,12 +506,12 @@ var kotorichan_app;
             hover.attr('href','javascript:void(0)');
         };
         $('table.topic_list tr').each(process);
-    };
+    }
 
     /**
      * 解析类似目录的页面
      */
-    _proto_.__parseIndexLikePage = function() {
+    __parseIndexLikePage() {
         console.log('类似目录的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -537,12 +537,12 @@ var kotorichan_app;
             hover.attr('href','javascript:void(0)');
         };
         $('#timeline ul li').each(process);
-    };
+    }
 
     /**
      * 解析类似小组话题的页面
      */
-    _proto_.__parseGroupMainLikePage = function() {
+    __parseGroupMainLikePage() {
         console.log('类似小组话题的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -568,12 +568,12 @@ var kotorichan_app;
             hover.attr('href','javascript:void(0)');
         };
         $('.topic_list tr').each(process);
-    };
+    }
 
     /**
      * 解析类似小组的页面
      */
-    _proto_.__parseGroupLikePage = function() {
+    __parseGroupLikePage() {
         console.log('类似小组的页面');
         let process = (idx, target) => {
             let block = $(target);
@@ -593,12 +593,12 @@ var kotorichan_app;
             hover.attr('href','javascript:void(0)');
         };
         $('.topic_list tr').each(process);
-    };
+    }
 
     /**
      * 初始化 UI
      */
-    _proto_.__initUI = function() {
+    __initUI() {
         // console.log("kotorichan_app.Remark.__initUI");
         const mainWindowId = "kotorichan_app_remark_main_window";
         const mainWindowCenterId = "kotorichan_app_remark_center";
@@ -656,7 +656,7 @@ var kotorichan_app;
         this.__initDock(dockId,dockMenuId);
         // 初始化标签
         this.__initTabs(tabs, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass);
-    };
+    }
 
     /**
      * 初始化组建主窗口
@@ -665,7 +665,7 @@ var kotorichan_app;
      * @param {string} mainWindowTabGroupId 主窗口标签组Id
      * @param {string} mainWindowContentId 主窗口内容Id
      */
-    _proto_.__initMainWindow = function(mainWindowId, mainWindowCenterId, mainWindowTabGroupId, mainWindowContentId) {
+    __initMainWindow(mainWindowId, mainWindowCenterId, mainWindowTabGroupId, mainWindowContentId) {
         let mainWindow = $(
 `<div id="${mainWindowId}">
     <div id="${mainWindowCenterId}">
@@ -689,14 +689,14 @@ var kotorichan_app;
         };
         mainWindow.click(event => this.m_mainWindowSwitch());
         mainWindow.find(`#${mainWindowCenterId}`).click(() => { return false; });
-    };
+    }
 
     /**
      * 初始化Dock菜单
      * @param {string} dockId DockId
      * @param {string} dockMenuId Dock菜单Id
      */
-    _proto_.__initDock = function(dockId, dockMenuId) {
+    __initDock(dockId, dockMenuId) {
         let dock_content = $(
 `<li id="${dockId}">
     <a href="javascript:void(0);">屏蔽用户列表</a>
@@ -704,17 +704,17 @@ var kotorichan_app;
 </li>`);
         dock_content.find('a').click(event => this.m_mainWindowSwitch());
         dock_content.insertAfter('#dock ul>li.first');
-    };
+    }
 
     /**
      * 切换标签
      * @param {number}
      */
-    _proto_.__onTabChange = function(idx, mainWindowTabSelectClass, mainWindowTabGroupId) {
+    __onTabChange(idx, mainWindowTabSelectClass, mainWindowTabGroupId) {
         // console.log("__onTabChange",idx);
         $(`.${mainWindowTabSelectClass}`).removeClass(mainWindowTabSelectClass);
         $($(`#${mainWindowTabGroupId} > li`)[idx]).addClass(mainWindowTabSelectClass);
-    };
+    }
 
     /**
      * 初始化组建主窗口标签
@@ -726,7 +726,7 @@ var kotorichan_app;
      * @param {string} dockMenuTabClass Dock标签Class
      * @param {string} mainWindowTabSelectClass 主窗口内标签选中Class
      */
-    _proto_.__initTabs = function(tabs, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
+    __initTabs(tabs, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
         const tabIniter = {
             friends: this.__initFriendTab.bind(this),
             blocks: this.__initBlockTab.bind(this),
@@ -738,12 +738,12 @@ var kotorichan_app;
             if(!tabIniter[tab]) continue;
             tabIniter[tab](idx++, tabs[tab].name, tabs[tab].params, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass);
         }
-    };
+    }
 
     /**
      * 初始化好友列表标签
      */
-    _proto_.__initFriendTab = function(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
+    __initFriendTab(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
         let dockMenu = $(`#${dockMenuId}`);
         let mainWindowTabGroup = $(`#${mainWindowTabGroupId}`);
         let dockMenuTab = $(`<li class="${dockMenuTabClass}">${tabName}</li>`);
@@ -776,12 +776,12 @@ var kotorichan_app;
                 // console.log(idx,userContent);
             }));
         });
-    };
+    }
 
     /**
      * 初始化屏蔽列表标签
      */
-    _proto_.__initBlockTab = function(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
+    __initBlockTab(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
         let dockMenu = $(`#${dockMenuId}`);
         let mainWindowTabGroup = $(`#${mainWindowTabGroupId}`);
         let dockMenuTab = $(`<li class="${dockMenuTabClass}">${tabName}</li>`);
@@ -814,12 +814,12 @@ var kotorichan_app;
                 blockList.append(item);
             });
         });
-    };
+    }
 
     /**
      * 初始化导出数据标签
      */
-    _proto_.__initExporeTab = function(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
+    __initExporeTab(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
         let dockMenu = $(`#${dockMenuId}`);
         let mainWindowTabGroup = $(`#${mainWindowTabGroupId}`);
         let dockMenuTab = $(`<li class="${dockMenuTabClass}">${tabName}</li>`);
@@ -835,12 +835,12 @@ var kotorichan_app;
             // 在content中增加一个textarea置入序列号后的本地数据
             mainWindowContent.append(`<textarea title="${tabParams.description}" class="${tabParams.textareaClass}">${JSON.stringify(this.m_remarks)}</textarea>`);
         });
-    };
+    }
 
     /**
      * 初始化导入数据标签
      */
-    _proto_.__initImportTab = function(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
+    __initImportTab(idx, tabName, tabParams, dockMenuId, mainWindowTabGroupId, mainWindowContentId, mainWindowTabClass, dockMenuTabClass, mainWindowTabSelectClass) {
         let dockMenu = $(`#${dockMenuId}`);
         let mainWindowTabGroup = $(`#${mainWindowTabGroupId}`);
         let dockMenuTab = $(`<li class="${dockMenuTabClass}">${tabName}</li>`);
@@ -884,7 +884,7 @@ var kotorichan_app;
             });
             mainWindowContent.append(submit);
         });
-    };
+    }
 
     /**
      * 鼠标经过悬浮窗
@@ -893,7 +893,7 @@ var kotorichan_app;
      * @param {number} showBlock 显示屏蔽按钮类型
      * @param {function} onBlockAlert 屏蔽状态改变回调
      */
-    _proto_.__onHoverShow = function(userid, target, showBlock, onBlockAlert) {
+    __onHoverShow(userid, target, showBlock, onBlockAlert) {
         const extClass = "kotorichan_app_remark_friend_ext";
         const bioClass = "kotorichan_app_remark_bio";
 
@@ -1003,7 +1003,7 @@ var kotorichan_app;
             }
             this.__FixPos(ext,ev.clientX,ev.clientY);
         },()=>{ });
-    };
+    }
 
     /**
      * 修复悬浮框在屏幕中的位置
@@ -1011,7 +1011,7 @@ var kotorichan_app;
      * @param {number} x x轴
      * @param {number} y y轴
      */
-    _proto_.__FixPos = function(ui,x,y) {
+    __FixPos(ui,x,y) {
         const mfix = 8;
         x -= mfix;
         y -= mfix;
@@ -1026,13 +1026,13 @@ var kotorichan_app;
         } else {
             ui.css("left", x);
         }
-    };
+    }
 
     /**
      * 显示屏蔽用户蒙板
      * @param {string} userid 用户id
      */
-    _proto_.__showBlockMask = function(userid) {
+    __showBlockMask(userid) {
         const maskId = "kotorichan_app_remark_block_mask";
 
         let mask = $(`<ul></ul>`);
@@ -1060,7 +1060,7 @@ var kotorichan_app;
         close.click(()=>{
             $("#kotorichan_app_remark_block_mask").remove();
         });
-    };
+    }
 
     /**
      * ajax api 获取用户信息
@@ -1068,7 +1068,7 @@ var kotorichan_app;
      * @param {function} onSuccess 获取成功回调
      * @param {function} onError 获取失败回调
      */
-    _proto_.__ajaxGetUserInfo = function(userid, onSuccess, onError) {
+    __ajaxGetUserInfo(userid, onSuccess, onError) {
         if(!onSuccess) onSuccess = () => {};
         if(!onError) onError = () => {};
         $.ajax({
@@ -1078,13 +1078,13 @@ var kotorichan_app;
             success:res => onSuccess(res),
             error: ()=>onError()
         });
-    };
+    }
 
     /**
      * Ajax 获取好友列表页面
      * @param {function} onSuccess 成功时回调
      */
-    _proto_.__ajaxGetFriendPage = function(onSuccess) {
+    __ajaxGetFriendPage(onSuccess) {
         // console.log("kotorichan_app.Remark.__ajaxGetFriendPage");
         // ajax require friends page
         if(!onSuccess) onSuccess = () => {};
@@ -1094,33 +1094,33 @@ var kotorichan_app;
             dataType:'text',
             success:res => onSuccess(res)
         });
-    };
+    }
 
     /**
      * 获取屏蔽列表
      * @returns {array} 屏蔽列表
      */
-    _proto_.__getBlocks = function() {
+    __getBlocks() {
         // console.log("kotorichan_app.Remark.__getBlocks");
         return this.m_remarks.blocks;
-    };
+    }
 
     /**
      * 获取屏蔽关系
      * @param {string} userid 用户id
      * @returns {boolean} 是否为屏蔽
      */
-    _proto_.__getBlock = function(userid) {
+    __getBlock(userid) {
         // console.log("kotorichan_app.Remark.__getBlock(",userid,')');
         return this.m_remarks.blocks.indexOf(userid) != -1;
-    };
+    }
 
     /**
      * 设置屏蔽关系
      * @param {string} userid 用户id
      * @param {boolean} isBlock 是否为屏蔽
      */
-    _proto_.__setBlock = function(userid, isBlock) {
+    __setBlock(userid, isBlock) {
         // console.log("kotorichan_app.Remark.__setBlock(",userid,isBlock,')');
         let inBlocks = this.__getBlock(userid);
         if(isBlock) {
@@ -1134,33 +1134,33 @@ var kotorichan_app;
                 this.__saveRemarks();
             }
         }
-    };
+    }
 
     /**
      * 获取好友列表
      * @returns {array} 好友列表
      */
-    _proto_.__getFriends = function() {
+    __getFriends() {
         // console.log("kotorichan_app.Remark.__getFriends");
         return this.m_remarks.friends;
-    };
+    }
 
     /**
      * 获取好友关系
      * @param {string} userid 用户id
      * @returns {boolean} 是否为好友
      */
-    _proto_.__getFriend = function(userid) {
+    __getFriend(userid) {
         // console.log("kotorichan_app.Remark.__getFriend(",userid,')');
         return this.m_remarks.friends.indexOf(userid) != -1;
-    };
+    }
 
     /**
      * 设置好友关系
      * @param {string} userid 用户id
      * @param {boolean} isFriend 是否为好友
      */
-    _proto_.__setFriend = function(userid, isFriend) {
+    __setFriend(userid, isFriend) {
         // console.log("kotorichan_app.Remark.__setFriend(",userid,isFriend,')');
         let inFriends = this.__getFriend(userid);
         if(isFriend) {
@@ -1174,57 +1174,57 @@ var kotorichan_app;
                 this.__saveRemarks();
             }
         }
-    };
+    }
 
     /**
      * 清空好友列表
      */
-    _proto_.__clearFriends = function() {
+    __clearFriends() {
         // console.log("kotorichan_app.Remark.__clearFriends");
         this.m_remarks.friends = [];
         this.__saveRemarks();
-    };
+    }
 
     /**
      * 获取备注
      * @param {string} userid 用户id
      * @returns {string} 备注, 默认 undefined
      */
-    _proto_.__getRemark = function(userid) {
+    __getRemark(userid) {
         // console.log("kotorichan_app.Remark.__getRemark(",userid,')');
         return this.m_remarks.people[userid]?this.m_remarks.people[userid].m:void 0;
-    };
+    }
 
     /**
      * 设置备注
      * @param {string} userid 用户id
      * @param {string} remark 备注
      */
-    _proto_.__setRemark = function(userid, remark) {
+    __setRemark(userid, remark) {
         // console.log("kotorichan_app.Remark.__setRemark(",userid,remark,')');
         if(!this.m_remarks.people[userid]) {
             this.__newPeople(userid);
         }
         this.m_remarks.people[userid].m = remark;
         this.__saveRemarks();
-    };
+    }
 
     /**
      * 获取曾用名列表
      * @param {string} userid 用户id
      * @returns {array} 用户曾用名列表默认空数组
      */
-    _proto_.__getUsedName = function(userid) {
+    __getUsedName(userid) {
         // console.log("kotorichan_app.Remark.__getUsedName(",userid,')');
         return this.m_remarks.people[userid]?this.m_remarks.people[userid].u:[];
-    };
+    }
 
     /**
      * 增加一个曾用名
      * @param {string} userid 用户id
      * @param {string} name 用户名
      */
-    _proto_.__addUsedName = function(userid, name) {
+    __addUsedName(userid, name) {
         // console.log("kotorichan_app.Remark.__addUsedName(",userid,name,')');
         if(!this.m_remarks.people[userid]) {
             this.__newPeople(userid, name);
@@ -1232,7 +1232,7 @@ var kotorichan_app;
             this.m_remarks.people[userid].u.push(name);
             this.__saveRemarks();
         }
-    };
+    }
 
     /**
      * 新建一个用户数据
@@ -1240,7 +1240,7 @@ var kotorichan_app;
      * @param {string} name 用户名
      * @returns {object} 用户数据
      */
-    _proto_.__newPeople = function(userid, name) {
+    __newPeople(userid, name) {
         // console.log("kotorichan_app.Remark.__newPeople(",userid,name,')');
         if(!this.m_remarks.people[userid]) {
             this.m_remarks.people[userid] = {
@@ -1252,12 +1252,12 @@ var kotorichan_app;
         }
         this.__saveRemarks();
         return this.m_remarks.people[userid];
-    };
+    }
 
     /**
      * 从 localStorage 中获取数据如果没有数据会自动初始化
      */
-    _proto_.__getRemarks = function() {
+    __getRemarks() {
         // console.log("kotorichan_app.Remark.__getRemarks");
         if(localStorage.kotorichan_remarks == undefined) localStorage.kotorichan_remarks = JSON.stringify({
             relationship_emui:{
@@ -1275,21 +1275,21 @@ var kotorichan_app;
             localStorage.kotorichan_remarks = JSON.stringify(obj);
         }
         return obj;
-    };
+    }
 
     /**
      * 保存数据到 localStorage
      */
-    _proto_.__saveRemarks = function() {
+    __saveRemarks() {
         // console.log("kotorichan_app.Remark.__saveRemarks");
         localStorage.kotorichan_remarks=JSON.stringify(this.m_remarks);
-    };
+    }
 
     /**
      * 转换旧版本数据
      * @param {object} obj 旧版本数据
      */
-    _proto_.__convertOldData = function(obj) {
+    __convertOldData(obj) {
         let newData = {
             relationship_emui:{
                 FRIEND:0,
@@ -1317,9 +1317,9 @@ var kotorichan_app;
         }
 
         return newData;
-    };
+    }
 
-    _proto_.__addStyle = function() {
+    __addStyle() {
         GM_addStyle(`
 /* 最外层 */
 #kotorichan_app_remark_main_window {
@@ -1652,7 +1652,8 @@ html[data-theme='dark'] #kotorichan_app_remark_block_mask {
     line-height: 50px;
 }
         `);
-    };
+    }
+}
 
 
     // 导出一个实例
