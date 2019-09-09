@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.9.9.2
+// @version      0.9.9.4
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
@@ -10,7 +10,7 @@
 
 var cid;
 var path;
-var api = 'https://www.tinygrail.com/api/';
+var api = 'https://tinygrail.com/api/';
 //var api = 'https://localhost:5001/api/';
 var box = `<div id="grailBox"></div>`;
 var lastEven = false;
@@ -24,7 +24,7 @@ var lastEven = false;
 // var _mouseDown = false;
 
 var _chartData;
-var bgColor = 'transparent';
+var bgColor = '#fff';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -47,21 +47,23 @@ function loadGrailBox(id, callback) {
 
   var url = api + `chara/${id}`;
   $.get(url, function (d, s) {
-    if (d && d.State === 0 && d.Value.CharacterId) {
-      loadICOBox(d.Value);
-    } else if (d && d.State === 0 && d.Value.Current) {
-      var flu = '0.00';
-      var fclass = 'even';
-      if (d.Value.Fluctuation > 0) {
-        flu = `+${formatNumber(d.Value.Fluctuation * 100, 2)}%`;
-        fclass = 'raise';
-      } else if (d.Value.Fluctuation < 0) {
-        flu = `${formatNumber(d.Value.Fluctuation * 100, 2)}%`;
-        fclass = 'fall';
+    if (d && d.State === 0) {
+      if (d.Value.Current) {
+        var flu = '0.00';
+        var fclass = 'even';
+        if (d.Value.Fluctuation > 0) {
+          flu = `+${formatNumber(d.Value.Fluctuation * 100, 2)}%`;
+          fclass = 'raise';
+        } else if (d.Value.Fluctuation < 0) {
+          flu = `${formatNumber(d.Value.Fluctuation * 100, 2)}%`;
+          fclass = 'fall';
+        }
+        var grail = `<div class="trade"><div class="value">#${id} -「${name}」市值：₵${formatNumber(d.Value.MarketValue, 0)} / ${formatNumber(d.Value.Total, 0)} | 现价：₵${formatNumber(d.Value.Current, 2)}<div class="tag ${fclass}">${flu}</div></div><button id="tradeButton" class="rounded active">开启交易</button></div>`;
+        $('#grailBox').html(grail);
+        $('#tradeButton').on('click', function () { loadTradeBox(d.Value) });
+      } else {
+        loadICOBox(d.Value);
       }
-      var grail = `<div class="trade"><div class="value">#${id} -「${name}」市值：₵${formatNumber(d.Value.MarketValue, 0)} / ${formatNumber(d.Value.Total, 0)} | 现价：₵${formatNumber(d.Value.Current, 2)}<div class="tag ${fclass}">${flu}</div></div><button id="tradeButton" class="rounded active">开启交易</button></div>`;
-      $('#grailBox').html(grail);
-      $('#tradeButton').on('click', function () { loadTradeBox(d.Value) });
     } else {
       var empty = `<div class="empty"><div class="text">“${name}”已做好准备，点击启动按钮，加入“小圣杯”的争夺！</div><button id="beginICOButton" class="rounded active">启动ICO</button></div>`;
       $('#grailBox').html(empty);
@@ -175,7 +177,16 @@ function loadTradeBox(chara) {
         }
       });
 
-      loadBoardMember(chara.Id, chara.Total);
+      loadBoardMember(chara.Id, chara.Total, function (chairman) {
+        if (d.Value.Id === chairman.Id || d.Value.Id === 702) {
+          getStyle('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.css');
+          $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
+          $('#iconButton').on('click', function () {
+            loadIconBox(chara);
+          });
+        }
+        $('#grailBox').append('<div class="loading" style="display:none"></div>');
+      });
 
       getData(`chara/depth/${chara.Id}`, function (d2, s2) {
         if (d2.State === 0 && d2.Value) {
@@ -215,17 +226,150 @@ function loadTradeBox(chara) {
   });
 }
 
-function loadBoardMember(id, total) {
+function loadIconBox(chara) {
+  $.getScript('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.js', function () {
+    $('#grailBox .icon_box').remove();
+    var box = `<div class="icon_box" style="display:none">
+      <input style="display:none" id="picture" type="file" accept="image/*">
+    </div>`;
+    $('#grailBox').append(box);
+    $("#picture").on("change", function () {
+      if (this.files.length > 0) {
+        var file = this.files[0];
+        var url = window.URL.createObjectURL(file);
+        var cropper = showCropper(url);
+        $('.icon_box').append('<div class="control"><span>请珍惜主席特权，保证头像符合规范。</span><button id="uploadButton" class="active bid">确定</button><button id="cancelUploadButton">取消</button></div>');
+        $('#cancelUploadButton').on('click', function () { hideCropper(cropper) });
+        $('#uploadButton').on('click', function () {
+          $('.icon_box').hide();
+          showLoading();
+          var source = cropper.getCroppedCanvas({
+            fillColor: '#fff',
+            maxWidth: 1000,
+            maxHeight: 1000,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+          });
+
+          var image = new Image();
+          image.src = source.toDataURL("image/jpeg");
+          image.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = 120;
+            canvas.height = 120;
+
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(image,
+              0,//sourceX,
+              0,//sourceY,
+              source.width,//sourceWidth,
+              source.height,//sourceHeight,
+              0,//destX,
+              0,//destY,
+              120,//destWidth,
+              120 //destHeight
+            );
+
+            canvas.toBlob((blob) => {
+              var url = 'https://sm.ms/api/upload';
+              var form = new FormData();
+              form.append('smfile', blob);
+              $.ajax({
+                url: url,
+                type: 'POST',
+                data: form,
+                // 告诉jQuery不要去处理发送的数据
+                processData: false,
+                // 告诉jQuery不要去设置Content-Type请求头
+                contentType: false,
+                success: function (r) {
+                  if (r.code === 'success') {
+                    //var data = { avatar: r.data.url };
+                    postData(`chara/avatar/${chara.Id}`, r.data.url, function (d) {
+                      if (d.State == 0) {
+                        alert("更换头像成功。");
+                        hideCropper(cropper);
+                      } else {
+                        alert(d.Message);
+                        $('.icon_box').show();
+                      }
+                      hideLoading();
+                    });
+                  } else {
+                    alert('图片上传失败：' + r.msg);
+                    $('.icon_box').show();
+                    hideLoading();
+                  }
+                },
+                error: function (r) {
+                  alert('图片上传失败。');
+                  $('.icon_box').show();
+                  hideLoading();
+                }
+              });
+            });
+          };
+        });
+      }
+    });
+    $('#picture').click();
+  });
+}
+
+function showLoading() {
+  $('.loading').show();
+}
+
+function hideLoading() {
+  $('.loading').hide();
+}
+
+function dataURLtoBlob(dataurl) {
+  var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+function showCropper(url) {
+  $('.icon_box').show();
+  $('.icon_box').append(`<img id="cropperImage" src="${url}">`);
+  var cropper = new Cropper($('#cropperImage')[0], { aspectRatio: 1 });
+  return cropper;
+}
+
+function hideCropper(cropper) {
+  $('.icon_box').addClass('hidden');
+  cropper.destroy();
+  $('#cropperImage').remove();
+  $('.icon_box .cropper-container').remove();
+}
+
+function getStyle(url) {
+  var link = document.createElement('link');
+  link.type = 'text/css';
+  link.rel = 'stylesheet';
+  link.href = url;
+  document.getElementsByTagName("head")[0].appendChild(link);
+}
+
+function loadBoardMember(id, total, callback) {
   getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('.trade_box').after(box);
+      var chairman;
       for (i = 0; i < d.Value.Items.length; i++) {
         var user = d.Value.Items[i];
         var avatar = normalizeAvatar(user.Avatar);
         var p = formatNumber(user.State / total * 100, 2);
         var title = i + 1;
-        if (i === 0) title = "主席";
+        if (i === 0) {
+          title = "主席";
+          chairman = user;
+        }
         var u = `<div class="user">
               <a target="_blank" href="/user/${user.Name}"><img src="${avatar}"></a>
               <div class="name">
@@ -234,6 +378,7 @@ function loadBoardMember(id, total) {
               </div></div>`
         $('.board_box .users').append(u);
       }
+      callback(chairman);
     }
   });
 }
@@ -303,7 +448,7 @@ function loadChart(id, days) {
   });
 }
 
-function unloadChart(){
+function unloadChart() {
   $('#kChart').remove();
 }
 
@@ -983,10 +1128,14 @@ function group(data, distance = defaultDistance) {
   data.forEach(item => {
     const timestamp = new Date(item.Time).getTime()
     const index = parseInt((timestamp - start) / distance)
+    let empty = index - lastIndex - 1
+    if (empty < 0) {
+      empty = 0
+    }
     if (!result[index]) {
       result[index] = {
         Time: start + index * distance,
-        Empty: index - lastIndex,
+        Empty: empty,
         data: []
       }
       lastIndex = index
@@ -1044,11 +1193,11 @@ function kLineData(data, distance = defaultDistance) {
   const result = []
   data.forEach(item => {
     if (item.Empty) {
-      for (let i = 0; i < item.Empty - 1; i += 1) {
+      for (let i = 0; i < item.Empty; i += 1) {
         const ref = [...result[result.length - 1]]
         ref[0] += distance
         result.push([
-          ref[0] + distance,
+          ref[0],
           item.End,
           item.End,
           item.End,
@@ -1070,7 +1219,6 @@ function kLineData(data, distance = defaultDistance) {
 
   // eslint-disable-next-line no-param-reassign
   result.forEach(item => (item[0] = getDateFormat(item[0])))
-
   return result
 }
 
@@ -1108,6 +1256,8 @@ function loadTinyBox(id, callback) {
           loadICOBox(item);
         });
       } else {
+        $('#pageHeader a.avatar>img').attr('src', d.Value.Icon);
+        $('#pageHeader a.avatar>img').css('width', '50px');
         var flu = '--';
         var tclass = 'even';
         if (item.Fluctuation > 0) {
@@ -1237,7 +1387,7 @@ function login(callback) {
       callback();
     }
   });
-  var login = 'https://bgm.tv/oauth/authorize?response_type=code&client_id=bgm2525b0e4c7d93fec&redirect_uri=https%3A%2F%2Fwww.tinygrail.com%2Fcb';
+  var login = 'https://bgm.tv/oauth/authorize?response_type=code&client_id=bgm2525b0e4c7d93fec&redirect_uri=https%3A%2F%2Ftinygrail.com%2Fcb';
   window.open(login);
 }
 
@@ -1249,9 +1399,9 @@ function normalizeAvatar(avatar) {
   if (!avatar) return '//lain.bgm.tv/pic/user/l/icon.jpg';
 
   var a = avatar.replace("http://", "//");
-  var index = a.indexOf("?");
-  if (index >= 0)
-    a = a.substr(0, index);
+  // var index = a.indexOf("?");
+  // if (index >= 0)
+  //   a = a.substr(0, index);
 
   return a;
 }
@@ -2157,13 +2307,19 @@ function loadCharacterList(list, page, total, more, render) {
     $('#eden_tpc_list ul').append(chara);
   }
   $('#eden_tpc_list .item_list').on('click', listItemClicked);
-  if (page != total) {
+  if (page != total && total > 0) {
     var loadMore = `<li class="load_more"><button id="loadMoreButton" class="load_more_button" data-page="${page + 1}">[加载更多]</button></li>`;
     $('#eden_tpc_list ul').append(loadMore);
     $('#loadMoreButton').on('click', function () {
       var page = $(this).data('page');
       if (more) more(page);
     });
+  } else {
+    var noMore = '暂无数据';
+    if (total > 0)
+      noMore = '加载完成';
+
+    $('#eden_tpc_list ul').append(`<li class="load_more sub">[${noMore}]</li>`);
   }
 }
 
@@ -2206,7 +2362,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
+        var id = $(this).data('id');
         if (id != null) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
@@ -2418,6 +2574,7 @@ if (path.startsWith('/character/')) {
           $(list[id]).append(`<div class="tags tag lv${pre.Level}" title="${formatNumber(item.Total, 0)}/100,000 ${percent}%">ICO进行中</div>`);
         } else {
           var id = item.Id;
+          $(list[id]).find('a.avatar>span').css('background-image', `url(${item.Icon})`);
           addCharacterTag(item, list[id]);
         }
       }
@@ -2427,7 +2584,7 @@ if (path.startsWith('/character/')) {
 
 GM_addStyle(`
 #grailBox, #phoneBox, #recommendBox {
-  background-color: transparent;
+  background-color: #F5F5F5;
   border-radius: 5px;
   padding:12px;
   color: #999;
@@ -2463,7 +2620,7 @@ GM_addStyle(`
   border-bottom: 1px solid #ccc;
 }
 
-#grailBox .text_button {
+#grailBox .text_button { 
   margin: 0 8px 0 0;
   padding: 0;
   width: fit-content;
@@ -2497,7 +2654,7 @@ GM_addStyle(`
   font-weight: bold;
 }
 
-#phoneBox input::-webkit-input-placeholder,
+#phoneBox input::-webkit-input-placeholder, 
 #recommendBox input::-webkit-input-placeholder {
     color:#ddd;
     font-size: 12px;
@@ -2579,7 +2736,7 @@ GM_addStyle(`
   flex-grow: 1;
 }
 
-#grailBox .sub {
+#grailBox .sub, .sub {
   color:#999;
   font-weight: normal;
 }
@@ -2597,7 +2754,7 @@ GM_addStyle(`
   margin: 10px 0 0 0;
   padding: 10px 10px 2px 10px;
   border-radius: 5px;
-  background-color: transparent;
+  background-color: #fff;
 }
 
 #grailBox .user{
@@ -2683,11 +2840,9 @@ GM_addStyle(`
 }
 
 .grail_list {
-  overflow: auto;
   display: flex;
   flex-wrap: wrap;
-  margin: 5px;
-  height: 800px;
+  margin: 10px;
 }
 
 .grail_list li {
@@ -2916,9 +3071,13 @@ GM_addStyle(`
   font-weight: bold;
 }
 
-.predicted .tag, .initial_item .tag, .trade .tag, .title .tag {
+.predicted .tag, .initial_item .tag, .trade .tag, .title .tag { 
     background: linear-gradient(#d965ff,#ffabf5);
     padding: 1px 10px;
+}
+
+.predicted .tag {
+  margin-right: 5px;
 }
 
 .info .name .tag {
@@ -2962,11 +3121,11 @@ GM_addStyle(`
   background: linear-gradient(#ff5555,#ff9999);
 }
 
-.tag.raise, #grailBox button.bid, .depth .bid_depth li div:hover {
+.tag.raise, #grailBox button.bid {
   background: linear-gradient(#ff658d,#ffa7cc);
 }
 
-.tag.fall, #grailBox button.ask, .depth .ask_depth li div:hover {
+.tag.fall, #grailBox button.ask {
   background: linear-gradient(#65bcff,#a7e3ff);
 }
 
@@ -3042,7 +3201,7 @@ GM_addStyle(`
 
 .trade_box .list li.ask {
   background: #ceefff;
-  color: #4196bd;
+  color: #22a3de;
 }
 
 .trade_box .list li.bid {
@@ -3060,11 +3219,11 @@ GM_addStyle(`
 }
 
 .trade_box .ask_depth {
-    background: transparent;
+    background: #ceefff;
 }
 
 .trade_box .bid_depth {
-    background: transparent;
+    background: #ffdeec;
 }
 
 #grailBox .trade_list {
@@ -3094,6 +3253,22 @@ GM_addStyle(`
   flex-grow: 1;
 }
 
+#grailBox .icon_box {
+  margin-top: 10px;
+  background: #fff;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.icon_box .control {
+  float:right;
+}
+
+.icon_box .control>span {
+  margin-right: 5px;
+  font-size: 13px;
+}
+
 .trade .value{
   display: flex;
   flex-grow: 1;
@@ -3111,19 +3286,34 @@ GM_addStyle(`
 }
 
 .depth li {
-  color: #fff;
-  text-shadow: 1px 1px 1px #aaa;
+  text-shadow: 1px 1px 1px #fff;
   font-weight: bold;
   text-align: right;
   display: flex;
   flex-direction: row-reverse;
-  border-bottom: 1px solid #f5f5f563;
+  border-bottom: 1px solid #F5F5F5;
   cursor: default;
-  height: 20px;
+  line-height: 20px;
 }
 
-.depth li:hover{
-  background-color: #eee;
+.depth .ask_depth li {
+    color: #22a3de;
+}
+
+.depth .bid_depth li {
+    color: #e46fa1;
+}
+
+.depth .bid_depth li:hover{
+  color: #fff;
+  text-shadow: 1px 1px 1px #aaa;
+  background-color: #ffc5dd;
+}
+
+.depth .ask_depth li:hover{
+  color: #fff;
+  text-shadow: 1px 1px 1px #aaa;
+  background-color: #a7e3ff;
 }
 
 .depth li span {
@@ -3134,14 +3324,14 @@ GM_addStyle(`
   pointer-events: none;
 }
 
-.depth .bid_depth li div {
-  background-color: #ffa7cc;
-  height: 20px;
+.depth .bid_depth li>div {
+  background-color: #ffcfe3;
+  height: 22px;
 }
 
-.depth .ask_depth li div {
-  background-color: #a7e3ff;
-  height: 20px;
+.depth .ask_depth li>div {
+  background-color: #b8e7ff;
+  height: 22px;
 }
 
 .current {
@@ -3212,6 +3402,7 @@ GM_addStyle(`
 .load_more {
   padding: 10px 0;
   text-align: center;
+  font-size: 15px;
 }
 
 #chart{
@@ -3235,5 +3426,10 @@ GM_addStyle(`
 
 #kChart {
   height: 360px;
+}
+
+.loading {
+  height: 100px;
+  background: url(https://bgm.tv/img/loadingAnimation.gif) no-repeat center;
 }
 `);
