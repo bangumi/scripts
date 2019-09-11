@@ -1,11 +1,19 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.9.9.4
+// @version      0.9.9.6
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
+// ==/UserScript==
+
+// ==UserScript==
+// @include    */character/*
+// @include    */rakuen/topiclist*
+// @include    */rakuen/topic/crt/*
+// @include    */rakuen/home*
+// @include    */user/*
 // ==/UserScript==
 
 var cid;
@@ -24,7 +32,7 @@ var lastEven = false;
 // var _mouseDown = false;
 
 var _chartData;
-var bgColor = 'transparent';
+var bgColor = '#fff';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -177,12 +185,20 @@ function loadTradeBox(chara) {
         }
       });
 
-      loadBoardMember(chara.Id, chara.Total, function (chairman) {
-        if (d.Value.Id === chairman.Id || d.Value.Id === 702) {
+      loadBoardMember(chara.Id, chara.Total, function (modifiers) {
+        var power = false;
+        for (i = 0; i < modifiers.length; i++) {
+          if (modifiers[i].Id == d.Value.Id)
+            power = true;
+        }
+
+        if (power || d.Value.Id === 702) {
           getStyle('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.css');
-          $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
-          $('#iconButton').on('click', function () {
-            loadIconBox(chara);
+          $.getScript('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.js', function () {
+            $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
+            $('#iconButton').on('click', function () {
+              loadIconBox(chara);
+            });
           });
         }
         $('#grailBox').append('<div class="loading" style="display:none"></div>');
@@ -227,93 +243,94 @@ function loadTradeBox(chara) {
 }
 
 function loadIconBox(chara) {
-  $.getScript('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.js', function () {
-    $('#grailBox .icon_box').remove();
-    var box = `<div class="icon_box" style="display:none">
+  $('#grailBox .icon_box').remove();
+  var box = `<div class="icon_box" style="display:none">
       <input style="display:none" id="picture" type="file" accept="image/*">
     </div>`;
-    $('#grailBox').append(box);
-    $("#picture").on("change", function () {
-      if (this.files.length > 0) {
-        var file = this.files[0];
-        var url = window.URL.createObjectURL(file);
-        var cropper = showCropper(url);
-        $('.icon_box').append('<div class="control"><span>请珍惜主席特权，保证头像符合规范。</span><button id="uploadButton" class="active bid">确定</button><button id="cancelUploadButton">取消</button></div>');
-        $('#cancelUploadButton').on('click', function () { hideCropper(cropper) });
-        $('#uploadButton').on('click', function () {
-          $('.icon_box').hide();
-          showLoading();
-          var source = cropper.getCroppedCanvas({
-            fillColor: '#fff',
-            maxWidth: 1000,
-            maxHeight: 1000,
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high'
-          });
-
-          var image = new Image();
-          image.src = source.toDataURL("image/jpeg");
-          image.onload = function () {
-            var canvas = document.createElement("canvas");
-            canvas.width = 120;
-            canvas.height = 120;
-
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(image,
-              0,//sourceX,
-              0,//sourceY,
-              source.width,//sourceWidth,
-              source.height,//sourceHeight,
-              0,//destX,
-              0,//destY,
-              120,//destWidth,
-              120 //destHeight
-            );
-
-            canvas.toBlob((blob) => {
-              var url = 'https://sm.ms/api/upload';
-              var form = new FormData();
-              form.append('smfile', blob);
-              $.ajax({
-                url: url,
-                type: 'POST',
-                data: form,
-                // 告诉jQuery不要去处理发送的数据
-                processData: false,
-                // 告诉jQuery不要去设置Content-Type请求头
-                contentType: false,
-                success: function (r) {
-                  if (r.code === 'success') {
-                    //var data = { avatar: r.data.url };
-                    postData(`chara/avatar/${chara.Id}`, r.data.url, function (d) {
-                      if (d.State == 0) {
-                        alert("更换头像成功。");
-                        hideCropper(cropper);
-                      } else {
-                        alert(d.Message);
-                        $('.icon_box').show();
-                      }
-                      hideLoading();
-                    });
-                  } else {
-                    alert('图片上传失败：' + r.msg);
-                    $('.icon_box').show();
-                    hideLoading();
-                  }
-                },
-                error: function (r) {
-                  alert('图片上传失败。');
-                  $('.icon_box').show();
-                  hideLoading();
-                }
-              });
-            });
-          };
+  $('#grailBox').append(box);
+  $("#picture").on("change", function () {
+    if (this.files.length > 0) {
+      var file = this.files[0];
+      var url = window.URL.createObjectURL(file);
+      var cropper = showCropper(url);
+      $('.icon_box').append('<div class="control"><span>请珍惜主席特权，保证头像符合规范。</span><button id="uploadButton" class="active bid">确定</button><button id="cancelUploadButton">取消</button></div>');
+      $('#cancelUploadButton').on('click', function () { hideCropper(cropper) });
+      $('#uploadButton').on('click', function () {
+        $('.icon_box').hide();
+        showLoading();
+        var source = cropper.getCroppedCanvas({
+          fillColor: '#fff',
+          maxWidth: 1000,
+          maxHeight: 1000,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high'
         });
-      }
-    });
-    $('#picture').click();
+
+        var image = new Image();
+        image.src = source.toDataURL("image/png");
+        image.onload = function () {
+          var canvas = document.createElement("canvas");
+          canvas.width = 120;
+          canvas.height = 120;
+
+          var ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(image,
+            0,//sourceX,
+            0,//sourceY,
+            source.width,//sourceWidth,
+            source.height,//sourceHeight,
+            0,//destX,
+            0,//destY,
+            120,//destWidth,
+            120 //destHeight
+          );
+
+          var data = canvas.toDataURL('image/jpeg');
+          var blob = dataURLtoBlob(data);
+
+          var url = 'https://sm.ms/api/upload';
+          var form = new FormData();
+          form.append('smfile', blob);
+          $.ajax({
+            url: url,
+            type: 'POST',
+            data: form,
+            // 告诉jQuery不要去处理发送的数据
+            processData: false,
+            // 告诉jQuery不要去设置Content-Type请求头
+            contentType: false,
+            success: function (r) {
+              if (r.code === 'success') {
+                //var data = { avatar: r.data.url };
+                postData(`chara/avatar/${chara.Id}`, r.data.url, function (d) {
+                  if (d.State == 0) {
+                    alert("更换头像成功。");
+                    hideCropper(cropper);
+                  } else {
+                    alert(d.Message);
+                    $('.icon_box').show();
+                  }
+                  hideLoading();
+                });
+              } else {
+                alert('图片上传失败：' + r.msg);
+                $('.icon_box').show();
+                hideLoading();
+              }
+            },
+            error: function (r) {
+              alert('图片上传失败。');
+              $('.icon_box').show();
+              hideLoading();
+            }
+          });
+        };
+      });
+    }
   });
+  $('#picture').click();
 }
 
 function showLoading() {
@@ -360,25 +377,37 @@ function loadBoardMember(id, total, callback) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('.trade_box').after(box);
-      var chairman;
+      var modifiers = [];
+      var chairmanActive = false;
+
       for (i = 0; i < d.Value.Items.length; i++) {
         var user = d.Value.Items[i];
         var avatar = normalizeAvatar(user.Avatar);
-        var p = formatNumber(user.State / total * 100, 2);
+        var p = formatNumber(user.Balance / total * 100, 2);
+        var inactive = '';
+
+        if (!chairmanActive)
+          modifiers.push(user);
+
         var title = i + 1;
         if (i === 0) {
+          if (getTimeDiff(user.LastActiveDate) < 1000 * 60 * 60 * 24 * 5)
+            chairmanActive = true;
+          else
+            inactive = 'inactive';
+
           title = "主席";
-          chairman = user;
         }
-        var u = `<div class="user">
+
+        var u = `<div class="user ${inactive}">
               <a target="_blank" href="/user/${user.Name}"><img src="${avatar}"></a>
               <div class="name">
                 <a target="_blank" title="${user.Nickname}" href="/user/${user.Name}"><span class="title">${title}</span>${user.Nickname}</a>
-                <div class="tag">${formatNumber(user.State, 0)} ${p}%</div>
+                <div class="tag">${formatNumber(user.Balance, 0)} ${p}%</div>
               </div></div>`
         $('.board_box .users').append(u);
       }
-      callback(chairman);
+      callback(modifiers);
     }
   });
 }
@@ -1610,6 +1639,12 @@ function countDown(end, callback) {
   }
 }
 
+function getTimeDiff(timeStr) {
+  var now = new Date();
+  var time = new Date(timeStr) - (new Date().getTimezoneOffset() + 8 * 60) * 60 * 1000;
+  return now - time;
+}
+
 function formatTime(timeStr) {
   var now = new Date();
   var time = new Date(timeStr) - (new Date().getTimezoneOffset() + 8 * 60) * 60 * 1000;
@@ -1952,7 +1987,7 @@ function loadIndexTab() {
 function loadNewBangumi() {
   if ($('#grailNewBangumi').length === 0) {
     $('#grailBox').after(`<div id="grailNewBangumi" class="grail_index">
-      <div class="index"><div class="title">/ 班市首富</div><ul class="top"></ul></div>
+      <div class="index"><div class="title">/ 番市首富</div><ul class="top"></ul></div>
       <div class="index"><div class="title">/ 新番市值</div><ul class="tnbc"></ul></div>
       <div class="index"><div class="title">/ 新番活跃</div><ul class="nbc"></ul></div>
     </div>
@@ -1964,11 +1999,14 @@ function loadNewBangumi() {
   var start = (page - 1) * size;
   var loadMore = false;
 
-  getData(`chara/top/${page}/${size}`, function (d, s) {
+  var topPage = 11 - page;
+  var topStart = 100 - start;
+
+  getData(`chara/top/${topPage}/${size}`, function (d, s) {
     if (d.State === 0) {
-      for (i = 0; i < d.Value.length; i++) {
+      for (i = d.Value.length - 1; i >= 0; i--) {
         var item = d.Value[i];
-        var user = renderUser(item, i + start);
+        var user = renderUser(item, i + topStart - d.Value.length);
         $('#grailNewBangumi .top').append(user);
       }
     }
@@ -2362,7 +2400,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
+        var id = $(this).data('id');
         if (id != null) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
@@ -2584,7 +2622,7 @@ if (path.startsWith('/character/')) {
 
 GM_addStyle(`
 #grailBox, #phoneBox, #recommendBox {
-  background-color: transparent;
+  background-color: #F5F5F5;
   border-radius: 5px;
   padding:12px;
   color: #999;
@@ -2754,7 +2792,7 @@ GM_addStyle(`
   margin: 10px 0 0 0;
   padding: 10px 10px 2px 10px;
   border-radius: 5px;
-  background-color: transparent;
+  background-color: #fff;
 }
 
 #grailBox .user{
@@ -2780,6 +2818,11 @@ GM_addStyle(`
   border: 1px solid #FFC107;
 }
 
+#grailBox .user.inactive img {
+  box-shadow: 0px 0px 5px #d2d2d2;
+  border: 1px solid #d2d2d2;
+}
+
 #grailBox .user .name{
   color: #666;
   text-overflow: ellipsis;
@@ -2803,6 +2846,10 @@ GM_addStyle(`
 
 #grailBox .user:first-child .tag{
   background: linear-gradient(#FFC107,#FFEB3B);
+}
+
+#grailBox .user.inactive .tag {
+   background: #d2d2d2;
 }
 
 #grailBox .user .name .title{
@@ -3219,11 +3266,11 @@ GM_addStyle(`
 }
 
 .trade_box .ask_depth {
-    background: transparent;
+    background: #ceefff;
 }
 
 .trade_box .bid_depth {
-    background: transparent;
+    background: #ffdeec;
 }
 
 #grailBox .trade_list {
