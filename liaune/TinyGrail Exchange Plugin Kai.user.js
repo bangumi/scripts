@@ -23,7 +23,7 @@ var lastEven = false;
 // var _mouseDown = false;
 
 var _chartData;
-var bgColor = '#fff';
+var bgColor = 'transparent';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -2414,7 +2414,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).data('id');
+        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
         if (id != null) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
@@ -2636,7 +2636,7 @@ if (path.startsWith('/character/')) {
 
 GM_addStyle(`
 #grailBox, #phoneBox, #recommendBox {
-  background-color: #F5F5F5;
+  background-color: transparent;
   border-radius: 5px;
   padding:12px;
   color: #999;
@@ -2764,7 +2764,7 @@ GM_addStyle(`
 #grailBox .progress_bar {
   height: 32px;
   border-radius: 5px;
-  background-color: #fff;
+  background-color: transparent;
 }
 
 #grailBox .progress {
@@ -2806,7 +2806,7 @@ GM_addStyle(`
   margin: 10px 0 0 0;
   padding: 10px 10px 2px 10px;
   border-radius: 5px;
-  background-color: #fff;
+  background-color: transparent;
 }
 
 #grailBox .user{
