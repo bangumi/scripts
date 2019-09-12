@@ -23,7 +23,7 @@ var lastEven = false;
 // var _mouseDown = false;
 
 var _chartData;
-var bgColor = 'transparent';
+var bgColor = '#fff';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -1538,6 +1538,17 @@ function getWeeklyShareBonus(callback) {
   });
 }
 
+function getHolidayBonus(callback) {
+  getData(`event/holiday/bonus`, function (d, s) {
+    if (d.State == 0)
+      alert(d.Value);
+    else
+      alert(d.Message);
+
+    callback();
+  });
+}
+
 function getCharacterName() {
   var name = $('.nameSingle small').text();
   if (!name)
@@ -1904,8 +1915,8 @@ function loadIndexPage() {
     $('body').css('overflow-x', 'auto');
     var box = `<div id="grailIndex" class="grail_index">
                   <div class="index"><div class="title">/ ICO最多资金</div><ul class="volume"></ul></div>
-                  <div class="index"><div class="title">/ ICO最高人气</div><ul class="popular"></ul></div>
-                  <div class="index"><div class="title">/ ICO最近活跃</div><ul class="recent"></ul></div>
+                  <div class="index"><div class="title">/ ICO最近活跃</div><ul class="popular"></ul></div>
+                  <div class="index"><div class="title">/ ICO即将结束</div><ul class="recent"></ul></div>
                 </div><div class="center_button"><button id="loadMoreButton" class="load_more_button">[加载更多...]</button></div>`;
     $('#grailIndexTab').after(box);
     $('#loadMoreButton').data('page', 1);
@@ -1925,7 +1936,7 @@ function loadIndexPage() {
         }
         loadMore |= (d.Value.length == size);
       }
-      getData(`chara/mpi/${page}/${size}`, function (d, s) {
+      getData(`chara/rai/${page}/${size}`, function (d, s) {
         if (d.State === 0) {
           for (i = 0; i < d.Value.length; i++) {
             var item = d.Value[i];
@@ -1934,7 +1945,7 @@ function loadIndexPage() {
           }
           loadMore |= (d.Value.length == size);
         }
-        getData(`chara/rai/${page}/${size}`, function (d, s) {
+        getData(`chara/mri/${page}/${size}`, function (d, s) {
           if (d.State === 0) {
             for (i = 0; i < d.Value.length; i++) {
               var item = d.Value[i];
@@ -2049,6 +2060,7 @@ function loadGrailBox2(callback) {
       $('.eden_rec_box').after(userBox);
       $('#loginButton').on('click', function () { login(loadGrailBox2) });
     }
+    loadHolidayButton();
     loadPhoneButton();
     loadShareBonusButton();
     if (callback) callback();
@@ -2066,6 +2078,17 @@ function loadPhoneButton() {
     }
 
     loadRecommendButton(phone);
+  });
+}
+
+function loadHolidayButton() {
+  getData('event/holiday/bonus/check', function (d, s) {
+    if (d.State == 0) {
+      var holiday = d.Value;
+      var button = `<button id="holidayButton" class="active tag phone_bonus">${holiday}福利</button>`;
+      $('button.daily_bonus').before(button);
+      $('#holidayButton').on('click', function () { getHolidayBonus(loadGrailBox2) });
+    }
   });
 }
 
@@ -2391,7 +2414,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
+        var id = $(this).data('id');
         if (id != null) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
@@ -2613,7 +2636,7 @@ if (path.startsWith('/character/')) {
 
 GM_addStyle(`
 #grailBox, #phoneBox, #recommendBox {
-  background-color: transparent;
+  background-color: #F5F5F5;
   border-radius: 5px;
   padding:12px;
   color: #999;
@@ -2741,7 +2764,7 @@ GM_addStyle(`
 #grailBox .progress_bar {
   height: 32px;
   border-radius: 5px;
-  background-color: transparent;
+  background-color: #fff;
 }
 
 #grailBox .progress {
@@ -2773,7 +2796,7 @@ GM_addStyle(`
 #grailBox #loginButton {
   border-radius: 5px;
   height: 20px;
-  width: 80px;
+  min-width: 80px;
   font-size: 12px;
 }
 
@@ -2783,7 +2806,7 @@ GM_addStyle(`
   margin: 10px 0 0 0;
   padding: 10px 10px 2px 10px;
   border-radius: 5px;
-  background-color: transparent;
+  background-color: #fff;
 }
 
 #grailBox .user{
@@ -3081,7 +3104,7 @@ GM_addStyle(`
 #grailBox.rakuen_home button, #grailBox.rakuen_home #loginButton, #phoneBox button {
   font-size: 13px;
   border-radius: 5px;
-  width: 80px;
+  min-width: 80px;
   height: 27px;
   margin-left: 5px;
 }
@@ -3257,11 +3280,11 @@ GM_addStyle(`
 }
 
 .trade_box .ask_depth {
-    background: transparent;
+    background: #ceefff;
 }
 
 .trade_box .bid_depth {
-    background: transparent;
+    background: #ffdeec;
 }
 
 #grailBox .trade_list {
