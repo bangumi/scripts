@@ -2001,14 +2001,11 @@ function loadNewBangumi() {
   var start = (page - 1) * size;
   var loadMore = false;
 
-  var topPage = 11 - page;
-  var topStart = 100 - start;
-
-  getData(`chara/top/${topPage}/${size}`, function (d, s) {
+  getData(`chara/top/${page}/${size}`, function (d, s) {
     if (d.State === 0) {
-      for (i = d.Value.length - 1; i >= 0; i--) {
+      for (i = 0; i < d.Value.length; i++) {
         var item = d.Value[i];
-        var user = renderUser(item, i + topStart - d.Value.length);
+        var user = renderUser(item, i + start);
         $('#grailNewBangumi .top').append(user);
       }
     }
