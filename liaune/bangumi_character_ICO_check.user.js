@@ -140,7 +140,7 @@ function checkup(){
 }
 
 GM_addStyle(`
-.tag_e_e {
+.tag_e {
   padding-left: 5px;
   max-height: 20px;
   font-size: 11px;
