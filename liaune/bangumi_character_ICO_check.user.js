@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Bangumi Character ICO Check
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.3
+// @version      0.4
 // @description  检测角色的小圣杯状态，已上市的角色显示市场价，正在ICO的角色显示已募集金额
 // @author       Liaune
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/.*
-// @grant        none
+// @grant        GM_addStyle
 // ==/UserScript==
 let api = 'https://www.tinygrail.com/api/';
 let characterlist;
@@ -19,9 +19,9 @@ showBtn.addEventListener('click', checkup);
 if(document.location.href.match(/mono\/character/))
     document.querySelector('#columnA .section h2').append(showBtn);
 else if(document.location.href.match(/subject\/\d+\/characters/))
-    document.querySelector('#columnInSubjectB').append(showBtn);
+    checkup();
 else if(document.location.href.match(/subject\/\d+/))
-    document.querySelector('#columnSubjectHomeB .subject_section h2 ').append(showBtn);
+    checkup();
 else if(document.location.href.match(/character/))
     document.querySelector('#columnCrtBrowserB .crtTools').append(showBtn);
 
@@ -38,7 +38,63 @@ function postData(url, data, callback) {
     success: callback
   });
 }
+function caculateICO(ico) {
+  var level = 0;
+  var price = 10;
+  var amount = 10000;
+  var total = 0;
+  var next = 100000;
 
+  if (ico.Total < 100000 || ico.Users < 10) {
+    return { Level: level, Next: next, Price: 0, Amount: 0 };
+  }
+
+  level = Math.floor(Math.sqrt(ico.Total / 100000));
+  amount = 10000 + (level - 1) * 7500;
+  price = ico.Total / amount;
+  next = Math.pow(level + 1, 2) * 100000;
+
+  return { Level: level, Next: next, Price: price, Amount: amount };
+}
+function formatNumber(number, decimals, dec_point, thousands_sep) {
+  number = (number + '').replace(/[^0-9+-Ee.]/g, '');
+  var n = !isFinite(+number) ? 0 : +number,
+    prec = !isFinite(+decimals) ? 2 : Math.abs(decimals),
+    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+    s = '',
+    toFixedFix = function (n, prec) {
+      var k = Math.pow(10, prec);
+      return '' + Math.ceil(n * k) / k;
+    };
+
+  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+  var re = /(-?\d+)(\d{3})/;
+  while (re.test(s[0])) {
+    s[0] = s[0].replace(re, "$1" + sep + "$2");
+  }
+
+  if ((s[1] || '').length < prec) {
+    s[1] = s[1] || '';
+    s[1] += new Array(prec - s[1].length + 1).join('0');
+  }
+  return s.join(dec);
+}
+function renderCharacterTag(chara, item) {
+  var id = chara.Id;
+  var flu = '--';
+  var tclass = 'even';
+  if (chara.Fluctuation > 0) {
+    tclass = 'raise';
+    flu = `+${formatNumber(chara.Fluctuation * 100, 2)}%`;
+  } else if (chara.Fluctuation < 0) {
+    tclass = 'fall';
+    flu = `${formatNumber(chara.Fluctuation * 100, 2)}%`;
+  }
+
+  var tag = `<div class="tag ${tclass}" title="₵${formatNumber(chara.MarketValue, 0)} / ${formatNumber(chara.Total, 0)}">₵${formatNumber(chara.Current, 2)} ${flu}</div>`
+  return tag;
+}
 function checkup(){
     let ids = [];
     let list = {};
@@ -61,17 +117,82 @@ function checkup(){
     if (d.State === 0) {
         for (i = 0; i < d.Value.length; i++) {
             var item = d.Value[i];
+            var pre = caculateICO(item);
             if (item.CharacterId) {
                 var id = item.CharacterId;
-                list[id].querySelector('a.l').style.color = '#eefa87';
-                $(list[id].querySelector('a.l')).append( '₵'+d.Value[i].Total);
+                var percent = formatNumber(item.Total / pre.Next * 100, 0);
+                var ICOtag = `<div class="tags tag lv${pre.Level}" title="${formatNumber(item.Total, 2)}/lv${pre.Level} ${percent}%">ICO:₵${formatNumber(item.Total, 0)}</div>`;
+                $(list[id].querySelector('a.l')).append(ICOtag);
+                //$(list[id].querySelector('a.l')).append( '₵'+d.Value[i].Total);
             }
             else{
                 var id = item.Id;
-                list[id].querySelector('a.l').style.color = '#fa8792';
-                $(list[id].querySelector('a.l')).append( '₵'+d.Value[i].Current);
+                //list[id].querySelector('a.l').style.color = '#fa8792';
+                //$(list[id].querySelector('a.l')).append( '₵'+d.Value[i].Current);
+                //var depth = renderCharacterDepth(chara);
+                var tag = renderCharacterTag(item, list[id]);
+                //$(item).find('.row').append(depth);
+                $(list[id].querySelector('a.l')).append(tag);
             }
         }
     }
   });
 }
+
+GM_addStyle(`
+.tag {
+  padding-left: 5px;
+  max-height: 20px;
+  font-size: 11px;
+  min-width: 80px;
+  max-width: 100px;
+  border-radius: 5px;
+  color: white;
+  text-shadow: 1px 1px 1px #000;
+  font-weight: bold;
+}
+.predicted .tag, .initial_item .tag, .trade .tag, .title .tag {
+    background: linear-gradient(#d965ff,#ffabf5);
+    padding: 1px 10px;
+}
+.predicted .tag {
+  margin-right: 5px;
+}
+.info .name .tag {
+  margin: -2px 10px 0 0;
+  padding: 1px 5px;
+}
+.initial_item .tag {
+  padding: 0px;
+}
+.title .tag {
+  margin-left: 5px;
+}
+.tag.lv0, .tag.even, .info .name .tag.even {
+  background: linear-gradient(#d2d2d2,#e0e0e0);
+}
+.tag.lv1, .tag.new {
+  background: linear-gradient(#40f343,#b2ffa5);
+}
+.tag.lv2 {
+  background: linear-gradient(#70bbff,#9bd0ff)
+}
+.tag.lv3 {
+  background: linear-gradient(#ffdc51,#ffe971);
+}
+.tag.lv4 {
+  background: linear-gradient(#FF9800,#FFC107);
+}
+.tag.lv5 {
+  background: linear-gradient(#d965ff,#ffabf5);
+}
+.tag.lv6 {
+  background: linear-gradient(#ff5555,#ff9999);
+}
+.tag.raise, #grailBox button.bid {
+  background: linear-gradient(#ff658d,#ffa7cc);
+}
+.tag.fall, #grailBox button.ask {
+  background: linear-gradient(#65bcff,#a7e3ff);
+}
+`);
