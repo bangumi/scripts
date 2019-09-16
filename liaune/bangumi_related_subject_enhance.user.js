@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.5.1
+// @version      0.5.2
 // @description  显示条目页面关联条目的收藏情况,显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -116,7 +116,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
     checkbox.type = 'checkbox';
     privatebox.appendChild(checkbox);
     if(itemsList3.length)
-        $(privatebox).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .subtitle')[1]);
+        $(privatebox).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .clearit')[0]);
     checkbox.onclick = function (){
         if (checkbox.checked) privacy = 1;
         else privacy = 0;
@@ -127,6 +127,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
     allCollect.textContent = '全部标为已读';
     let flag = 0;
     allCollect.onclick = function (){
+        if (!confirm("确定要"+allCollect.textContent+"吗？")) return;
         let i = 0;
         flag = (flag==1)?0:1;
         allCollect.textContent =(flag==1)? '全部取消已读':'全部标为已读';
@@ -153,7 +154,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
         },300);
     };
     if(itemsList3.length)
-        $(allCollect).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .subtitle')[1]);
+        $(allCollect).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .clearit')[0]);
 
     function ShowCheckIn(elem,ID){
         let checkIn = document.createElement('a');
