@@ -92,7 +92,7 @@ function renderCharacterTag(chara, item) {
     flu = `${formatNumber(chara.Fluctuation * 100, 2)}%`;
   }
 
-  var tag = `<div class="tag ${tclass}" title="₵${formatNumber(chara.MarketValue, 0)} / ${formatNumber(chara.Total, 0)}">₵${formatNumber(chara.Current, 2)} ${flu}</div>`
+  var tag = `<div class="tag_e ${tclass}" title="₵${formatNumber(chara.MarketValue, 0)} / ${formatNumber(chara.Total, 0)}">₵${formatNumber(chara.Current, 2)} ${flu}</div>`
   return tag;
 }
 function checkup(){
@@ -121,7 +121,7 @@ function checkup(){
             if (item.CharacterId) {
                 var id = item.CharacterId;
                 var percent = formatNumber(item.Total / pre.Next * 100, 0);
-                var ICOtag = `<div class="tags tag lv${pre.Level}" title="${formatNumber(item.Total, 2)}/lv${pre.Level} ${percent}%">ICO:₵${formatNumber(item.Total, 0)}</div>`;
+                var ICOtag = `<div class="tags tag_e lv${pre.Level}" title="${formatNumber(item.Total, 2)}/lv${pre.Level} ${percent}%">ICO:₵${formatNumber(item.Total, 0)}</div>`;
                 $(list[id].querySelector('a.l')).append(ICOtag);
                 //$(list[id].querySelector('a.l')).append( '₵'+d.Value[i].Total);
             }
@@ -140,7 +140,7 @@ function checkup(){
 }
 
 GM_addStyle(`
-.tag {
+.tag_e_e {
   padding-left: 5px;
   max-height: 20px;
   font-size: 11px;
@@ -151,48 +151,48 @@ GM_addStyle(`
   text-shadow: 1px 1px 1px #000;
   font-weight: bold;
 }
-.predicted .tag, .initial_item .tag, .trade .tag, .title .tag {
+.predicted .tag_e, .initial_item .tag_e, .trade .tag_e, .title .tag_e {
     background: linear-gradient(#d965ff,#ffabf5);
     padding: 1px 10px;
 }
-.predicted .tag {
+.predicted .tag_e {
   margin-right: 5px;
 }
-.info .name .tag {
+.info .name .tag_e {
   margin: -2px 10px 0 0;
   padding: 1px 5px;
 }
-.initial_item .tag {
+.initial_item .tag_e {
   padding: 0px;
 }
-.title .tag {
+.title .tag_e {
   margin-left: 5px;
 }
-.tag.lv0, .tag.even, .info .name .tag.even {
+.tag_e.lv0, .tag_e.even, .info .name .tag_e.even {
   background: linear-gradient(#d2d2d2,#e0e0e0);
 }
-.tag.lv1, .tag.new {
+.tag_e.lv1, .tag_e.new {
   background: linear-gradient(#40f343,#b2ffa5);
 }
-.tag.lv2 {
+.tag_e.lv2 {
   background: linear-gradient(#70bbff,#9bd0ff)
 }
-.tag.lv3 {
+.tag_e.lv3 {
   background: linear-gradient(#ffdc51,#ffe971);
 }
-.tag.lv4 {
+.tag_e.lv4 {
   background: linear-gradient(#FF9800,#FFC107);
 }
-.tag.lv5 {
+.tag_e.lv5 {
   background: linear-gradient(#d965ff,#ffabf5);
 }
-.tag.lv6 {
+.tag_e.lv6 {
   background: linear-gradient(#ff5555,#ff9999);
 }
-.tag.raise, #grailBox button.bid {
+.tag_e.raise, #grailBox button.bid {
   background: linear-gradient(#ff658d,#ffa7cc);
 }
-.tag.fall, #grailBox button.ask {
+.tag_e.fall, #grailBox button.ask {
   background: linear-gradient(#65bcff,#a7e3ff);
 }
 `);
