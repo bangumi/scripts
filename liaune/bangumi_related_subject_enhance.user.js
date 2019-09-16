@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.5
+// @version      0.5.1
 // @description  显示条目页面关联条目的收藏情况,显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
 // @grant        GM_addStyle
 // ==/UserScript==
 (function() {
- GM_addStyle(`
+    GM_addStyle(`
 .rank{
 padding: 2px 5px 1px 5px;
 background: #b4b020;
@@ -31,31 +31,31 @@ box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
 -webkit-border-radius: 4px;
 border-radius: 4px
 }
-.wish{
+.relate_wish{
 border-color: #fd59a9;
 border-style: solid;
 border-width:2px;
 border-radius: 4px
 }
-.collect{
+.relate_collect{
 border-color: #3838e6;
 border-style: solid;
 border-width:2px;
 border-radius: 4px
 }
-.do{
+.relate_do{
 border-color: #15d748;
 border-style: solid;
 border-width:2px;
 border-radius: 4px
 }
-.on_hold{
+.relate_on_hold{
 border-color: #f6af45;
 border-style: solid;
 border-width:2px;
 border-radius: 4px
 }
-.dropped{
+.relate_dropped{
 border-color: #5a5855;
 border-style: solid;
 border-width:2px;
@@ -118,8 +118,8 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
     if(itemsList3.length)
         $(privatebox).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .subtitle')[1]);
     checkbox.onclick = function (){
-     if (checkbox.checked) privacy = 1;
-      else privacy = 0;
+        if (checkbox.checked) privacy = 1;
+        else privacy = 0;
     };
     const allCollect = document.createElement('a');
     allCollect.className = 'chiiBtn';
@@ -178,50 +178,53 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             elem.style.height="150px";
             //elem.style.width="82px";
         });
-        let i = 0;
-        let getitemsList= setInterval(function(){
-            let elem = itemsList[i];
-            let index = i;
-            let href = elem.querySelector('a.avatar').href;
-            let href1 = href.replace(/subject/,"update");
-            let ID = href.split('/subject/')[1];
-            if(localStorage.getItem('Subject'+ID+'Status') && !update){
-                let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
-                DisplayRank(info.rankNum,index,1);
+        if(itemsList.length){
+            let i = 0;
+            let getitemsList= setInterval(function(){
+                let elem = itemsList[i];
+                let index = i;
+                let href = elem.querySelector('a.avatar').href;
+                let href1 = href.replace(/subject/,"update");
+                let ID = href.split('/subject/')[1];
+                if(localStorage.getItem('Subject'+ID+'Status') && !update){
+                    let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
+                    DisplayRank(info.rankNum,index,1);
+                }
+                else ShowRank(href,index,1);
+                if(collectStatus[ID]!='collect')
+                    ShowCheckIn(elem,ID);
+                if(collectStatus[ID] && !update)
+                    DisplayCollect(collectStatus[ID],index,1);
+                else ShowCollect(href1,index,1);
+                i++;
+                if(i >= itemsList.length){
+                    clearInterval(getitemsList);
+                }
+            },300);}
+        if(itemsList2.length){
+            let j = 0;
+            let getitemsList2= setInterval(function(){
+                let elem = itemsList2[j];
+                let index = j;
+                let href = elem.querySelector('a').href;
+                let href1 = href.replace(/subject/,"update");
+                let ID = href.split('/subject/')[1];
+                if(localStorage.getItem('Subject'+ID+'Status') && !update){
+                    let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
+                    DisplayRank(info.rankNum,index,0);
+                }
+                else ShowRank(href,index,0);
+                if(collectStatus[ID]!='collect')
+                    ShowCheckIn(elem,ID);
+                if(collectStatus[ID] && !update)
+                    DisplayCollect(collectStatus[ID],index,0);
+                else  ShowCollect(href1,index,0);
+                j++;
+                if(j >= itemsList2.length){
+                    clearInterval(getitemsList2);
+                }
+            },300)
             }
-            else ShowRank(href,index,1);
-            if(collectStatus[ID]!='collect')
-                ShowCheckIn(elem,ID);
-            if(collectStatus[ID] && !update)
-                DisplayCollect(collectStatus[ID],index,1);
-            else ShowCollect(href1,index,1);
-            i++;
-            if(i >= itemsList.length){
-                clearInterval(getitemsList);
-            }
-        },300);
-        let j = 0;
-        let getitemsList2= setInterval(function(){
-            let elem = itemsList2[j];
-            let index = j;
-            let href = elem.querySelector('a').href;
-            let href1 = href.replace(/subject/,"update");
-            let ID = href.split('/subject/')[1];
-            if(localStorage.getItem('Subject'+ID+'Status') && !update){
-                let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
-                DisplayRank(info.rankNum,index,0);
-            }
-            else ShowRank(href,index,0);
-            if(collectStatus[ID]!='collect')
-                ShowCheckIn(elem,ID);
-            if(collectStatus[ID] && !update)
-                DisplayCollect(collectStatus[ID],index,0);
-            else  ShowCollect(href1,index,0);
-            j++;
-            if(j >= itemsList2.length){
-                clearInterval(getitemsList2);
-            }
-        },300);
         itemsList3.forEach( (elem, index) => {
             let href = elem.querySelector('a').href;
             let ID = href.split('/subject/')[1];
@@ -283,19 +286,19 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
         else if(args==2)
             avatarNeue = document.querySelectorAll('#columnSubjectHomeB  ul.browserCoverSmall li')[index].querySelector('span.avatarNeue');
         if(interest=='wish'){
-            avatarNeue.classList.add('wish');
+            avatarNeue.classList.add('relate_wish');
         }
         else if(interest=='collect'){
-            avatarNeue.classList.add('collect');
+            avatarNeue.classList.add('relate_collect');
         }
         else if(interest=='do'){
-            avatarNeue.classList.add('do');
+            avatarNeue.classList.add('relate_do');
         }
         else if(interest=='on_hold'){
-            avatarNeue.classList.add('on_hold');
+            avatarNeue.classList.add('relate_on_hold');
         }
         else if(interest=='dropped'){
-            avatarNeue.classList.add('dropped');
+            avatarNeue.classList.add('relate_dropped');
         }
     }
 
