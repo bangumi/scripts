@@ -1,5 +1,16 @@
 # [liaune](https://bgm.tv/user/liaune)
 
+## [自动标签系统](https://github.com/bangumi/scripts/blob/master/liaune/bangumi_auto_show_Tags.user.js)
+
+讨论页面：https://bgm.tv/group/topic/344638
+
+在用户的收藏列表自动显示条目标签，并展示标签汇总和编辑功能，附带展示评分统计和年份统计
+使用了indexedDB以代替localstorage，解决了因标签数据庞大可能引起的localstorage存储不足的问题
+- 点击右侧列表中的标签可以在左边条目中搜索对应的标签，并将结果显示在列表顶部；评分和年份同理
+- 点击标签列表右边的'x'可以删除对应的标签，同时将该标签从左边条目列表中删除，并将结果保存入库
+- 点击标签列表右边的'#'可以重命名对应的标签，同时将左边条目列表中的标签重命名，并将结果保存入库
+- 标签搜索可支持单标签、多标签和逻辑搜索，多标签搜索格式：'tag1 tag2 tag3'，逻辑搜索格式：'tag1 tag2|tag3 -tag4'，'|'表示“或”，'-'表示“非”
+
 ## [条目列表显示增强](https://github.com/bangumi/scripts/raw/master/liaune/bangumi_itemslist_enhance.user.js)
 
 讨论页面：https://bgm.tv/group/topic/344034
@@ -13,7 +24,7 @@
 
 ## [关联条目显示增强](https://github.com/bangumi/scripts/raw/master/liaune/bangumi_related_subject_enhance.user.js)
 
-讨论页面：https://bgm.tv/group/topic/344547
+讨论页面：https://bgm.tv/group/topic/352583
 
 显示条目页面关联条目的完成情况
 
