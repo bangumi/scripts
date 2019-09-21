@@ -137,7 +137,7 @@ padding: 3px 10px;
     const Min_Tag_Vote = 10;    //有效标签需要的标记数下限
     const Tag_Bar_Num = 50;    //标签统计栏默认显示的标签数量
     //标签消歧义
-    const filter = {"TVA":"TV","漫改":"漫画改","漫画改编":"漫画改","轻改":"轻小说改","轻小说改编":"轻小说改","原创动画":"原创","京都动画":"京阿尼","京都":"京阿尼","京都アニメーション":"京阿尼","ProductionI.G":"Production.I.G","Production_I.G":"Production.I.G","Production.IG":"Production.I.G","ProductionIG":"Production.I.G","I.G":"Production.I.G","key社":"key","骨头社":"BONES","日升":"SUNRISE","GANAIX":"GAINAX","国产动画":"国产","日本动画":"日本","日本漫画":"日本","SF":"科幻","治愈系":"治愈","泡面":"泡面番","宫崎峻":"宫崎骏","花澤香菜":"花泽香菜","香菜":"花泽香菜","钉宫":"钉宫理惠","钉宫病":"钉宫理惠","冈田磨里":"冈田麿里","奈须きのこ":"奈须蘑菇","名侦探柯南":"柯南","コミック":"漫画","マンガ":"漫画","成年コミック":"成人漫画","BLコミック":"BL漫画","少女漫画":"少女漫","东方":"東方","東方project":"東方","东方project":"東方","講談社":"讲谈社","漫画単行本":"漫画单行本","西尾維新":"西尾维新","同人音乐":"同人","同人音樂":"同人","澤野弘之":"泽野弘之","梶浦由記":"梶浦由记"};
+    const filter = {"TVA":"TV","漫改":"漫画改","漫画改编":"漫画改","轻改":"轻小说改","轻小说改编":"轻小说改","原创动画":"原创","京都动画":"京阿尼","京都":"京阿尼","京都アニメーション":"京阿尼","ProductionI.G":"Production.I.G","Production_I.G":"Production.I.G","Production.IG":"Production.I.G","ProductionIG":"Production.I.G","I.G":"Production.I.G","key社":"key","骨头社":"BONES","日升":"SUNRISE","GANAIX":"GAINAX","国产动画":"国产","日本动画":"日本","日本漫画":"日本","SF":"科幻","治愈系":"治愈","泡面":"泡面番","宫崎峻":"宫崎骏","花澤香菜":"花泽香菜","香菜":"花泽香菜","钉宫":"钉宫理惠","钉宫病":"钉宫理惠","冈田磨里":"冈田麿里","奈须きのこ":"奈须蘑菇","名侦探柯南":"柯南","コミック":"漫画","マンガ":"漫画","成年コミック":"成人漫画","BLコミック":"BL漫画","少女漫画":"少女漫","东方":"東方","東方project":"東方","东方project":"東方","講談社":"讲谈社","漫画単行本":"漫画单行本","西尾維新":"西尾维新","同人音乐":"同人","同人音樂":"同人","澤野弘之":"泽野弘之","梶浦由記":"梶浦由记","石黒正数":"石黑正数","劇場版":"剧场版","动画剧场版":"剧场版","剧场版动画":"剧场版","劇場版アニメ":"剧场版","アニメ劇場版":"剧场版"};
     let menu = location.pathname.match(/(anime|book|music|game|real)/)[1];
     let state = location.pathname.match(/(wish|collect|do|on_hold|dropped)/)[1];
 
@@ -328,9 +328,12 @@ padding: 3px 10px;
         for(let TagName in filter){
             if (Tags.includes(TagName)) {
                 Tags.splice(Tags.indexOf(TagName),1,filter[TagName]);
-                Tags = distinct(Tags);
             }
         }
+        for(let i=0;i<Tags.length;i++){
+            if(Tags[i].match(/『(\S+)』/)) Tags[i] = Tags[i].match(/『(\S+)』/)[1];
+        }
+        Tags = distinct(Tags);
         return Tags;
     }
 
@@ -565,10 +568,10 @@ padding: 3px 10px;
             let TagsList = elem.querySelector('#DivTags').textContent.split("  ");
             if (TagsList.includes(TagName)) {
                 TagsList.remove(TagName);
-                AllTags = AllTags.concat(TagsList);
                 setCache(ID,TagsList);
                 addDivTags(elem,TagsList);
             }
+            AllTags = AllTags.concat(TagsList);
             i++;
             if(i==itemsList.length) refreshTagsAll();
         });
@@ -603,10 +606,10 @@ padding: 3px 10px;
             if (TagsList.includes(TagName)) {
                 TagsList.splice(TagsList.indexOf(TagName),1,name);
                 TagsList = distinct(TagsList);
-                AllTags = AllTags.concat(TagsList);
                 setCache(ID,TagsList);
                 addDivTags(elem,TagsList);
             }
+            AllTags = AllTags.concat(TagsList);
             i++;
             if(i==itemsList.length) refreshTagsAll();
         });
