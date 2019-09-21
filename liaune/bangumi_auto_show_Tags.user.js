@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Autoshow Tags
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.7.1
+// @version      0.7.2
 // @description  在条目收藏列表显示条目的常用标签，双击标签栏可以修改；在右边显示统计,点击标签可在列表上方显示相应的条目；标签搜索，多个标签请用空格隔开，支持逻辑搜索
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/.*
@@ -173,15 +173,14 @@ padding: 3px 10px;
             let i = 0;
             let getitemsList= setInterval(function(){
                 let elem = itemsList[i];
-                let index = i;
                 let href = elem.querySelector('a.subjectCover').href;
                 let ID = href.split('/subject/')[1];
                 getStatus(href,elem);
                 i++;
-                if(i >= itemsList.length){
+                if(count >= itemsList.length){
                     clearInterval(getitemsList);
                 }
-            },300);
+            },500);
         }
     }
     function stopLoadTag(){
@@ -270,7 +269,7 @@ padding: 3px 10px;
                     i++;
                     console.log(i);
                 }
-                if(fetchList.length && i >= fetchList.length){
+                if(count >= itemsList.length){
                     clearInterval(getitemsList);
                 }
             },500);
