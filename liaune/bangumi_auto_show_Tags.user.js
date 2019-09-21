@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Autoshow Tags
-// @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6
+// @namespace    https://github.com/bangumi/scripts/tree/master/liaune
+// @version      0.7
 // @description  在条目收藏列表显示条目的常用标签，双击标签栏可以修改；在右边显示统计,点击标签可在列表上方显示相应的条目；标签搜索，多个标签请用空格隔开，支持逻辑搜索
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/.*
@@ -52,7 +52,6 @@ padding: 3px 10px;
     const dbName = 'Bangumi_Subject_Tags';
     const tableName = 'tags';
     const indexName = 'id';
-    // const keyPathName = 'id';
     if (indexedDB) {
         let request = indexedDB.open(dbName, 1);
         request.onupgradeneeded = evt => {
@@ -132,10 +131,15 @@ padding: 3px 10px;
         };
     }
 
-    let itemsList,TagsAll=[],JsonTags = {},AllTags=[],count=0,update=0,stop=0;
+    let itemsList,count=0,update=0,stop=0,readonly=0;
+    let AllTags=[],JsonTags={},TagsAll=[],RatesAll={},YearsAll=[];
     const Display_Tag_Num = 10;  //每个条目下展示的标签数量
     const Min_Tag_Vote = 10;    //有效标签需要的标记数下限
     const Tag_Bar_Num = 50;    //标签统计栏默认显示的标签数量
+    //标签消歧义
+    const filter = {"TVA":"TV","漫改":"漫画改","漫画改编":"漫画改","轻改":"轻小说改","轻小说改编":"轻小说改","原创动画":"原创","京都动画":"京阿尼","京都":"京阿尼","京都アニメーション":"京阿尼","ProductionI.G":"Production.I.G","Production_I.G":"Production.I.G","Production.IG":"Production.I.G","ProductionIG":"Production.I.G","I.G":"Production.I.G","key社":"key","骨头社":"BONES","日升":"SUNRISE","GANAIX":"GAINAX","国产动画":"国产","日本动画":"日本","日本漫画":"日本","SF":"科幻","治愈系":"治愈","泡面":"泡面番","宫崎峻":"宫崎骏","花澤香菜":"花泽香菜","香菜":"花泽香菜","钉宫":"钉宫理惠","钉宫病":"钉宫理惠","冈田磨里":"冈田麿里","奈须きのこ":"奈须蘑菇","名侦探柯南":"柯南","コミック":"漫画","マンガ":"漫画","成年コミック":"成人漫画","BLコミック":"BL漫画","少女漫画":"少女漫","东方":"東方","東方project":"東方","东方project":"東方","講談社":"讲谈社","漫画単行本":"漫画单行本","西尾維新":"西尾维新","同人音乐":"同人","同人音樂":"同人","澤野弘之":"泽野弘之","梶浦由記":"梶浦由记"};
+    let menu = location.pathname.match(/(anime|book|music|game|real)/)[1];
+    let state = location.pathname.match(/(wish|collect|do|on_hold|dropped)/)[1];
 
     $('#browserTools').append(`<a id="showBtn" class="chiiBtn" href="javascript:;">Show Tags</a>`);
     $('#showBtn').on('click', function () {
@@ -151,8 +155,13 @@ padding: 3px 10px;
     $('#stopLoadBtn').on('click', function () {
         stopLoadTag();
     });
+    $('#columnSubjectBrowserB').append(`<div id="showLastResult" class="SimpleSidePanel"><h2><a href="#">显示上次标签统计结果</a></h2></div>`);
+    $('#showLastResult').on('click', function () {
+        showLastResult();
+    });
 
     const User =window.location.href.match(/\/list\/(\S+)\//)? window.location.href.match(/\/list\/(\S+)\//)[1]: null;
+    let record = {"anime":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"book":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"music":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"game":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"real":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}}};
 
     function updateTags(){
         update=1;
@@ -179,11 +188,10 @@ padding: 3px 10px;
         $('#stopLoadBtn').hide();
         $('#updateBtn').show();
         $('#updateBtn').text('更新Tags');
-        JsonTags=[];
-        for (let i = 0; i < TagsAll.length; i++) {
-            JsonTags[TagsAll[i]] = (JsonTags[TagsAll[i]] + 1) || 1;
+        for (let i = 0; i < AllTags.length; i++) {
+            JsonTags[AllTags[i]] = (JsonTags[AllTags[i]] + 1) || 1;
         }
-        AllTags = Object.keys(JsonTags)
+        TagsAll = Object.keys(JsonTags)
             .map(function(key){return {TagName:key, Value:JsonTags[key]};})
             .sort(function(x, y){return y.Value - x.Value;});
         /* for (var key in JsonTags){
@@ -191,11 +199,44 @@ padding: 3px 10px;
                 AllTags.push(temp_tag);
             }
             AllTags.sort(function (x,y){return y.Value - x.Value;});*/
+        saveRecord();
         showTagSearchPanel();
-        showSidePanel(AllTags);
+        showSidePanelTag(TagsAll);
+    }
+    function showLastResult(){
+        if(localStorage.getItem(User+'Bangumi_Tag_Record')){
+            readonly = 1;
+            $('#showLastResult').hide();
+            $('#columnSubjectBrowserB .SimpleSidePanel').hide();
+            $('#columnSubjectBrowserB .menu_inner').hide();
+            let record = JSON.parse(localStorage.getItem(User+'Bangumi_Tag_Record'));
+            let RatesAll = record[menu][state].Rates;
+            let YearsAll = record[menu][state].Years;
+            let TagsAll = record[menu][state].Tags;
+            showSidePanelRate(RatesAll);
+            showSidePanelYear(YearsAll);
+            showSidePanelTag(TagsAll);
+        }
+        else alert('没有记录哦');
+    }
+
+    function saveRecord(){
+        let saverecordBtn = document.createElement('a');
+        saverecordBtn.href = "javascript:;"; saverecordBtn.textContent = "保存本次结果"; saverecordBtn.className = 'chiiBtn';
+        $(saverecordBtn).on('click', function () {
+            if (!confirm("确认要保存结果吗？")) {
+                return;
+            }
+            record[menu][state].Rates = RatesAll;
+            record[menu][state].Years = YearsAll;
+            record[menu][state].Tags = TagsAll;
+            localStorage.setItem(User+'Bangumi_Tag_Record',JSON.stringify(record));
+        });
+        $('#columnSubjectBrowserB').append(saverecordBtn);
     }
     //Main Program
     function showProcess(){
+        readonly = 0;
         $('#showBtn').hide();
         $('#columnSubjectBrowserB .SimpleSidePanel').hide();
         $('#columnSubjectBrowserB .menu_inner').hide();
@@ -269,6 +310,7 @@ padding: 3px 10px;
                 if(checkTag(tagsAll.tag[i]) && parseInt(tagsAll.vote[i])>= Math.min(Min_Tag_Vote,parseInt(tagsAll.vote[0])/10))
                     Tags.push(tagsAll.tag[i]);
             }
+            Tags = filterTags(Tags);
             Tags = Tags.slice(0,Math.min(Display_Tag_Num,Tags.length));
             let ID = href.split('/subject/')[1];
             setCache(ID,Tags);
@@ -280,6 +322,16 @@ padding: 3px 10px;
                 }
             }
         }
+    }
+
+    function filterTags(Tags){
+        for(let TagName in filter){
+            if (Tags.includes(TagName)) {
+                Tags.splice(Tags.indexOf(TagName),1,filter[TagName]);
+                Tags = distinct(Tags);
+            }
+        }
+        return Tags;
     }
 
     function addDivTags(elem,Tags){
@@ -313,7 +365,7 @@ padding: 3px 10px;
     function displayStatus(elem,Tags){
         let href = elem.querySelector('a.subjectCover').href;
         let ID = href.split('/subject/')[1];
-        TagsAll = TagsAll.concat(Tags);
+        AllTags = AllTags.concat(Tags);
         addDivTags(elem,Tags);
 
         count++;
@@ -325,11 +377,10 @@ padding: 3px 10px;
             $('#stopLoadBtn').hide();
             $('#updateBtn').show();
             $('#updateBtn').text('更新Tags');
-            JsonTags=[];
-            for (let i = 0; i < TagsAll.length; i++) {
-                JsonTags[TagsAll[i]] = (JsonTags[TagsAll[i]] + 1) || 1;
+            for (let i = 0; i < AllTags.length; i++) {
+                JsonTags[AllTags[i]] = (JsonTags[AllTags[i]] + 1) || 1;
             }
-            AllTags = Object.keys(JsonTags)
+            TagsAll = Object.keys(JsonTags)
                 .map(function(key){return {TagName:key, Value:JsonTags[key]};})
                 .sort(function(x, y){return y.Value - x.Value;});
             /* for (var key in JsonTags){
@@ -337,12 +388,12 @@ padding: 3px 10px;
                 AllTags.push(temp_tag);
             }
             AllTags.sort(function (x,y){return y.Value - x.Value;});*/
+            record[menu][state].Tags = TagsAll;
+            saveRecord();
             $('#TagSearchSidePanel').remove();
             showTagSearchPanel();
             $('#TagAllSidePanel').remove();
-            showSidePanel(AllTags);
-
-            //console.log(AllTags);
+            showSidePanelTag(TagsAll);
         }
 
     }
@@ -367,7 +418,7 @@ padding: 3px 10px;
         $('#columnSubjectBrowserB').append(SimpleSidePanel);
     }
 
-    function showSidePanel(AllTags){
+    function showSidePanelTag(TagsAll){
         let SimpleSidePanel = document.createElement('div');
         SimpleSidePanel.id = "TagAllSidePanel";
         SimpleSidePanel.className = "SimpleSidePanel";
@@ -380,29 +431,30 @@ padding: 3px 10px;
             for(let i=start; i<end; i++){
                 let tagli = document.createElement('li');
                 let taglia = document.createElement('a');
-                taglia.href='#';taglia.textContent = AllTags[i].TagName;
-                taglia.addEventListener('click', findTag.bind(this,AllTags[i].TagName),false);
-                $(taglia).append(`<small>${AllTags[i].Value}</small>`);
+                if(!readonly) taglia.href='#';
+                taglia.textContent = TagsAll[i].TagName;
+                if(!readonly) taglia.addEventListener('click', findTag.bind(this,TagsAll[i].TagName),false);
+                $(taglia).append(`<small>${TagsAll[i].Value}</small>`);
                 //添加删除按钮
                 let tag_del = document.createElement('a');
                 tag_del.href='javascript:;';tag_del.textContent = 'x';tag_del.title = '删除';tag_del.classList.add('tag_d');
-                tag_del.addEventListener('click', deleteTag.bind(this,tagli,AllTags[i].TagName),false);
-                tagli.appendChild(tag_del);
+                tag_del.addEventListener('click', deleteTag.bind(this,tagli,TagsAll[i].TagName),false);
+                if(!readonly) tagli.appendChild(tag_del);
                 //添加重命名按钮
                 let tag_rename = document.createElement('a');
                 tag_rename.href='javascript:;';tag_rename.textContent = '#';tag_rename.title = '重命名';tag_rename.classList.add('tag_d');
-                tag_rename.addEventListener('click', renameTag.bind(this,taglia,AllTags[i].TagName),false);
-                tagli.appendChild(tag_rename);
+                tag_rename.addEventListener('click', renameTag.bind(this,taglia,TagsAll[i].TagName),false);
+                if(!readonly) tagli.appendChild(tag_rename);
                 tagli.appendChild(taglia);
                 tagList.appendChild(tagli);
             }
         }
-        showMoreTags(0,Math.min(Tag_Bar_Num,AllTags.length),0);
+        showMoreTags(0,Math.min(Tag_Bar_Num,TagsAll.length),0);
         $(SimpleSidePanel).append($(tagList));
         let showmoreTags = document.createElement('a');
         showmoreTags.href='javascript:;';
         showmoreTags.textContent = '/ 展开全部标签';
-        showmoreTags.addEventListener('click', showMoreTags.bind(this,Math.min(Tag_Bar_Num,AllTags.length),AllTags.length,1),false);
+        showmoreTags.addEventListener('click', showMoreTags.bind(this,Math.min(Tag_Bar_Num,TagsAll.length),TagsAll.length,1),false);
         $(SimpleSidePanel).append($(showmoreTags));
         $('#columnSubjectBrowserB').append(SimpleSidePanel);
     }
@@ -489,12 +541,23 @@ padding: 3px 10px;
         return false;
     };
 
+    function refreshTagsAll(){
+        JsonTags = {};
+        for (let i = 0; i < AllTags.length; i++) {
+            JsonTags[AllTags[i]] = (JsonTags[AllTags[i]] + 1) || 1;
+        }
+        TagsAll = Object.keys(JsonTags)
+            .map(function(key){return {TagName:key, Value:JsonTags[key]};})
+            .sort(function(x, y){return y.Value - x.Value;});
+    }
+
     function deleteTag(tagli,TagName){
         itemsList = document.querySelectorAll('#browserItemList li.item');
-        //findTag(TagName);
+        AllTags = [];
         if (!confirm(`确认要删除标签“${TagName}”吗？`)) {
             return;
         }
+        let i=0;
         $(tagli).remove();
         itemsList.forEach( (elem, index) => {
             let href = elem.querySelector('a.subjectCover').href;
@@ -502,9 +565,12 @@ padding: 3px 10px;
             let TagsList = elem.querySelector('#DivTags').textContent.split("  ");
             if (TagsList.includes(TagName)) {
                 TagsList.remove(TagName);
+                AllTags = AllTags.concat(TagsList);
                 setCache(ID,TagsList);
                 addDivTags(elem,TagsList);
             }
+            i++;
+            if(i==itemsList.length) refreshTagsAll();
         });
     }
     function distinct(arr) {
@@ -521,11 +587,13 @@ padding: 3px 10px;
 
     function renameTag(taglia,TagName){
         itemsList = document.querySelectorAll('#browserItemList li.item');
+        AllTags = [];
         let name = prompt('重命名为：',TagName);
         if (!name || name=='') {
             return;
         }
         let num = taglia.querySelector('small').textContent;
+        let i=0;
         $(taglia).text(name);
         $(taglia).append(`<small>${num}</small>`);
         itemsList.forEach( (elem, index) => {
@@ -535,25 +603,26 @@ padding: 3px 10px;
             if (TagsList.includes(TagName)) {
                 TagsList.splice(TagsList.indexOf(TagName),1,name);
                 TagsList = distinct(TagsList);
+                AllTags = AllTags.concat(TagsList);
                 setCache(ID,TagsList);
                 addDivTags(elem,TagsList);
             }
+            i++;
+            if(i==itemsList.length) refreshTagsAll();
         });
     }
 
     function createRateSidePannel(elem){
-        let AllRates = [], JsonAllRates = {},RatesAll=[];
+        let AllRates = [];
         itemsList.forEach( (elem, index) => {
             let User_rate=elem.querySelectorAll('.inner .collectInfo .starlight')[0] ? elem.querySelectorAll('.inner .collectInfo .starlight')[0].className: null;
             let Rate =User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:0):0;
             AllRates = AllRates.concat(Rate);
         });
         for (let i = 0; i < AllRates.length; i++) {
-            JsonAllRates[AllRates[i]] = (JsonAllRates[AllRates[i]] + 1) || 1;
+            RatesAll[AllRates[i]] = (RatesAll[AllRates[i]] + 1) || 1;
         }
-        RatesAll = Object.keys(JsonAllRates)
-            .map(function(key){return {Rate:key, Value:JsonAllRates[key]};})
-            .sort(function(x, y){return y.Rate - x.Rate;});
+        record[menu][state].Rates = RatesAll;
         showSidePanelRate(RatesAll);
     }
     function showSidePanelRate(RatesAll){
@@ -561,31 +630,34 @@ padding: 3px 10px;
         SimpleSidePanel.id = "RateSidePanel";
         SimpleSidePanel.className = "SimpleSidePanel";
         SimpleSidePanel.style.width = "190px";
-        let RateSum = 0, count_t=0;
         let tagList = document.createElement('ul');
         tagList.className = "tagList";
-        for(let i=0; i<RatesAll.length; i++){
-            let tagli = document.createElement('li');
-            let taglia = document.createElement('a');
-            taglia.href='#';taglia.textContent = RatesAll[i].Rate+"分";
-            if(RatesAll[i].Rate=='0') taglia.textContent = "未评分";
-            taglia.addEventListener('click', showThisRate.bind(this,RatesAll[i].Rate),false);
-            $(taglia).append(`<small>${RatesAll[i].Value}</small>`);
-            tagli.appendChild(taglia);
-            tagList.appendChild(tagli);
-            //不计未评分
-            if(RatesAll[i].Rate!='0'){
-                RateSum += RatesAll[i].Rate * RatesAll[i].Value;
-                count_t += RatesAll[i].Value;}
+        let RateSum = 0, count_t=0;
+        for(let i=10; i>=0; i--){
+            let vote = RatesAll[i] ? parseInt(RatesAll[i]) : 0;
+            if(vote){
+                let tagli = document.createElement('li');
+                let taglia = document.createElement('a');
+                if(!readonly) taglia.href='#';
+                taglia.textContent = i+"分";
+                if(i==0) taglia.textContent = "未评分";
+                if(!readonly) taglia.addEventListener('click', showThisRate.bind(this,i),false);
+                $(taglia).append(`<small>${vote}</small>`);
+                tagli.appendChild(taglia);
+                tagList.appendChild(tagli);
+                //不计未评分
+                if(i){
+                    RateSum += i * vote;
+                    count_t += vote}
+            }
         }
         $(SimpleSidePanel).append($("<h2>打分统计<small style='float:right'>平均："+ parseFloat(RateSum/count_t).toFixed(2)+"</small></h2>"));
         $(SimpleSidePanel).append($(tagList));
-
         $('#columnSubjectBrowserB').append(SimpleSidePanel);
-        createVotesSidePanel();
+        showChartPanelRate(RatesAll);
     }
-    function createVotesSidePanel(){
-        let AllVotes = [], JsonAllVotes = {},votes = 0,sum = 0;
+    function showChartPanelRate(RatesAll){
+        /*let AllVotes = [], JsonAllVotes = {},votes = 0,sum = 0;
         itemsList = document.querySelectorAll('#browserItemList li.item');
         itemsList.forEach( (elem, index) => {
             let User_rate=elem.querySelectorAll('.inner .collectInfo .starlight')[0] ? elem.querySelectorAll('.inner .collectInfo .starlight')[0].className: null;
@@ -600,45 +672,50 @@ padding: 3px 10px;
         let average = parseFloat(sum/votes).toFixed(3);
         for (let i = 0; i < AllVotes.length; i++) {
             JsonAllVotes[AllVotes[i]] = (JsonAllVotes[AllVotes[i]] + 1) || 1;
+        }*/
+        let SimpleSidePanel = document.createElement('div');
+        SimpleSidePanel.id = "ChartPanelRate";
+        SimpleSidePanel.className = "SimpleSidePanel";
+        let largest=0,votes=0,vote0=0;
+        vote0 = RatesAll[0] ? parseInt(RatesAll[0]) : 0;
+        for(let i=0;i<=10;i++) {
+            let vote = RatesAll[i] ? parseInt(RatesAll[i]) : 0;
+            votes += vote;
+            if(i && vote>largest) largest = vote;
         }
-        let VotesSidePannel = document.createElement('div');
-        $(VotesSidePannel).append(`已打分: ${votes} / ${itemsList.length}`);
+        $(SimpleSidePanel).append(`已打分: ${votes-vote0} / ${votes}`);
         let chart = document.createElement('ul');
         chart.className = "horizontalChart";
-        let largest=0;
-        for(let i=1;i<=10;i++) {
-            if(parseInt(JsonAllVotes[i])>largest)
-                largest=parseInt(JsonAllVotes[i]);
-        }
-        for(let i=10; i>=1; i--){
+        for(let i=1; i<=10; i++){
             let tagli = document.createElement('li');
             let taglia = document.createElement('a');
-            taglia.addEventListener('click', showThisRate.bind(this,i),false);
-            let v_votes = JsonAllVotes[i] ? parseInt(JsonAllVotes[i]) : 0;
+            if(!readonly) taglia.addEventListener('click', showThisRate.bind(this,i),false);
+            let v_votes = RatesAll[i] ? parseInt(RatesAll[i]) : 0;
             let height = parseFloat(v_votes/largest*100).toFixed(2).toString();
             taglia.title = v_votes + '  '+ height +'%';
             $(taglia).append(`<span class="label">${i}</span><span class="count" style="height: ${height}%;"></span>`);
             tagli.appendChild(taglia);
             chart.appendChild(tagli);
         }
-        $(VotesSidePannel).append($(chart));
-        $('#columnSubjectBrowserB').append($(VotesSidePannel));
+        $(SimpleSidePanel).append($(chart));
+        $('#columnSubjectBrowserB').append($(SimpleSidePanel));
     }
-    function createYearSidePannel(elem){
-        let AllYears = [], JsonAllYears = {},YearsAll=[];
+
+    function createYearSidePannel(){
+        let AllYears = [], JsonAllYears = {};
         itemsList.forEach( (elem, index) => {
             let date = elem.querySelectorAll('.inner .info')[0].textContent;
             date = parseDate(date);
             AllYears = AllYears.concat(date);
         });
-        for (i = 0; i < AllYears.length; i++) {
+        for (let i=0;i<AllYears.length;i++) {
             JsonAllYears[AllYears[i]] = (JsonAllYears[AllYears[i]] + 1) || 1;
         }
         console.log(JsonAllYears);
         YearsAll = Object.keys(JsonAllYears)
             .map(function(key){return {Year:key, Value:JsonAllYears[key]};})
             .sort(function(x, y){return y.Year - x.Year;});
-        console.log(YearsAll);
+        record[menu][state].Years = YearsAll;
         showSidePanelYear(YearsAll);
     }
 
@@ -651,11 +728,12 @@ padding: 3px 10px;
         tagList.className = "tagList";
         function showMoreTags(start,end,hide){
             if(hide) $(showmoreTags).hide();
-            for(i=start; i<end; i++){
+            for(let i=start; i<end; i++){
                 let tagli = document.createElement('li');
                 let taglia = document.createElement('a');
-                taglia.href='#';taglia.textContent = YearsAll[i].Year;
-                taglia.addEventListener('click', showThisYear.bind(this,YearsAll[i].Year),false);
+                if(!readonly) taglia.href='#';
+                taglia.textContent = YearsAll[i].Year;
+                if(!readonly) taglia.addEventListener('click', showThisYear.bind(this,YearsAll[i].Year),false);
                 $(taglia).append(`<small>${YearsAll[i].Value}</small>`);
                 tagli.appendChild(taglia);
                 tagList.appendChild(tagli);
