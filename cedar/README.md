@@ -110,3 +110,11 @@
 对应组件https://bangumi.tv/dev/app/1207
 
 站内讨论https://bgm.tv/group/topic/352335
+
+## BBCode效果补丁
+
+暂无脚本 请前往组件页面启用组件
+
+对应组件https://bgm.tv/dev/app/1252
+
+站内讨论https://bgm.tv/group/topic/352723
