@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         TinyGrail Initial Price
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.2
+// @version      0.2.1
 // @description  小圣杯显示角色发行价
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topic\/crt).*
 // @grant        GM_addStyle
 // ==/UserScript==
-var api = 'https://www.tinygrail.com/api/';
+var api = 'https://tinygrail.com/api/';
 
 function getData(url, callback) {
     if (!url.startsWith('http'))
