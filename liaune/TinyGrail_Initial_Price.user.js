@@ -22,7 +22,7 @@ function getData(url, callback) {
 if(document.location.href.match(/rakuen\/topic\/crt/)){
     setTimeout(function(){
         var charaId=document.location.pathname.split('crt/')[1];
-        getData(`chara/charts/${charaId}/2019-08-09`, function (d, s) {
+        getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
             if (d.State === 0) {
                 var price = d.Value[0].Begin;
                 price = parseFloat(price).toFixed(2);
