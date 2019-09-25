@@ -74,7 +74,7 @@ function fetchBangumiDataBySearch(subjectInfo, typeNumber, queryStr) {
   typeNumber = typeNumber || 'all';
   // 去掉末尾的括号加上引号搜索
   var query = (subjectInfo.subjectName || '').trim()
-    .replace(/（.+）|\(.+\)$/, '');
+    .replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
   query = `"${query}"`;
   console.log(subjectInfo);
   // if (subjectInfo.isbn13) {

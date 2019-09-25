@@ -8,7 +8,7 @@
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.1.4
+// @version     0.1.5
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -517,7 +517,7 @@ function fetchBangumiDataBySearch(subjectInfo, typeNumber, queryStr) {
   }
   typeNumber = typeNumber || 'all';
   // 去掉末尾的括号加上引号搜索
-  var query = (subjectInfo.subjectName || '').trim().replace(/（.+）|\(.+\)$/, '');
+  var query = (subjectInfo.subjectName || '').trim().replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
   query = '"' + query + '"';
   console.log(subjectInfo);
   // if (subjectInfo.isbn13) {
