@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         bangumi列表显示增强
-// @namespace    https://github.com/bangumi/scripts/liaune
+// @namespace    https://github.com/bangumi/scripts/tree/master/liaune
 // @version      0.8
-// @description  在有条目列表的页面，显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能，鼠标移到排名处可查看历史记录
+// @description  在有条目列表的页面，显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|.+?/tag|.+?/browser|subject_search|index)(/|\?).+$/
 // @grant        GM_addStyle
@@ -109,7 +109,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
             };
             let reqInfo = objectStore.put({id: itemId, value: cache})
             reqInfo.onerror = evt => {
-                // console.log('Error', evt.target.error.name);
+                //console.log('Error', evt.target.error.name);
             }
             reqInfo.onsuccess = evt => {}
         };
@@ -213,7 +213,7 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
                     let href = elem.querySelector('a.subjectCover').href;
                     getStatus(href,elem);
                     i++;
-                    console.log(i);
+                    //console.log(i);
                 }
                 if(count >= itemsList.length){
                     clearInterval(getitemsList);
