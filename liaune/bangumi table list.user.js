@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi table list
-// @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.2
+// @namespace    https://github.com/bangumi/scripts/tree/master/liaune
+// @version      0.3
 // @description  在条目列表点击表格图标可以表格形式显示列表
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
@@ -31,6 +31,90 @@ border-style: solid;
 border-color: #a9c6c9;
 }
 `);
+    // 检测 indexedDB 兼容性，因为只有新版本浏览器支持
+    let indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+    // 初始化 indexedDB
+    const dbName = 'Bangumi_Subject_Info';
+    const tableName = 'info';
+    const indexName = 'id';
+    if (indexedDB) {
+        let request = indexedDB.open(dbName, 1);
+        request.onupgradeneeded = evt => {
+            let db = evt.target.result;
+            let objectStore = db.createObjectStore(tableName, {keyPath: indexName});
+        }
+        request.onsuccess = evt => {
+            //removeCache();
+        }
+    }
+    // 用来记录已经被使用的缓存列表
+    let cacheLists = [];
+    // 获取本地缓存
+    function getCache(itemId, callback) {
+        let request = indexedDB.open(dbName, 1);
+        request.onsuccess = evt => {
+            let db = evt.target.result;
+            let transaction = db.transaction([tableName], 'readonly');
+            let objectStore = transaction.objectStore(tableName);
+            let reqInfo = objectStore.get(itemId);
+            reqInfo.onsuccess = evt => {
+                let result = evt.target.result;
+                if(!!result) {
+                    cacheLists.push(itemId);
+                    callback(true, result.value.content);
+                } else {
+                    callback(false);
+                }
+            }
+            reqInfo.onerror = evt => {
+                callback(false);
+            }
+        };
+    }
+    // 记录到本地缓存
+    function setCache(itemId, data) {
+        let request = indexedDB.open(dbName, 1);
+        request.onsuccess = evt => {
+            let db = evt.target.result;
+            let transaction = db.transaction([tableName], 'readwrite');
+            let objectStore = transaction.objectStore(tableName);
+            let cache = {
+                content: data,
+                created: new Date()
+            };
+            let reqInfo = objectStore.put({id: itemId, value: cache})
+            reqInfo.onerror = evt => {
+                // console.log('Error', evt.target.error.name);
+            }
+            reqInfo.onsuccess = evt => {}
+        };
+    }
+    // 清除和更新缓存
+    function removeCache() {
+        let request = indexedDB.open(dbName, 1);
+        request.onsuccess = evt => {
+            let db = evt.target.result;
+            let transaction = db.transaction([tableName], 'readwrite'),
+                store = transaction.objectStore(tableName),
+                twoWeek = 1209600000;
+            store.openCursor().onsuccess = evt => {
+                let cursor = evt.target.result;
+                if (cursor) {
+                    if (cacheLists.indexOf(cursor.value.name) !== -1) {
+                        cursor.value.created = new Date();
+                        cursor.update(cursor.value);
+                    } else {
+                        let now = new Date(),
+                            last = cursor.value.created;
+                        if (now - last > twoWeek) {
+                            cursor.delete();
+                        }
+                    }
+                    cursor.continue();
+                }
+            }
+        };
+    }
     const showBtn = document.createElement('li');
     const table = document.createElement('a');
     table.addEventListener('click', ShowTable);
@@ -85,61 +169,65 @@ border-color: #a9c6c9;
                     return time;
                 }
                 date = ParseDate(date);
-                let info = JSON.parse(localStorage.getItem('Subject'+ID+'Status'));
-                let rankNum = info ? info.rankNum : '';
-                let Point = info ? info.Point : '';
-                let Votes = info ? info.Votes :'';
-                let Point_f = info ? info.Point_f : '';
-                let Votes_f = info ? info.Votes_f :'';
-                let User_rate=elem.querySelectorAll('.inner .collectInfo .starlight')[0] ? elem.querySelectorAll('.inner .collectInfo .starlight')[0].className: null;
-                let User_Point=User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:''):'';
-                let My_Point=localStorage.getItem(You+'Point'+ID) ? localStorage.getItem(You+'Point'+ID) :'';
-                if(My_Point=='null') My_Point='';
-                if(My_Point!=='' && User_Point!==''){
-                    count1+= 1;
-                    DXY+= Math.pow((My_Point-User_Point),2);
-                }
-                let comment_box=elem.querySelector('#comment_box .item .text');
-                let comment = comment_box ? comment_box.innerHTML :'';
-                let tr=document.createElement('tr');
-                if(window.location.href.match(/\/(list|index)\//)){
-                    if(User && User!=You){
-                        tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rankNum}</td><td>${Point}</td><td>${Votes}</td><td>${Point_f}</td><td>${Votes_f}</td><td>${My_Point}</td><td>${User_Point}</td><td>${comment}</td>`;
-                        if(My_Point!=='' && User_Point!=='' && Math.pow((My_Point-User_Point),2)>4){tr.style.color="#ff0000";}
-                        if(My_Point!=='' && User_Point!=='' && Math.pow((Point-User_Point),2)>1 && My_Point==User_Point){tr.style.color="#2ea6ff";}
-                        //if(User_Point!=='' && User_Point-Point>1){tr.style.color="#ff00ff";}
-                        //if(User_Point!=='' && Point-User_Point>1){tr.style.color="#c59c01";}
-                    }
-                    else {tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rankNum}</td><td>${Point}</td><td>${Votes}</td><td>${Point_f}</td><td>${Votes_f}</td><td>${My_Point}</td><td>${comment}</td>`;
-                         if(My_Point!=='' && My_Point-Point>1){tr.style.color="#ff00ff";}
-                         if(My_Point!=='' && Point-My_Point>1){tr.style.color="#c59c01";}
-                         }
-                }
-                else
-                    tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rankNum}</td><td>${Point}</td><td>${Votes}</td><td>${Point_f}</td><td>${Votes_f}</td><td>${My_Point}</td>`;
-                tb.appendChild(tr);
-                count+=1;
-                if(window.location.href.match(/\/(list|index)\//)){
-                    if(User && User!=You){
-                        if(count==itemsList.length){
-                            let average = parseFloat(DXY/count1).toFixed(2);
-                            let record = document.createElement('a');
-                            record.className='chiiBtn';
-                            record.href='javascript:;';
-                            record.innerHTML = 'Record';
-                            record.addEventListener('click', function(){
-                                if(count1) localStorage.setItem(User+'CommenRated',count1);
-                                if(average) localStorage.setItem(User+'RateDiff',average);
-                                console.log(count1+average);
-                                record.innerHTML = record.innerHTML == 'Record'?'Recorded':'Record';
-                            });
-                            tr.innerHTML=`<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>${count1}</td><td>${average}</td><td></td>`;
-                            
-                            tb.appendChild(tr);
-                            tb.appendChild(record);
+                getCache(ID, function(success, result) {
+                    if (success) {
+                        let info = result;
+                        let rank = info ? info.rank : '';
+                        let score = info ? info.score : '';
+                        let votes = info ? info.votes :'';
+                        let score_f = info ? info.score_f : '';
+                        let votes_f = info ? info.votes_f :'';
+                        let User_rate=elem.querySelector('.inner .collectInfo .starlight') ? elem.querySelector('.inner .collectInfo .starlight').className: null;
+                        let User_score=User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:''):'';
+                        let My_score= info ? info.score_u :'';
+                        if(My_score!=='' && User_score!==''){
+                            count1++;
+                            DXY+= Math.pow((My_score-User_score),2);
+                        }
+                        let comment_box=elem.querySelector('#comment_box .item .text');
+                        let comment = comment_box ? comment_box.innerHTML :'';
+                        let tr=document.createElement('tr');
+                        if(window.location.href.match(/\/(list|index)\//)){
+                            if(User && User!=You){
+                                tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rank}</td><td>${score}</td><td>${votes}</td><td>${score_f}</td><td>${votes_f}</td><td>${My_score}</td><td>${User_score}</td><td>${comment}</td>`;
+                                if(My_score!=='' && User_score!=='' && Math.pow((My_score-User_score),2)>4){tr.style.color="#ff0000";}
+                                if(My_score!=='' && User_score!=='' && Math.pow((score-User_score),2)>1 && My_score==User_score){tr.style.color="#2ea6ff";}
+                                //if(User_score!=='' && User_score-score>1){tr.style.color="#ff00ff";}
+                                //if(User_score!=='' && score-User_score>1){tr.style.color="#c59c01";}
+                            }
+                            else {tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rank}</td><td>${score}</td><td>${votes}</td><td>${score_f}</td><td>${votes_f}</td><td>${My_score}</td><td>${comment}</td>`;
+                                  if(My_score!=='' && My_score-score>1){tr.style.color="#ff00ff";}
+                                  if(My_score!=='' && score-My_score>1){tr.style.color="#c59c01";}
+                                 }
+                        }
+                        else
+                            tr.innerHTML=`<td><a href=${href} class="l">${ID}</a></td><td>${title}</td><td>${ep}</td><td>${date}</td><td>${rank}</td><td>${score}</td><td>${votes}</td><td>${score_f}</td><td>${votes_f}</td><td>${My_score}</td>`;
+                        tb.appendChild(tr);
+                        count+=1;
+                        if(window.location.href.match(/\/(list|index)\//)){
+                            if(User && User!=You){
+                                if(count==itemsList.length){
+                                    let average = parseFloat(DXY/count1).toFixed(2);
+                                    let record = document.createElement('a');
+                                    record.className='chiiBtn';
+                                    record.href='javascript:;';
+                                    record.innerHTML = 'Record';
+                                    record.addEventListener('click', function(){
+                                        if(count1) localStorage.setItem(User+'CommenRated',count1);
+                                        if(average) localStorage.setItem(User+'RateDiff',average);
+                                        console.log(count1+average);
+                                        record.innerHTML = record.innerHTML == 'Record'?'Recorded':'Record';
+                                    });
+                                    tr.innerHTML=`<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>${count1}</td><td>${average}</td><td></td>`;
+
+                                    tb.appendChild(tr);
+                                    tb.appendChild(record);
+                                }
+                            }
                         }
                     }
-                }
+                });
+
 
             });
         }
