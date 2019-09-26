@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Bangumi Autoshow Tags
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.7.2
+// @version      0.7.5
 // @description  在条目收藏列表显示条目的常用标签，双击标签栏可以修改；在右边显示统计,点击标签可在列表上方显示相应的条目；标签搜索，多个标签请用空格隔开，支持逻辑搜索
 // @author       Liaune
-// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/.*
+// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/(.+?/list|.+?/tag|.+?/browser|subject_search)(/|\?).+$/
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -137,12 +137,13 @@ padding: 3px 10px;
     const Min_Tag_Vote = 10;    //有效标签需要的标记数下限
     const Tag_Bar_Num = 50;    //标签统计栏默认显示的标签数量
     //标签消歧义
-    const filter = {"TVA":"TV","漫改":"漫画改","漫画改编":"漫画改","轻改":"轻小说改","轻小说改编":"轻小说改","原创动画":"原创","京都动画":"京阿尼","京都":"京阿尼","京都アニメーション":"京阿尼","ProductionI.G":"Production.I.G","Production_I.G":"Production.I.G","Production.IG":"Production.I.G","ProductionIG":"Production.I.G","I.G":"Production.I.G","key社":"key","骨头社":"BONES","日升":"SUNRISE","GANAIX":"GAINAX"," 東映アニメーション":"东映","国产动画":"国产","日本动画":"日本","日本漫画":"日本","SF":"科幻","治愈系":"治愈","泡面":"泡面番","宫崎峻":"宫崎骏","花澤香菜":"花泽香菜","香菜":"花泽香菜","钉宫":"钉宫理惠","钉宫病":"钉宫理惠","冈田磨里":"冈田麿里","奈须きのこ":"奈须蘑菇","名侦探柯南":"柯南","コミック":"漫画","マンガ":"漫画","成年コミック":"成人漫画","BLコミック":"BL漫画","少女漫画":"少女漫","东方":"東方","東方project":"東方","东方project":"東方","講談社":"讲谈社","漫画単行本":"漫画单行本","西尾維新":"西尾维新","同人音乐":"同人","同人音樂":"同人","澤野弘之":"泽野弘之","梶浦由記":"梶浦由记","石黒正数":"石黑正数","劇場版":"剧场版","动画剧场版":"剧场版","剧场版动画":"剧场版","劇場版アニメ":"剧场版","アニメ劇場版":"剧场版"};
+    const filter = {"TVA":"TV","TV动画":"TV","漫改":"漫画改","漫画改编":"漫画改","轻改":"轻小说改","轻小说改编":"轻小说改","原创动画":"原创","京都动画":"京阿尼","京都":"京阿尼","京都アニメーション":"京阿尼","ProductionI.G":"Production.I.G","Production_I.G":"Production.I.G","Production.IG":"Production.I.G","ProductionIG":"Production.I.G","I.G":"Production.I.G","ProductionIMS":"Production.IMS","key社":"key","骨头社":"BONES","日升":"SUNRISE","GANAIX":"GAINAX"," 東映アニメーション":"东映","国产动画":"国产","日本动画":"日本","日本漫画":"日本","SF":"科幻","治愈系":"治愈","泡面":"泡面番","宫崎峻":"宫崎骏","宮崎駿":"宫崎骏","花澤香菜":"花泽香菜","香菜":"花泽香菜","钉宫":"钉宫理惠","钉宫病":"钉宫理惠","冈田磨里":"冈田麿里","奈须きのこ":"奈须蘑菇","名侦探柯南":"柯南","名探偵コナン":"柯南","コミック":"漫画","マンガ":"漫画","成年コミック":"成人漫画","BLコミック":"BL漫画","少女漫画":"少女漫","东方":"東方","東方project":"東方","东方project":"東方","講談社":"讲谈社","漫画単行本":"漫画单行本","西尾維新":"西尾维新","同人音乐":"同人","同人音樂":"同人","澤野弘之":"泽野弘之","梶浦由記":"梶浦由记","石黒正数":"石黑正数","劇場版":"剧场版","劇場版アニメ":"剧场版","Diomedea":"Diomedéa","KINEMACITRUS":"KINEMA.CITRUS","KINEMA_CITRUS":"KINEMA.CITRUS","黒田洋介":"黑田洋介","新海誠":"新海诚","動画工房":"动画工房","BONSE":"BONES","A-1Pictures":"A-1.Pictures","A-1_Pictures":"A-1.Pictures","JC社":"J.C.STAFF","节操社":"J.C.STAFF","JCSTAFF":"J.C.STAFF","肉番":"肉","肉片":"肉","卖肉":"肉","肉感":"肉","肉感丰满":"肉","可疑的肉片":"肉","0":"0"};
 
-    let menu = location.pathname.match(/(anime|book|music|game|real)/)[1];
-    let state = location.pathname.match(/(wish|collect|do|on_hold|dropped)/)[1];
+    const User =window.location.href.match(/\/list\/(\S+)\//)? window.location.href.match(/\/list\/(\S+)\//)[1]: null;
+    let menu = location.pathname.match(/(anime|book|music|game|real)/); menu = menu?menu[1]:'unknown';
+    let state = location.pathname.match(/(wish|collect|do|on_hold|dropped)/); state = state?state[1]:'browser';
 
-    $('#browserTools').append(`<a id="showBtn" class="chiiBtn" href="javascript:;">Show Tags</a>`);
+    $('#browserTools').append(`<a id="showBtn" class="chiiBtn" href="javascript:;">Tags</a>`);
     $('#showBtn').on('click', function () {
         showProcess();
     });
@@ -156,13 +157,20 @@ padding: 3px 10px;
     $('#stopLoadBtn').on('click', function () {
         stopLoadTag();
     });
-    $('#columnSubjectBrowserB').append(`<div id="showLastResult" class="SimpleSidePanel"><h2><a href="#">显示上次标签统计结果</a></h2></div>`);
+    if(User) $('#columnSubjectBrowserB').append(`<div id="showLastResult" class="SimpleSidePanel"><h2><a href="#">显示上次标签统计结果</a></h2></div>`);
     $('#showLastResult').on('click', function () {
         showLastResult();
     });
 
-    const User =window.location.href.match(/\/list\/(\S+)\//)? window.location.href.match(/\/list\/(\S+)\//)[1]: null;
     let record = {"anime":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"book":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"music":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"game":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}},"real":{"wish":{},"collect":{},"do":{},"on_hold":{},"dropped":{}}};
+
+    function createElement(type,className,href,textContent){
+        let Element = document.createElement(type);
+        Element.className = className;
+        Element.href = href;
+        Element.textContent = textContent;
+        return Element;
+    }
 
     function updateTags(){
         update=1;
@@ -173,10 +181,13 @@ padding: 3px 10px;
             let i = 0;
             let getitemsList= setInterval(function(){
                 let elem = itemsList[i];
-                let href = elem.querySelector('a.subjectCover').href;
-                let ID = href.split('/subject/')[1];
-                getStatus(href,elem);
-                i++;
+                if(!elem) console.log(i);
+                else{
+                    let href = elem.querySelector('a.subjectCover').href;
+                    getStatus(href,elem);
+                    i++;
+                    console.log(i);
+                }
                 if(count >= itemsList.length){
                     clearInterval(getitemsList);
                 }
@@ -204,35 +215,44 @@ padding: 3px 10px;
         showSidePanelTag(TagsAll);
     }
     function showLastResult(){
-        if(localStorage.getItem(User+'Bangumi_Tag_Record')){
-            readonly = 1;
-            $('#showLastResult').hide();
-            $('#columnSubjectBrowserB .SimpleSidePanel').hide();
-            $('#columnSubjectBrowserB .menu_inner').hide();
-            let record = JSON.parse(localStorage.getItem(User+'Bangumi_Tag_Record'));
-            let RatesAll = record[menu][state].Rates;
-            let YearsAll = record[menu][state].Years;
-            let TagsAll = record[menu][state].Tags;
-            showSidePanelRate(RatesAll);
-            showSidePanelYear(YearsAll);
-            showSidePanelTag(TagsAll);
-        }
-        else alert('没有记录哦');
+        getCache(User+'Bangumi_Tag_Record', function(success, result) {
+            if (success) {
+                let RatesAll = result[menu][state].Rates;
+                let YearsAll = result[menu][state].Years;
+                let TagsAll = result[menu][state].Tags;
+                if(TagsAll){
+                    readonly = 1;
+                    $('#showLastResult').hide();
+                    $('#columnSubjectBrowserB .SimpleSidePanel').hide();
+                    $('#columnSubjectBrowserB .menu_inner').hide();
+                    showSidePanelRate(RatesAll);
+                    showSidePanelYear(YearsAll);
+                    showSidePanelTag(TagsAll);
+                }
+                else alert('没有记录哦');
+            }
+            else{
+                alert('没有记录哦');
+            }
+        });
     }
 
     function saveRecord(){
-        let saverecordBtn = document.createElement('a');
-        saverecordBtn.href = "javascript:;"; saverecordBtn.textContent = "保存本次结果"; saverecordBtn.className = 'chiiBtn';
+        let saverecordBtn = createElement('a',"chiiBtn","javascript:;","保存本次结果");
         $(saverecordBtn).on('click', function () {
             if (!confirm("确认要保存结果吗？")) {
                 return;
             }
+            TagsAll = TagsAll.slice(0,Math.min(250,TagsAll.length)); //每次最多只保留前250个标签记录
             record[menu][state].Rates = RatesAll;
             record[menu][state].Years = YearsAll;
             record[menu][state].Tags = TagsAll;
-            localStorage.setItem(User+'Bangumi_Tag_Record',JSON.stringify(record));
+            setCache(User+'Bangumi_Tag_Record',record);
         });
-        $('#columnSubjectBrowserB').append(saverecordBtn);
+        if(User){
+            $('#saverecordBtn').remove();
+            $('#columnSubjectBrowserB').append(saverecordBtn);
+        }
     }
     //Main Program
     function showProcess(){
@@ -240,16 +260,13 @@ padding: 3px 10px;
         $('#showBtn').hide();
         $('#columnSubjectBrowserB .SimpleSidePanel').hide();
         $('#columnSubjectBrowserB .menu_inner').hide();
+        $('#columnSubjectBrowserB .sideInner').hide();
         itemsList = document.querySelectorAll('#browserItemList li.item');
         if(itemsList.length){
             let fetchList = [];
             itemsList.forEach( (elem, index) => {
                 let href = elem.querySelector('a.subjectCover').href;
                 let ID = href.split('/subject/')[1];
-                /* //为每个条目添加单独刷新
-                let showBtn_Re = document.createElement('a'); showBtn_Re.className = 'l'; showBtn_Re.href='javascript:;'; showBtn_Re.textContent = '↺';
-                showBtn_Re.addEventListener('click', getStatus.bind(this,href,elem),false);
-                elem.querySelector('.inner h3').appendChild(showBtn_Re);*/
                 getCache(ID, function(success, result) {
                     if (success) {
                         displayStatus(elem,result);
@@ -355,7 +372,7 @@ padding: 3px 10px;
         }
         if(elem.querySelector('#DivTags'))
             $(elem.querySelector('#DivTags')).remove();
-        $(DivTags).insertAfter(elem.querySelector('.inner .collectInfo'));
+        $(elem.querySelector('.inner')).append($(DivTags));
         DivTags.addEventListener('dblclick', function (){
             DivTags.contentEditable = true;
         });
@@ -369,9 +386,10 @@ padding: 3px 10px;
     function displayStatus(elem,Tags){
         let href = elem.querySelector('a.subjectCover').href;
         let ID = href.split('/subject/')[1];
+        Tags = filterTags(Tags);
+        setCache(ID,Tags);
         AllTags = AllTags.concat(Tags);
         addDivTags(elem,Tags);
-
         count++;
         if(!update && !stop){
             $('#stopLoadBtn').show();
@@ -392,7 +410,6 @@ padding: 3px 10px;
                 AllTags.push(temp_tag);
             }
             AllTags.sort(function (x,y){return y.Value - x.Value;});*/
-            record[menu][state].Tags = TagsAll;
             saveRecord();
             $('#TagSearchSidePanel').remove();
             showTagSearchPanel();
@@ -619,14 +636,13 @@ padding: 3px 10px;
     function createRateSidePannel(elem){
         let AllRates = [];
         itemsList.forEach( (elem, index) => {
-            let User_rate=elem.querySelectorAll('.inner .collectInfo .starlight')[0] ? elem.querySelectorAll('.inner .collectInfo .starlight')[0].className: null;
+            let User_rate=elem.querySelectorAll('.inner .starlight')[0] ? elem.querySelectorAll('.inner .starlight')[0].className: null;
             let Rate =User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:0):0;
             AllRates = AllRates.concat(Rate);
         });
         for (let i = 0; i < AllRates.length; i++) {
             RatesAll[AllRates[i]] = (RatesAll[AllRates[i]] + 1) || 1;
         }
-        record[menu][state].Rates = RatesAll;
         showSidePanelRate(RatesAll);
     }
     function showSidePanelRate(RatesAll){
@@ -655,28 +671,12 @@ padding: 3px 10px;
                     count_t += vote}
             }
         }
-        $(SimpleSidePanel).append($("<h2>打分统计<small style='float:right'>平均："+ parseFloat(RateSum/count_t).toFixed(2)+"</small></h2>"));
+        $(SimpleSidePanel).append($("<h2>评分统计<small style='float:right'>平均："+ parseFloat(RateSum/count_t).toFixed(2)+"</small></h2>"));
         $(SimpleSidePanel).append($(tagList));
         $('#columnSubjectBrowserB').append(SimpleSidePanel);
         showChartPanelRate(RatesAll);
     }
     function showChartPanelRate(RatesAll){
-        /*let AllVotes = [], JsonAllVotes = {},votes = 0,sum = 0;
-        itemsList = document.querySelectorAll('#browserItemList li.item');
-        itemsList.forEach( (elem, index) => {
-            let User_rate=elem.querySelectorAll('.inner .collectInfo .starlight')[0] ? elem.querySelectorAll('.inner .collectInfo .starlight')[0].className: null;
-            User_rate =User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:0):0;
-            let stars = parseInt(User_rate);
-            if(stars){
-                votes += 1;
-                sum += stars;
-            }
-            AllVotes = AllVotes.concat(stars);
-        });
-        let average = parseFloat(sum/votes).toFixed(3);
-        for (let i = 0; i < AllVotes.length; i++) {
-            JsonAllVotes[AllVotes[i]] = (JsonAllVotes[AllVotes[i]] + 1) || 1;
-        }*/
         let SimpleSidePanel = document.createElement('div');
         SimpleSidePanel.id = "ChartPanelRate";
         SimpleSidePanel.className = "SimpleSidePanel";
@@ -687,7 +687,7 @@ padding: 3px 10px;
             votes += vote;
             if(i && vote>largest) largest = vote;
         }
-        $(SimpleSidePanel).append(`已打分: ${votes-vote0} / ${votes}`);
+        $(SimpleSidePanel).append(`已评分: ${votes-vote0} / ${votes}`);
         let chart = document.createElement('ul');
         chart.className = "horizontalChart";
         for(let i=1; i<=10; i++){
@@ -696,7 +696,7 @@ padding: 3px 10px;
             if(!readonly) taglia.addEventListener('click', showThisRate.bind(this,i),false);
             let v_votes = RatesAll[i] ? parseInt(RatesAll[i]) : 0;
             let height = parseFloat(v_votes/largest*100).toFixed(2).toString();
-            taglia.title = v_votes + '  '+ height +'%';
+            taglia.title = v_votes + '  '+ v_votes/votes +'%';
             $(taglia).append(`<span class="label">${i}</span><span class="count" style="height: ${height}%;"></span>`);
             tagli.appendChild(taglia);
             chart.appendChild(tagli);
@@ -719,7 +719,6 @@ padding: 3px 10px;
         YearsAll = Object.keys(JsonAllYears)
             .map(function(key){return {Year:key, Value:JsonAllYears[key]};})
             .sort(function(x, y){return y.Year - x.Year;});
-        record[menu][state].Years = YearsAll;
         showSidePanelYear(YearsAll);
     }
 
