@@ -107,7 +107,7 @@ z-index: 2;
                 else fetchList.push(elem);
             }
             else if(collectStatus[ID]){
-                if(collectStatus[ID]=='collect')
+                if(collectStatus[ID]=='collect' || collectStatus[ID]=='dropped' )
                     DisplayCollect(collectStatus[ID],elem);
                 else fetchList.push(elem);
             }
