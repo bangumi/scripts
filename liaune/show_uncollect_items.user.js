@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         只看未完成条目
-// @namespace    https://github.com/bangumi/scripts/liaune
+// @namespace    https://github.com/bangumi/scripts/tree/master/liaune
 // @version      1.5
 // @description  显示列表条目的完成状态，以不同的颜色区分。只看未完成条目，隐藏已完成和抛弃的列表条目，再次点击可完全显示。
 // @author       Liaune
