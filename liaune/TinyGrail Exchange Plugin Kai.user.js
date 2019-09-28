@@ -23,7 +23,7 @@ var lastEven = false;
 // var _mouseDown = false;
 
 var _chartData;
-var bgColor = 'transparent';
+var bgColor = '#fff';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -186,9 +186,11 @@ function loadTradeBox(chara) {
         if (power || d.Value.Id === 702) {
           getStyle('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.css');
           $.getScript('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.js', function () {
-            $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
-            $('#iconButton').on('click', function () {
-              loadIconBox(chara);
+            $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
+              $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
+              $('#iconButton').on('click', function () {
+                loadIconBox(chara);
+              });
             });
           });
         }
@@ -261,8 +263,8 @@ function loadIconBox(chara) {
         image.src = source.toDataURL("image/png");
         image.onload = function () {
           var canvas = document.createElement("canvas");
-          canvas.width = 120;
-          canvas.height = 120;
+          canvas.width = 256;
+          canvas.height = 256;
 
           var ctx = canvas.getContext('2d');
           ctx.imageSmoothingEnabled = true;
@@ -274,47 +276,45 @@ function loadIconBox(chara) {
             source.height,//sourceHeight,
             0,//destX,
             0,//destY,
-            120,//destWidth,
-            120 //destHeight
+            256,//destWidth,
+            256 //destHeight
           );
 
           var data = canvas.toDataURL('image/jpeg');
+          var hash = md5(data);
           var blob = dataURLtoBlob(data);
 
-          var url = 'https://sm.ms/api/upload';
-          var form = new FormData();
-          form.append('smfile', blob);
-          $.ajax({
-            url: url,
-            type: 'POST',
-            data: form,
-            // 告诉jQuery不要去处理发送的数据
-            processData: false,
-            // 告诉jQuery不要去设置Content-Type请求头
-            contentType: false,
-            success: function (r) {
-              if (r.code === 'success') {
-                //var data = { avatar: r.data.url };
-                postData(`chara/avatar/${chara.Id}`, r.data.url, function (d) {
-                  if (d.State == 0) {
-                    alert("更换头像成功。");
-                    hideCropper(cropper);
+          var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/avatar/${hash}.jpg`;
+
+          getOssSignature('avatar', hash, function (d) {
+            console.log(d);
+            if (d.State === 0) {
+              var xhr = new XMLHttpRequest();
+              xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                  if (xhr.status == 200) {
+                    postData(`chara/avatar/${chara.Id}`, url, function (d) {
+                      if (d.State == 0) {
+                        alert("更换头像成功。");
+                        hideCropper(cropper);
+                      } else {
+                        alert(d.Message);
+                        $('.icon_box').show();
+                      }
+                      hideLoading();
+                    });
                   } else {
-                    alert(d.Message);
+                    alert('图片上传失败。');
                     $('.icon_box').show();
+                    hideLoading();
                   }
-                  hideLoading();
-                });
-              } else {
-                alert('图片上传失败：' + r.msg);
-                $('.icon_box').show();
-                hideLoading();
-              }
-            },
-            error: function (r) {
-              alert('图片上传失败。');
-              $('.icon_box').show();
-              hideLoading();
+                }
+              };
+
+              xhr.open('PUT', url);
+              xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
+              xhr.setRequestHeader('x-oss-date', d.Value.Date);
+              xhr.send(blob);
             }
           });
         };
@@ -330,6 +330,12 @@ function showLoading() {
 
 function hideLoading() {
   $('.loading').hide();
+}
+
+function getOssSignature(path, hash, callback) {
+  postData(`chara/oss/sign/${path}/${hash}`, null, function (d) {
+    if (callback) callback(d);
+  });
 }
 
 function dataURLtoBlob(dataurl) {
@@ -364,7 +370,7 @@ function getStyle(url) {
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/1000`, function (d, s) {
+  getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('.trade_box').after(box);
@@ -382,7 +388,7 @@ function loadBoardMember(id, total, callback) {
 
         var title = i + 1;
         if (i === 0) {
-          if (getTimeDiff(user.LastActiveDate) < 1000 * 60 * 60 * 24 * 5)
+          if (getTimeDiff(user.LastActiveDate) < 1000 * 60 * 60 * 24 * 5 && user.State != 666)
             chairmanActive = true;
           else
             inactive = 'inactive';
@@ -390,10 +396,16 @@ function loadBoardMember(id, total, callback) {
           title = "主席";
         }
 
+        var banned = '';
+        if (user.State == 666) {
+          inactive = "banned";
+          banned = '(被封禁)';
+        }
+
         var u = `<div class="user ${inactive}">
               <a target="_blank" href="/user/${user.Name}"><img src="${avatar}"></a>
               <div class="name">
-                <a target="_blank" title="${user.Nickname}" href="/user/${user.Name}"><span class="title">${title}</span>${user.Nickname}</a>
+                <a target="_blank" title="${user.Nickname}${banned}" href="/user/${user.Name}"><span class="title">${title}</span>${user.Nickname}</a>
                 <div class="tag">${formatNumber(user.Balance, 0)} ${p}%</div>
               </div></div>`
         $('.board_box .users').append(u);
@@ -1276,7 +1288,7 @@ function loadTinyBox(id, callback) {
           loadICOBox(item);
         });
       } else {
-        $('#pageHeader a.avatar>img').attr('src', d.Value.Icon);
+        $('#pageHeader a.avatar>img').attr('src', normalizeAvatar(d.Value.Icon));
         $('#pageHeader a.avatar>img').css('width', '50px');
         var flu = '--';
         var tclass = 'even';
@@ -1418,7 +1430,11 @@ function logout(callback) {
 function normalizeAvatar(avatar) {
   if (!avatar) return '//lain.bgm.tv/pic/user/l/icon.jpg';
 
+  if (avatar.startsWith('https://tinygrail.oss-cn-hangzhou.aliyuncs.com/'))
+    return avatar + "!w120";
+
   var a = avatar.replace("http://", "//");
+
   // var index = a.indexOf("?");
   // if (index >= 0)
   //   a = a.substr(0, index);
@@ -1776,14 +1792,14 @@ function loadUserPage(name) {
 }
 
 function renderUserInitial(initial) {
-  var item = `<li><a href="/character/${initial.CharacterId}" target="_blank" class="avatar"><span class="groupImage"><img src="${initial.Icon}"></span></a>
+  var item = `<li><a href="/character/${initial.CharacterId}" target="_blank" class="avatar"><span class="groupImage"><img src="${normalizeAvatar(initial.Icon)}"></span></a>
           <div class="inner"><a href="/character/${initial.CharacterId}" target="_blank" class="avatar name">${initial.Name}</a><br>
             <small class="feed">₵${formatNumber(initial.State, 0)} / ${formatNumber(initial.Total, 0)}</small></div></li>`;
   return item;
 }
 
 function renderUserCharacter(chara) {
-  var item = `<li><a href="/character/${chara.Id}" target="_blank" class="avatar"><span class="groupImage"><img src="${chara.Icon}"></span></a>
+  var item = `<li><a href="/character/${chara.Id}" target="_blank" class="avatar"><span class="groupImage"><img src="${normalizeAvatar(chara.Icon)}"></span></a>
             <div class="inner"><a href="/character/${chara.Id}" target="_blank" class="avatar name">${chara.Name}</a><br>
               <small class="feed">₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.State, 0)}</small></div></li>`;
   return item;
@@ -1797,7 +1813,7 @@ function renderInitial(item, index) {
   if (item.Type === 1)
     badge = `<span class="badge" title="剩余${item.Bonus}期额外分红">×${item.Bonus}</span>`;
 
-  var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.CharacterId}" class="avatar"><img src="${item.Icon}">${badge}</a>
+  var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.CharacterId}" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
               <div class="info"><div class="name"><a target="_blank" href="/character/${item.CharacterId}">${index + 1}. ${item.Name}</a></div><div class="money">₵${formatNumber(item.Total, 0)} / ${formatNumber(item.Users, 0)}人</div>
                 <div class="progress"><div style="width:${p}%" class="tag lv${predicted.Level}">lv${predicted.Level} ${percent}%</div></div>
                 <div class="time">${formatTime(item.End)}</div>
@@ -1821,13 +1837,20 @@ function renderUser(item, index) {
     flu = "new";
   }
 
+  var banned = '';
+  var name = item.Name;
+  if (item.State == 666) {
+    banned = 'banned';
+    name += '(被封禁)';
+  }
+
   var badge = '';
   // if (item.Type === 1)
   //   badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
   var avatar = normalizeAvatar(item.Avatar);
-  var box = `<li class="initial_item"><a target="right" href="/user/${item.Name}" class="avatar"><img src="${avatar}">${badge}</a>
-                <div class="info"><div class="name"><a target="_blank" href="/user/${item.Name}"><span>${index + 1}.</span>${item.Nickname}</a><span class="tag ${tclass}">${flu}</span></div><div class="money">₵${formatNumber(item.TotalBalance, 2)} / ${formatNumber(item.Principal, 2)}</div>
+  var box = `<li class="initial_item ${banned}"><a target="right" href="/user/${item.Name}" class="avatar"><img src="${avatar}">${badge}</a>
+                <div class="info"><div class="name" title="${name}"><a target="_blank" href="/user/${item.Name}"><span>${index + 1}.</span>${item.Nickname}</a><span class="tag ${tclass}">${flu}</span></div><div class="money">₵${formatNumber(item.TotalBalance, 2)} / ${formatNumber(item.Principal, 2)}</div>
                   <div class="current ${tclass}">₵${formatNumber(item.Assets, 2)}</div>
                   <div class="time"><small>${formatTime(item.LastActiveDate)}</small></div></div></li>`;
   return box;
@@ -1848,7 +1871,7 @@ function renderCharacter(item, index) {
   if (item.Type === 1)
     badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
-  var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${item.Icon}">${badge}</a>
+  var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
                 <div class="info"><div class="name"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money">₵${formatNumber(item.MarketValue, 0)} / ${formatNumber(item.Total, 0)}</div>
                   <div class="current ${tclass}">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
                   <div class="time"><small>${formatTime(item.LastOrder)}</small>${depth}</div></div></li>`;
@@ -2001,11 +2024,14 @@ function loadNewBangumi() {
   var start = (page - 1) * size;
   var loadMore = false;
 
-  getData(`chara/top/${page}/${size}`, function (d, s) {
+  var topPage = 11 - page;
+  var topStart = 100 - start;
+
+  getData(`chara/top/${topPage}/${size}`, function (d, s) {
     if (d.State === 0) {
-      for (i = 0; i < d.Value.length; i++) {
+      for (i = d.Value.length - 1; i >= 0; i--) {
         var item = d.Value[i];
-        var user = renderUser(item, i + start);
+        var user = renderUser(item, i + topStart - d.Value.length);
         $('#grailNewBangumi .top').append(user);
       }
     }
@@ -2411,7 +2437,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
+        var id = $(this).data('id');
         if (id != null) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
@@ -2468,7 +2494,7 @@ function renderCharacter2(item, even) {
     badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
   var chara = `<li class="${line} item_list"><a href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar l" target="right">
-                  <span class="avatarNeue avatarReSize32 ll" style="background-image:url('${item.Icon}')"></span></a><div class="inner">
+                  <span class="avatarNeue avatarReSize32 ll" style="background-image:url('${normalizeAvatar(item.Icon)}')"></span></a><div class="inner">
                     <a href="/rakuen/topic/crt/${item.Id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(${amount}${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
                     <span class="row"><small class="time">${formatTime(item.LastOrder)}</small>${depth}</span></div>${tag}</li>`
   return chara;
@@ -2623,7 +2649,7 @@ if (path.startsWith('/character/')) {
           $(list[id]).append(`<div class="tags tag lv${pre.Level}" title="${formatNumber(item.Total, 0)}/100,000 ${percent}%">ICO进行中</div>`);
         } else {
           var id = item.Id;
-          $(list[id]).find('a.avatar>span').css('background-image', `url(${item.Icon})`);
+          $(list[id]).find('a.avatar>span').css('background-image', `url(${normalizeAvatar(item.Icon)})`);
           addCharacterTag(item, list[id]);
         }
       }
@@ -2633,7 +2659,7 @@ if (path.startsWith('/character/')) {
 
 GM_addStyle(`
 #grailBox, #phoneBox, #recommendBox {
-  background-color: transparent;
+  background-color: #F5F5F5;
   border-radius: 5px;
   padding:12px;
   color: #999;
@@ -2761,7 +2787,7 @@ GM_addStyle(`
 #grailBox .progress_bar {
   height: 32px;
   border-radius: 5px;
-  background-color: transparent;
+  background-color: #fff;
 }
 
 #grailBox .progress {
@@ -2803,7 +2829,7 @@ GM_addStyle(`
   margin: 10px 0 0 0;
   padding: 10px 10px 2px 10px;
   border-radius: 5px;
-  background-color: transparent;
+  background-color: #fff;
 }
 
 #grailBox .user{
@@ -2811,6 +2837,10 @@ GM_addStyle(`
   margin: 0 5px 5px 0;
   width: 130px;
   height: 42px;
+}
+
+#grailBox .user.banned .name a, .initial_item.banned .name a {
+  color:#f09199;
 }
 
 #grailBox .user img{
@@ -2832,6 +2862,11 @@ GM_addStyle(`
 #grailBox .user.inactive img {
   box-shadow: 0px 0px 5px #d2d2d2;
   border: 1px solid #d2d2d2;
+}
+
+#grailBox .user.banned img, .initial_item.banned img {
+  box-shadow: 0px 0px 5px #d2d2d2;
+  border: 1px solid #f09199;
 }
 
 #grailBox .user .name{
@@ -2859,7 +2894,7 @@ GM_addStyle(`
   background: linear-gradient(#FFC107,#FFEB3B);
 }
 
-#grailBox .user.inactive .tag {
+#grailBox .user.inactive .tag, #grailBox .user.banned .tag {
    background: #d2d2d2;
 }
 
