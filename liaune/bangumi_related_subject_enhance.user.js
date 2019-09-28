@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6
+// @version      0.6.1
 // @description  显示条目页面关联条目的收藏情况,显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -212,16 +212,16 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             let avatarNeue = elem.querySelector('span.avatarNeue');
             if(flag){
                 collectStatus[ID] = 'collect';
-                avatarNeue.classList.add('collect');
+                avatarNeue.classList.add('relate_collect');
                 $.post('/subject/' + ID + '/interest/update?gh=' + securitycode, { status: 'collect',privacy:privacy});
             }
             else{
                 delete collectStatus[ID];
-                avatarNeue.classList.remove('collect');
+                avatarNeue.classList.remove('relate_collect');
                 $.post('/subject/' + ID + '/remove?gh=' + securitycode);
             }
-            localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
             i++;
+            localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
             if(i >= itemsList3.length){
                 clearInterval(getitemsList3);
             }
@@ -247,13 +247,13 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             if(flag){
                 checkIn.style.backgroundPosition= "bottom left";
                 collectStatus[ID] = 'collect';
-                avatarNeue.classList.add('collect');
+                avatarNeue.classList.add('relate_collect');
                 $.post('/subject/' + ID + '/interest/update?gh=' + securitycode, { status: 'collect',privacy:privacy});
             }
             else{
                 checkIn.style.backgroundPosition= "top left";
                 delete collectStatus[ID];
-                avatarNeue.classList.remove('collect');
+                avatarNeue.classList.remove('relate_collect');
                 $.post('/subject/' + ID + '/remove?gh=' + securitycode);
             }
             localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
