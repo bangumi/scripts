@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         角色收藏
-// @namespace    https://github.com/bangumi/scripts/liaune
+// @namespace    https://github.com/bangumi/scripts/tree/master/liaune
 // @version      1.3.4
 // @description  收藏并将角色收藏添加到 bgm_user_detail_by_yonjar
 // @author       Liaune
