@@ -232,6 +232,13 @@ function loadTradeBox(chara) {
           });
         }
       });
+     getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {
+            if (d.State === 0) {
+                var price = d.Value[0].Begin;
+                price = parseFloat(price).toFixed(2);
+                $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
+            }
+     });
     } else {
       login(function () { loadTradeBox(chara) });
     }
@@ -381,7 +388,7 @@ function loadFixedAssets(chara, userChara, callback) {
       });
 
       var temples = {};
-      for (i = 0; i < d.Value.length; i++) {
+      for (let i = 0; i < d.Value.length; i++) {
         var temple = d.Value[i];
         temples[temple.UserId] = temple;
 
@@ -410,12 +417,21 @@ function loadFixedAssets(chara, userChara, callback) {
       });
 
       if (d.Value.length === 0) {
-        var card = '<div class="empty">啊咧？啥都没有~( T oT)//</div>';
+        let card = '<div class="empty">啊咧？啥都没有~( T oT)//</div>';
         $('.assets_box .assets').append(card);
       }
     }
     if (callback) callback();
   });
+    getData(`chara/user/chara/valhalla@tinygrail.com/1/1000`, function (d, s) {
+        for(let i=0;i<d.Value.TotalItems;i++){
+            if (d.Value.Items[i].Id === chara.Id) {
+                var price = d.Value.Items[i].Price;
+                price = parseFloat(price).toFixed(2);
+                $('#grailBox .assets_box .bold').append(`<span>拍卖底价：${price}</span>`);
+            }
+        }
+     });
 }
 
 function renderTemple(temple) {
@@ -2014,6 +2030,7 @@ function loadUserPage(name) {
       loadUserTemples(1);
       loadUserCharacters(1);
       loadUserInitials(1);
+      loadUserInterest();
 
       // for (i = 0; i < data.Initials.length; i++) {
       //   var item = renderUserInitial(data.Initials[i]);
@@ -2066,6 +2083,49 @@ function loadUserPage(name) {
       });
     }
   });
+}
+
+function loadUserInterest(){
+    var userId = $('#grail').data('id');
+    var userName = path.split('?')[0].substr(6);
+    let sacrificesE1 = document.createElement('span');
+    let templeInterestE1 = document.createElement('span');
+    let totalStockNumEl = document.createElement('span');
+    let totalIncomeEl = document.createElement('span');
+    let elWrapper = $(document.createElement('span')).css('margin-left', '10px');
+    let stockEl = $(document.createElement('div'))
+    .css({'padding': '10px 0', 'font-weight': 'bold', 'font-size': '14px'})
+    .append(
+    elWrapper.clone().html("圣殿献祭值：").append(sacrificesE1),
+    elWrapper.clone().html("圣殿股息：").append(templeInterestE1),
+    elWrapper.clone().html("持股数：").append(totalStockNumEl),
+    elWrapper.clone().html("持股股息：").append(totalIncomeEl)
+    );
+    $("#grail .horizontalOptions").append(stockEl);
+    let sacrifices = 0;
+    let templeInterest = 0;
+    let badgeStockNum = 0;
+    let badgeInterest = 0;
+    getData(`chara/user/temple/${userName}/1/1000`, function (d) {
+        if (d.State !== 0) return;
+        let charaData = d.Value.Items;
+        charaData.forEach((chara, i) => {
+            sacrifices += chara.Sacrifices;
+            templeInterest += chara.Rate * 250;
+        });
+        sacrificesE1.innerHTML = sacrifices;
+        templeInterestE1.innerHTML = parseFloat(templeInterest).toFixed(1);
+    });
+    getData(`chara/user/chara/${userName}/1/1000`, function (d) {
+            if (d.State !== 0) return;
+            let charaData = d.Value.Items;
+            charaData.forEach((chara, i) => {
+                badgeStockNum += chara.State;
+                badgeInterest += chara.State * chara.Rate;
+            });
+            totalStockNumEl.innerHTML = badgeStockNum;
+            totalIncomeEl.innerHTML = parseFloat(badgeInterest).toFixed(1);
+        });
 }
 
 function loadUserTemples(page) {
