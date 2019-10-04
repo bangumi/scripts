@@ -3044,7 +3044,7 @@ function loadUserLog(page) {
         if (d.State === 0 && d.Value && d.Value.Items) {
             loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
             $('#eden_tpc_list ul li').on('click', function () {
-                var id = $(this).data('id');
+                var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
                 if (id != null) {
                     if (parent.window.innerWidth < 1200) {
                         $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
