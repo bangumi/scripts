@@ -7,14 +7,6 @@
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
-// ==UserScript==
-// @include    */character/*
-// @include    */rakuen/topiclist*
-// @include    */rakuen/topic/crt/*
-// @include    */rakuen/home*
-// @include    */user/*
-// ==/UserScript==
-
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
