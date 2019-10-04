@@ -7,6 +7,90 @@
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
+// 检测 indexedDB 兼容性，因为只有新版本浏览器支持	
+let indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;	
+// 初始化 indexedDB	
+const dbName = 'TinyGrail_Exchange_Plugin';	
+const tableName = 'localdata';	
+const indexName = 'id';	
+if (indexedDB) {	
+    let request = indexedDB.open(dbName, 1);	
+    request.onupgradeneeded = evt => {	
+        let db = evt.target.result;	
+        let objectStore = db.createObjectStore(tableName, {keyPath: indexName});	
+    }	
+    request.onsuccess = evt => {	
+        //removeCache();	
+    }	
+}	
+// 用来记录已经被使用的缓存列表	
+let cacheLists = [];	
+// 获取本地缓存	
+function getCache(itemId, callback) {	
+    let request = indexedDB.open(dbName, 1);	
+    request.onsuccess = evt => {	
+        let db = evt.target.result;	
+        let transaction = db.transaction([tableName], 'readonly');	
+        let objectStore = transaction.objectStore(tableName);	
+        let reqInfo = objectStore.get(itemId);	
+        reqInfo.onsuccess = evt => {	
+            let result = evt.target.result;	
+            if(!!result) {	
+                cacheLists.push(itemId);	
+                callback(true, result.value.content);	
+            } else {	
+                callback(false);	
+            }	
+        }	
+        reqInfo.onerror = evt => {	
+            callback(false);	
+        }	
+    };	
+}	
+// 记录到本地缓存	
+function setCache(itemId, data) {	
+    let request = indexedDB.open(dbName, 1);	
+    request.onsuccess = evt => {	
+        let db = evt.target.result;	
+        let transaction = db.transaction([tableName], 'readwrite');	
+        let objectStore = transaction.objectStore(tableName);	
+        let cache = {	
+            content: data,	
+            created: new Date()	
+        };	
+        let reqInfo = objectStore.put({id: itemId, value: cache})	
+        reqInfo.onerror = evt => {	
+            // console.log('Error', evt.target.error.name);	
+        }	
+        reqInfo.onsuccess = evt => {}	
+    };	
+}	
+// 清除和更新缓存	
+function removeCache() {	
+    let request = indexedDB.open(dbName, 1);	
+    request.onsuccess = evt => {	
+        let db = evt.target.result;	
+        let transaction = db.transaction([tableName], 'readwrite'),	
+            store = transaction.objectStore(tableName),	
+            updateInterval = 24*3600*1000;	
+        store.openCursor().onsuccess = evt => {	
+            let cursor = evt.target.result;	
+            if (cursor) {	
+                if (cacheLists.indexOf(cursor.value.name) !== -1) {	
+                    cursor.value.created = new Date();	
+                    cursor.update(cursor.value);	
+                } else {	
+                    let now = new Date(),	
+                        last = cursor.value.created;	
+                    if (now - last > updateInterval) {	
+                        cursor.delete();	
+                    }	
+                }	
+                cursor.continue();	
+            }	
+        }	
+    };	
+}
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
@@ -15,7 +99,7 @@ var box = `<div id="grailBox"></div>`;
 var lastEven = false;
 
 var _chartData;
-var bgColor = '#fff';
+var bgColor = 'transparent';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -3274,7 +3358,7 @@ if (path.startsWith('/character/')) {
 
 GM_addStyle(`
 #grailBox, #phoneBox, #recommendBox {
-  background-color: #F5F5F5;
+  background-color: transparent;
   border-radius: 5px;
   padding:12px;
   color: #999;
@@ -3421,7 +3505,7 @@ GM_addStyle(`
 #grailBox .progress_bar {
   height: 32px;
   border-radius: 5px;
-  background-color: #fff;
+  background-color: transparent;
 }
 
 #grailBox .progress {
@@ -3463,7 +3547,7 @@ GM_addStyle(`
   margin: 10px 0 0 0;
   padding: 10px 10px 2px 10px;
   border-radius: 5px;
-  background-color: #fff;
+  background-color: transparent;
 }
 
 #grailBox .user{
