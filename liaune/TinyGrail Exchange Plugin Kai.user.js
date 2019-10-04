@@ -308,6 +308,13 @@ function loadTradeBox(chara) {
           });
         }
       });
+    getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##
+                if (d.State === 0) {
+                    var price = d.Value[0].Begin;
+                    price = parseFloat(price).toFixed(2);
+                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
+                }
+     });
     } else {
       login(function () { loadTradeBox(chara) });
     }
@@ -502,6 +509,29 @@ function loadFixedAssets(chara, userChara, callback) {
         }
       });
     }
+    getCache('valhalla_chara',function(success, d) {
+        if (success) {
+            for(let i=0;i<d.Value.TotalItems;i++){
+                if (d.Value.Items[i].Id === chara.Id) {
+                    var price = d.Value.Items[i].Price;
+                    price = parseFloat(price).toFixed(2);
+                    $('#grailBox .assets_box .bold').append(`<span style="margin-left: 10px;">拍卖底价:<span class="sub">${price}</span></span>`);
+                }
+            }
+        }
+        else{
+            getData(`chara/user/chara/valhalla@tinygrail.com/1/1000`, function (d, s) {
+                setCache('valhalla_chara',d);
+                for(let i=0;i<d.Value.TotalItems;i++){
+                    if (d.Value.Items[i].Id === chara.Id) {
+                        var price = d.Value.Items[i].Price;
+                        price = parseFloat(price).toFixed(2);
+                        $('#grailBox .assets_box .bold').append(`<span style="margin-left: 10px;">拍卖底价:<span class="sub">${price}</span>`);
+                    }
+                }
+            });
+        }
+    });
     if (callback) callback();
   });
 }
@@ -706,7 +736,7 @@ function closeDialog() {
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/10`, function (d, s) {
+  getData(`chara/users/${id}/1/1000`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('#grailBox').append(box);
