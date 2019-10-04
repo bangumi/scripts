@@ -7,90 +7,6 @@
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
-// 检测 indexedDB 兼容性，因为只有新版本浏览器支持
-let indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
-// 初始化 indexedDB
-const dbName = 'TinyGrail_Exchange_Plugin';
-const tableName = 'localdata';
-const indexName = 'id';
-if (indexedDB) {
-    let request = indexedDB.open(dbName, 1);
-    request.onupgradeneeded = evt => {
-        let db = evt.target.result;
-        let objectStore = db.createObjectStore(tableName, {keyPath: indexName});
-    }
-    request.onsuccess = evt => {
-        //removeCache();
-    }
-}
-// 用来记录已经被使用的缓存列表
-    let cacheLists = [];
-    // 获取本地缓存
-    function getCache(itemId, callback) {
-        let request = indexedDB.open(dbName, 1);
-        request.onsuccess = evt => {
-            let db = evt.target.result;
-            let transaction = db.transaction([tableName], 'readonly');
-            let objectStore = transaction.objectStore(tableName);
-            let reqInfo = objectStore.get(itemId);
-            reqInfo.onsuccess = evt => {
-                let result = evt.target.result;
-                if(!!result) {
-                    cacheLists.push(itemId);
-                    callback(true, result.value.content);
-                } else {
-                    callback(false);
-                }
-            }
-            reqInfo.onerror = evt => {
-                callback(false);
-            }
-        };
-    }
-    // 记录到本地缓存
-    function setCache(itemId, data) {
-        let request = indexedDB.open(dbName, 1);
-        request.onsuccess = evt => {
-            let db = evt.target.result;
-            let transaction = db.transaction([tableName], 'readwrite');
-            let objectStore = transaction.objectStore(tableName);
-            let cache = {
-                content: data,
-                created: new Date()
-            };
-            let reqInfo = objectStore.put({id: itemId, value: cache})
-            reqInfo.onerror = evt => {
-                // console.log('Error', evt.target.error.name);
-            }
-            reqInfo.onsuccess = evt => {}
-        };
-    }
-    // 清除和更新缓存
-    function removeCache() {
-        let request = indexedDB.open(dbName, 1);
-        request.onsuccess = evt => {
-            let db = evt.target.result;
-            let transaction = db.transaction([tableName], 'readwrite'),
-                store = transaction.objectStore(tableName),
-                updateinterval = 24*3600*1000;
-            store.openCursor().onsuccess = evt => {
-                let cursor = evt.target.result;
-                if (cursor) {
-                    if (cacheLists.indexOf(cursor.value.name) !== -1) {
-                        cursor.value.created = new Date();
-                        cursor.update(cursor.value);
-                    } else {
-                        let now = new Date(),
-                            last = cursor.value.created;
-                        if (now - last > updateinterval) {
-                            cursor.delete();
-                        }
-                    }
-                    cursor.continue();
-                }
-            }
-        };
-    }
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
@@ -509,29 +425,16 @@ function loadFixedAssets(chara, userChara, callback) {
                 }
             });
         }
-        getCache('valhalla_chara',function(success, d) {
-            if (success) {
-                for(let i=0;i<d.Value.TotalItems;i++){
-                    if (d.Value.Items[i].Id === chara.Id) {
-                        var price = d.Value.Items[i].Price;
-                        price = parseFloat(price).toFixed(2);
-                        $('#grailBox .assets_box .bold').append(`<span style="margin-left: 10px;">拍卖底价:<span class="sub">${price}</span></span>`);
-                    }
+        getData(`chara/user/chara/valhalla@tinygrail.com/1/1000`, function (d, s) {
+            for(let i=0;i<d.Value.TotalItems;i++){
+                if (d.Value.Items[i].Id === chara.Id) {
+                    var price = d.Value.Items[i].Price;
+                    price = parseFloat(price).toFixed(2);
+                    $('#grailBox .assets_box .bold').append(`<span style="margin-left: 10px;">拍卖底价:<span class="sub">${price}</span>`);
                 }
             }
-            else{
-                getData(`chara/user/chara/valhalla@tinygrail.com/1/1000`, function (d, s) {
-                    setCache('valhalla_chara',d);
-                    for(let i=0;i<d.Value.TotalItems;i++){
-                        if (d.Value.Items[i].Id === chara.Id) {
-                            var price = d.Value.Items[i].Price;
-                            price = parseFloat(price).toFixed(2);
-                            $('#grailBox .assets_box .bold').append(`<span style="margin-left: 10px;">拍卖底价:<span class="sub">${price}</span>`);
-                        }
-                    }
-                });
-            }
         });
+
         if (callback) callback();
     });
 }
