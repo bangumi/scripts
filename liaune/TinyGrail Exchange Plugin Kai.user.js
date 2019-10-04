@@ -1,12 +1,20 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.9.9.8
+// @version      1.0.0.9
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
+// ==UserScript==
+// @include    */character/*
+// @include    */rakuen/topiclist*
+// @include    */rakuen/topic/crt/*
+// @include    */rakuen/home*
+// @include    */user/*
+// ==/UserScript==
+
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
@@ -87,6 +95,8 @@ function loadTradeBox(chara) {
       var badge = '';
       if (chara.Type === 1)
         badge = `<span class="badge" title="${formatNumber(chara.Rate, 1)}倍分红剩余${chara.Bonus}期">×${chara.Bonus}</span>`;
+
+      var userChara = d.Value;
 
       var box = `<div class="title"><button id="kChartButton" class="text_button">[K线图]</button><div class="text">#${chara.Id} -「${chara.Name}」 ₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.Total, 0)} / ${formatNumber(d.Value.Amount, 0)}<span class="tag ${fclass}">${flu}</span>${badge}</div><div class="balance">账户余额：<span>₵${formatNumber(d.Value.Balance, 2)}</span></div></div>
      <div class="trade_box">
@@ -176,27 +186,28 @@ function loadTradeBox(chara) {
         }
       });
 
-      loadBoardMember(chara.Id, chara.Total, function (modifiers) {
-        var power = false;
-        for (i = 0; i < modifiers.length; i++) {
-          if (modifiers[i].Id == d.Value.Id)
-            power = true;
-        }
+      loadFixedAssets(chara, userChara, () => {
+        loadBoardMember(chara.Id, chara.Total, function (modifiers) {
+          var power = false;
+          for (i = 0; i < modifiers.length; i++) {
+            if (modifiers[i].Id == d.Value.Id)
+              power = true;
+          }
 
-        if (power || d.Value.Id === 702) {
-          getStyle('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.css');
-          $.getScript('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.js', function () {
-            $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
-              $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
-              $('#iconButton').on('click', function () {
-                loadIconBox(chara);
+          if (power || d.Value.Id === 702) {
+            getStyle('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.css');
+            $.getScript('https://cdn.bootcss.com/cropperjs/1.5.5/cropper.min.js', function () {
+              $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
+                $('.board_box .desc').append('<button id="iconButton" class="text_button">[更换头像]</button>');
+                $('#iconButton').on('click', function () {
+                  loadIconBox(chara);
+                });
               });
             });
-          });
-        }
-        $('#grailBox').append('<div class="loading" style="display:none"></div>');
+          }
+          $('#grailBox').append('<div class="loading" style="display:none"></div>');
+        });
       });
-
       getData(`chara/depth/${chara.Id}`, function (d2, s2) {
         if (d2.State === 0 && d2.Value) {
           var max1 = getMaxValue(d2.Value.Asks, 'Amount');
@@ -286,8 +297,7 @@ function loadIconBox(chara) {
 
           var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/avatar/${hash}.jpg`;
 
-          getOssSignature('avatar', hash, function (d) {
-            console.log(d);
+          getOssSignature('avatar', hash, encodeURIComponent('image/jpeg'), function (d) {
             if (d.State === 0) {
               var xhr = new XMLHttpRequest();
               xhr.onreadystatechange = function () {
@@ -332,8 +342,8 @@ function hideLoading() {
   $('.loading').hide();
 }
 
-function getOssSignature(path, hash, callback) {
-  postData(`chara/oss/sign/${path}/${hash}`, null, function (d) {
+function getOssSignature(path, hash, type, callback) {
+  postData(`chara/oss/sign/${path}/${hash}/${type}`, null, function (d) {
     if (callback) callback(d);
   });
 }
@@ -369,11 +379,257 @@ function getStyle(url) {
   document.getElementsByTagName("head")[0].appendChild(link);
 }
 
+function loadFixedAssets(chara, userChara, callback) {
+  getData(`chara/temple/${chara.Id}`, function (d) {
+    if (d.State === 0) {
+      var box = `<div class="assets_box"><div class="desc"><div class="bold">固定资产 ${d.Value.length}<span class="sub"> / +${formatNumber(chara.Rate, 2)}</span></div><button id="buildButton" class="text_button">[资产重组]</button></div><div class="assets"></div></div>`;
+      $('#grailBox').append(box);
+      $('#buildButton').on('click', () => {
+        openSacrificeDialog(chara, userChara.Amount);
+      });
+
+      var temples = {};
+      for (i = 0; i < d.Value.length; i++) {
+        var temple = d.Value[i];
+        temples[temple.UserId] = temple;
+
+        var cover = getSmallCover(temple.Cover);
+        var avatar = normalizeAvatar(temple.Avatar);
+
+        var card = `<div class="item">
+          <div class="card" data-id="${temple.UserId}" style="background-image:url(${cover})">
+            <div class="tag"><span>${temple.Level}</span></div>
+            <div class="buff">+0.2</div>
+          </div>
+          <div class="title">
+            <span>光辉圣殿 ${temple.Sacrifices} / 500</span>
+          </div>
+          <div class="name">
+            <span>所有者 </span><a target="_blank" title="${temple.Nickname}" href="/user/${temple.Name}">${temple.Nickname}</a>
+          </div>
+        </div>`
+        $('.assets_box .assets').append(card);
+      }
+
+      $('.item .card').on('click', (e) => {
+        var uid = $(e.srcElement).data('id');
+        var temple = temples[uid];
+        showTemple(temple, chara, userChara.Id);
+      });
+
+      if (d.Value.length === 0) {
+        var card = '<div class="empty">啊咧？啥都没有~( T oT)//</div>';
+        $('.assets_box .assets').append(card);
+      }
+    }
+    if (callback) callback();
+  });
+}
+
+function renderTemple(temple) {
+  var cover = getSmallCover(temple.Cover);
+  var avatar = normalizeAvatar(temple.Avatar);
+
+  var card = `<div class="item">
+          <div class="card" data-id="${temple.CharacterId}" style="background-image:url(${cover})">
+            <div class="tag"><span>${temple.Level}</span></div>
+            <div class="buff">+0.2</div>
+          </div>
+          <div class="name" title="${temple.Name}">
+            <span><a href="/character/${temple.CharacterId}" target="_blank">${temple.Name}</a></span>
+          </div>
+          <div class="title">
+            <span>光辉圣殿 ${temple.Sacrifices} / 500</span>
+          </div>
+        </div>`
+
+  return card;
+}
+
+function sacrificeCharacter(id, count, callback) {
+  postData(`chara/sacrifice/${id}/${count}`, null, (d) => {
+    if (callback) { callback(d); }
+  });
+}
+
+function showTemple(temple, chara, userId) {
+  var cover = getLargeCover(temple.Cover);
+  var action = '';
+  if (userId == 702 || temple.UserId == userId) {
+    var action = `<div class="action">
+      <button id="changeCoverButton" class="text_button">[修改]</button>
+      <button id="resetCoverButton" class="text_button">[重置]</button>
+      <input style="display:none" id="picture" type="file" accept="image/*">
+    </div>`;
+  }
+
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog temple" style="display:block;">
+    <div class="card" style="background-image:url(${cover});">
+      ${action}
+      <div class="loading" style="display:none;padding-top:600px;"></div>
+      <a id="TB_closeWindowButton" title="Close">X关闭</a>
+    </div>
+  </div>`;
+  $('body').append(dialog);
+
+  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#TB_closeWindowButton').on('click', closeDialog);
+
+  if (userId == 702 || temple.UserId == userId) {
+    $('#changeCoverButton').on('click', () => { $("#picture").click(); });
+    $('#resetCoverButton').on('click', () => { resetTempleCover(temple); });
+    $("#picture").on("change", function () {
+      if (this.files.length > 0) {
+        var file = this.files[0];
+        var data = window.URL.createObjectURL(file);
+
+        $('#TB_window .card').css('background-image', `url(${data})`);
+        $('#TB_window .action').hide();
+        $('#TB_window .loading').show();
+
+        if (!/image+/.test(file.type)) {
+          alert("请选择图片文件。");
+          return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = (ev) => {
+          var result = ev.target.result;
+          $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
+            var hash = md5(result);
+            var blob = dataURLtoBlob(result);
+            var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/cover/${hash}.jpg`;
+
+            getOssSignature('cover', hash, encodeURIComponent(file.type), function (d) {
+              if (d.State === 0) {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                  if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                      postData(`chara/temple/cover/${temple.CharacterId}`, url, function (d) {
+                        if (d.State == 0) {
+                          alert("更换封面成功。");
+                          if (chara)
+                            loadTradeBox(chara);
+                        } else {
+                          alert(d.Message);
+                        }
+                      });
+                    } else {
+                      alert('图片上传失败。');
+                    }
+
+                    $('#TB_window .action').show();
+                    $('#TB_window .loading').hide();
+                  }
+                };
+
+                xhr.open('PUT', url);
+                xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
+                xhr.setRequestHeader('x-oss-date', d.Value.Date);
+                xhr.send(blob);
+              }
+            });
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+}
+
+function getLargeCover(cover) {
+  if (cover.indexOf('/crt/m/') >= 0)
+    return cover.replace('/m/', '/l/');
+
+  if (cover.indexOf('tinygrail.') >= 0)
+    return cover + '!w480';
+
+  return cover;
+}
+
+function getSmallCover(cover) {
+  if (cover.indexOf('/crt/g/') >= 0)
+    return cover.replace('/g/', '/m/');
+
+  if (cover.indexOf('tinygrail.') >= 0)
+    return cover + '!w150';
+
+  return cover;
+}
+
+function resetTempleCover(temple, callback) {
+  $('#TB_window .action').hide();
+  $('#TB_window .loading').show();
+  postData(`chara/temple/cover/reset/${temple.CharacterId}/${temple.UserId}`, null, (d) => {
+    if (d.State == 0) {
+      var cover = d.Value.Cover;
+      var large = getLargeCover(cover);
+      $(`.assets .card[data-id=${temple.UserId}]`).css('background-image', `url(${cover})`);
+      $('#TB_window .card').css('background-image', `url(${large})`);
+      $('#TB_window .action').show();
+      $('#TB_window .loading').hide();
+      alert('重置封面完成。');
+    }
+  });
+}
+
+function openSacrificeDialog(chara, amount) {
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+    <div class="title">资产重组 - #${chara.Id} 「${chara.Name}」 ${formatNumber(amount, 0)} / ${formatNumber(chara.Total, 0)}</div>
+    <div class="desc">输入重组融资股份的数量，融资累计超过500股获得「光辉圣殿」</div>
+    <div class="trade finance"><input class="amount" type="number" min="1" max="${amount}" value="500"><button id="financeButton" class="active">确定</button><button id="cancelDialogButton">取消</button></div>
+    <div class="loading" style="display:none"></div>
+    <a id="TB_closeWindowButton" title="Close">X关闭</a>
+  </div>`;
+  $('body').append(dialog);
+  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#cancelDialogButton').on('click', closeDialog);
+  $('#TB_closeWindowButton').on('click', closeDialog);
+  $('#financeButton').on('click', function () {
+    var count = $('.trade.finance input').val();
+    $("#TB_window .loading").show();
+    $("#TB_window .desc").hide();
+    $("#TB_window .trade").hide();
+    sacrificeCharacter(chara.Id, count, (d) => {
+      $("#TB_window .loading").hide();
+      $("#TB_window .desc").show();
+      $("#TB_window .trade").show();
+      if (d.State == 0) {
+        var message = `融资完成！获得资金 ₵${formatNumber(d.Value.Balance, 0)} `;
+        if (d.Value.Items.length > 0)
+          message += '掉落道具';
+
+        for (i = 0; i < d.Value.Items.length; i++) {
+          var item = d.Value.Items[i];
+          message += ` 「${item.Name}」×${item.Count}`;
+        }
+
+        $('#TB_window .trade.finance').hide();
+        $('#TB_window .desc').text(message);
+
+        loadTradeBox(chara);
+      } else {
+        alert(d.Message);
+      }
+    });
+  });
+}
+
+function closeDialog() {
+  $('#TB_overlay').remove();
+  $('#TB_window').remove();
+}
+
 function loadBoardMember(id, total, callback) {
   getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
-      $('.trade_box').after(box);
+      $('#grailBox').append(box);
       var modifiers = [];
       var chairmanActive = false;
 
@@ -464,7 +720,6 @@ function loadChart(id, days) {
   $.getScript('https://cdn.jsdelivr.net/npm/echarts@4.2.1/dist/echarts.min.js', function () {
     getData(`chara/charts/${id}/${begin.format('yyyy-MM-dd')}`, function (d, s) {
       if (d.State === 0 && d.Value) {
-        console.log('data loaded');
         var kdata = getKData(d.Value);
 
         if (kdata.length < 100) {
@@ -1737,56 +1992,206 @@ function loadUserPage(name) {
   else
     title = '我的小圣杯';
 
-  getData(`chara/user/assets/${name}/true`, function (d, s) {
+  getData(`chara/user/assets/${name}`, function (d, s) {
     if (d.State === 0) {
       var data = d.Value;
-      var total = data.Balance;
-
-      if (data.Initials.length === 0 && data.Characters.length === 0 && d.Balance === 0)
-        return;
-
-      var box = `<div id="grail" class="sort">
+      var box = `<div id="grail" class="sort" data-id="${d.Value.Id}">
       <div class="horizontalOptions clearit">
         <ul class="">
           <li class="title"><h2>${title} </h2></li>
-          <li id="charaTab" class="current"><a>${data.Characters.length}个人物</a></li>
-          <li id="initTab"><a>${data.Initials.length}个ICO</a></li>
+          <li id="templeTab" class="current"><a>0座圣殿</a></li>
+          <li id="charaTab"><a>0个人物</a></li>
+          <li id="initTab"><a>0个ICO</a></li>
           <li class="total"></li>
         </ul>
       </div>
       <div class="clearit">
-        <ul class="grail_list chara_list"></ul>
-        <ul class="grail_list init_list" style="display:none"></ul>
+        <div class="temple_list">
+          <div class="loading"></div>
+        </div>
+        <div class="chara_list" style="display:none">
+          <div class="loading"></div>
+        </div>
+        <div class="init_list" style="display:none">
+          <div class="loading"></div>
+        </div>
       </div>
       </div>`;
       $('#user_home .user_box').after(box);
-      for (i = 0; i < data.Initials.length; i++) {
-        var item = renderUserInitial(data.Initials[i]);
-        total += data.Initials[i].State;
-        $('#grail .init_list').append(item);
-      }
 
-      for (i = 0; i < data.Characters.length; i++) {
-        var item = renderUserCharacter(data.Characters[i]);
-        total += data.Characters[i].State * data.Characters[i].Current;
-        $('#grail .chara_list').append(item);
-      }
+      loadUserTemples(1);
+      loadUserCharacters(1);
+      loadUserInitials(1);
 
-      $('#grail .total').text(`总资产：₵${formatNumber(total, 2)} / ${formatNumber(data.Balance, 2)}`);
+      // for (i = 0; i < data.Initials.length; i++) {
+      //   var item = renderUserInitial(data.Initials[i]);
+      //   total += data.Initials[i].State;
+      //   $('#grail .init_list').append(item);
+      // }
+
+      // for (i = 0; i < data.Characters.length; i++) {
+      //   var item = renderUserCharacter(data.Characters[i]);
+      //   total += data.Characters[i].State * data.Characters[i].Current;
+      //   $('#grail .chara_list').append(item);
+      // }
+
+      $('#grail .total').text(`总资产：₵${formatNumber(data.Assets, 2)} / ${formatNumber(data.Balance, 2)}`);
 
       $('#initTab').on('click', function () {
+        $('#templeTab').removeClass('current');
         $('#initTab').addClass('current');
         $('#charaTab').removeClass('current');
-        $('ul.chara_list').hide();
-        $('ul.init_list').show();
+        $('.chara_list').hide();
+        $('.temple_list').hide();
+        $('.init_list').show();
+        $('#pager1').hide();
+        $('#pager2').hide();
+        $('#pager3').show();
       });
 
       $('#charaTab').on('click', function () {
+        $('#templeTab').removeClass('current');
         $('#initTab').removeClass('current');
         $('#charaTab').addClass('current');
-        $('ul.chara_list').show();
-        $('ul.init_list').hide();
+        $('.chara_list').show();
+        $('.temple_list').hide();
+        $('.init_list').hide();
+        $('#pager1').hide();
+        $('#pager2').show();
+        $('#pager3').hide();
       });
+
+      $('#templeTab').on('click', function () {
+        $('#templeTab').addClass('current');
+        $('#initTab').removeClass('current');
+        $('#charaTab').removeClass('current');
+        $('.chara_list').hide();
+        $('.temple_list').show();
+        $('.init_list').hide();
+        $('#pager1').show();
+        $('#pager2').hide();
+        $('#pager3').hide();
+      });
+    }
+  });
+}
+
+function loadUserTemples(page) {
+  $('#grail .temple_list .grail_list').hide();
+
+  var p = $(`#grail .temple_list .grail_list.page${page}`);
+  if (p.length > 0) {
+    p.show();
+    $('#pager1 .p').removeClass('p_cur');
+    $(`#pager1 .p[data-page=${page}]`).addClass('p_cur');
+    p.show();
+    return;
+  }
+
+  $('#grail .temple_list .loading').show();
+
+  var userId = $('#grail').data('id');
+  var userName = path.split('?')[0].substr(6);
+  var list = `<ul class="grail_list page${page}"></ul>`;
+  $('.temple_list').append(list);
+
+  postData(`chara/user/temple/${userName}/${page}/24`, null, (data) => {
+    $('#grail .temple_list .loading').hide();
+    if (data.State == 0) {
+      $('#templeTab a').text(`${data.Value.TotalItems}座圣殿`);
+
+      for (i = 0; i < data.Value.Items.length; i++) {
+        var item = renderTemple(data.Value.Items[i]);
+        $(`#grail .temple_list .page${page}`).append(item);
+      }
+
+      $(`#grail .temple_list .page${page} .item .card`).on('click', (e) => {
+        var cid = $(e.srcElement).data('id');
+        var temple = data.Value.Items.find((t) => { return t.CharacterId == cid; });
+        showTemple(temple, null, userId);
+      });
+
+      if (data.Value.TotalPages > 1) {
+        loadPager(data.Value.TotalPages, page, 'grail', 'pager1', loadUserTemples);
+        if ($('.temple_list').css('display') == 'none')
+          $('#pager1').hide();
+      }
+    }
+  });
+}
+
+function loadUserCharacters(page) {
+  $('#grail .chara_list .grail_list').hide();
+
+  var p = $(`#grail .chara_list .grail_list.page${page}`);
+  if (p.length > 0) {
+    p.show();
+    $('#pager2 .p').removeClass('p_cur');
+    $(`#pager2 .p[data-page=${page}]`).addClass('p_cur');
+    p.show();
+    return;
+  }
+
+  $('#grail .chara_list .loading').show();
+
+  var userId = $('#grail').data('id');
+  var userName = path.split('?')[0].substr(6);
+  var list = `<ul class="grail_list page${page}"></ul>`;
+  $('.chara_list').append(list);
+
+  postData(`chara/user/chara/${userName}/${page}/48`, null, (data) => {
+    $('#grail .chara_list .loading').hide();
+    if (data.State == 0) {
+      $('#charaTab a').text(`${data.Value.TotalItems}个人物`);
+
+      for (i = 0; i < data.Value.Items.length; i++) {
+        var item = renderUserCharacter(data.Value.Items[i]);
+        $(`#grail .chara_list .page${page}`).append(item);
+      }
+
+      if (data.Value.TotalPages > 1) {
+        loadPager(data.Value.TotalPages, page, 'grail', 'pager2', loadUserCharacters);
+        if ($('.chara_list').css('display') == 'none')
+          $('#pager2').hide();
+      }
+    }
+  });
+}
+
+function loadUserInitials(page) {
+  $('#grail .init_list .grail_list').hide();
+
+  var p = $(`#grail .init_list .grail_list.page${page}`);
+  if (p.length > 0) {
+    p.show();
+    $('#pager3 .p').removeClass('p_cur');
+    $(`#pager3 .p[data-page=${page}]`).addClass('p_cur');
+    p.show();
+    return;
+  }
+
+  $('#grail .init_list .loading').show();
+
+  var userId = $('#grail').data('id');
+  var userName = path.split('?')[0].substr(6);
+  var list = `<ul class="grail_list page${page}"></ul>`;
+  $('.init_list').append(list);
+
+  postData(`chara/user/initial/${userName}/${page}/48`, null, (data) => {
+    $('#grail .init_list .loading').hide();
+    if (data.State == 0) {
+      $('#initTab a').text(`${data.Value.TotalItems}个ICO`);
+
+      for (i = 0; i < data.Value.Items.length; i++) {
+        var item = renderUserInitial(data.Value.Items[i]);
+        $(`#grail .init_list .page${page}`).append(item);
+      }
+
+      if (data.Value.TotalPages > 1) {
+        loadPager(data.Value.TotalPages, page, 'grail', 'pager3', loadUserInitials);
+        if ($('.init_list').css('display') == 'none')
+          $('#pager3').hide();
+      }
     }
   });
 }
@@ -1850,8 +2255,8 @@ function renderUser(item, index) {
 
   var avatar = normalizeAvatar(item.Avatar);
   var box = `<li class="initial_item ${banned}"><a target="right" href="/user/${item.Name}" class="avatar"><img src="${avatar}">${badge}</a>
-                <div class="info"><div class="name" title="${name}"><a target="_blank" href="/user/${item.Name}"><span>${index + 1}.</span>${item.Nickname}</a><span class="tag ${tclass}">${flu}</span></div><div class="money">₵${formatNumber(item.TotalBalance, 2)} / ${formatNumber(item.Principal, 2)}</div>
-                  <div class="current ${tclass}">₵${formatNumber(item.Assets, 2)}</div>
+                <div class="info"><div class="name" title="${name}"><a target="_blank" href="/user/${item.Name}"><span>${index + 1}.</span>${item.Nickname}</a><span class="tag ${tclass}">${flu}</span></div><div class="money" title="流动资金 / 初始资金">₵${formatNumber(item.TotalBalance, 0)} / ${formatNumber(item.Principal, 0)}</div>
+                  <div class="current ${tclass}" title="总资产">₵${formatNumber(item.Assets, 2)}</div>
                   <div class="time"><small>${formatTime(item.LastActiveDate)}</small></div></div></li>`;
   return box;
 }
@@ -1872,9 +2277,32 @@ function renderCharacter(item, index) {
     badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
   var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
-                <div class="info"><div class="name"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money">₵${formatNumber(item.MarketValue, 0)} / ${formatNumber(item.Total, 0)}</div>
-                  <div class="current ${tclass}">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
-                  <div class="time"><small>${formatTime(item.LastOrder)}</small>${depth}</div></div></li>`;
+                <div class="info"><div class="name" title="${item.Name}"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money" title="股息 / 总股份 / 总市值">+${formatNumber(item.Rate, 2)} / ${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)}</div>
+                  <div class="current ${tclass}" title="现价 / 涨跌">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
+                  <div class="time" title="买入 / 卖出 / 成交量"><small>${formatTime(item.LastOrder)}</small>${depth}</div></div></li>`;
+  return box;
+}
+
+function renderCharacter3(item, index) {
+  var flu = '0.00';
+  var tclass = 'even';
+  if (item.Fluctuation > 0) {
+    tclass = 'raise';
+    flu = `+${formatNumber(item.Fluctuation * 100, 2)}%`;
+  } else if (item.Fluctuation < 0) {
+    tclass = 'fall';
+    flu = `${formatNumber(item.Fluctuation * 100, 2)}%`;
+  }
+
+  var badge = '';
+  if (item.Type === 1)
+    badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
+
+  var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
+    <div class="info"><div class="name" title="${item.Name}"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money" title="股息 / 底价 / 数量">+${formatNumber(item.Rate, 2)} / ₵${formatNumber(item.Price, 0)} / ${formatNumber(item.State, 0)}</div>
+    <div class="current ${tclass}" title="现价 / 涨跌">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
+    <div class="time"><button class="auction_button" data-id="${item.Id}">[出价]</button></div>
+  </li>`;
   return box;
 }
 
@@ -1989,7 +2417,7 @@ function loadIndexPage() {
 }
 
 function loadIndexTab() {
-  var tab = `<div id="grailIndexTab"><div id="tabButton1" class="tab_button active">交易榜单</div><div id="tabButton2" class="tab_button">ICO榜单</div></div>`;
+  var tab = `<div id="grailIndexTab" class="grail_index_tab"><div id="tabButton1" class="tab_button active">交易榜单</div><div id="tabButton2" class="tab_button">ICO榜单</div></div>`;
   $('#grailBox').after(tab);
   $('#tabButton1').on('click', function () {
     $('#tabButton1').addClass('active');
@@ -2009,17 +2437,90 @@ function loadIndexTab() {
   });
 }
 
-function loadNewBangumi() {
-  if ($('#grailNewBangumi').length === 0) {
-    $('#grailBox').after(`<div id="grailNewBangumi" class="grail_index">
-      <div class="index"><div class="title">/ 番市首富</div><ul class="top"></ul></div>
-      <div class="index"><div class="title">/ 新番市值</div><ul class="tnbc"></ul></div>
-      <div class="index"><div class="title">/ 新番活跃</div><ul class="nbc"></ul></div>
-    </div>
-    <div class="center_button"><button id="loadMoreButton3" class="load_more_button" data-page="1">[加载更多...]</button></div>`);
-    $('#loadMoreButton3').on('click', function () { loadNewBangumi() });
+function loadNewTab() {
+  var tab = `<div id="grailIndexTab2" class="grail_index_tab"><div id="tabButton3" class="tab_button active">热门榜单</div><div id="tabButton4" class="tab_button">英灵殿</div></div>`;
+  $('#grailBox').after(tab);
+  $('#tabButton3').on('click', function () {
+    $('#tabButton3').addClass('active');
+    $('#tabButton4').removeClass('active');
+    $('#grailNewBangumi').show();
+    $('#valhalla').hide();
+    $('#pager1').show();
+    $('#pager2').hide();
+    loadNewBangumi(1);
+  });
+  $('#tabButton4').on('click', function () {
+    $('#tabButton4').addClass('active');
+    $('#tabButton3').removeClass('active');
+    $('#grailNewBangumi').hide();
+    $('#valhalla').show();
+    $('#pager1').hide();
+    $('#pager2').show();
+    loadValhalla(1);
+  });
+}
+
+function loadValhalla(page) {
+  $('#valhalla .page').hide();
+
+  var p = $(`#valhalla .page.page${page}`);
+  if (p.length > 0) {
+    $('#pager2 .p').removeClass('p_cur');
+    $(`#pager2 .p[data-page=${page}]`).addClass('p_cur');
+    p.show();
+    return;
   }
-  var page = $('#loadMoreButton3').data('page');
+
+  if ($('#valhalla').length == 0) {
+    var valhalla = `<div id="valhalla" class="grail_index"><div class="loading" style="display:none"></div></div>`;
+    $('#grailIndexTab2').after(valhalla);
+  }
+
+  $('#valhalla .loading').show();
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
+    $('#valhalla .loading').hide();
+    $('#valhalla').append(`<div class="page page${page}"></div>`);
+    if (d.State === 0) {
+      var start = (page - 1) * 36;
+      for (i = 0; i < d.Value.Items.length; i++) {
+        var item = d.Value.Items[i];
+        var chara = renderCharacter3(item, i + start);
+        $(`#valhalla .page.page${page}`).append(chara);
+      }
+      loadPager(d.Value.TotalPages, d.Value.CurrentPage, 'valhalla', 'pager2', loadValhalla, 'grailIndexTab2');
+      $(`#valhalla .page.page${page} .auction_button`).on('click', () => { alert('暂未开放，敬请期待。'); });
+    }
+  });
+}
+
+function loadPager(total, current, target, pager, loadPage, anchor) {
+  var p = $(`<div id="${pager}" class="grail page_inner"></div>`);
+  for (i = 1; i <= total; i++) {
+    if (current == i)
+      p.append(`<a href="#${anchor}" class="p p_cur" data-page="${i}">${i}</a>`);
+    else
+      p.append(`<a href="#${anchor}" class="p" data-page="${i}">${i}</a>`);
+  }
+  $(`#${pager}`).remove();
+  $(`#${target}`).after(p);
+  $(`#${pager} a.p`).on('click', (e) => { loadPage($(e.srcElement).data('page')); });
+}
+
+function loadNewBangumi(page) {
+  $('#grailNewBangumi .page').hide();
+
+  var p = $(`#grailNewBangumi .page.page${page}`);
+  if (p.length > 0) {
+    $('#pager1 .p').removeClass('p_cur');
+    $(`#pager1 .p[data-page=${page}]`).addClass('p_cur');
+    p.show();
+    return;
+  }
+
+  if ($('#grailNewBangumi').length === 0) {
+    $('#grailIndexTab2').after(`<div id="grailNewBangumi" class="grail_index"></div>`);
+  }
+
   var size = 10;
   var start = (page - 1) * size;
   var loadMore = false;
@@ -2027,39 +2528,40 @@ function loadNewBangumi() {
   var topPage = 11 - page;
   var topStart = 100 - start;
 
+  var p = `<div class="page page${page}"><div class="index"><div class="title">/ 番市首富</div><ul class="top"></ul></div>
+      <div class="index"><div class="title">/ 新番市值</div><ul class="tnbc"></ul></div>
+      <div class="index"><div class="title">/ 新番活跃</div><ul class="nbc"></ul></div></div>`;
+
+  $('#grailNewBangumi').append(p);
+
   getData(`chara/top/${topPage}/${size}`, function (d, s) {
     if (d.State === 0) {
       for (i = d.Value.length - 1; i >= 0; i--) {
         var item = d.Value[i];
         var user = renderUser(item, i + topStart - d.Value.length);
-        $('#grailNewBangumi .top').append(user);
+        $(`#grailNewBangumi .page${page} .top`).append(user);
       }
     }
-
     getData(`chara/tnbc/${page}/${size}`, function (d, s) {
       if (d.State === 0) {
         for (i = 0; i < d.Value.length; i++) {
           var item = d.Value[i];
           var chara = renderCharacter(item, i + start);
-          $('#grailNewBangumi .tnbc').append(chara);
+          $(`#grailNewBangumi .page${page} .tnbc`).append(chara);
         }
-
         getData(`chara/nbc/${page}/${size}`, function (d, s) {
           if (d.State === 0) {
             for (i = 0; i < d.Value.length; i++) {
               var item = d.Value[i];
               var chara = renderCharacter(item, i + start);
-              $('#grailNewBangumi .nbc').append(chara);
+              $(`#grailNewBangumi .page${page} .nbc`).append(chara);
             }
           }
         });
       }
     });
   });
-
-  $('#loadMoreButton3').data('page', page + 1);
-  if (page === 10)
-    $('#loadMoreButton3').hide();
+  loadPager(10, page, 'grailNewBangumi', 'pager1', loadNewBangumi, 'grailIndexTab2');
 }
 
 function loadGrailBox2(callback) {
@@ -2075,12 +2577,12 @@ function loadGrailBox2(callback) {
         bonus = `<button id="bonusButton" class="active tag daily_bonus">签到奖励</button>`;
 
       var userBox = `<div id="grailBox" class="rakuen_home"><div class="bold">「小圣杯」账户余额：₵${formatNumber(d.Value.Balance, 2)}<button id="logoutButton" class="text_button">[退出登录]</button></div>${bonus}</div>`
-      $('.eden_rec_box').before(userBox);
+      $('body').prepend(userBox);
       $('#logoutButton').on('click', function () { logout(loadGrailBox2) });
       $('#bonusButton').on('click', function () { getDailyBangumiBonus(loadGrailBox2) });
     } else {
       var userBox = `<div id="grailBox" class="rakuen_home"><div class="bold" style="margin: 7px 0 0 7px">点击授权登录，开启「小圣杯」最萌大战！</div><button id="loginButton" class="active tag">授权登录</button></div>`
-      $('.eden_rec_box').after(userBox);
+      $('body').prepend(userBox);
       $('#loginButton').on('click', function () { login(loadGrailBox2) });
     }
     loadHolidayButton();
@@ -2485,7 +2987,7 @@ function renderCharacter2(item, even) {
   var line = 'line_odd';
   if (even) line = 'line_even';
   var amount = '';
-  if (item.State != 0) amount = `${formatNumber(item.State, 0)} / `;
+  if (item.State != 0) amount = ` ${formatNumber(item.State, 0)}`;
   var tag = renderCharacterTag(item);
   var depth = renderCharacterDepth(item);
 
@@ -2495,8 +2997,8 @@ function renderCharacter2(item, even) {
 
   var chara = `<li class="${line} item_list"><a href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar l" target="right">
                   <span class="avatarNeue avatarReSize32 ll" style="background-image:url('${normalizeAvatar(item.Icon)}')"></span></a><div class="inner">
-                    <a href="/rakuen/topic/crt/${item.Id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(${amount}${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
-                    <span class="row"><small class="time">${formatTime(item.LastOrder)}</small>${depth}</span></div>${tag}</li>`
+                    <a href="/rakuen/topic/crt/${item.Id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(+${formatNumber(item.Rate, 2)} / ${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
+                    <span class="row"><small class="time">${formatTime(item.LastOrder)}${amount}</small>${depth}</span></div>${tag}</li>`
   return chara;
 }
 
@@ -2606,10 +3108,11 @@ if (path.startsWith('/character/')) {
   loadGrailBox2(function () {
     loadIndexTab();
     loadIndexPage2();
-    loadNewBangumi();
+    loadNewTab();
+    loadNewBangumi(1);
   });
 } else if (path.startsWith('/user/')) {
-  var id = path.substr(6);
+  var id = path.split('?')[0].substr(6);
   loadUserPage(id);
   // if (/^[0-9a-z_]{1,}$/.test(id)) {
   //   $.get(`//api.bgm.tv/user/${id}`, function (d, s) {
@@ -2672,6 +3175,7 @@ GM_addStyle(`
 
 #grailBox .empty {
   display: flex;
+  margin-bottom: 5px;
 }
 
 #grailBox .empty .text {
@@ -2682,7 +3186,7 @@ GM_addStyle(`
   border-radius: 5px;
 }
 
-#grailBox .active, #pageHeader .tag.active {
+#grailBox .active, #pageHeader .tag.active, #TB_window .active {
   background: linear-gradient(#ffdc51,#ffe971);
   color: #fff;
   text-shadow: 1px 1px 1px #aaa;
@@ -2714,7 +3218,7 @@ GM_addStyle(`
   font-weight: bold;
 }
 
-#grailBox input, #phoneBox input, #recommendBox input {
+#grailBox input, #phoneBox input, #recommendBox input, #TB_window .trade input {
   border: none;
   border-radius: 0;
   height: 32px;
@@ -2726,6 +3230,22 @@ GM_addStyle(`
 
 #grail .total{
   float: right;
+  font-weight: bold;
+}
+
+#grail .item {
+  margin-right: 10px;
+}
+
+#grail .item .title {
+  color: #aaa;
+  padding-top: 0;
+  max-width: 96px;
+  white-space: nowrap;
+}
+
+#grail .item .name {
+  padding-top: 7px;
   font-weight: bold;
 }
 
@@ -2760,22 +3280,22 @@ GM_addStyle(`
   margin-right: 5px;
 }
 
-#grailBox .trade {
+#grailBox .trade, #TB_window .trade {
   display: flex;
 }
 
-#grailBox .desc {
+#grailBox .desc, #TB_window .desc {
   font-size: 15px;
   margin: 10px 0;
   color: #0084B4;
   display: flex;
 }
 
-#grailBox .trade .money{
+#grailBox .trade .money, #TB_window .trade .amount {
   flex-grow: 1;
 }
 
-#grailBox button, #phoneBox button, #recommendBox button {
+#grailBox button, #phoneBox button, #recommendBox button, #TB_window button {
     border: none;
     width: fit-content;
     min-width: 80px;
@@ -2823,7 +3343,7 @@ GM_addStyle(`
   font-size: 12px;
 }
 
-#grailBox .users{
+#grailBox .users, #grailBox .assets{
   display: flex;
   flex-wrap: wrap;
   margin: 10px 0 0 0;
@@ -2851,7 +3371,7 @@ GM_addStyle(`
   margin-right: 6px;
 }
 
-#grailBox .user:first-child img{
+#grailBox .user:first-of-type img{
   width: 40px;
   height: 40px;
   margin-top: -3px;
@@ -2890,7 +3410,7 @@ GM_addStyle(`
   width: fit-content;
 }
 
-#grailBox .user:first-child .tag{
+#grailBox .user:first-of-type .tag{
   background: linear-gradient(#FFC107,#FFEB3B);
 }
 
@@ -2904,6 +3424,61 @@ GM_addStyle(`
   font-size: 15px;
   margin-right: 5px;
   border: none;
+}
+
+.assets .item {
+  margin: 0 10px 10px 0;
+}
+
+#grailBox .assets .item .title {
+  padding: 7px 0 0 0;
+  font-weight: bold;
+  border: none;
+  color: #d3d3d3;
+}
+
+#grailBox .assets .item .name, #grail .temple_list .item .name {
+  max-width: 96px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.assets .card, #grail .card {
+    background-size: cover;
+    width: 96px;
+    height: 128px;
+    border-radius: 5px;
+    box-shadow: 3px 3px 5px #d8d8d8;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+}
+
+.card .tag {
+  background: linear-gradient(45deg, #FFC107, #FFEB3B);
+    width: 42px;
+    height: 42px;
+    border-radius: 21px;
+    margin: -20px 0 0 -20px;
+    padding: 1px 0 0 0px;
+}
+
+.card .buff {
+  color: #fff;
+  width: fit-content;
+  padding: 1px 15px 1px 6px;
+  margin: 75px 0 0 60px;
+  border-radius: 5px;
+  text-shadow: 1px 1px 1px #a5002e;
+  background: linear-gradient(#ff658d99,#ffa7cc99);
+  font-weight: bold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card .tag>span {
+  padding: 20px 0 0 25px;
+  display: block;
 }
 
 .item_list .tag {
@@ -2974,18 +3549,18 @@ GM_addStyle(`
   padding: 20px 10px 10px 10px;
 }
 
-.grail_index .index:first-child{
+.grail_index .index:first-of-type{
   margin-left: 0;
 }
 
-.grail_index .index:last-child{
+.grail_index .index:last-of-type{
   margin-right: 0;
 }
 
 .grail_index .index {
   border: 1px solid #eee;
   border-radius: 10px;
-  margin: 5px;
+  margin: 0 5px 5px 5px;
   flex-grow: 1;
   min-width: 226px;
   overflow: hidden;
@@ -2997,7 +3572,7 @@ GM_addStyle(`
   height: 80px;
 }
 
-.initial_item:first-child {
+.initial_item:first-of-type {
   height: 95px;
 }
 
@@ -3020,11 +3595,11 @@ GM_addStyle(`
   border-radius: 8px;
 }
 
-.initial_item:first-child .progress {
+.initial_item:first-of-type .progress {
   width: 145px;
 }
 
-.initial_item:first-child .name {
+.initial_item:first-of-type .name {
   font-size: 15px;
   margin-right: 5px;
 }
@@ -3038,7 +3613,7 @@ GM_addStyle(`
   margin-right: 5px;
 }
 
-.initial_item:first-child .name span {
+.initial_item:first-of-type .name span {
   font-size: 16px;
   line-height: 24px;
 }
@@ -3050,47 +3625,38 @@ GM_addStyle(`
   border: 1px solid #eee;
 }
 
-.initial_item:first-child img {
+.initial_item:first-of-type img {
   width: 81px;
   height: 81px;
 }
 
-.initial_item:first-child .badge {
+.initial_item:first-of-type .badge {
   top: -96px;
 }
 
-@media (max-width: 800px) {
-  .initial_item img {
-    width: 50px;
-    height: 50px;
-  }
+.initial_item .avatar {
+  width: 64px;
+}
 
-  .initial_item:first-child img {
-    width: 60px;
-    height: 60px;
-  }
-
-  .initial_item .avatar .badge {
-    top: -64px;
-  }
-
-  .initial_item:first-child .badge {
-    top: -72px;
-  }
+.initial_item:first-of-type .avatar {
+  width: 81px;
 }
 
 .initial_item .info {
-  margin-left: 10px;
+  margin-left: 12px;
+  width: 160px;
 }
 
 .initial_item .money {
   font-size: 13px;
   font-weight: bold;
   color: #ccc;
+  white-space: nowrap;
 }
 
 .initial_item .time {
   color: #999;
+  white-space: nowrap;
 }
 
 .initial_item .name {
@@ -3098,7 +3664,6 @@ GM_addStyle(`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: 160px;
 }
 
 .initial_item .progress {
@@ -3458,7 +4023,7 @@ GM_addStyle(`
     font-size: 12px;
 }
 
-#grailIndexTab {
+.grail_index_tab {
   display: flex;
   margin: 10px auto;
   width: 800px;
@@ -3521,8 +4086,133 @@ GM_addStyle(`
   height: 360px;
 }
 
-.loading {
+#grail .loading, #grailBox .loading, #TB_window .loading, .grail_index .loading {
   height: 100px;
+  width: -webkit-fill-available;
   background: url(https://bgm.tv/img/loadingAnimation.gif) no-repeat center;
+}
+
+#grail .temple_list .grail_list {
+  margin: 10px -15px 10px 0;
+}
+
+#grail .temple_list .item {
+  margin: 5px 15px 5px 0;
+}
+
+#TB_window .title {
+  color: #d4d4d4;
+  padding: 0;
+  margin: 20px 20px 10px 20px;
+}
+
+#TB_window .trade {
+  border: 1px solid #f4f4f4;
+  margin: 10px 20px 20px 20px;
+}
+
+#TB_window .desc {
+  margin: 15px 20px 20px 20px;
+}
+
+#TB_window .card {
+  border-radius: 18px;
+  background-position: center;
+  background-size:cover;
+  width: 480px;
+  height: 720px;
+}
+
+#TB_window .action {
+  text-align: center;
+  padding-top: 725px;
+}
+
+#TB_window .action .text_button {
+  padding: 0;
+  min-width: inherit;
+  height: inherit;
+  color: #d4d4d4;
+}
+
+#TB_window.temple {
+  border-radius: 20px;
+}
+
+@media (max-width: 640px) {
+  #TB_window .action {
+    padding-top: 150%;
+  }
+
+  #TB_window .card {
+    width: inherit;
+    height: inherit;
+  }
+}
+
+#valhalla {
+  flex-wrap: wrap;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px 0;
+  width: 800px;
+}
+
+#valhalla .initial_item {
+  margin: 0;
+  padding: 15px 0 0 29px;
+  border-right: 1px solid #f4f4f4;
+}
+
+#valhalla .initial_item:nth-of-type(3n) {
+  border-right: none;
+}
+
+#valhalla .initial_item:first-of-type {
+  height: inherit;
+}
+
+#valhalla .initial_item:first-of-type .avatar {
+  width: 64px;
+}
+
+#valhalla .initial_item:first-of-type img {
+  width: 64px;
+  height: 64px;
+}
+
+#valhalla .time button {
+  color:#999;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+#valhalla .time button:hover {
+  color:#0084B4;
+}
+
+.grail.page_inner {
+  text-align: center;
+}
+
+.grail.page_inner .p {
+  cursor: pointer;
+}
+
+.grail.page_inner .p_cur {
+  background: #F09199;
+  color: #fff;
+}
+
+#valhalla .page {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.grail_index .page {
+  display: flex;
+  max-width: 800px;
 }
 `);
