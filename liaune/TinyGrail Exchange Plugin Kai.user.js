@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.0.0.9
+// @version      1.0.1.10
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
@@ -13,14 +13,6 @@ var api = 'https://tinygrail.com/api/';
 //var api = 'https://localhost:5001/api/';
 var box = `<div id="grailBox"></div>`;
 var lastEven = false;
-
-// var _chartOffset = 0;
-// var _dragOffset = 0;
-// var _maxOffset = 0;
-// var _mouseX = 0;
-// var _mouseY = 0;
-// var _mouseStartX = 0;
-// var _mouseDown = false;
 
 var _chartData;
 var bgColor = '#fff';
@@ -413,6 +405,18 @@ function loadFixedAssets(chara, userChara, callback) {
         var card = '<div class="empty">啊咧？啥都没有~( T oT)//</div>';
         $('.assets_box .assets').append(card);
       }
+
+      getData(`chara/user/${chara.Id}/valhalla@tinygrail.com/false`, (d) => {
+        if (d.State == 0 && d.Value.Amount > 0) {
+          chara.Price = d.Value.Price;
+          chara.State = d.Value.Amount;
+          var button = `<button id="auctionButton" class="text_button">[参与竞拍]</button>`;
+          $('#buildButton').before(button);
+          $('#auctionButton').on('click', () => {
+            openAuctionDialog(chara);
+          });
+        }
+      });
     }
     if (callback) callback();
   });
@@ -2293,7 +2297,7 @@ function renderCharacter3(item, index) {
   var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
     <div class="info"><div class="name" title="${item.Name}"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money" title="股息 / 底价 / 数量">+${formatNumber(item.Rate, 2)} / ₵${formatNumber(item.Price, 0)} / ${formatNumber(item.State, 0)}</div>
     <div class="current ${tclass}" title="现价 / 涨跌">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
-    <div class="time"><button class="auction_button" data-id="${item.Id}">[出价]</button></div>
+    <div class="time"><span class="user_auction" data-id="${item.Id}"></span><button class="auction_button" data-id="${item.Id}">[出价]</button></div>
   </li>`;
   return box;
 }
@@ -2473,15 +2477,84 @@ function loadValhalla(page) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
+      var ids = [];
       var start = (page - 1) * 36;
       for (i = 0; i < d.Value.Items.length; i++) {
         var item = d.Value.Items[i];
-        var chara = renderCharacter3(item, i + start);
+        ids.push(parseInt(item.Id));
+        var chara = $(renderCharacter3(item, i + start));
         $(`#valhalla .page.page${page}`).append(chara);
       }
       loadPager(d.Value.TotalPages, d.Value.CurrentPage, 'valhalla', 'pager2', loadValhalla, 'grailIndexTab2');
-      $(`#valhalla .page.page${page} .auction_button`).on('click', () => { alert('暂未开放，敬请期待。'); });
+      $(`#valhalla .page.page${page} .auction_button`).on('click', (e) => {
+        var cid = $(e.srcElement).data('id');
+        var chara = d.Value.Items.find((c) => { return c.Id == cid; });
+        openAuctionDialog(chara);
+      });
+
+      loadUserAuctions(ids);
     }
+  });
+}
+
+function loadUserAuctions(ids) {
+  postData('chara/auction/list', ids, (d) => {
+    if (d.State == 0) {
+      d.Value.forEach((a) => {
+        $(`#valhalla .user_auction[data-id=${a.CharacterId}]`).text(`₵${formatNumber(a.Price, 2)} / ${formatNumber(a.Amount, 0)} `);
+      });
+    }
+  });
+}
+
+function openAuctionDialog(chara) {
+  var price = Math.ceil(chara.Price);
+  var total = formatNumber(price * chara.State, 2);
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+    <div class="title" title="拍卖底价 / 竞拍数量 / 流通股份">股权拍卖 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Price, 2)} / ${formatNumber(chara.State, 0)} / ${formatNumber(chara.Total, 0)}</div>
+    <div class="desc">输入竞拍出价和数量参与竞拍</div>
+    <div class="label"><span class="input">价格</span><span class="input">数量</span><span class="result">合计 -₵${total}</span></div>
+    <div class="trade auction">
+      <input class="price" type="number" min="${price}" value="${price}">
+      <input class="amount" type="number" min="1" max="${chara.State}" value="${chara.State}">
+      <button id="bidAuctionButton" class="active">确定</button><button id="cancelDialogButton">取消</button></div>
+    <div class="loading" style="display:none"></div>
+    <a id="TB_closeWindowButton" title="Close">X关闭</a>
+  </div>`;
+  $('body').append(dialog);
+  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#cancelDialogButton').on('click', closeDialog);
+  $('#TB_closeWindowButton').on('click', closeDialog);
+  $('#TB_window .auction input').on('keyup', () => {
+    var price = $('.trade.auction .price').val();
+    var amount = $('.trade.auction .amount').val();
+    var total = formatNumber(price * amount, 2);
+    $("#TB_window .label .result").text(`合计 -₵${total}`);
+  });
+  $('#bidAuctionButton').on('click', function () {
+    var price = $('.trade.auction .price').val();
+    var amount = $('.trade.auction .amount').val();
+    $("#TB_window .loading").show();
+    $('#TB_window .label').hide();
+    $("#TB_window .desc").hide();
+    $("#TB_window .trade").hide();
+    postData(`chara/auction/${chara.Id}/${price}/${amount}`, null, (d) => {
+      $("#TB_window .loading").hide();
+      $('#TB_window .label').show();
+      $("#TB_window .desc").show();
+      $("#TB_window .trade").show();
+      if (d.State == 0) {
+        var message = d.Value;
+        $('#TB_window .trade').hide();
+        $('#TB_window .label').hide();
+        $('#TB_window .desc').text(message);
+        $(`#valhalla .user_auction[data-id=${chara.Id}]`).text(`₵${formatNumber(price, 2)} / ${formatNumber(amount, 0)} `);
+      } else {
+        alert(d.Message);
+      }
+    });
   });
 }
 
@@ -2821,6 +2894,7 @@ function loadGrailMenu() {
                   <ul>
                     <li><a href="#" id="recentMenu2">最近活跃</a></li>
                     <li><a href="#" id="myMenu">我的持仓</a></li>
+                    <li><a href="#" id="auctionMenu">我的拍卖</a></li>
                     <li><a href="#" id="bidMenu">我的买单</a></li>
                     <li><a href="#" id="askMenu">我的卖单</a></li>
                     <li><a href="#" id="logMenu">资金日志</a></li>
@@ -2845,6 +2919,9 @@ function loadGrailMenu() {
   });
   $('#logMenu').on('click', function () {
     menuItemClicked(loadUserLog);
+  });
+  $('#auctionMenu').on('click', function () {
+    menuItemClicked(loadUserAuction);
   });
 }
 
@@ -2892,11 +2969,30 @@ function loadCharacterList(list, page, total, more, render) {
   }
 }
 
-function loadUserAssets() {
-  $('#eden_tpc_list ul').html('');
-  getData('chara/user/assets/0/true', function (d, s) {
-    if (d.State === 0 && d.Value) {
-      loadCharacterList(d.Value.Characters, 1, 1);
+function loadUserAssets(page) {
+  // $('#eden_tpc_list ul').html('');
+  // getData('chara/user/assets/0/true', function (d, s) {
+  //   if (d.State === 0 && d.Value) {
+  //     loadCharacterList(d.Value.Characters, 1, 1);
+  //   }
+  // });
+  if (page === 1)
+    $('#eden_tpc_list ul').html('');
+
+  getData(`chara/user/chara/0/${page}/50`, function (d, s) {
+    if (d.State === 0 && d.Value && d.Value.Items) {
+      loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserAssets);
+    }
+  });
+}
+
+function loadUserAuction(page) {
+  if (page === 1)
+    $('#eden_tpc_list ul').html('');
+
+  getData(`chara/user/auction/${page}/50`, function (d, s) {
+    if (d.State === 0 && d.Value && d.Value.Items) {
+      loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserAuction);
     }
   });
 }
@@ -2982,15 +3078,24 @@ function renderCharacter2(item, even) {
   if (item.State != 0) amount = ` ${formatNumber(item.State, 0)}`;
   var tag = renderCharacterTag(item);
   var depth = renderCharacterDepth(item);
+  var id = item.Id;
+  var time = item.LastOrder;
+
+  if (item.Bid) {
+    id = item.CharacterId;
+    time = item.Bid;
+    depth = `<small class="raise">₵${formatNumber(item.Price, 2)}</small><small class="fall">${formatNumber(item.Amount, 0)}</small><small class="even">₵${formatNumber(item.Start, 2)}</small>`;
+    tag = renderAuctionTag(item);
+  }
 
   var badge = '';
   if (item.Type === 1)
     badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
-  var chara = `<li class="${line} item_list"><a href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar l" target="right">
+  var chara = `<li class="${line} item_list"><a href="/rakuen/topic/crt/${id}?trade=true" class="avatar l" target="right">
                   <span class="avatarNeue avatarReSize32 ll" style="background-image:url('${normalizeAvatar(item.Icon)}')"></span></a><div class="inner">
-                    <a href="/rakuen/topic/crt/${item.Id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(+${formatNumber(item.Rate, 2)} / ${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
-                    <span class="row"><small class="time">${formatTime(item.LastOrder)}${amount}</small>${depth}</span></div>${tag}</li>`
+                    <a href="/rakuen/topic/crt/${id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(+${formatNumber(item.Rate, 2)} / ${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
+                    <span class="row"><small class="time">${formatTime(time)}${amount}</small>${depth}</span></div>${tag}</li>`
   return chara;
 }
 
@@ -3012,6 +3117,21 @@ function renderCharacterTag(chara, item) {
   }
 
   var tag = `<div class="tag ${tclass}" title="₵${formatNumber(chara.MarketValue, 0)} / ${formatNumber(chara.Total, 0)}">₵${formatNumber(chara.Current, 2)} ${flu}</div>`
+  return tag;
+}
+
+function renderAuctionTag(auction) {
+  var flu = '竞拍失败';
+  var tclass = 'even';
+  if (auction.State == 1) {
+    tclass = 'raise';
+    flu = '竞拍成功';
+  } else if (auction.State == 0) {
+    tclass = 'new';
+    flu = '竞拍中';
+  }
+
+  var tag = `<div class="tag ${tclass}">${flu}</div>`
   return tag;
 }
 
@@ -3218,6 +3338,8 @@ GM_addStyle(`
   text-align: right;
   font-weight: bold;
   padding-right: 5px;
+  flex-grow: 1;
+  width: 150px;
 }
 
 #grail .total{
@@ -3283,7 +3405,7 @@ GM_addStyle(`
   display: flex;
 }
 
-#grailBox .trade .money, #TB_window .trade .amount {
+#grailBox .trade .money {
   flex-grow: 1;
 }
 
@@ -4131,6 +4253,20 @@ GM_addStyle(`
   border-radius: 20px;
 }
 
+#TB_window .label {
+  display: flex;
+  margin: -10px 20px 0 20px;
+  color: #d4d4d4;
+}
+
+#TB_window .label .input {
+  flex-grow: 1;
+}
+
+#TB_window .label .result {
+  width: 160px;
+}
+
 @media (max-width: 640px) {
   #TB_window .action {
     padding-top: 150%;
@@ -4206,5 +4342,9 @@ GM_addStyle(`
 .grail_index .page {
   display: flex;
   max-width: 800px;
+}
+
+.grail_index .user_auction {
+  color: #ffa7cc;
 }
 `);
