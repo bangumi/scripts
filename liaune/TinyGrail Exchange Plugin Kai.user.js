@@ -1,12 +1,20 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.0.0.14
+// @version      1.0.0.15
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
+// ==UserScript==
+// @include    */character/*
+// @include    */rakuen/topiclist*
+// @include    */rakuen/topic/crt/*
+// @include    */rakuen/home*
+// @include    */user/*
+// ==/UserScript==
+
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
@@ -224,13 +232,6 @@ function loadTradeBox(chara) {
           });
         }
       });
-      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##
-                if (d.State === 0) {
-                    var price = d.Value[0].Begin;
-                    price = parseFloat(price).toFixed(2);
-                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
-                }
-      });
     } else {
       login(function () { loadTradeBox(chara) });
     }
@@ -373,10 +374,13 @@ function getStyle(url) {
 function loadFixedAssets(chara, userChara, callback) {
   getData(`chara/temple/${chara.Id}`, function (d) {
     if (d.State === 0) {
-      var box = `<div class="assets_box"><div class="desc"><div class="bold">固定资产 ${d.Value.length}<span class="sub"> / +${formatNumber(chara.Rate, 2)}</span></div><button id="buildButton" class="text_button">[资产重组]</button></div><div class="assets"></div></div>`;
+      var box = `<div class="assets_box"><div class="desc"><div class="bold">固定资产 ${d.Value.length}<span class="sub"> / +${formatNumber(chara.Rate, 2)}</span></div><button id="auctionHistoryButton" class="text_button">[上期公示]</button><button id="buildButton" class="text_button">[资产重组]</button></div><div class="assets"></div></div>`;
       $('#grailBox').append(box);
       $('#buildButton').on('click', () => {
         openSacrificeDialog(chara, userChara.Amount);
+      });
+      $('#auctionHistoryButton').on('click', () => {
+        openHistoryDialog(chara);
       });
 
       var temples = {};
@@ -387,13 +391,27 @@ function loadFixedAssets(chara, userChara, callback) {
         var cover = getSmallCover(temple.Cover);
         var avatar = normalizeAvatar(temple.Avatar);
 
+        var name = '光辉圣殿';
+        var rate = '+0.20';
+        var full = '500';
+
+        if (temple.Level == 2) {
+          name = '闪耀圣殿';
+          rate = '+0.40';
+          full = '2,500';
+        } else if (temple.Level == 3) {
+          name = '奇迹圣殿';
+          rate = '+0.80';
+          full = '12,500';
+        }
+
         var card = `<div class="item">
           <div class="card" data-id="${temple.UserId}" style="background-image:url(${cover})">
             <div class="tag"><span>${temple.Level}</span></div>
-            <div class="buff">+0.2</div>
+            <div class="buff">${rate}</div>
           </div>
           <div class="title">
-            <span>光辉圣殿 ${temple.Sacrifices} / 500</span>
+            <span title="${name} ${formatNumber(temple.Sacrifices, 0)} / ${full}">${name} ${formatNumber(temple.Sacrifices, 0)} / ${full}</span>
           </div>
           <div class="name">
             <span>所有者 </span><a target="_blank" title="${temple.Nickname}" href="/user/${temple.Name}">${temple.Nickname}</a>
@@ -432,17 +450,30 @@ function loadFixedAssets(chara, userChara, callback) {
 function renderTemple(temple) {
   var cover = getSmallCover(temple.Cover);
   var avatar = normalizeAvatar(temple.Avatar);
+  var name = '光辉圣殿';
+  var rate = '+0.20';
+  var full = '500';
+
+  if (temple.Level == 2) {
+    name = '闪耀圣殿';
+    rate = '+0.40';
+    full = '2,500';
+  } else if (temple.Level == 3) {
+    name = '奇迹圣殿';
+    rate = '+0.80';
+    full = '12,500';
+  }
 
   var card = `<div class="item">
           <div class="card" data-id="${temple.CharacterId}" style="background-image:url(${cover})">
             <div class="tag"><span>${temple.Level}</span></div>
-            <div class="buff">+0.2</div>
+            <div class="buff">+${formatNumber(temple.Rate, 2)}</div>
           </div>
           <div class="name" title="${temple.Name}">
             <span><a href="/character/${temple.CharacterId}" target="_blank">${temple.Name}</a></span>
           </div>
           <div class="title">
-            <span>光辉圣殿 ${temple.Sacrifices} / 500</span>
+            <span title="${rate} / ${formatNumber(temple.Sacrifices, 0)} / ${full}">${name} ${formatNumber(temple.Sacrifices, 0)} / ${full}</span>
           </div>
         </div>`
 
@@ -479,9 +510,11 @@ function showTemple(temple, chara, userId) {
     </div>
   </div>`;
   $('body').append(dialog);
-
-  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
-  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  fixRightTempleImageReso();
+  console.log('test');
+  //$('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  //$('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#TB_window .card').on('click', closeDialog);
   $('#TB_closeWindowButton').on('click', closeDialog);
 
   if (userId == 702 || temple.UserId == userId) {
@@ -545,6 +578,25 @@ function showTemple(temple, chara, userId) {
       }
     });
   }
+}
+
+function fixRightTempleImageReso() {
+  let pageWidth = window.innerWidth;
+  let pageHeight = window.innerHeight;
+  let imgHeight = 640;
+  let imgWidth = 480;
+
+  if (window.innerWidth <= 640) {
+    imgHeight = pageHeight * 0.9;
+    imgWidth = imgHeight * 2 / 3;
+  }
+
+  let styles = {
+    'height': imgHeight + 'px',
+    'width': imgWidth + 'px',
+  };
+  
+  $('#TB_window.dialog.temple .card').css(styles);
 }
 
 function getLargeCover(cover) {
@@ -627,13 +679,62 @@ function openSacrificeDialog(chara, amount) {
   });
 }
 
+function openHistoryDialog(chara) {
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+    <div class="title">上周拍卖结果 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.Total, 0)}</div>
+    <div class="desc" style="display:none"></div>
+    <div class="result" style="display:none"></div>
+    <div class="loading"></div>
+    <a id="TB_closeWindowButton" title="Close">X关闭</a>
+  </div>`;
+  $('body').append(dialog);
+
+  getData(`https://tinygrail.com/api/chara/auction/list/${chara.Id}/1`, (d => {
+    $('#TB_window .loading').hide();
+    if (d.State == 0 && d.Value.length > 0) {
+      var success = 0;
+      var total = 0;
+      d.Value.forEach((a) => {
+        var state = "even";
+        var name = "失败";
+        if (a.State == 1) {
+          success++;
+          total += a.Amount;
+          state = "raise";
+          name = "成功";
+        }
+
+        var record = `<div class="row">
+          <span class="time">${formatDate(a.Bid)}</span>
+          <span class="user"><a target="_blank" href="/user/${a.Username}">${a.Nickname}</a></span>
+          <span class="price">₵${formatNumber(a.Price, 2)} / ${formatNumber(a.Amount, 0)}</span>
+          <span class="tag ${state}">${name}</span>
+        </div>`;
+        $('#TB_window .result').append(record);
+      });
+      $('#TB_window .desc').text(`共有${d.Value.length}人参与拍卖，成功${success}人 / ${total}股`);
+      $('#TB_window .result').show();
+    } else {
+      $('#TB_window .desc').text('暂无拍卖数据');
+    }
+    $('#TB_window .desc').show();
+    $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+    $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  }));
+
+  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#TB_closeWindowButton').on('click', closeDialog);
+}
+
 function closeDialog() {
   $('#TB_overlay').remove();
   $('#TB_window').remove();
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/1000`, function (d, s) {
+  getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('#grailBox').append(box);
@@ -666,11 +767,11 @@ function loadBoardMember(id, total, callback) {
         }
 
         var u = `<div class="user ${inactive}">
-              <a target="_blank" href="/user/${user.Name}"><img src="${avatar}"></a>
-              <div class="name">
-                <a target="_blank" title="${user.Nickname}${banned}" href="/user/${user.Name}"><span class="title">${title}</span>${user.Nickname}</a>
-                <div class="tag">${formatNumber(user.Balance, 0)} ${p}%</div>
-              </div></div>`
+      <a target="_blank" href="/user/${user.Name}"><img src="${avatar}"></a>
+        <div class="name">
+          <a target="_blank" title="${user.Nickname}${banned}" href="/user/${user.Name}"><span class="title">${title}</span>${user.Nickname}</a>
+          <div class="tag">${formatNumber(user.Balance, 0)} ${p}%</div>
+        </div></div>`
         $('.board_box .users').append(u);
       }
       callback(modifiers);
@@ -1385,7 +1486,7 @@ function getDateFormat(date) {
  * @param {*} formatDate
  */
 function getStartDate(formatDate) {
-  return `${formatDate.substring(0, 11)}00:00${formatDate.substring(16)}`
+  return `${formatDate.substring(0, 11)}00: 00${formatDate.substring(16)}`
 }
 
 /**
@@ -1556,12 +1657,13 @@ function loadTinyBox(id, callback) {
         var tclass = 'even';
         if (item.Fluctuation > 0) {
           tclass = 'raise';
-          flu = `+${formatNumber(item.Fluctuation * 100, 2)}%`;
+          flu = `+ ${formatNumber(item.Fluctuation * 100, 2)
+            }% `;
         } else if (item.Fluctuation < 0) {
           tclass = 'fall';
-          flu = `${formatNumber(item.Fluctuation * 100, 2)}%`;
+          flu = `${formatNumber(item.Fluctuation * 100, 2)}% `;
         }
-        $('#pageHeader').append(`<button id="openTradeButton" class="tag ${tclass}" title="₵${formatNumber(item.MarketValue, 0)} / ${formatNumber(item.Total, 0)}">₵${formatNumber(item.Current, 2)} ${flu}</button>`);
+        $('#pageHeader').append(`<button id="openTradeButton" class="tag ${tclass}" title ="₵${formatNumber(item.MarketValue, 0)} / ${formatNumber(item.Total, 0)}">₵${formatNumber(item.Current, 2)} ${flu}</button>`);
         $('#openTradeButton').on('click', function () {
           $('#grailBox').remove();
           $("#subject_info .board").after(box);
@@ -1588,19 +1690,19 @@ function loadICOBox(ico) {
   percent = formatNumber(percent, 0);
   var predictedBox = '';
   if (predicted.Level > 0)
-    predictedBox = `<div class="predicted"><div class="tag lv${predicted.Level}">level ${predicted.Level}</div>预计发行量：约${formatNumber(predicted.Amount, 0)}股 | 发行价：₵${formatNumber(predicted.Price, 2)}</div>`;
+    predictedBox = `<div class="predicted"><div class="tag lv${predicted.Level}">level ${predicted.Level}</div>预计发行量：约${formatNumber(predicted.Amount, 0)} 股 | 发行价：₵${formatNumber(predicted.Price, 2)}</div>`;
 
   var badge = '';
   if (ico.Type === 1)
-    badge = `<span class="badge" title="剩余${ico.Bonus}期额外分红">×${ico.Bonus}</span>`;
+    badge = `<span class="badge" title = "剩余${ico.Bonus}期额外分红" >×${ico.Bonus}</span>`;
 
-  var box = `<div class="title"><div class="text">#${ico.CharacterId} -「${ico.Name}」 ICO进行中${badge}</div><div class="balance"></div></div>
-  <div class="desc">
-  <div class="bold">已筹集 ₵${formatNumber(ico.Total, 0)} / <span class="sub">下一等级需要₵${formatNumber(predicted.Next, 0)}</span></div>
-  <div class="sub">剩余时间：<span id="day"></span><span id="hour"></span><span id="minute"></span><span id="second"></span></div>
-  </div>
-  ${predictedBox}
-  <div class="progress_bar"><div class="progress" style="width:${p}%">${percent}%</div></div>`
+  var box = `<div class="title"><div class="text">#${ico.CharacterId} -「${ico.Name}」 ICO进行中${badge}</div> <div class="balance"></div></div>
+      <div class="desc">
+        <div class="bold">已筹集 ₵${formatNumber(ico.Total, 0)} / <span class="sub">下一等级需要₵${formatNumber(predicted.Next, 0)}</span></div>
+        <div class="sub">剩余时间：<span id="day"></span><span id="hour"></span><span id="minute"></span><span id="second"></span></div>
+      </div>
+    ${ predictedBox}
+    <div class="progress_bar"><div class="progress" style="width:${p}%">${percent}%</div></div>`
   $('#grailBox').html(box);
   countDown(end, function () { loadGrailBox(cid); });
 
@@ -1644,10 +1746,10 @@ function loadICOBox(ico) {
         getUserInitial(ico.Id, function (d, s) {
           var text = '追加注资请在下方输入金额';
           if (d.State === 0) {
-            text = `已注资₵${formatNumber(d.Value.Amount, 2)}，${text}`;
+            text = `已注资₵${formatNumber(d.Value.Amount, 2)} ，${text} `;
           }
           var trade = `<div class="desc">${text}</div>
-        <div class="trade"><input class="money" type="number" min="1000" value="1000"></input><button id="appendICOButton" class="active">确定</button><button id="cancelICOButton">取消</button></div>`;
+      <div class="trade"><input class="money" type="number" min="1000" value="1000"></input><button id="appendICOButton" class="active">确定</button><button id="cancelICOButton">取消</button></div>`;
           $('#grailBox').append(trade);
           $('#appendICOButton').on('click', function () { appendICO(ico.Id) });
           $('#cancelICOButton').on('click', function () { cancelICO(ico.Id) });
@@ -1665,11 +1767,11 @@ function RenderInitialUser(icu) {
   var avatar = normalizeAvatar(icu.Avatar);
 
   var user = `<div class="user">
-              <a target="_blank" href="/user/${icu.Name}"><img src="${avatar}"></a>
-              <div class="name">
-                <a target="_blank" href="/user/${icu.Name}">${icu.NickName}</a>
-                <div class="tag">+${formatNumber(icu.Amount, 0)}</div>
-              </div></div>`;
+      <a target="_blank" href="/user/${icu.Name}"><img src="${avatar}"></a>
+        <div class="name">
+          <a target="_blank" href="/user/${icu.Name}">${icu.NickName}</a>
+          <div class="tag">+${formatNumber(icu.Amount, 0)}</div>
+        </div></div>`;
 
   return user;
 }
@@ -2308,7 +2410,7 @@ function renderCharacter3(item, index) {
   var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
     <div class="info"><div class="name" title="${item.Name}"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money" title="股息 / 底价 / 数量">+${formatNumber(item.Rate, 2)} / ₵${formatNumber(item.Price, 0)} / ${formatNumber(item.State, 0)}</div>
     <div class="current ${tclass}" title="现价 / 涨跌">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
-    <div class="time"><button class="auction_button" data-id="${item.Id}">[出价]</button></div>
+    <div class="time"><button class="auction_button" data-id="${item.Id}">[出价]</button><button class="history_button" data-id="${item.Id}">[上周]</button></div>
   </li>`;
   return box;
 }
@@ -2484,7 +2586,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/1000`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -2501,6 +2603,11 @@ function loadValhalla(page) {
         var cid = $(e.srcElement).data('id');
         var chara = d.Value.Items.find((c) => { return c.Id == cid; });
         openAuctionDialog(chara);
+      });
+      $(`#valhalla .page.page${page} .history_button`).on('click', (e) => {
+        var cid = $(e.srcElement).data('id');
+        var chara = d.Value.Items.find((c) => { return c.Id == cid; });
+        openHistoryDialog(chara);
       });
 
       loadUserAuctions(ids);
@@ -3310,7 +3417,6 @@ if (path.startsWith('/character/')) {
     }
   });
 }
-
 GM_addStyle(`
 html[data-theme='dark'] body {
   background-image: none!important;
@@ -3452,11 +3558,13 @@ html[data-theme='dark'] .initial_item .progress {
   margin-right: 10px;
 }
 
-#grail .item .title {
+#grail .item .title, .assets .item .title span {
   color: #aaa;
   padding-top: 0;
   max-width: 96px;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 #grail .item .name {
@@ -3681,8 +3789,8 @@ html[data-theme='dark'] .initial_item .progress {
 .card .buff {
   color: #fff;
   width: fit-content;
-  padding: 1px 15px 1px 6px;
-  margin: 75px 0 0 60px;
+  padding: 1px 20px 1px 7px;
+  margin: 75px 0 0 55px;
   border-radius: 5px;
   text-shadow: 1px 1px 1px #a5002e;
   background: linear-gradient(#ff658d99,#ffa7cc99);
@@ -4355,6 +4463,20 @@ html[data-theme='dark'] .initial_item .progress {
 
 #TB_window.temple {
   border-radius: 20px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+}
+
+#TB_window.temple .action{
+  padding-top: 135%;
+}
+
+#TB_window.temple .card{
+  position: relative;
+  left: 50%;
+  transform: translate(-50%);
+  background-position: top;
 }
 
 #TB_window .label {
@@ -4371,6 +4493,38 @@ html[data-theme='dark'] .initial_item .progress {
   width: 160px;
 }
 
+#TB_window .result {
+  margin: 20px 15px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+#TB_window .result .user, #TB_window .result .price {
+  margin: 0 10px;
+  width: 120px;
+  display: inline-block;
+}
+
+#TB_window .result .user a {
+  color: #4f93cf;
+}
+
+#TB_window .result .time {
+  color: #888;
+}
+
+#TB_window .result .row {
+  margin: 10px 5px;
+  padding: 0 0 10px 0;
+  border-bottom: 1px solid #666;
+}
+
+#TB_window .result .tag {
+    padding: 1px 5px;
+    color: #fff;
+    float: right;
+}
+
 @media (max-width: 640px) {
   #TB_window .action {
     padding-top: 150%;
@@ -4379,6 +4533,18 @@ html[data-theme='dark'] .initial_item .progress {
   #TB_window .card {
     width: inherit;
     height: inherit;
+  }
+
+  #TB_window .result {
+    max-height: 500px;
+  }
+
+  #TB_window.temple {
+    margin-left: 0!important;
+  }
+
+  #TB_window.temple .action{
+    padding-top: 135%;
   }
 }
 
@@ -4457,4 +4623,4 @@ html[data-theme='dark'] .initial_item .progress {
   color: #a7e3ff;
   margin-right: 5px;
 }
-`);
+`)
