@@ -7,14 +7,6 @@
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
-// ==UserScript==
-// @include    */character/*
-// @include    */rakuen/topiclist*
-// @include    */rakuen/topic/crt/*
-// @include    */rakuen/home*
-// @include    */user/*
-// ==/UserScript==
-
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
@@ -231,6 +223,13 @@ function loadTradeBox(chara) {
             caculateTotal();
           });
         }
+      });
+      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##	
+                if (d.State === 0) {	
+                    var price = d.Value[0].Begin;	
+                    price = parseFloat(price).toFixed(2);	
+                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);	
+                }	
       });
     } else {
       login(function () { loadTradeBox(chara) });
@@ -734,7 +733,7 @@ function closeDialog() {
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/10`, function (d, s) {
+  getData(`chara/users/${id}/1/1000`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('#grailBox').append(box);
@@ -2586,7 +2585,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/1000`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -3170,7 +3169,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).data('id');
+        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
         if (id != null) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
