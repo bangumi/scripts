@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.0.0.15
+// @version      1.0.0.17
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
@@ -223,13 +223,6 @@ function loadTradeBox(chara) {
             caculateTotal();
           });
         }
-      });
-      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##	
-                if (d.State === 0) {	
-                    var price = d.Value[0].Begin;	
-                    price = parseFloat(price).toFixed(2);	
-                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);	
-                }	
       });
     } else {
       login(function () { loadTradeBox(chara) });
@@ -510,15 +503,19 @@ function showTemple(temple, chara, userId) {
   </div>`;
   $('body').append(dialog);
   fixRightTempleImageReso();
-  console.log('test');
+
+  $('#TB_closeWindowButton').on('click', closeDialog);
   //$('#TB_window').css("margin-left", $('#TB_window').width() / -2);
   //$('#TB_window').css("margin-top", $('#TB_window').height() / -2);
-  $('#TB_window .card').on('click', closeDialog);
-  $('#TB_closeWindowButton').on('click', closeDialog);
-
   if (userId == 702 || temple.UserId == userId) {
-    $('#changeCoverButton').on('click', () => { $("#picture").click(); });
-    $('#resetCoverButton').on('click', () => { resetTempleCover(temple); });
+    $('#changeCoverButton').on('click', (e) => {
+      $("#picture").click();
+      e.stopPropagation();
+    });
+    $('#resetCoverButton').on('click', (e) => {
+      resetTempleCover(temple);
+      e.stopPropagation();
+    });
     $("#picture").on("change", function () {
       if (this.files.length > 0) {
         var file = this.files[0];
@@ -594,7 +591,7 @@ function fixRightTempleImageReso() {
     'height': imgHeight + 'px',
     'width': imgWidth + 'px',
   };
-  
+
   $('#TB_window.dialog.temple .card').css(styles);
 }
 
@@ -733,7 +730,7 @@ function closeDialog() {
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/1000`, function (d, s) {
+  getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('#grailBox').append(box);
@@ -1485,7 +1482,7 @@ function getDateFormat(date) {
  * @param {*} formatDate
  */
 function getStartDate(formatDate) {
-  return `${formatDate.substring(0, 11)}00: 00${formatDate.substring(16)}`
+  return `${formatDate.substring(0, 11)}00:00${formatDate.substring(16)}`
 }
 
 /**
@@ -2585,7 +2582,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/1000`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -3169,8 +3166,14 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).find('small.time')[0].innerText.match(/#(\d+)/)[1];
-        if (id != null) {
+        var id = $(this).data('id');
+        if (id == null) {
+          var result = $(this).find('small.time').text().match(/#(\d+)/);
+          if (result && result.length > 0)
+            id = result[1];
+        }
+
+        if (id != null && id.length > 0) {
           if (parent.window.innerWidth < 1200) {
             $(parent.document.body).find("#split #listFrameWrapper").animate({ left: '-450px' });
           }
