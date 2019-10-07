@@ -163,7 +163,7 @@ function loadTradeBox(chara) {
       $('#kChartButton').on('click', function () {
         if (!$(this).data("loaded")) {
           $(this).data("loaded", true);
-          loadChart(chara.Id, 14);
+          loadChart(chara.Id, 60);
         } else {
           $(this).data("loaded", false);
           unloadChart();
