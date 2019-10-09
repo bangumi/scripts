@@ -271,7 +271,7 @@ function listRequest(action, page = 1, limit = settings[action + 'Num']) {
             if (count >= limit) {
                 return;
             }
-            let starInfo = $(this).find('span.starstop').attr('class');
+            let starInfo = $(this).find('span.starlight').attr('class');
             if (settings.starredOnly && !starInfo) {
                 return;
             }
@@ -334,7 +334,7 @@ function buildListTitle(action, lang) {
 }
 
 function buildElement(info, lang) {
-    let starInfo = info.star ? `<span class="s${info.star.split(' ')[0]} starsinfo"></span>` : '';
+    let starInfo = info.star ? `<span class="starstop" style="float: right"><span class="${info.star}"></span></span>` : '';
     let timeInfo = info.time + ' ' + lang;
     return `<li class="clearit">
                 <a href="/user/${info.uid}" class="avatar">
