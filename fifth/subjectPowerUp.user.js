@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         subjectPowerUp
 // @namespace    fifth26.com
-// @version      1.3.1
+// @version      1.3.2
 // @description  条目页面优化：看看你的好友是否喜欢
 // @author       fifth | aslo thanks to @everpcpc's contributions.
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+/
