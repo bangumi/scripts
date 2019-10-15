@@ -1,12 +1,20 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.0.0.17
+// @version      1.0.2.18
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
 // @grant        GM_addStyle
 // ==/UserScript==
+// ==UserScript==
+// @include    */character/*
+// @include    */rakuen/topiclist*
+// @include    */rakuen/topic/crt/*
+// @include    */rakuen/home*
+// @include    */user/*
+// ==/UserScript==
+
 var cid;
 var path;
 var api = 'https://tinygrail.com/api/';
@@ -163,7 +171,7 @@ function loadTradeBox(chara) {
       $('#kChartButton').on('click', function () {
         if (!$(this).data("loaded")) {
           $(this).data("loaded", true);
-          loadChart(chara.Id, 60);
+          loadChart(chara.Id, 14);
         } else {
           $(this).data("loaded", false);
           unloadChart();
@@ -223,13 +231,6 @@ function loadTradeBox(chara) {
             caculateTotal();
           });
         }
-      });
-      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##		
-                if (d.State === 0) {		
-                    var price = d.Value[0].Begin;		
-                    price = parseFloat(price).toFixed(2);		
-                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);		
-                }		
       });
     } else {
       login(function () { loadTradeBox(chara) });
@@ -382,6 +383,15 @@ function loadFixedAssets(chara, userChara, callback) {
         openHistoryDialog(chara);
       });
 
+      getGameMaster((result) => {
+        if (result) {
+          $('.assets_box .desc').append('<button id="tradeHistoryButton" class="text_button">[交易记录]</button>');
+          $('#tradeHistoryButton').on('click', () => {
+            openTradeHistoryDialog(chara);
+          });
+        }
+      });
+
       var temples = {};
       for (i = 0; i < d.Value.length; i++) {
         var temple = d.Value[i];
@@ -422,7 +432,7 @@ function loadFixedAssets(chara, userChara, callback) {
       $('.item .card').on('click', (e) => {
         var uid = $(e.srcElement).data('id');
         var temple = temples[uid];
-        showTemple(temple, chara, userChara.Id);
+        showTemple(temple, chara);
       });
 
       if (d.Value.length === 0) {
@@ -485,16 +495,33 @@ function sacrificeCharacter(id, count, callback) {
   });
 }
 
-function showTemple(temple, chara, userId) {
+function showTemple(temple, chara) {
   var cover = getLargeCover(temple.Cover);
-  var action = '';
-  if (userId == 702 || temple.UserId == userId) {
-    var action = `<div class="action">
-      <button id="changeCoverButton" class="text_button">[修改]</button>
-      <button id="resetCoverButton" class="text_button">[重置]</button>
+  var action = `<div class="action">
+      <button style="display:none" id="changeCoverButton" class="text_button">[修改]</button>
+      <button style="display:none" id="resetCoverButton" class="text_button">[重置]</button>
       <input style="display:none" id="picture" type="file" accept="image/*">
     </div>`;
-  }
+  // if (temple.UserId == userId) {
+  //   $('#changeCoverButton').show();
+  //   $('#resetCoverButton').show();
+  // } else {
+  //   getGameMaster((r) => {
+  //     $('#resetCoverButton').show();
+  //   });
+  // }
+
+  getUserAssets((d) => {
+    if (d.State == 0) {
+      if (d.Value.Id == temple.UserId) {
+        $('#changeCoverButton').show();
+        $('#resetCoverButton').show();
+      }
+      if (d.Value.Type == 999 || d.Value.Id == 702) {
+        $('#resetCoverButton').show();
+      }
+    }
+  });
 
   var position = '';
   if (cover.indexOf('//lain.') >= 0)
@@ -682,6 +709,56 @@ function openSacrificeDialog(chara, amount) {
   });
 }
 
+function openRecommendDialog(uid, name) {
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+    <div class="title">推荐关系详情 - ${name}</div>
+    <div class="desc" style="display:none"></div>
+    <div class="result" style="display:none"></div>
+    <div class="loading"></div>
+    <a id="TB_closeWindowButton" title="Close">X关闭</a>
+  </div>`;
+  $('body').append(dialog);
+
+  getData(`chara/recommend/user/${uid}`, (d => {
+    $('#TB_window .loading').hide();
+    if (d.State == 0) {
+      d.Value.Recommends.forEach((a) => {
+        //var name = '';
+        //var uid = '';
+        var list = a.Description.match(/推荐人奖励：(.*?) \((.*?)#/);
+        if (list && list.length > 2) {
+          var name = list[1];
+          var uid = list[2];
+          var record = `<div class="row">
+          <span class="time">${formatDate(a.LogTime)}</span>
+          <span class="user" title="被推荐人"><a target="_blank" href="/user/${uid}">${name}</a></span></div>`;
+          $('#TB_window .result').append(record);
+        }
+      });
+
+      var count = d.Value.Recommends.length;
+      $('#TB_window .desc').text(`共推荐${count}人，获得奖励₵${formatNumber(count * 10000)}`);
+      if (d.Value.Recommender) {
+        console.log(d.Value.Recommender);
+        var list2 = d.Value.Recommender.Description.split('#');
+        if (list2.length > 1) {
+          $('#TB_window .desc').append(`<a style="margin-left:10px" target="_blank" href="/user/${list2[0]}">推荐人：${list2[1]}</a>`);
+        }
+      }
+      $('#TB_window .result').show();
+    }
+
+    $('#TB_window .desc').show();
+    $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+    $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  }));
+
+  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#TB_closeWindowButton').on('click', closeDialog);
+}
+
 function openHistoryDialog(chara) {
   var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
   <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
@@ -693,7 +770,7 @@ function openHistoryDialog(chara) {
   </div>`;
   $('body').append(dialog);
 
-  getData(`https://tinygrail.com/api/chara/auction/list/${chara.Id}/1`, (d => {
+  getData(`chara/auction/list/${chara.Id}/1`, (d => {
     $('#TB_window .loading').hide();
     if (d.State == 0 && d.Value.length > 0) {
       var success = 0;
@@ -731,13 +808,72 @@ function openHistoryDialog(chara) {
   $('#TB_closeWindowButton').on('click', closeDialog);
 }
 
+function openTradeHistoryDialog(chara) {
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+    <div class="title">交易历史记录 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.Total, 0)}</div>
+    <div class="desc" style="display:none"></div>
+    <div class="result" style="display:none"></div>
+    <div class="loading"></div>
+    <a id="TB_closeWindowButton" title="Close">X关闭</a>
+  </div>`;
+  $('body').append(dialog);
+
+  loadTradeHistory(chara.Id, 1);
+
+  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#TB_closeWindowButton').on('click', closeDialog);
+}
+
+function loadTradeHistory(id, page) {
+  $('#TB_window .result').hide();
+  $('#TB_window .loading').show();
+  getData(`chara/history/${id}/${page}`, (d => {
+    $('#TB_window .loading').hide();
+    $('#TB_window .result').show();
+    $('#TB_window .result').html('');
+    if (d.State == 0 && d.Value.TotalItems > 0) {
+      d.Value.Items.forEach(a => {
+        var record = `<div class="row">
+          <span class="time" title="交易时间">${formatDate(a.TradeTime)}</span>
+          <span class="user" title="卖家"><a target="_blank" href="/user/${a.Seller}">${a.SellerName}</a></span>
+          <span class="user" title="买家"><a target="_blank" href="/user/${a.Buyer}">${a.BuyerName}</a></span>
+          <span class="price" title="价格 / 数量">₵${formatNumber(a.Price, 2)} / ${formatNumber(a.Amount, 0)}</span>
+        </div>`;
+        $('#TB_window .result').append(record);
+      });
+
+      $('#TB_window .desc').html('');
+      $('#TB_window .desc').text(`共有${d.Value.TotalItems}条记录，当前 ${d.Value.CurrentPage} / ${d.Value.TotalPages} 页`);
+
+      for (var i = 1; i <= d.Value.TotalPages; i++) {
+        var pager = `<span class="page" data-page="${i}">[${i}]</span>`;
+        $('#TB_window .desc').append(pager);
+      }
+
+      $('#TB_window .desc .page').on('click', (e) => {
+        var p = $(e.target).data('page');
+        loadTradeHistory(id, p);
+      })
+
+      $('#TB_window .result').show();
+    } else {
+      $('#TB_window .desc').text('暂无交易记录');
+    }
+    $('#TB_window .desc').show();
+    $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+    $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  }));
+}
+
 function closeDialog() {
   $('#TB_overlay').remove();
   $('#TB_window').remove();
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/1000`, function (d, s) {
+  getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('#grailBox').append(box);
@@ -1819,6 +1955,14 @@ function getUserAssets(callback) {
   getData('chara/user/assets', callback);
 }
 
+function getGameMaster(callback) {
+  getData('chara/user/assets', (d) => {
+    if (d.State == 0 && (d.Value.Type == 999 || d.Value.Id == 702)) {
+      if (callback) callback(d.Value);
+    }
+  });
+}
+
 function getUserInitial(id, callback) {
   getData(`chara/initial/${id}`, function (d, s) {
     callback(d, s);
@@ -2107,6 +2251,48 @@ function loadUserPage(name) {
   getData(`chara/user/assets/${name}`, function (d, s) {
     if (d.State === 0) {
       var data = d.Value;
+      $('h1.nameSingle .inner small.grey').after(`<button id="recommendButton" class="text_button">[推荐关系]</button>`);
+      $('#recommendButton').on('click', (e) => {
+        openRecommendDialog(d.Value.Id, name);
+      });
+
+      if (data.State == 666)
+        $('h1.nameSingle .inner small.grey').after('<small class="red">[小圣杯已封禁]</small>');
+
+      getGameMaster((result) => {
+        if (result && result.Id != data.Id) {
+          $('h1.nameSingle .rr').append(`<a href="#" id="banUserButton" class="chiiBtn"><span>封禁</span></a>`);
+          $('#banUserButton').on('click', (e) => {
+            if (!confirm('封禁之后只有管理员才能解除，确认要封禁用户？'))
+              return;
+            postData(`chara/user/ban/${name}`, null, (d) => {
+              if (d.State == 0) {
+                alert('封禁用户成功。');
+                window.location.reload();
+              } else {
+                alert(d.Message);
+              }
+            });
+          });
+
+          if (result.Id == 702) {
+            $('h1.nameSingle .rr').append(`<a href="#" id="unbanUserButton" class="chiiBtn"><span>解封</span></a>`);
+            $('#unbanUserButton').on('click', (e) => {
+              if (!confirm('确认要解除封禁用户？'))
+                return;
+              getData(`chara/user/unban/${name}`, (d) => {
+                if (d.State == 0) {
+                  alert('解除封禁成功。');
+                  window.location.reload();
+                } else {
+                  alert(d.Message);
+                }
+              });
+            });
+          }
+        }
+      });
+
       var box = `<div id="grail" class="sort" data-id="${d.Value.Id}">
       <div class="horizontalOptions clearit">
         <ul class="">
@@ -2220,7 +2406,7 @@ function loadUserTemples(page) {
       $(`#grail .temple_list .page${page} .item .card`).on('click', (e) => {
         var cid = $(e.srcElement).data('id');
         var temple = data.Value.Items.find((t) => { return t.CharacterId == cid; });
-        showTemple(temple, null, userId);
+        showTemple(temple, null);
       });
 
       if (data.Value.TotalPages > 1) {
@@ -2589,7 +2775,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/1000`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -3139,6 +3325,22 @@ function loadUserAuction(page) {
       var ids = [];
       d.Value.Items.forEach((i) => { ids.push(parseInt(i.CharacterId)); });
       loadUserAuctions(ids);
+      $('.cancel_auction').unbind();
+      $('.cancel_auction').on('click', (e) => {
+        e.stopPropagation();
+        if (!confirm('确定取消竞拍？'))
+          return;
+
+        var id = $(e.target).data('id');
+        postData(`chara/auction/cancel/${id}`, null, (d2) => {
+          if (d2.State == 0) {
+            alert('取消竞拍成功。');
+            $(`#eden_tpc_list li[data-id=${id}]`).remove();
+          } else {
+            alert(d2.Message);
+          }
+        });
+      });
     }
   });
 }
@@ -3230,13 +3432,15 @@ function renderCharacter2(item, even) {
   if (item.State != 0) amount = ` ${formatNumber(item.State, 0)}`;
   var tag = renderCharacterTag(item);
   var depth = renderCharacterDepth(item);
+  var cid = item.Id;
   var id = item.Id;
   var time = item.LastOrder;
 
   if (item.Bid) {
-    id = item.CharacterId;
+    cid = item.CharacterId;
+    id = item.Id;
     time = item.Bid;
-    depth = `<small class="even" title="拍卖底价 / 拍卖数量">₵${formatNumber(item.Start, 2)} / ${formatNumber(item.Type, 0)}</small>`;
+    depth = `<small class="even" title="拍卖底价 / 拍卖数量">₵${formatNumber(item.Start, 2)} / ${formatNumber(item.Type, 0)}</small><small data-id="${id}" class="cancel_auction">[取消]</small>`;
     tag = renderAuctionTag(item);
   }
 
@@ -3244,9 +3448,9 @@ function renderCharacter2(item, even) {
   if (item.Type === 1)
     badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
-  var chara = `<li class="${line} item_list" data-id="${id}"><a href="/rakuen/topic/crt/${id}?trade=true" class="avatar l" target="right">
+  var chara = `<li class="${line} item_list" data-id="${id}"><a href="/rakuen/topic/crt/${cid}?trade=true" class="avatar l" target="right">
                   <span class="avatarNeue avatarReSize32 ll" style="background-image:url('${normalizeAvatar(item.Icon)}')"></span></a><div class="inner">
-                    <a href="/rakuen/topic/crt/${id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(+${formatNumber(item.Rate, 2)} / ${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
+                    <a href="/rakuen/topic/crt/${cid}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(+${formatNumber(item.Rate, 2)} / ${formatNumber(item.Total, 0)} / ₵${formatNumber(item.MarketValue, 0)})</small>
                     <span class="row"><small class="time">${formatTime(time)}${amount}</small>${depth}</span></div>${tag}</li>`
   return chara;
 }
@@ -3430,7 +3634,6 @@ GM_addStyle(`
 html[data-theme='dark'] body {
   background-image: none!important;
   background-color: #2d2e2f!important;
-  color: #ddd!important;
 }
 
 html[data-theme='dark'] #grailBox, html[data-theme='dark'] #phoneBox, html[data-theme='dark'] #recommendBox {
@@ -3621,6 +3824,7 @@ html[data-theme='dark'] .initial_item .progress {
   margin: 10px 0;
   color: #0084B4;
   display: flex;
+  flex-wrap: wrap;
 }
 
 #grailBox .trade .money {
@@ -4039,6 +4243,10 @@ html[data-theme='dark'] .initial_item .progress {
 
 #grailBox.rakuen_home .text_button {
   margin: 0 0 0 5px;
+}
+
+#headerProfile .text_button {
+  border: none;
 }
 
 .text_button {
@@ -4631,5 +4839,14 @@ html[data-theme='dark'] .initial_item .progress {
 .grail_index .user_auction, .item_list .user_auction {
   color: #a7e3ff;
   margin-right: 5px;
+}
+
+#TB_window .desc .page {
+  margin: 2px 0 0 10px;
+  cursor: default;
+}
+
+#TB_window {
+  min-width: 360px;
 }
 `)
