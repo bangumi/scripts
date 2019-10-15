@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Exchange Plugin Kai
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.0.2.18
+// @version      1.0.2.20
 // @description  小圣杯修改版
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/topic\/crt|rakuen\/home|user).*
@@ -163,7 +163,7 @@ function loadTradeBox(chara) {
       $('#kChartButton').on('click', function () {
         if (!$(this).data("loaded")) {
           $(this).data("loaded", true);
-          loadChart(chara.Id, 60);
+          loadChart(chara.Id, 14);
         } else {
           $(this).data("loaded", false);
           unloadChart();
@@ -223,13 +223,6 @@ function loadTradeBox(chara) {
             caculateTotal();
           });
         }
-      });
-      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##			
-                if (d.State === 0) {			
-                    var price = d.Value[0].Begin;			
-                    price = parseFloat(price).toFixed(2);			
-                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);			
-                }			
       });
     } else {
       login(function () { loadTradeBox(chara) });
@@ -540,73 +533,71 @@ function showTemple(temple, chara) {
   $('#TB_closeWindowButton').on('click', closeDialog);
   //$('#TB_window').css("margin-left", $('#TB_window').width() / -2);
   //$('#TB_window').css("margin-top", $('#TB_window').height() / -2);
-  if (userId == 702 || temple.UserId == userId) {
-    $('#changeCoverButton').on('click', (e) => {
-      $("#picture").click();
-      e.stopPropagation();
-    });
-    $('#resetCoverButton').on('click', (e) => {
-      resetTempleCover(temple);
-      e.stopPropagation();
-    });
-    $("#picture").on("change", function () {
-      if (this.files.length > 0) {
-        var file = this.files[0];
-        var data = window.URL.createObjectURL(file);
+  $('#changeCoverButton').on('click', (e) => {
+    $("#picture").click();
+    e.stopPropagation();
+  });
+  $('#resetCoverButton').on('click', (e) => {
+    resetTempleCover(temple);
+    e.stopPropagation();
+  });
+  $("#picture").on("change", function () {
+    if (this.files.length > 0) {
+      var file = this.files[0];
+      var data = window.URL.createObjectURL(file);
 
-        $('#TB_window .card').css('background-image', `url(${data})`);
-        $('#TB_window .action').hide();
-        $('#TB_window .loading').show();
+      $('#TB_window .card').css('background-image', `url(${data})`);
+      $('#TB_window .action').hide();
+      $('#TB_window .loading').show();
 
-        if (!/image+/.test(file.type)) {
-          alert("请选择图片文件。");
-          return;
-        }
-
-        var reader = new FileReader();
-        reader.onload = (ev) => {
-          var result = ev.target.result;
-          $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
-            var hash = md5(result);
-            var blob = dataURLtoBlob(result);
-            var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/cover/${hash}.jpg`;
-
-            getOssSignature('cover', hash, encodeURIComponent(file.type), function (d) {
-              if (d.State === 0) {
-                var xhr = new XMLHttpRequest();
-                xhr.onreadystatechange = function () {
-                  if (xhr.readyState == 4) {
-                    if (xhr.status == 200) {
-                      postData(`chara/temple/cover/${temple.CharacterId}`, url, function (d) {
-                        if (d.State == 0) {
-                          alert("更换封面成功。");
-                          if (chara)
-                            loadTradeBox(chara);
-                        } else {
-                          alert(d.Message);
-                        }
-                      });
-                    } else {
-                      alert('图片上传失败。');
-                    }
-
-                    $('#TB_window .action').show();
-                    $('#TB_window .loading').hide();
-                  }
-                };
-
-                xhr.open('PUT', url);
-                xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
-                xhr.setRequestHeader('x-oss-date', d.Value.Date);
-                xhr.send(blob);
-              }
-            });
-          });
-        };
-        reader.readAsDataURL(file);
+      if (!/image+/.test(file.type)) {
+        alert("请选择图片文件。");
+        return;
       }
-    });
-  }
+
+      var reader = new FileReader();
+      reader.onload = (ev) => {
+        var result = ev.target.result;
+        $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
+          var hash = md5(result);
+          var blob = dataURLtoBlob(result);
+          var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/cover/${hash}.jpg`;
+
+          getOssSignature('cover', hash, encodeURIComponent(file.type), function (d) {
+            if (d.State === 0) {
+              var xhr = new XMLHttpRequest();
+              xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                  if (xhr.status == 200) {
+                    postData(`chara/temple/cover/${temple.CharacterId}`, url, function (d) {
+                      if (d.State == 0) {
+                        alert("更换封面成功。");
+                        if (chara)
+                          loadTradeBox(chara);
+                      } else {
+                        alert(d.Message);
+                      }
+                    });
+                  } else {
+                    alert('图片上传失败。');
+                  }
+
+                  $('#TB_window .action').show();
+                  $('#TB_window .loading').hide();
+                }
+              };
+
+              xhr.open('PUT', url);
+              xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
+              xhr.setRequestHeader('x-oss-date', d.Value.Date);
+              xhr.send(blob);
+            }
+          });
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  });
 }
 
 function fixRightTempleImageReso() {
@@ -872,7 +863,7 @@ function closeDialog() {
 }
 
 function loadBoardMember(id, total, callback) {
-  getData(`chara/users/${id}/1/1000`, function (d, s) {
+  getData(`chara/users/${id}/1/10`, function (d, s) {
     if (d.State === 0 && d.Value.Items && d.Value.Items.length > 0) {
       var box = `<div class="board_box"><div class="desc"><div class="bold">董事会 ${d.Value.Items.length}<span class="sub"> / ${d.Value.TotalItems}</span></div></div><div class="users"></div></div>`;
       $('#grailBox').append(box);
@@ -2774,7 +2765,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/1000`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -2810,12 +2801,12 @@ function loadUserAuctions(ids) {
         if (a.State != 0) {
           var userAuction = `<span class="user_auction" title="竞拍人数 / 竞拍数量">${formatNumber(a.State, 0)} / ${formatNumber(a.Type, 0)}</span>`;
           $(`#valhalla .auction_button[data-id=${a.CharacterId}]`).before(userAuction);
-          $(`.item_list[data-id=${a.CharacterId}] .time`).after(userAuction);
+          $(`.item_list[data-id=${a.Id}] .time`).after(userAuction);
         }
         if (a.Price != 0) {
           var myAuction = `<span class="my_auction" title="出价 / 数量">₵${formatNumber(a.Price, 2)} / ${formatNumber(a.Amount, 0)}</span>`;
           $(`#valhalla .auction_button[data-id=${a.CharacterId}]`).before(myAuction);
-          $(`.item_list[data-id=${a.CharacterId}] .time`).after(myAuction);
+          $(`.item_list[data-id=${a.Id}] .time`).after(myAuction);
         }
       });
     }
@@ -3374,7 +3365,7 @@ function loadUserLog(page) {
     if (d.State === 0 && d.Value && d.Value.Items) {
       loadCharacterList(d.Value.Items, d.Value.CurrentPage, d.Value.TotalPages, loadUserLog, renderBalanceLog);
       $('#eden_tpc_list ul li').on('click', function () {
-        var id = $(this).find('small.time').text().match(/#(\d+)/)[1];
+        var id = $(this).data('id');
         if (id == null) {
           var result = $(this).find('small.time').text().match(/#(\d+)/);
           if (result && result.length > 0)
