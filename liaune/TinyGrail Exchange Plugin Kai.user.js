@@ -163,7 +163,7 @@ function loadTradeBox(chara) {
       $('#kChartButton').on('click', function () {
         if (!$(this).data("loaded")) {
           $(this).data("loaded", true);
-          loadChart(chara.Id, 66);
+          loadChart(chara.Id, 60);
         } else {
           $(this).data("loaded", false);
           unloadChart();
@@ -224,12 +224,12 @@ function loadTradeBox(chara) {
           });
         }
       });
-       getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##				
-                if (d.State === 0) {				
-                    var price = d.Value[0].Begin;				
-                    price = parseFloat(price).toFixed(2);				
-                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);				
-                }				
+      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##
+                if (d.State === 0) {
+                    var price = d.Value[0].Begin;
+                    price = parseFloat(price).toFixed(2);
+                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
+                }
       });
     } else {
       login(function () { loadTradeBox(chara) });
@@ -381,6 +381,9 @@ function loadFixedAssets(chara, userChara, callback) {
       $('#auctionHistoryButton').on('click', () => {
         openHistoryDialog(chara);
       });
+      var ids = [];
+      ids.push(chara.Id);
+      loadUserAuctions(ids);
 
       getGameMaster((result) => {
         if (result) {
@@ -540,71 +543,73 @@ function showTemple(temple, chara) {
   $('#TB_closeWindowButton').on('click', closeDialog);
   //$('#TB_window').css("margin-left", $('#TB_window').width() / -2);
   //$('#TB_window').css("margin-top", $('#TB_window').height() / -2);
-  $('#changeCoverButton').on('click', (e) => {
-    $("#picture").click();
-    e.stopPropagation();
-  });
-  $('#resetCoverButton').on('click', (e) => {
-    resetTempleCover(temple);
-    e.stopPropagation();
-  });
-  $("#picture").on("change", function () {
-    if (this.files.length > 0) {
-      var file = this.files[0];
-      var data = window.URL.createObjectURL(file);
+  if (true) {
+    $('#changeCoverButton').on('click', (e) => {
+      $("#picture").click();
+      e.stopPropagation();
+    });
+    $('#resetCoverButton').on('click', (e) => {
+      resetTempleCover(temple);
+      e.stopPropagation();
+    });
+    $("#picture").on("change", function () {
+      if (this.files.length > 0) {
+        var file = this.files[0];
+        var data = window.URL.createObjectURL(file);
 
-      $('#TB_window .card').css('background-image', `url(${data})`);
-      $('#TB_window .action').hide();
-      $('#TB_window .loading').show();
+        $('#TB_window .card').css('background-image', `url(${data})`);
+        $('#TB_window .action').hide();
+        $('#TB_window .loading').show();
 
-      if (!/image+/.test(file.type)) {
-        alert("请选择图片文件。");
-        return;
-      }
+        if (!/image+/.test(file.type)) {
+          alert("请选择图片文件。");
+          return;
+        }
 
-      var reader = new FileReader();
-      reader.onload = (ev) => {
-        var result = ev.target.result;
-        $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
-          var hash = md5(result);
-          var blob = dataURLtoBlob(result);
-          var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/cover/${hash}.jpg`;
+        var reader = new FileReader();
+        reader.onload = (ev) => {
+          var result = ev.target.result;
+          $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
+            var hash = md5(result);
+            var blob = dataURLtoBlob(result);
+            var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/cover/${hash}.jpg`;
 
-          getOssSignature('cover', hash, encodeURIComponent(file.type), function (d) {
-            if (d.State === 0) {
-              var xhr = new XMLHttpRequest();
-              xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4) {
-                  if (xhr.status == 200) {
-                    postData(`chara/temple/cover/${temple.CharacterId}`, url, function (d) {
-                      if (d.State == 0) {
-                        alert("更换封面成功。");
-                        if (chara)
-                          loadTradeBox(chara);
-                      } else {
-                        alert(d.Message);
-                      }
-                    });
-                  } else {
-                    alert('图片上传失败。');
+            getOssSignature('cover', hash, encodeURIComponent(file.type), function (d) {
+              if (d.State === 0) {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                  if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                      postData(`chara/temple/cover/${temple.CharacterId}`, url, function (d) {
+                        if (d.State == 0) {
+                          alert("更换封面成功。");
+                          if (chara)
+                            loadTradeBox(chara);
+                        } else {
+                          alert(d.Message);
+                        }
+                      });
+                    } else {
+                      alert('图片上传失败。');
+                    }
+
+                    $('#TB_window .action').show();
+                    $('#TB_window .loading').hide();
                   }
+                };
 
-                  $('#TB_window .action').show();
-                  $('#TB_window .loading').hide();
-                }
-              };
-
-              xhr.open('PUT', url);
-              xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
-              xhr.setRequestHeader('x-oss-date', d.Value.Date);
-              xhr.send(blob);
-            }
+                xhr.open('PUT', url);
+                xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
+                xhr.setRequestHeader('x-oss-date', d.Value.Date);
+                xhr.send(blob);
+              }
+            });
           });
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
 }
 
 function fixRightTempleImageReso() {
@@ -2254,7 +2259,9 @@ function loadUserPage(name) {
       });
 
       if (data.State == 666)
-        $('h1.nameSingle .inner small.grey').after('<small class="red">[小圣杯已封禁]</small>');
+          $('h1.nameSingle .inner small.grey').after('<small class="red">[小圣杯已封禁]</small>');
+      if (data.Type == 999)
+          $('h1.nameSingle .inner small.grey').after('<small class="red">[小圣杯GM]</small>');
 
       getGameMaster((result) => {
         if (result && result.Id != data.Id) {
@@ -2806,14 +2813,18 @@ function loadUserAuctions(ids) {
     if (d.State == 0) {
       d.Value.forEach((a) => {
         if (a.State != 0) {
+            console.log(a.CharacterId);
           var userAuction = `<span class="user_auction" title="竞拍人数 / 竞拍数量">${formatNumber(a.State, 0)} / ${formatNumber(a.Type, 0)}</span>`;
+          console.log(userAuction);
+          $(`#auctionHistoryButton`).before(userAuction);
           $(`#valhalla .auction_button[data-id=${a.CharacterId}]`).before(userAuction);
-          $(`.item_list[data-id=${a.Id}] .time`).after(userAuction);
+          $(`.item_list[data-id=${a.CharacterId}] .time`).after(userAuction);
         }
         if (a.Price != 0) {
           var myAuction = `<span class="my_auction" title="出价 / 数量">₵${formatNumber(a.Price, 2)} / ${formatNumber(a.Amount, 0)}</span>`;
+          $(`#auctionHistoryButton`).before(myAuction);
           $(`#valhalla .auction_button[data-id=${a.CharacterId}]`).before(myAuction);
-          $(`.item_list[data-id=${a.Id}] .time`).after(myAuction);
+          $(`.item_list[data-id=${a.CharacterId}] .time`).after(myAuction);
         }
       });
     }
@@ -3435,7 +3446,7 @@ function renderCharacter2(item, even) {
 
   if (item.Bid) {
     cid = item.CharacterId;
-    id = item.Id;
+    id = item.CharacterId;
     time = item.Bid;
     depth = `<small class="even" title="拍卖底价 / 拍卖数量">₵${formatNumber(item.Start, 2)} / ${formatNumber(item.Type, 0)}</small><small data-id="${id}" class="cancel_auction">[取消]</small>`;
     tag = renderAuctionTag(item);
