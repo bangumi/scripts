@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         bangumi_upload_imgchr_medium
+// @name         bangumi_upload_imgchr
 // @namespace    https://github.com/Liaune/scripts/tree/master/liaune
 // @version      0.3
 // @description  imgchr.com图片上传插件,插入为缩略图
@@ -15,7 +15,7 @@
             vendor: "auto",
             mode: "auto",
             lang: "auto",
-            autoInsert: "bbcode-embed-medium",
+            autoInsert: "bbcode-embed",
             palette: "default",
             init: "onload",
             containerClass: 1,
