@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi列表显示增强
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.8
+// @version      0.8.1
 // @description  在有条目列表的页面，显示条目的排名，站内评分和评分人数，好友评分和评分人数，并提供排序功能
 // @author       Liaune
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(.+?/list|.+?/tag|.+?/browser|subject_search|index)(/|\?).+$/
@@ -263,8 +263,10 @@ box-shadow: 0 0 3px #EEE,inset 0 -1px 5px rgba(0,0,0,0.1)
             //获取自己评分
             let score_u=0;
             if(location.pathname.match(/list/)){
-                let User_rate=elem.querySelector('.inner .starlight') ? elem.querySelector('.inner .starlight').className: null;
-                score_u =User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:null):null;
+                if(User==You){
+                    let User_rate=elem.querySelector('.inner .starlight') ? elem.querySelector('.inner .starlight').className: null;
+                    score_u =User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:null):null;
+                }
             }
             let info = {"name_cn":name_cn,"rank":rank,"score":score,"votes":votes,"score_f":score_f,"votes_f":votes_f,"score_u":score_u};
             let ID = href.split('/subject/')[1];
