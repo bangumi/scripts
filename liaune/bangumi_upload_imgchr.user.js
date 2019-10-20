@@ -2,7 +2,7 @@
 // @name         bangumi_upload_imgchr
 // @namespace    https://github.com/Liaune/scripts/tree/master/liaune
 // @version      0.3
-// @description  imgchr.com图片上传插件,插入为缩略图
+// @description  imgchr.com图片上传插件
 // @author       liaune
 // @include      /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(blog|ep|rakuen\/topic|group).*
 // @grant        none
