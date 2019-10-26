@@ -256,6 +256,7 @@ class Remark {
                     return;
                 }
                 case 'group': {
+                    if(url.search(/group\/(my_reply|my_topic)+$/)!=-1) return;
                     this.__parseGroupLikePage();
                     return;
                 }
