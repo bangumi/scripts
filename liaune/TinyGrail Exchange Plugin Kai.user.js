@@ -15,7 +15,7 @@ var box = `<div id="grailBox"></div>`;
 var lastEven = false;
 
 var _chartData;
-var bgColor = '#fff';
+var bgColor = 'transparent';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -163,7 +163,7 @@ function loadTradeBox(chara) {
       $('#kChartButton').on('click', function () {
         if (!$(this).data("loaded")) {
           $(this).data("loaded", true);
-          loadChart(chara.Id, 14);
+          loadChart(chara.Id, parseInt(((new Date())-(new Date('2019/08/08')))/(24*3600*1000)));
         } else {
           $(this).data("loaded", false);
           unloadChart();
@@ -223,6 +223,13 @@ function loadTradeBox(chara) {
             caculateTotal();
           });
         }
+      });
+      getData(`chara/charts/${chara.Id}/2019-08-08`, function (d, s) {//##		
+                if (d.State === 0) {		
+                    var price = d.Value[0].Begin;		
+                    price = parseFloat(price).toFixed(2);		
+                    $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);		
+                }		
       });
     } else {
       login(function () { loadTradeBox(chara) });
@@ -372,8 +379,10 @@ function loadFixedAssets(chara, userChara, callback) {
         openSacrificeDialog(chara, userChara.Amount);
       });
       $('#auctionHistoryButton').on('click', () => {
-        openHistoryDialog(chara);
+        openHistoryDialog(chara,1);
       });
+      
+      loadUserAuctions([chara.Id]);
 
       getGameMaster((result) => {
         if (result) {
@@ -749,10 +758,10 @@ function openRecommendDialog(uid, name) {
   $('#TB_closeWindowButton').on('click', closeDialog);
 }
 
-function openHistoryDialog(chara) {
+function openHistoryDialog(chara,page) {
   var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
   <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
-    <div class="title">上周拍卖结果 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.Total, 0)}</div>
+    <div class="title">上${page}周拍卖结果 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.Total, 0)}</div>
     <div class="desc" style="display:none"></div>
     <div class="result" style="display:none"></div>
     <div class="loading"></div>
@@ -760,7 +769,7 @@ function openHistoryDialog(chara) {
   </div>`;
   $('body').append(dialog);
 
-  getData(`chara/auction/list/${chara.Id}/1`, (d => {
+  getData(`chara/auction/list/${chara.Id}/${page}`, (d => {
     $('#TB_window .loading').hide();
     if (d.State == 0 && d.Value.length > 0) {
       var success = 0;
@@ -786,7 +795,11 @@ function openHistoryDialog(chara) {
       $('#TB_window .desc').text(`共有${d.Value.length}人参与拍卖，成功${success}人 / ${total}股`);
       $('#TB_window .result').show();
     } else {
-      $('#TB_window .desc').text('暂无拍卖数据');
+      page++;	
+      closeDialog();
+      let week = parseInt(((new Date())-(new Date('2019/10/06')))/(7*24*3600*1000)+1);
+      if(page>=week) return;	
+      openHistoryDialog(chara,page);
     }
     $('#TB_window .desc').show();
     $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
@@ -2336,6 +2349,8 @@ function loadUserPage(name) {
 
       if (data.State == 666)
         $('h1.nameSingle .inner small.grey').after('<small class="red">[小圣杯已封禁]</small>');
+      if (data.Type == 999)		
+          $('h1.nameSingle .inner small.grey').after('<small class="red">[小圣杯GM]</small>');
 
       getGameMaster((result) => {
         if (result && result.Id != data.Id) {
@@ -2835,7 +2850,7 @@ function loadNewTab() {
 }
 
 function loadValhalla(page) {
-  $('#valhalla .page').hide();
+  //$('#valhalla .page').hide();
 
   var p = $(`#valhalla .page.page${page}`);
   if (p.length > 0) {
@@ -2851,7 +2866,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/36`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/200`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -2888,11 +2903,13 @@ function loadUserAuctions(ids) {
           var userAuction = `<span class="user_auction" title="竞拍人数 / 竞拍数量">${formatNumber(a.State, 0)} / ${formatNumber(a.Type, 0)}</span>`;
           $(`#valhalla .auction_button[data-id=${a.CharacterId}]`).before(userAuction);
           $(`.item_list[data-id=${a.Id}] .time`).after(userAuction);
+          $(`#auctionHistoryButton`).before(userAuction);
         }
         if (a.Price != 0) {
           var myAuction = `<span class="my_auction" title="出价 / 数量">₵${formatNumber(a.Price, 2)} / ${formatNumber(a.Amount, 0)}</span>`;
           $(`#valhalla .auction_button[data-id=${a.CharacterId}]`).before(myAuction);
           $(`.item_list[data-id=${a.Id}] .time`).after(myAuction);
+          $(`#auctionHistoryButton`).before(myAuction);
         }
       });
     }
@@ -4950,12 +4967,12 @@ html[data-theme='dark'] #TB_window .result .row {
   max-width: 800px;
 }
 
-.grail_index .my_auction, .item_list .my_auction {
+.my_auction {
   color: #ffa7cc;
   margin-right: 5px;
 }
 
-.grail_index .user_auction, .item_list .user_auction {
+.user_auction {
   color: #a7e3ff;
   margin-right: 5px;
 }
