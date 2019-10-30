@@ -15,7 +15,7 @@ var box = `<div id="grailBox"></div>`;
 var lastEven = false;
 
 var _chartData;
-var bgColor = '#fff';
+var bgColor = 'transparent';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
@@ -2602,7 +2602,7 @@ function renderCharacter3(item, index) {
     badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 
   var box = `<li class="initial_item"><a target="right" href="/rakuen/topic/crt/${item.Id}?trade=true" class="avatar"><img src="${normalizeAvatar(item.Icon)}">${badge}</a>
-    <div class="info"><div class="name" title="${item.Name}"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money" title="股息 / 底价 / 数量">+${formatNumber(item.Rate, 2)} / ₵${formatNumber(item.Price, 0)} / ${formatNumber(item.State, 0)}</div>
+    <div class="info"><div class="name" title="${item.Name}"><a target="_blank" href="/character/${item.Id}"><span>${index + 1}.</span>${item.Name}</a></div><div class="money" title="股息 / 底价 / 数量">+${formatNumber(item.Rate, 2)} / ₵${formatNumber(item.Price, 2)} / ${formatNumber(item.State, 0)}</div>
     <div class="current ${tclass}" title="现价 / 涨跌">₵${formatNumber(item.Current, 2)}<span class="tag ${tclass}">${flu}</span></div>
     <div class="time"><button class="auction_button" data-id="${item.Id}">[出价]</button><button class="history_button" data-id="${item.Id}">[上周]</button></div>
   </li>`;
@@ -2764,7 +2764,7 @@ function loadNewTab() {
 }
 
 function loadValhalla(page) {
-  $('#valhalla .page').hide();
+  //$('#valhalla .page').hide();
 
   var p = $(`#valhalla .page.page${page}`);
   if (p.length > 0) {
@@ -2780,7 +2780,7 @@ function loadValhalla(page) {
   }
 
   $('#valhalla .loading').show();
-  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/1000`, function (d, s) {
+  getData(`chara/user/chara/valhalla@tinygrail.com/${page}/200`, function (d, s) {
     $('#valhalla .loading').hide();
     $('#valhalla').append(`<div class="page page${page}"></div>`);
     if (d.State === 0) {
@@ -2968,7 +2968,12 @@ function loadGrailBox2(callback) {
       if (lastDate != today)
         bonus = `<button id="bonusButton" class="active tag daily_bonus">签到奖励</button>`;
 
-      var userBox = `<div id="grailBox" class="rakuen_home"><div class="bold">「小圣杯」账户余额：₵${formatNumber(d.Value.Balance, 2)}<button id="logoutButton" class="text_button">[退出登录]</button><button id="testButton" class="text_button">[股息预测]</button></div>${bonus}</div>`
+      var userBox = `<div id="grailBox" class="rakuen_home">
+        <div class="bold">「小圣杯」账户余额：₵${formatNumber(d.Value.Balance, 2)}
+          <button id="logoutButton" class="text_button">[退出登录]</button>
+          <button id="testButton" class="text_button">[股息预测]</button>
+          <button id="scratchButton" class="text_button">[刮刮乐]</button>
+        </div>${bonus}</div>`
       $('body').prepend(userBox);
       $('#logoutButton').on('click', function () { logout(loadGrailBox2) });
       $('#testButton').on('click', function () {
@@ -2979,6 +2984,17 @@ function loadGrailBox2(callback) {
             alert(d.Message);
           }
         });
+      });
+      $('#scratchButton').on('click', function () {
+        if (confirm('消费₵1,000购买一张司法刮刮乐彩票？')) {
+          getData('event/scratch/bonus', (d) => {
+            if (d.State == 0) {
+              alert(d.Value);
+            } else {
+              alert(d.Message);
+            }
+          });
+        }
       });
       $('#bonusButton').on('click', function () { getDailyBangumiBonus(loadGrailBox2) });
     } else {
