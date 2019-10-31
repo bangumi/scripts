@@ -178,7 +178,7 @@ border-color: #a9c6c9;
                     let votes_f = info ? info.votes_f :'';
                     let User_rate=elem.querySelector('.inner .collectInfo .starlight') ? elem.querySelector('.inner .collectInfo .starlight').className: null;
                     let User_score=User_rate ? (User_rate.match(/stars(\d+)/)?User_rate.match(/stars(\d+)/)[1]:''):'';
-                    let My_score= info ? info.score_u :'';
+                    let My_score= info ? (info.score_u ? info.score_u : '' ):'';
                     if(My_score!=='' && User_score!==''){
                         count1++;
                         DXY+= Math.pow((My_score-User_score),2);
