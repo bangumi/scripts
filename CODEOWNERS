@@ -1,0 +1,26 @@
+# https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+# default owner
+#  by here we use team name @bangumi
+*    @bangumi
+
+/a_little/ @22earth
+/binota/ @binotaliu
+/cedar/ @XDcedar
+/chaucerling/ @chaucerling
+/everpcpc/ @everpcpc
+/fifth/ @fifth
+/fireattach/ @fireattack
+/fitailsh/ @fitailsh
+/imorz/ @sorz
+/inchei/ @inchei
+/infinityloop/ @swsoyee
+/liaune/ @Liaune
+/mono/ @jokester
+/prevails/ @protodonuts
+/sinker/ @15cm
+/upsuper/ @upsuper
+/vickscarlet/ @VickScarlet
+/willian/ @Willian-Zhang
+/yonjar/ @yonjar
+
