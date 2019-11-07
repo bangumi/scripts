@@ -4,13 +4,17 @@
 // @version      0.2
 // @description  显示角色发行价，显示拍卖情况，把自己的圣殿排到最前面，股息高于低保隐藏签到
 // @author       Liaune, Cedar
-// @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/home|rakuen/topic/crt).*/
+// @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/home|rakuen\/topic\/crt).*
 // @grant        GM_addStyle
 // ==/UserScript==
 GM_addStyle(`
 .assets .my_temple.item .card {
   box-shadow: 0px 0px 5px #FFEB3B;
-  border: 2px solid #FFC107;
+  border: 1px solid #FFC107;
+}
+.assets .my_temple.item .name a {
+  font-weight: bold;
+  color: #0084b4;
 }
 .assets .item .card {
   background-size: cover;
@@ -34,14 +38,14 @@ const me = $('#new_comment .reply_author a')[0] ? $('#new_comment .reply_author 
 const api = 'https://tinygrail.com/api/';
 
 function getData(url, callback) {
-  if (!url.startsWith('http'))
-    url = api + url;
-  $.ajax({
-    url: url,
-    type: 'GET',
-    xhrFields: { withCredentials: true },
-    success: callback
-  });
+    if (!url.startsWith('http'))
+        url = api + url;
+    $.ajax({
+        url: url,
+        type: 'GET',
+        xhrFields: { withCredentials: true },
+        success: callback
+    });
 }
 
 function postData(url, data, callback) {
@@ -82,24 +86,25 @@ function formatNumber(number, decimals, dec_point, thousands_sep) {
   }
   return s.join(dec);
 }
-
 function showInitialPrice(charaId){
-  getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
-    if (d.State === 0) {
-      let price = parseFloat(d.Value[0].Begin).toFixed(2);
-      $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
-    }
-  });
+    getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
+        if (d.State === 0) {
+            var price = d.Value[0].Begin;
+            price = parseFloat(price).toFixed(2);
+            $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
+        }
+    });
 }
 
 function showOwnTemple(){
-  let temples = document.querySelectorAll('#grailBox .assets_box .assets .item');
-  for(let i = 0; i < temples.length; i++) {
-    if(temples[i].querySelector('.name a').innerText == me) {
-      temples[i].classList.add('my_temple');
-      break;
-    }
-  }
+    $('#grailBox .assets_box .assets .item').each(function(i,e){
+        if(e.querySelector('.name a').innerText != me){
+            $('#grailBox .assets_box .assets').append(e);
+        }
+        else{
+            e.classList.add('my_temple');
+        }
+    });
 }
 
 function loadUserAuctions(ids) {
@@ -120,12 +125,12 @@ function loadUserAuctions(ids) {
 }
 
 function hideBonusButton(){
-  getData('event/share/bonus/test', (d) => {
-    if (d.State == 0) {
-      if(d.Value.Share>1500*7) $('#bonusButton').hide();
-      //else $('#shareBonusButton').hide();
-    }
-  });
+    getData('event/share/bonus/test', (d) => {
+        if (d.State == 0) {
+            if(d.Value.Share>1500*7) $('#bonusButton').hide();
+            //else $('#shareBonusButton').hide();
+        }
+    });
 }
 
 let MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
@@ -145,3 +150,5 @@ let observer = new MutationObserver(function() {
 let parentNodeId = location.pathname.startsWith('/rakuen/topic/crt')? 'subject_info': 'columnCrtB';
 console.log(parentNodeId);
 observer.observe(document.getElementById(parentNodeId), {'childList': true, 'subtree': true});
+
+
