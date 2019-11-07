@@ -38,14 +38,14 @@ const You = $('#new_comment .reply_author a')[0] ? $('#new_comment .reply_author
 const api = 'https://tinygrail.com/api/';
 
 function getData(url, callback) {
-    if (!url.startsWith('http'))
-        url = api + url;
-    $.ajax({
-        url: url,
-        type: 'GET',
-        xhrFields: { withCredentials: true },
-        success: callback
-    });
+  if (!url.startsWith('http'))
+    url = api + url;
+  $.ajax({
+    url: url,
+    type: 'GET',
+    xhrFields: { withCredentials: true },
+    success: callback
+  });
 }
 
 function postData(url, data, callback) {
@@ -87,24 +87,24 @@ function formatNumber(number, decimals, dec_point, thousands_sep) {
   return s.join(dec);
 }
 function showInitialPrice(charaId){
-    getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
-        if (d.State === 0) {
-            var price = d.Value[0].Begin;
-            price = parseFloat(price).toFixed(2);
-            $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
-        }
-    });
+  getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
+    if (d.State === 0) {
+      var price = d.Value[0].Begin;
+      price = parseFloat(price).toFixed(2);
+      $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
+    }
+  });
 }
 
 function showOwnTemple(){
-    $('#grailBox .assets_box .assets .item').each(function(i,e){
-        if(e.querySelector('.name a').innerText!=You){
-            $('#grailBox .assets_box .assets').append(e);
-        }
-        else{
-            e.id = 'own';
-        }
-    });
+  $('#grailBox .assets_box .assets .item').each(function(i,e){
+    if(e.querySelector('.name a').innerText!=You){
+      $('#grailBox .assets_box .assets').append(e);
+    }
+    else{
+      e.id = 'own';
+    }
+  });
 }
 
 function loadUserAuctions(ids) {
@@ -125,24 +125,24 @@ function loadUserAuctions(ids) {
 }
 
 function hideBonusButton(){
-    getData('event/share/bonus/test', (d) => {
-        if (d.State == 0) {
-            if(d.Value.Share>1500*7) $('#bonusButton').hide();
-            //else $('#shareBonusButton').hide();
-        }
-    });
+  getData('event/share/bonus/test', (d) => {
+    if (d.State == 0) {
+      if(d.Value.Share>1500*7) $('#bonusButton').hide();
+      //else $('#shareBonusButton').hide();
+    }
+  });
 }
 
 let checkgrailBox= setInterval(function(){
-    if($('#grailBox .assets_box').length){
-        clearInterval(checkgrailBox);
-        let charaId = document.location.pathname.split('/').pop();
-        showInitialPrice(charaId);
-        loadUserAuctions([charaId]);
-        showOwnTemple();
-    }
-    if($('#grailBox.rakuen_home #bonusButton').length){
-        clearInterval(checkgrailBox);
-        hideBonusButton();
-    }
+  if($('#grailBox .assets_box').length){
+    clearInterval(checkgrailBox);
+    let charaId = document.location.pathname.split('/').pop();
+    showInitialPrice(charaId);
+    loadUserAuctions([charaId]);
+    showOwnTemple();
+  }
+  if($('#grailBox.rakuen_home #bonusButton').length){
+    clearInterval(checkgrailBox);
+    hideBonusButton();
+  }
 },500);
