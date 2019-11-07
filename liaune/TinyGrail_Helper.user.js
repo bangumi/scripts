@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         TinyGrail Helper
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.2
+// @version      0.2.1
 // @description  显示角色发行价，显示拍卖情况，把自己的圣殿排到最前面，股息高于低保隐藏签到
-// @author       Liaune, Cedar
+// @author       Liaune,Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/home|rakuen\/topic\/crt).*
 // @grant        GM_addStyle
 // ==/UserScript==
@@ -98,11 +98,9 @@ function showInitialPrice(charaId){
 
 function showOwnTemple(){
     $('#grailBox .assets_box .assets .item').each(function(i,e){
-        if(e.querySelector('.name a').innerText != me){
-            $('#grailBox .assets_box .assets').append(e);
-        }
-        else{
+        if(e.querySelector('.name a').innerText == me){
             e.classList.add('my_temple');
+            $('#grailBox .assets_box .assets').prepend(e);
         }
     });
 }
@@ -133,22 +131,16 @@ function hideBonusButton(){
     });
 }
 
-let MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
-let observer = new MutationObserver(function() {
-  if(!$('#grailBox .assets_box').length && !$('#grailBox.rakuen_home #bonusButton').length) return;
-  observer.disconnect();
-  if($('#grailBox .assets_box').length){
-    let charaId = document.location.pathname.split('/').pop();
-    showInitialPrice(charaId);
-    loadUserAuctions([charaId]);
-    showOwnTemple();
-  }
-  else if($('#grailBox.rakuen_home #bonusButton').length){
-    hideBonusButton();
-  }
-});
-let parentNodeId = location.pathname.startsWith('/rakuen/topic/crt')? 'subject_info': 'columnCrtB';
-console.log(parentNodeId);
-observer.observe(document.getElementById(parentNodeId), {'childList': true, 'subtree': true});
-
-
+let checkgrailBox= setInterval(function(){
+    if($('#grailBox .assets_box').length){
+        clearInterval(checkgrailBox);
+        let charaId = document.location.pathname.split('/').pop();
+        showInitialPrice(charaId);
+        loadUserAuctions([charaId]);
+        showOwnTemple();
+    }
+    if($('#grailBox.rakuen_home #bonusButton').length){
+        clearInterval(checkgrailBox);
+        hideBonusButton();
+    }
+},500);
