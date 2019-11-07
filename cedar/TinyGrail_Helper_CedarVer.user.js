@@ -146,5 +146,12 @@ let observer = new MutationObserver(function() {
     hideBonusButton();
   }
 });
-let parentNode = location.pathname.startsWith('/rakuen/topic/crt')? document.getElementById('subject_info'): document.body;
+let parentNode;
+if(location.pathname.startsWith('/rakuen/topic/crt')) {
+  parentNode = document.getElementById('subject_info');
+} else if(location.pathname.startsWith('/character')) {
+  parentNode = document.getElementById('columnCrtB')
+} else {
+  parentNode = document.body;
+}
 observer.observe(parentNode, {'childList': true, 'subtree': true});
