@@ -1,16 +1,20 @@
 // ==UserScript==
 // @name         TinyGrail Helper
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.1
+// @version      0.1.1
 // @description  显示角色发行价，显示拍卖情况，把自己的圣殿排到最前面，股息高于低保隐藏签到
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/home|rakuen\/topic\/crt).*
 // @grant        GM_addStyle
 // ==/UserScript==
 GM_addStyle(`
-.assets .item:first-of-type .card {
+.assets #own.item .card {
   box-shadow: 0px 0px 5px #FFEB3B;
   border: 1px solid #FFC107;
+}
+.assets #own.item .name a {
+  font-weight: bold;
+  color: #0084b4;
 }
 .assets .item .card {
   background-size: cover;
@@ -32,7 +36,6 @@ GM_addStyle(`
 `);
 const You = $('#new_comment .reply_author a')[0] ? $('#new_comment .reply_author a')[0].innerText : '';
 const api = 'https://tinygrail.com/api/';
-let charaId = document.location.pathname.split('/').pop();
 
 function getData(url, callback) {
     if (!url.startsWith('http'))
@@ -83,7 +86,7 @@ function formatNumber(number, decimals, dec_point, thousands_sep) {
   }
   return s.join(dec);
 }
-function showInitialPrice(){
+function showInitialPrice(charaId){
     getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
         if (d.State === 0) {
             var price = d.Value[0].Begin;
@@ -99,8 +102,7 @@ function showOwnTemple(){
             $('#grailBox .assets_box .assets').append(e);
         }
         else{
-            e.querySelector('.name a').className = 'bold';
-            e.querySelector('.name a').style.color = '#0084B4';
+            e.id = 'own';
         }
     });
 }
@@ -122,24 +124,25 @@ function loadUserAuctions(ids) {
   });
 }
 
+function hideBonusButton(){
+    getData('event/share/bonus/test', (d) => {
+        if (d.State == 0) {
+            if(d.Value.Share>1500*7) $('#bonusButton').hide();
+            //else $('#shareBonusButton').hide();
+        }
+    });
+}
+
 let checkgrailBox= setInterval(function(){
     if($('#grailBox .assets_box').length){
         clearInterval(checkgrailBox);
-        showInitialPrice();
+        let charaId = document.location.pathname.split('/').pop();
+        showInitialPrice(charaId);
         loadUserAuctions([charaId]);
         showOwnTemple();
     }
-    if($('#grailBox.rakuen_home').length){
+    if($('#grailBox.rakuen_home #bonusButton').length){
         clearInterval(checkgrailBox);
-        getData('event/share/bonus/test', (d) => {
-            if (d.State == 0) {
-                if(d.Value.Share>10500) $('#bonusButton').hide();
-                //else $('#shareBonusButton').hide();
-            } else {
-                alert(d.Message);
-            }
-        });
+        hideBonusButton();
     }
 },500);
-
-
