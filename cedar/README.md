@@ -118,3 +118,17 @@
 对应组件https://bgm.tv/dev/app/1252
 
 站内讨论https://bgm.tv/group/topic/352723
+
+## [小圣杯小助手](TinyGrail_Helper_CedarVer.user.js?raw=true)
+
+修改自君寻组件, 详见站内讨论
+主要区别:
+* 不会把自己的圣殿挪到第一
+* 自己的圣殿的边框稍微变粗
+* 玩家昵称颜色不变
+* 改用主页链接而非用户昵称判断是否为相同玩家
+* 少量bug修复, 增加稳定性
+
+对应组件 暂无组件
+
+站内讨论https://bgm.tv/group/topic/353368#post_1520373
