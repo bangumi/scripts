@@ -125,7 +125,7 @@ function loadUserAuctions(ids) {
 }
 
 function hideBonusButton() {
-  if(!$('#bonusButton').length) return;
+  if(!document.getElementById('bonusButton')) return;
   getData('event/share/bonus/test', d => {
     if(d.State == 0 && d.Value.Share > 1500*7) $('#bonusButton').hide();
     //else $('#shareBonusButton').hide();
@@ -133,26 +133,26 @@ function hideBonusButton() {
 }
 
 function observeBonus(mutationList) {
-  if(!$('#grailBox.rakuen_home button.daily_bonus').length) return;
+  if(document.querySelector('#grailBox.rakuen_home button.daily_bonus')) return;
   observer.disconnect();
   hideBonusButton();
 }
 
 let fetched = false;
 function observeChara(mutationList) {
-  if(!$('#grailBox .progress_bar, #grailBox .assets_box').length) {
+  if(!document.querySelector('#grailBox .progress_bar, #grailBox .assets_box')) {
     fetched = false;
     return;
   }
   if(fetched) return;
-  if($('#grailBox .assets_box').length) {
+  if(document.querySelector('#grailBox .assets_box')) {
     fetched = true;
     let charaId = document.location.pathname.split('/').pop();
     showInitialPrice(charaId);
     loadUserAuctions([charaId]);
     showOwnTemple();
   } // use '.progress_bar' to detect (and skip) ICO characters
-  else if($('#grailBox .progress_bar').length) {
+  else if(document.querySelector('#grailBox .progress_bar')) {
     observer.disconnect();
   }
 }
@@ -168,5 +168,4 @@ if(location.pathname.startsWith('/rakuen/topic/crt')) {
   parentNode = document.body;
   observer = new MutationObserver(observeBonus);
 }
-
 observer.observe(parentNode, {'childList': true, 'subtree': true});
