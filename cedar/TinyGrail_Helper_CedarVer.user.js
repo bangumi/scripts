@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     0.9
+// @version     1.0
 // @description 显示角色发行价，显示拍卖情况，高亮自己的圣殿，股息高于低保隐藏签到
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/home|rakuen\/topic\/crt).*
@@ -125,33 +125,47 @@ function loadUserAuctions(ids) {
 }
 
 function hideBonusButton() {
-  getData('event/share/bonus/test', (d) => {
+  getData('event/share/bonus/test', d => {
     if(d.State == 0 && d.Value.Share > 1500*7) $('#bonusButton').hide();
     //else $('#shareBonusButton').hide();
   });
 }
 
-let MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
-let observer = new MutationObserver(function() {
-  // use '.progress_bar' to skip ICO characters
-  if(!$('#grailBox .progress_bar, #grailBox .assets_box, #grailBox.rakuen_home button.daily_bonus').length) return;
+function observeBonus(mutationList) {
+  if(!$('#grailBox.rakuen_home button.daily_bonus').length) return;
   observer.disconnect();
+  hideBonusButton();
+}
+
+let fetched = false;
+function observeChara(mutationList) {
+  if(!$('#grailBox .progress_bar, #grailBox .assets_box').length) {
+    fetched = false;
+    return;
+  }
+  if(fetched) return;
   if($('#grailBox .assets_box').length) {
+    fetched = true;
     let charaId = document.location.pathname.split('/').pop();
     showInitialPrice(charaId);
     loadUserAuctions([charaId]);
     showOwnTemple();
+  } // use '.progress_bar' to detect (and skip) ICO characters
+  else if($('#grailBox .progress_bar').length) {
+    observer.disconnect();
   }
-  else if($('#grailBox.rakuen_home #bonusButton').length) {
-    hideBonusButton();
-  }
-});
-let parentNode;
+}
+
+let parentNode, observer;
 if(location.pathname.startsWith('/rakuen/topic/crt')) {
   parentNode = document.getElementById('subject_info');
+  observer = new MutationObserver(observeChara);
 } else if(location.pathname.startsWith('/character')) {
   parentNode = document.getElementById('columnCrtB')
-} else {
+  observer = new MutationObserver(observeChara);
+} else if (location.pathname.startsWith('/rakuen/home')) {
   parentNode = document.body;
+  observer = new MutationObserver(observeBonus);
 }
+
 observer.observe(parentNode, {'childList': true, 'subtree': true});
