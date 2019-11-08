@@ -125,6 +125,7 @@ function loadUserAuctions(ids) {
 }
 
 function hideBonusButton() {
+  if(!$('#bonusButton').length) return;
   getData('event/share/bonus/test', d => {
     if(d.State == 0 && d.Value.Share > 1500*7) $('#bonusButton').hide();
     //else $('#shareBonusButton').hide();
