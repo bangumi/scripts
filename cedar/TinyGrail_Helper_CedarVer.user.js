@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.0.2
+// @version     1.0.3
 // @description 显示角色发行价，显示拍卖情况，高亮自己的圣殿，股息高于低保隐藏签到
 // @author      Cedar, Liaune
-// @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/home|rakuen\/topic\/crt).*
+// @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/home|rakuen/topic/crt).*/
 // @grant       GM_addStyle
 // ==/UserScript==
 
@@ -104,7 +104,7 @@ function showOwnTemple() {
   let temples = document.querySelectorAll('#grailBox .assets_box .assets .item');
   let me = document.querySelector('#new_comment .reply_author a').href;
   for(let i = 0; i < temples.length; i++) {
-    if(temples[i].querySelector('.name a').href == me) {
+    if(temples[i].querySelector('.name a').href === me) {
       temples[i].classList.add('my_temple');
       break;
     }
@@ -137,7 +137,7 @@ function hideBonusButton() {
 }
 
 function observeBonus(mutationList) {
-  if(document.querySelector('#grailBox.rakuen_home button.daily_bonus')) return;
+  if(!document.querySelector('#grailBox.rakuen_home button.daily_bonus')) return;
   observer.disconnect();
   hideBonusButton();
 }
