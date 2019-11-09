@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.0
+// @version     1.0.1
 // @description 显示角色发行价，显示拍卖情况，高亮自己的圣殿，股息高于低保隐藏签到
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/home|rakuen\/topic\/crt).*
@@ -10,12 +10,8 @@
 
 GM_addStyle(`
 .assets .my_temple.item .card {
-  box-shadow: 0px 0px 5px #FFEB3B;
+  box-shadow: 0px 0px 20px #FFEB3B;
   border: 1px solid #FFC107;
-}
-.assets .my_temple.item .name a {
-  font-weight: bold;
-  color: #0084b4;
 }
 .assets .item .card {
   background-size: cover;
@@ -33,7 +29,8 @@ GM_addStyle(`
 .user_auction {
   color: #a7e3ff;
   margin-right: 5px;
-}`);
+}
+`);
 
 const api = 'https://tinygrail.com/api/';
 
