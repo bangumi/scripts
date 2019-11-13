@@ -119,12 +119,13 @@
 
 站内讨论https://bgm.tv/group/topic/352723
 
-## [小圣杯小助手](TinyGrail_Helper_CedarVer.user.js?raw=true)
+## [小圣杯助手CedarVer](TinyGrail_Helper_CedarVer.user.js?raw=true)
 
-修改自君寻组件, 详见站内讨论
+fork自君寻组件, 详见站内讨论
+
 主要区别:
 * 不会把自己的圣殿挪到第一
-* 自己的圣殿的边框稍微变粗
+* 发光特效变更, 区分白天模式与夜间模式
 * 玩家昵称颜色不变
 * 改用主页链接而非用户昵称判断是否为相同玩家
 * 少量bug修复, 增加稳定性
@@ -132,3 +133,18 @@
 对应组件 暂无组件
 
 站内讨论https://bgm.tv/group/topic/353368#post_1520373
+
+## [小圣杯股息计算CedarVer](TinyGrail_Income_Predictor_CedarVer.user.js?raw=true)
+
+fork自chitanda的组件, 详见站内讨论.
+
+主要区别:
+* UI优化, 增加进度条
+* 提供更多信息
+* 尽量与TinyGrail组件保持同步
+* 启用Promise和MutationObserver, 提高速度与稳定性
+* 少量bug修复
+
+对应组件https://bgm.tv/dev/app/1272 (对应组件一直无法过审)
+
+站内讨论https://bgm.tv/group/topic/352374#post_1505240
