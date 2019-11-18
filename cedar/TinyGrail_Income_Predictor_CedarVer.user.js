@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.3.3
+// @version      1.3.4
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -47,43 +47,224 @@ a.badgeName:hover{
 `);
 
 
-const api = 'https://tinygrail.com/api/';
-let numEl = document.createElement('span'); numEl.innerHTML = '-';
-let badgeCharaNumEl = numEl.cloneNode(true);
-let badgeStockNumEl = numEl.cloneNode(true);
-let totalCharaStockNumEl = numEl.cloneNode(true);
-let totalCharaIncomeNumEl = numEl.cloneNode(true);
-let totalTempleStockNumEl = numEl.cloneNode(true);
-let totalTempleIncomeNumEl = numEl.cloneNode(true);
-let totalStockNumEl = numEl.cloneNode(true);
-let totalIncomeEl = numEl.cloneNode(true);
-let totalTaxEl = numEl.cloneNode(true);
-let afterTaxIncomeEl = numEl.cloneNode(true);
-let avgHoldingCostEl = numEl.cloneNode(true);
-let elWrapper = $(document.createElement('span')).css({'margin-right': '5px', 'min-width': '160px', 'display': 'inline-block'});
-let stockEl = $(document.createElement('div'))
-  .css({'padding': '10px 0', 'font-weight': 'bold', 'font-size': '14px', 'border-top': '1px solid #CCC'})
-  .append(
-    $(document.createElement('div')).append(
-      elWrapper.clone().html("新番角色数：").append(badgeCharaNumEl).attr('title', '新番角色在52周内有参与TV或剧场版'),
-      elWrapper.clone().html("新番持股量：").append(badgeStockNumEl),
-      elWrapper.clone().html("角色总持股：").append(totalCharaStockNumEl),
-      elWrapper.clone().html("角色总股息：").append(totalCharaIncomeNumEl)
-    ),
-    $(document.createElement('div')).append(
-      elWrapper.clone().html("计息圣殿股：").append(totalTempleStockNumEl).attr('title', '拥有圣殿的角色献祭的股数的一半'),
-      elWrapper.clone().html("圣殿总股息：").append(totalTempleIncomeNumEl),
-      elWrapper.clone().html("计息持股量：").append(totalStockNumEl).attr('title', '角色持股 + 圣殿持股'),
-      elWrapper.clone().html("每周总股息：").append(totalIncomeEl)
-    ),
-    $(document.createElement('div')).append(
-      elWrapper.clone().html("个人所得税：").append(totalTaxEl),
-      elWrapper.clone().html("税后总股息：").append(afterTaxIncomeEl),
-      // 这个暂时不需要计算
-      // elWrapper.clone().html("持股成本均价：").append(avgHoldingCostEl).attr('title', '持有的所有股票的加权市价')
-    )
-  );
 
+class IncomeAnalyser {
+  constructor() {
+    this._bgmId = location.pathname.split('user/')[1];
+
+    let numEl = document.createElement('span'); numEl.innerHTML = '-';
+    this._badgeCharaNumEl = numEl.cloneNode(true);
+    this._badgeStockNumEl = numEl.cloneNode(true);
+    this._totalCharaStockNumEl = numEl.cloneNode(true);
+    this._totalCharaIncomeNumEl = numEl.cloneNode(true);
+    this._totalTempleStockNumEl = numEl.cloneNode(true);
+    this._totalTempleIncomeNumEl = numEl.cloneNode(true);
+    this._totalStockNumEl = numEl.cloneNode(true);
+    this._totalIncomeEl = numEl.cloneNode(true);
+    this._totalTaxEl = numEl.cloneNode(true);
+    this._afterTaxIncomeEl = numEl.cloneNode(true);
+    this._avgHoldingCostEl = numEl.cloneNode(true);
+
+    let elWrapper = $(document.createElement('span')).css({'margin-right': '5px', 'min-width': '160px', 'display': 'inline-block'});
+    this.stockEl = $(document.createElement('div'))
+      .css({'padding': '10px 0', 'font-weight': 'bold', 'font-size': '14px', 'border-top': '1px solid #CCC'})
+      .append(
+        $(document.createElement('div')).append(
+          elWrapper.clone().html("新番角色数：").append(this._badgeCharaNumEl).attr('title', '新番角色在52周内有参与TV或剧场版'),
+          elWrapper.clone().html("新番持股量：").append(this._badgeStockNumEl),
+          elWrapper.clone().html("角色总持股：").append(this._totalCharaStockNumEl),
+          elWrapper.clone().html("角色总股息：").append(this._totalCharaIncomeNumEl)
+        ),
+        $(document.createElement('div')).append(
+          elWrapper.clone().html("计息圣殿股：").append(this._totalTempleStockNumEl).attr('title', '拥有圣殿的角色献祭的股数的一半'),
+          elWrapper.clone().html("圣殿总股息：").append(this._totalTempleIncomeNumEl),
+          elWrapper.clone().html("计息持股量：").append(this._totalStockNumEl).attr('title', '角色持股 + 圣殿持股'),
+          elWrapper.clone().html("税前总股息：").append(this._totalIncomeEl)
+        ),
+        $(document.createElement('div')).append(
+          elWrapper.clone().html("个人所得税：").append(this._totalTaxEl),
+          elWrapper.clone().html("税后总股息：").append(this._afterTaxIncomeEl),
+          // elWrapper.clone().html("持股成本均价：").append(this._avgHoldingCostEl).attr('title', '持有的所有股票的加权市价')
+        )
+      );
+
+    this._badgeStockNum = 0;
+    this._normalStockNum = 0;
+    this._charaIncome = 0;
+    this._templeStockNum = 0;
+    this._templeIncome = 0;
+
+    this._charaInfo = null;
+    this._templeInfo = null;
+  }
+
+  doStatistics() {
+    this._prepare();
+    Promise.all([this._charaFetch(), this._templeFetch()])
+    .then(() => {
+      console.log('calculating');
+      this._getTemplePrice();
+      this._calcRealIncome();
+      this._totalStockNumEl.innerHTML = this._templeStockNum/2 + this._badgeStockNum + this._normalStockNum;
+    });
+  }
+
+  _prepare() {
+    $('#grail .chara_list .grail_list').remove();
+    $(`#grail .temple_list .grail_list`).remove();
+    $('#pager1').remove();
+    $('#pager2').remove();
+    $('#grail .chara_list .loading').show();
+    $(`#grail .temple_list .loading`).show();
+  }
+
+  _charaFetch() {
+    return new Promise(resolve =>
+      getData(`chara/user/chara/${this._bgmId}/1/2000`, d => {
+        console.log('got charaInfo');
+        if (d.State !== 0) return;
+        this._charaInfo = d.Value.Items;
+        let $page = $(document.createElement('ul')).addClass('grail_list page1')
+          .append(this._charaInfo.map(renderUserCharacter));
+        $('#grail .chara_list').append($page);
+        $('#grail .chara_list .loading').hide();
+        $(document.createElement('span')).addClass('badgeBox').html('0').prependTo($page.find('li'));
+        this._calcStockIncome(this._charaInfo);
+        this._renderBonusStock(this._charaInfo);
+        // this._calcAvgHoldingCost(this._charaInfo);
+        resolve();
+      })
+    );
+  }
+
+  _templeFetch() {
+    return new Promise(resolve =>
+      getData(`chara/user/temple/${this._bgmId}/1/2000`, d => {
+        console.log('got templeInfo');
+        if (d.State !== 0) return;
+        this._templeInfo = d.Value.Items;
+        let $page = $(document.createElement('ul')).addClass('grail_list page1')
+          .append(this._templeInfo.map(renderTemple));
+        $('#grail .temple_list').append($page);
+        $('#grail .temple_list .loading').hide();
+        this._calcTempleIncome(this._templeInfo);
+        resolve();
+      })
+    );
+  }
+
+  _calcStockIncome(charaInfo) {
+    this._badgeStockNum = this._normalStockNum = this._charaIncome = 0;
+    let badgeBox = document.getElementsByClassName('badgeBox');
+    let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
+    let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
+    charaInfo.forEach((chara, i) => {
+      chara.Bonus? this._badgeStockNum += chara.State: this._normalStockNum += chara.State;
+      this._charaIncome += chara.State * chara.Rate;
+    });
+    this._badgeCharaNumEl.innerHTML = charaInfo.filter(chara => chara.Bonus > 0).length;
+    this._badgeStockNumEl.innerHTML = this._badgeStockNum;
+    this._totalCharaStockNumEl.innerHTML = this._badgeStockNum + this._normalStockNum;
+    this._totalCharaIncomeNumEl.innerHTML = this._charaIncome.toFixed(2);
+  }
+
+  _renderBonusStock(charaInfo) {
+    let badgeBox = document.getElementsByClassName('badgeBox');
+    let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
+    let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
+    charaInfo.forEach((chara, i) => {
+      let bonusNum = chara.Bonus;
+      if (bonusNum) {
+        badgeBox[i].innerHTML = bonusNum;
+        badgeBox[i].style.visibility = 'visible';
+        charaName[i].classList.add('badgeName');
+      }
+      if(bonusNum && chara.Rate!==0.75 || !bonusNum && chara.Rate!==0.1) {
+        let charaRate = document.createElement('span');
+        charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
+        charaRateBox[i].appendChild(charaRate);
+      }
+    });
+  }
+
+  _calcAvgHoldingCost(charaInfo) {
+    let totalHoldingCost = 0;
+    charaInfo.forEach(charaInfo => {
+      totalHoldingCost += charaInfo.Current * charaInfo.State;
+    });
+    this._avgHoldingCostEl.innerHTML = ((totalHoldingCost / (this._badgeStockNum + this._normalStockNum)) || 0).toFixed(2);
+  }
+
+
+  _calcTempleIncome(templeInfo) {
+    this._templeIncome = this._templeStockNum = 0;
+    templeInfo.forEach((temple, i) => {
+      this._templeIncome += temple.Rate * temple.Sacrifices/2;
+      this._templeStockNum += temple.Sacrifices;
+    });
+    this._totalTempleIncomeNumEl.innerHTML = this._templeIncome.toFixed(2);
+    this._totalTempleStockNumEl.innerHTML = parseInt(this._templeStockNum/2);
+  }
+
+  _calcRealIncome() {
+    let totalIncome = this._charaIncome + this._templeIncome;
+    let tax = this._collectTax(totalIncome);
+    this._totalIncomeEl.innerHTML = totalIncome.toFixed(2);
+    this._totalTaxEl.innerHTML = tax.toFixed(2);
+    this._afterTaxIncomeEl.innerHTML = (totalIncome - tax).toFixed(2);
+  }
+
+  _collectTax(income) {
+    let tax = 0;
+    const taxRate = [0.75, 0.5, 0.25, 0.1];
+    const threshold = [400000, 200000, 100000, 50000];
+    for(let i = 0; i < taxRate.length; i++) {
+      if(income > threshold[i]) {
+        tax += (income - threshold[i]) * taxRate[i];
+        income = threshold[i];
+      }
+    }
+    return tax;
+  }
+
+  //获取塔的拍卖底价
+  _getTemplePrice() {
+    getData('chara/user/assets/valhalla@tinygrail.com/true', d => {
+      if (d.State !== 0) return;
+      let templeId = Array.from(document.querySelectorAll('.temple_list .grail_list .item .card')).map(x => $(x).data('id'));
+      let titleSpan = document.querySelectorAll('.temple_list .grail_list .item .title>span');
+      let allTempleInfo = d.Value.Characters;
+      titleSpan.forEach((title, i) => {
+        let idx = allTempleInfo.findIndex(x => x.Id === templeId[i]);
+        if(idx < 0) {
+          $(title)
+            .html(`${title.title.split('/')[1].trim()} / Sold out`)
+            .attr('title', '圣殿持股 / 已售罄');
+        } else {
+          $(title).addClass('templePrice')
+            .html(`${title.title.split('/')[1].trim()} / ₵${allTempleInfo[idx].Price.toFixed(2)}`)
+            .attr('title', '圣殿持股 / 拍卖底价')
+            .on('click', function() {openAuctionDialog(allTempleInfo[idx])});
+        }
+      });
+    })
+  }
+}
+
+let observer = new MutationObserver(function() {
+  let analyser = new IncomeAnalyser();
+  let $initTab = $('#initTab');
+  if(!$initTab.length) return;
+  observer.disconnect();
+  let $countBtn = $(document.createElement('a')).attr('href', "javascript:void(0)")
+    .addClass("chiiBtn").html('计算股息').on('click', () => {analyser.doStatistics()});
+  $initTab.after($countBtn);
+  $("#grail .horizontalOptions").append(analyser.stockEl);
+});
+observer.observe(document.getElementById('user_home'), {'childList': true, 'subtree': true});
+
+
+const api = 'https://tinygrail.com/api/';
 function getData(url, callback) {
   if (!url.startsWith('http')) url = api + url;
   $.ajax({
@@ -266,162 +447,3 @@ function openAuctionDialog(chara) {
     });
   });
 }
-
-
-let badgeStockNum, normalStockNum, charaIncome, templeStockNum, templeIncome;
-function prepare() {
-  $('#grail .chara_list .grail_list').remove();
-  $(`#grail .temple_list .grail_list`).remove();
-  $('#pager1').remove();
-  $('#pager2').remove();
-  $('#grail .chara_list .loading').show();
-  $(`#grail .temple_list .loading`).show();
-}
-
-function doStatistics() {
-  prepare();
-  let bgmId = location.pathname.split('user/')[1];
-  let charaFetch = new Promise(resolve =>
-    getData(`chara/user/chara/${bgmId}/1/2000`, function (d) {
-      if (d.State !== 0) return;
-      let charaInfo = d.Value.Items;
-      let $page = $(document.createElement('ul')).addClass('grail_list page1')
-        .append(charaInfo.map(renderUserCharacter));
-      $('#grail .chara_list').append($page);
-      $('#grail .chara_list .loading').hide();
-      $(document.createElement('span')).addClass('badgeBox').html('0').prependTo($page.find('li'));
-      calcStockIncome(charaInfo);
-      renderBonusStock(charaInfo);
-      // calcAvgHoldingCost(charaInfo);
-      resolve();
-    })
-  );
-  let templeFetch = new Promise(resolve =>
-    getData(`chara/user/temple/${bgmId}/1/2000`, function(d) {
-      if (d.State !== 0) return;
-      let templeInfo = d.Value.Items;
-      let $page = $(document.createElement('ul')).addClass('grail_list page1')
-        .append(templeInfo.map(renderTemple));
-      $('#grail .temple_list').append($page);
-      $('#grail .temple_list .loading').hide();
-      calcTempleIncome(templeInfo);
-      resolve();
-    })
-  );
-  Promise.all([charaFetch, templeFetch])
-  .then(() => {
-    getTemplePrice();
-    calcRealIncome();
-    totalStockNumEl.innerHTML = templeStockNum/2 + badgeStockNum + normalStockNum;
-  });
-}
-
-function calcStockIncome(charaInfo) {
-  badgeStockNum = normalStockNum = charaIncome = 0;
-  let badgeBox = document.getElementsByClassName('badgeBox');
-  let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
-  let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
-  charaInfo.forEach((chara, i) => {
-    chara.Bonus? badgeStockNum += chara.State: normalStockNum += chara.State;
-    charaIncome += chara.State * chara.Rate;
-  });
-  badgeCharaNumEl.innerHTML = charaInfo.filter(chara => chara.Bonus > 0).length;
-  badgeStockNumEl.innerHTML = badgeStockNum;
-  totalCharaStockNumEl.innerHTML = badgeStockNum + normalStockNum;
-  totalCharaIncomeNumEl.innerHTML = charaIncome.toFixed(2);
-}
-
-function renderBonusStock(charaInfo) {
-  let badgeBox = document.getElementsByClassName('badgeBox');
-  let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
-  let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
-  charaInfo.forEach((chara, i) => {
-    let bonusNum = chara.Bonus;
-    if (bonusNum) {
-      badgeBox[i].innerHTML = bonusNum;
-      badgeBox[i].style.visibility = 'visible';
-      charaName[i].classList.add('badgeName');
-    }
-    if(bonusNum && chara.Rate!==0.75 || !bonusNum && chara.Rate!==0.1) {
-      let charaRate = document.createElement('span');
-      charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
-      charaRateBox[i].appendChild(charaRate);
-    }
-  });
-}
-
-function calcAvgHoldingCost(charaInfo) {
-  let totalHoldingCost = 0;
-  charaInfo.forEach(charaInfo => {
-    totalHoldingCost += charaInfo.Current * charaInfo.State;
-  });
-  avgHoldingCostEl.innerHTML = ((totalHoldingCost / (badgeStockNum + normalStockNum)) || 0).toFixed(2);
-}
-
-
-function calcTempleIncome(templeInfo) {
-  templeIncome = templeStockNum = 0;
-  templeInfo.forEach((temple, i) => {
-    templeIncome += temple.Rate * temple.Sacrifices/2;
-    templeStockNum += temple.Sacrifices;
-  });
-  totalTempleIncomeNumEl.innerHTML = templeIncome.toFixed(2);
-  totalTempleStockNumEl.innerHTML = parseInt(templeStockNum/2);
-}
-
-function calcRealIncome() {
-  let totalIncome = charaIncome + templeIncome;
-  let tax = collectTax(totalIncome);
-  totalIncomeEl.innerHTML = totalIncome.toFixed(2);
-  totalTaxEl.innerHTML = tax.toFixed(2);
-  afterTaxIncomeEl.innerHTML = (totalIncome - tax).toFixed(2);
-}
-
-function collectTax(income) {
-  let tax = 0;
-  const taxRate = [0.75, 0.5, 0.25, 0.1];
-  const threshold = [400000, 200000, 100000, 50000];
-  for(let i = 0; i < taxRate.length; i++) {
-    if(income > threshold[i]) {
-      tax += (income - threshold[i]) * taxRate[i];
-      income = threshold[i];
-    }
-  }
-  return tax;
-}
-
-//获取塔的拍卖底价
-function getTemplePrice() {
-  getData('chara/user/assets/valhalla@tinygrail.com/true', function(d) {
-    if (d.State !== 0) return;
-    let templeId = Array.from(document.querySelectorAll('.temple_list .grail_list .item .card')).map(x => $(x).data('id'));
-    let titleSpan = document.querySelectorAll('.temple_list .grail_list .item .title>span');
-    let allTempleInfo = d.Value.Characters;
-    titleSpan.forEach((title, i) => {
-      let idx = allTempleInfo.findIndex(x => x.Id === templeId[i]);
-      if(idx < 0) {
-        $(title)
-          .html(`${title.title.split('/')[1].trim()} / Sold out`)
-          .attr('title', '圣殿持股 / 已售罄');
-      } else {
-        $(title).addClass('templePrice')
-          .html(`${title.title.split('/')[1].trim()} / ₵${allTempleInfo[idx].Price.toFixed(2)}`)
-          .attr('title', '圣殿持股 / 拍卖底价')
-          .on('click', function() {openAuctionDialog(allTempleInfo[idx])});
-      }
-    });
-  })
-}
-
-
-let MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
-let observer = new MutationObserver(function() {
-  let $initTab = $('#initTab');
-  if(!$initTab.length) return;
-  observer.disconnect();
-  let $countBtn = $(document.createElement('a')).attr('href', "javascript:void(0)")
-    .addClass("chiiBtn").html('计算股息').on('click', doStatistics);
-  $initTab.after($countBtn);
-  $("#grail .horizontalOptions").append(stockEl);
-});
-observer.observe(document.getElementById('user_home'), {'childList': true, 'subtree': true});
