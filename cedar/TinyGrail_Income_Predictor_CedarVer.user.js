@@ -594,6 +594,31 @@ function fixRightTempleImageReso() {
   $('#TB_window.dialog.temple .card').css(styles);
 }
 
+function resetTempleCover(temple, callback) {
+  $('#TB_window .action').hide();
+  $('#TB_window .loading').show();
+  postData(`chara/temple/cover/reset/${temple.CharacterId}/${temple.UserId}`, null, (d) => {
+    if (d.State == 0) {
+      var cover = d.Value.Cover;
+      var large = getLargeCover(cover);
+      $(`.assets .card[data-id=${temple.UserId}]`).css('background-image', `url(${cover})`);
+      $('#TB_window .card').css('background-image', `url(${large})`);
+      $('#TB_window .action').show();
+      $('#TB_window .loading').hide();
+      alert('重置封面完成。');
+    }
+  });
+}
+
 function getUserAssets(callback) {
   getData('chara/user/assets', callback);
+}
+
+function dataURLtoBlob(dataurl) {
+  var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
 }
