@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.3.4
+// @version      1.3.5
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -45,7 +45,6 @@ a.badgeName:hover{
   cursor: pointer;
 }
 `);
-
 
 
 class IncomeAnalyser {
@@ -104,6 +103,7 @@ class IncomeAnalyser {
     .then(() => {
       console.log('calculating');
       this._getTemplePrice();
+      this._addTempleCover();
       this._calcRealIncome();
       this._totalStockNumEl.innerHTML = this._templeStockNum/2 + this._badgeStockNum + this._normalStockNum;
     });
@@ -153,26 +153,26 @@ class IncomeAnalyser {
     );
   }
 
-  _calcStockIncome(charaInfo) {
+  _calcStockIncome() {
     this._badgeStockNum = this._normalStockNum = this._charaIncome = 0;
     let badgeBox = document.getElementsByClassName('badgeBox');
     let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
     let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
-    charaInfo.forEach((chara, i) => {
+    this._charaInfo.forEach((chara, i) => {
       chara.Bonus? this._badgeStockNum += chara.State: this._normalStockNum += chara.State;
       this._charaIncome += chara.State * chara.Rate;
     });
-    this._badgeCharaNumEl.innerHTML = charaInfo.filter(chara => chara.Bonus > 0).length;
+    this._badgeCharaNumEl.innerHTML = this._charaInfo.filter(chara => chara.Bonus > 0).length;
     this._badgeStockNumEl.innerHTML = this._badgeStockNum;
     this._totalCharaStockNumEl.innerHTML = this._badgeStockNum + this._normalStockNum;
     this._totalCharaIncomeNumEl.innerHTML = this._charaIncome.toFixed(2);
   }
 
-  _renderBonusStock(charaInfo) {
+  _renderBonusStock() {
     let badgeBox = document.getElementsByClassName('badgeBox');
     let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
     let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
-    charaInfo.forEach((chara, i) => {
+    this._charaInfo.forEach((chara, i) => {
       let bonusNum = chara.Bonus;
       if (bonusNum) {
         badgeBox[i].innerHTML = bonusNum;
@@ -187,23 +187,31 @@ class IncomeAnalyser {
     });
   }
 
-  _calcAvgHoldingCost(charaInfo) {
+  _calcAvgHoldingCost() {
     let totalHoldingCost = 0;
-    charaInfo.forEach(charaInfo => {
-      totalHoldingCost += charaInfo.Current * charaInfo.State;
+    this._charaInfo.forEach(chara => {
+      totalHoldingCost += chara.Current * chara.State;
     });
     this._avgHoldingCostEl.innerHTML = ((totalHoldingCost / (this._badgeStockNum + this._normalStockNum)) || 0).toFixed(2);
   }
 
 
-  _calcTempleIncome(templeInfo) {
+  _calcTempleIncome() {
     this._templeIncome = this._templeStockNum = 0;
-    templeInfo.forEach((temple, i) => {
+    this._templeInfo.forEach((temple, i) => {
       this._templeIncome += temple.Rate * temple.Sacrifices/2;
       this._templeStockNum += temple.Sacrifices;
     });
     this._totalTempleIncomeNumEl.innerHTML = this._templeIncome.toFixed(2);
     this._totalTempleStockNumEl.innerHTML = parseInt(this._templeStockNum/2);
+  }
+
+  _addTempleCover() {
+    $('#grail .temple_list').on('click', '.item .card', e => {
+      let cid = $(e.srcElement).data('id');
+      let temple = this._templeInfo.find(t => t.CharacterId == cid);
+      showTemple(temple, null);
+    });
   }
 
   _calcRealIncome() {
@@ -285,6 +293,12 @@ function postData(url, data, callback) {
     data: d,
     xhrFields: {withCredentials: true},
     success: callback
+  });
+}
+
+function getOssSignature(path, hash, type, callback) {
+  postData(`chara/oss/sign/${path}/${hash}/${type}`, null, function (d) {
+    if (callback) callback(d);
   });
 }
 
@@ -446,4 +460,140 @@ function openAuctionDialog(chara) {
       }
     });
   });
+}
+
+function showTemple(temple, chara) {
+  var cover = getLargeCover(temple.Cover);
+  var action = `<div class="action">
+      <button style="display:none" id="changeCoverButton" class="text_button">[修改]</button>
+      <button style="display:none" id="resetCoverButton" class="text_button">[重置]</button>
+      <input style="display:none" id="picture" type="file" accept="image/*">
+    </div>`;
+  // if (temple.UserId == userId) {
+  //   $('#changeCoverButton').show();
+  //   $('#resetCoverButton').show();
+  // } else {
+  //   getGameMaster((r) => {
+  //     $('#resetCoverButton').show();
+  //   });
+  // }
+
+  getUserAssets((d) => {
+    if (d.State == 0) {
+      if (d.Value.Id == temple.UserId) {
+        $('#changeCoverButton').show();
+        $('#resetCoverButton').show();
+      }
+      if (d.Value.Type == 999 || d.Value.Id == 702) {
+        $('#resetCoverButton').show();
+      }
+    }
+  });
+
+  var position = '';
+  if (cover.indexOf('//lain.') >= 0)
+    position = 'background-position:top;';
+
+  var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
+  <div id="TB_window" class="dialog temple" style="display:block;">
+    <div class="card" style="background-image:url(${cover});${position}">
+      ${action}
+      <div class="loading" style="display:none;padding-top:600px;"></div>
+      <a id="TB_closeWindowButton" title="Close">X关闭</a>
+    </div>
+  </div>`;
+  $('body').append(dialog);
+  fixRightTempleImageReso();
+
+  $('#TB_closeWindowButton').on('click', closeDialog);
+  //$('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  //$('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  $('#changeCoverButton').on('click', (e) => {
+    $("#picture").click();
+    e.stopPropagation();
+  });
+  $('#resetCoverButton').on('click', (e) => {
+    resetTempleCover(temple);
+    e.stopPropagation();
+  });
+  $("#picture").on("change", function () {
+    if (this.files.length > 0) {
+      var file = this.files[0];
+      var data = window.URL.createObjectURL(file);
+
+      $('#TB_window .card').css('background-image', `url(${data})`);
+      $('#TB_window .action').hide();
+      $('#TB_window .loading').show();
+
+      if (!/image+/.test(file.type)) {
+        alert("请选择图片文件。");
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = (ev) => {
+        var result = ev.target.result;
+        $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
+          var hash = md5(result);
+          var blob = dataURLtoBlob(result);
+          var url = `https://tinygrail.oss-cn-hangzhou.aliyuncs.com/cover/${hash}.jpg`;
+
+          getOssSignature('cover', hash, encodeURIComponent(file.type), function (d) {
+            if (d.State === 0) {
+              var xhr = new XMLHttpRequest();
+              xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                  if (xhr.status == 200) {
+                    postData(`chara/temple/cover/${temple.CharacterId}`, url, function (d) {
+                      if (d.State == 0) {
+                        alert("更换封面成功。");
+                        if (chara)
+                          loadTradeBox(chara);
+                      } else {
+                        alert(d.Message);
+                      }
+                    });
+                  } else {
+                    alert('图片上传失败。');
+                  }
+
+                  $('#TB_window .action').show();
+                  $('#TB_window .loading').hide();
+                }
+              };
+
+              xhr.open('PUT', url);
+              xhr.setRequestHeader('Authorization', `OSS ${d.Value.Key}:${d.Value.Sign}`);
+              xhr.setRequestHeader('x-oss-date', d.Value.Date);
+              xhr.send(blob);
+            }
+          });
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function fixRightTempleImageReso() {
+  let pageWidth = window.innerWidth;
+  let pageHeight = window.innerHeight;
+  let imgHeight = 640;
+  let imgWidth = 480;
+
+  if (window.innerWidth <= 640) {
+    imgHeight = pageHeight * 0.9;
+    imgWidth = imgHeight * 2 / 3;
+  }
+
+  let styles = {
+    'height': imgHeight + 'px',
+    'width': imgWidth + 'px',
+  };
+
+  $('#TB_window.dialog.temple .card').css(styles);
+}
+
+function getUserAssets(callback) {
+  getData('chara/user/assets', callback);
 }
