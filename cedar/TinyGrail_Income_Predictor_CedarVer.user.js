@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name         TinyGrail Income Predictor CedarVer
-// @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.3.5
+// @name         TinyGrail Income Analysis
+// @namespace    Cedar.chitanda.TinyGrailIncomeAnalysis
+// @version      1.4
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
-// @grant       GM_addStyle
+// @grant        GM_addStyle
 // ==/UserScript==
 
 'use strict';
@@ -37,14 +37,48 @@ a.badgeName{
 a.badgeName:hover{
   color: blueviolet;
 }
+
+#grail .horizontalOptions ul li {
+  /* padding: 3px 0; */
+  cursor: pointer;
+}
 #grail .item .templePrice {
   cursor: pointer;
 }
-#grail .horizontalOptions ul li {
-  padding: 3px 0;
-  cursor: pointer;
+#grail .grailInfoBox {
+  padding: 10px 0;
+  border-top: 1px solid #CCC;
+}
+#grail .grailInfoBox div>span {
+  font-weight: bold;
+  font-size: 14px;
+  margin-right: 5px;
+  min-width: 160px;
+  display: inline-block;
+}
+#grailChart {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 90%;
+  height: 90%;
+  min-width: 50px;
+  margin: auto;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.9);
+  border-radius: 5px;
+  z-index: 102;
+}
+#grailChart canvas {
+  margin: 20px auto;
 }
 `);
+
+
+let ChartClass;
+$.getScript('https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.js', function () {ChartClass = Chart;});
 
 
 class IncomeAnalyser {
@@ -64,9 +98,9 @@ class IncomeAnalyser {
     this._afterTaxIncomeEl = numEl.cloneNode(true);
     this._avgHoldingCostEl = numEl.cloneNode(true);
 
-    let elWrapper = $(document.createElement('span')).css({'margin-right': '5px', 'min-width': '160px', 'display': 'inline-block'});
-    this.stockEl = $(document.createElement('div'))
-      .css({'padding': '10px 0', 'font-weight': 'bold', 'font-size': '14px', 'border-top': '1px solid #CCC'})
+    let elWrapper = $(document.createElement('span'));
+    this.$stockEl = $(document.createElement('div'))
+      .addClass('grailInfoBox')
       .append(
         $(document.createElement('div')).append(
           elWrapper.clone().html("新番角色数：").append(this._badgeCharaNumEl).attr('title', '新番角色在52周内有参与TV或剧场版'),
@@ -87,6 +121,9 @@ class IncomeAnalyser {
         )
       );
 
+    this._canvasEl = document.createElement('canvas'); this._canvasEl.width = '400'; this._canvasEl.height = '400';
+    this.$chartEl = $(document.createElement('div')).attr('id', 'grailChart').hide();
+
     this._badgeStockNum = 0;
     this._normalStockNum = 0;
     this._charaIncome = 0;
@@ -97,15 +134,16 @@ class IncomeAnalyser {
     this._templeInfo = null;
   }
 
+  // 统计数据
   doStatistics() {
     this._prepare();
     Promise.all([this._charaFetch(), this._templeFetch()])
     .then(() => {
-      console.log('calculating');
-      this._getTemplePrice();
-      this._addTempleCover();
       this._calcRealIncome();
       this._totalStockNumEl.innerHTML = this._templeStockNum/2 + this._badgeStockNum + this._normalStockNum;
+    })
+    .then(() => {
+      this._updateChart();
     });
   }
 
@@ -116,6 +154,8 @@ class IncomeAnalyser {
     $('#pager2').remove();
     $('#grail .chara_list .loading').show();
     $(`#grail .temple_list .loading`).show();
+
+    $('#grail .grailInfoBox span>span').html('-'); //清除之前的数据
   }
 
   _charaFetch() {
@@ -123,15 +163,15 @@ class IncomeAnalyser {
       getData(`chara/user/chara/${this._bgmId}/1/2000`, d => {
         console.log('got charaInfo');
         if (d.State !== 0) return;
-        this._charaInfo = d.Value.Items;
+        this._charaInfo = d.Value.Items.filter(x => x.State > 0); // 去掉只有圣殿股的角色
         let $page = $(document.createElement('ul')).addClass('grail_list page1')
           .append(this._charaInfo.map(renderUserCharacter));
         $('#grail .chara_list').append($page);
         $('#grail .chara_list .loading').hide();
         $(document.createElement('span')).addClass('badgeBox').html('0').prependTo($page.find('li'));
-        this._calcStockIncome(this._charaInfo);
-        this._renderBonusStock(this._charaInfo);
-        // this._calcAvgHoldingCost(this._charaInfo);
+        this._calcStockIncome();
+        this._renderBonusStock();
+        // this._calcAvgHoldingCost();
         resolve();
       })
     );
@@ -148,6 +188,7 @@ class IncomeAnalyser {
         $('#grail .temple_list').append($page);
         $('#grail .temple_list .loading').hide();
         this._calcTempleIncome(this._templeInfo);
+        this._addTempleCover();
         resolve();
       })
     );
@@ -235,8 +276,8 @@ class IncomeAnalyser {
     return tax;
   }
 
-  //获取塔的拍卖底价
-  _getTemplePrice() {
+  //获取拍卖底价
+  getTemplePrice() {
     getData('chara/user/assets/valhalla@tinygrail.com/true', d => {
       if (d.State !== 0) return;
       let templeId = Array.from(document.querySelectorAll('.temple_list .grail_list .item .card')).map(x => $(x).data('id'));
@@ -257,17 +298,136 @@ class IncomeAnalyser {
       });
     })
   }
+
+  // 绘图
+  _updateChart() {
+    this.$chartEl.empty();
+
+    const threshold = 0;
+    let labels, data, config;
+    this._templeStockNum;
+    this._templeIncome;
+
+    // chara stock num chart
+    let stockNumChartEl = this._canvasEl.cloneNode(true);
+    this.$chartEl.append(stockNumChartEl);
+    [labels, data] = this._arrangeChartData(
+      this._charaInfo, this._badgeStockNum + this._normalStockNum,
+      x => x.State, x => x.Name, threshold
+    )
+    config = this._chartConfig(labels, data, 'pie', '角色持股分布', '角色持股量');
+    new ChartClass(stockNumChartEl, config);
+
+    // chara income chart
+    [labels, data] = this._arrangeChartData(
+      this._charaInfo, this._charaIncome,
+      x => x.State*x.Rate, x => x.Name, threshold
+    )
+    config = this._chartConfig(labels, data.map(Math.round), 'pie', '角色股息分布', '角色股息');
+    let charaIncomeChartEl = this._canvasEl.cloneNode(true);
+    this.$chartEl.append(charaIncomeChartEl);
+    new ChartClass(charaIncomeChartEl, config);
+
+    // temple stock num chart
+    [labels, data] = this._arrangeChartData(
+      this._templeInfo, this._templeStockNum,
+      x => x.Sacrifices/2, x => x.Name, threshold
+    )
+    config = this._chartConfig(labels, data, 'pie', '圣殿计息持股分布', '圣殿计息持股量');
+    let templeStockNumChartEl = this._canvasEl.cloneNode(true);
+    this.$chartEl.append(templeStockNumChartEl);
+    new ChartClass(templeStockNumChartEl, config);
+
+    // temple income chart
+    [labels, data] = this._arrangeChartData(
+      this._templeInfo, this._templeIncome,
+      x => x.Rate*x.Sacrifices/2, x => x.Name, threshold
+    )
+    config = this._chartConfig(labels, data.map(Math.round), 'pie', '圣殿股息分布', '圣殿股息');
+    let templeIncomeChartEl = this._canvasEl.cloneNode(true);
+    this.$chartEl.append(templeIncomeChartEl);
+    new ChartClass(templeIncomeChartEl, config);
+  }
+
+  _arrangeChartData(rawData, total, parseData, parseLabel, threshold) {
+    let others = 0;
+    let labels = [], data = [];
+    rawData.forEach(x => {
+      let d = parseData(x);
+      let n = parseLabel(x);
+      if(d/total > threshold) {
+        data.push(d);
+        labels.push(n);
+      } else {
+        others += d;
+      }
+    });
+    labels.push('其他');
+    data.push(others);
+    return [labels, data];
+  }
+
+  _chartConfig(labels, chartData, chartType, titleText, labelName) {
+    // 色相偏移180度
+    const stepColor = (slice, s, l, a) => [...Array(slice).keys()].map(x => `hsla(${parseInt((360/slice*x+180)%360)},${s},${l},${a})`);
+
+    let options = {
+      responsive: false,
+      maintainAspectRatio: false,
+      title: {
+        display: true,
+        text: titleText
+      },
+      legend: {
+        display: false,
+        position: 'right'
+      }
+    };
+    let data = {
+      labels: labels,
+      datasets: [{
+        label: labelName,
+        data: chartData,
+        backgroundColor: stepColor(chartData.length, '100%', '50%', '50%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 0.5)', 'rgba(0, 0, 255, 0.5)'),
+        borderColor: stepColor(chartData.length, '100%', '50%', '100%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 1)', 'rgba(0, 0, 255, 1)'),
+        borderWidth: 1
+      }]
+    };
+    let config = {
+      type: chartType,
+      data: data,
+      options: options
+    };
+    return config;
+  }
+
+  _getLinearGradientCanvas(beginColor, endColor) {
+    let canvas = document.createElement('canvas');
+    canvas.width = '400'; canvas.height = '400';
+    let ctx = canvas.getContext('2d');
+    let gradient = ctx.createLinearGradient(20,0, 380,0);
+    gradient.addColorStop(0.1, beginColor);
+    gradient.addColorStop(0.9, endColor);
+    return gradient;
+  }
 }
 
 let observer = new MutationObserver(function() {
   let analyser = new IncomeAnalyser();
-  let $initTab = $('#initTab');
-  if(!$initTab.length) return;
+  let $grailOptions = $('#grail .horizontalOptions');
+  if(!$grailOptions.length) return;
+
   observer.disconnect();
-  let $countBtn = $(document.createElement('a')).attr('href', "javascript:void(0)")
-    .addClass("chiiBtn").html('计算股息').on('click', () => {analyser.doStatistics()});
-  $initTab.after($countBtn);
-  $("#grail .horizontalOptions").append(analyser.stockEl);
+  let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
+  let $countBtn = $btn.clone().html('更新数据').on('click', () => {analyser.doStatistics()});
+  let $chartBtn = $btn.clone().html('显示图表').on('click', () => {analyser.$chartEl.show()});
+  let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()});
+
+  let $grailInfoBtns = $(document.createElement('div')).addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn);
+  $grailOptions.append($grailInfoBtns, analyser.$stockEl);
+
+  analyser.$chartEl.on('click', e => {if(e.target === e.currentTarget) analyser.$chartEl.hide();});
+  $(document.body).append(analyser.$chartEl);
 });
 observer.observe(document.getElementById('user_home'), {'childList': true, 'subtree': true});
 
