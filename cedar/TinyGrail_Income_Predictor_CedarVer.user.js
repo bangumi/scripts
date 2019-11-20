@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         TinyGrail Income Analysis
-// @namespace    Cedar.chitanda.TinyGrailIncomeAnalysis
-// @version      1.4
+// @name         TinyGrail Income Predictor CedarVer
+// @namespace    Cedar.chitanda.TinyGrailIncomePredictor
+// @version      1.5
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -12,6 +12,7 @@
 
 
 GM_addStyle(`
+/*新番股左上角的圆圈以及名字颜色*/
 .grail_list li{
   position:relative;
 }
@@ -37,17 +38,24 @@ a.badgeName{
 a.badgeName:hover{
   color: blueviolet;
 }
-
-#grail .horizontalOptions ul li {
-  /* padding: 3px 0; */
-  cursor: pointer;
+html[data-theme='dark'] a.badgeName {
+  font-weight:bold;
+  color: lightblue;
 }
-#grail .item .templePrice {
+html[data-theme='dark'] a.badgeName:hover {
+  color: lightgreen;
+}
+
+/*相关按钮与数据*/
+#grail .horizontalOptions ul li, #grail .item .templePrice {
   cursor: pointer;
 }
 #grail .grailInfoBox {
   padding: 10px 0;
   border-top: 1px solid #CCC;
+}
+#grail .grailInfoBox .chiiBtn {
+  margin: 0 3px;
 }
 #grail .grailInfoBox div>span {
   font-weight: bold;
@@ -56,7 +64,10 @@ a.badgeName:hover{
   min-width: 160px;
   display: inline-block;
 }
-#grailChart {
+
+/*图表相关*/
+#grailChartWrapper {
+  overflow: auto;
   position: fixed;
   left: 0;
   right: 0;
@@ -64,15 +75,23 @@ a.badgeName:hover{
   bottom: 0;
   width: 90%;
   height: 90%;
-  min-width: 50px;
   margin: auto;
-  overflow: auto;
   background-color: rgba(0,0,0,0.9);
   border-radius: 5px;
   z-index: 102;
 }
-#grailChart canvas {
-  margin: 20px auto;
+#grailChart {
+  width: 70%;
+  min-width: 400px;
+  margin: auto;
+  overflow: auto;
+}
+#closeGrailChartBtn {
+  background: url(/img/ico/closebox.png);
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  position: fixed;
 }
 `);
 
@@ -109,7 +128,7 @@ class IncomeAnalyser {
           elWrapper.clone().html("角色总股息：").append(this._totalCharaIncomeNumEl)
         ),
         $(document.createElement('div')).append(
-          elWrapper.clone().html("计息圣殿股：").append(this._totalTempleStockNumEl).attr('title', '拥有圣殿的角色献祭的股数的一半'),
+          elWrapper.clone().html("计息圣殿股：").append(this._totalTempleStockNumEl).attr('title', '拥有圣殿的角色所重组的股数的一半'),
           elWrapper.clone().html("圣殿总股息：").append(this._totalTempleIncomeNumEl),
           elWrapper.clone().html("计息持股量：").append(this._totalStockNumEl).attr('title', '角色持股 + 圣殿持股'),
           elWrapper.clone().html("税前总股息：").append(this._totalIncomeEl)
@@ -122,7 +141,7 @@ class IncomeAnalyser {
       );
 
     this._canvasEl = document.createElement('canvas'); this._canvasEl.width = '400'; this._canvasEl.height = '400';
-    this.$chartEl = $(document.createElement('div')).attr('id', 'grailChart').hide();
+    this.$chartEl = $(document.createElement('div')).attr('id', 'grailChart');
 
     this._badgeStockNum = 0;
     this._normalStockNum = 0;
@@ -163,7 +182,7 @@ class IncomeAnalyser {
       getData(`chara/user/chara/${this._bgmId}/1/2000`, d => {
         console.log('got charaInfo');
         if (d.State !== 0) return;
-        this._charaInfo = d.Value.Items.filter(x => x.State > 0); // 去掉只有圣殿股的角色
+        this._charaInfo = d.Value.Items;
         let $page = $(document.createElement('ul')).addClass('grail_list page1')
           .append(this._charaInfo.map(renderUserCharacter));
         $('#grail .chara_list').append($page);
@@ -303,52 +322,49 @@ class IncomeAnalyser {
   _updateChart() {
     this.$chartEl.empty();
 
-    const threshold = 0;
     let labels, data, config;
     this._templeStockNum;
     this._templeIncome;
 
+    // sort 是 inline 的, 所以这个函数有点小问题
+    const findNthLargest = (array, n=10) => array.sort((lft, ryt) => ryt - lft)[n <= array.length? n-1: array.length-1];
+
+    let charaInfo = this._charaInfo.filter(x => x.State > 0); // 去掉只有圣殿股的角色
+
     // chara stock num chart
     let stockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(stockNumChartEl);
-    [labels, data] = this._arrangeChartData(
-      this._charaInfo, this._badgeStockNum + this._normalStockNum,
-      x => x.State, x => x.Name, threshold
-    )
-    config = this._chartConfig(labels, data, 'pie', '角色持股分布', '角色持股量');
+    [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State)
+    config = this._chartConfig(labels, data, 'pie', '角色持股分布', '角色持股量', findNthLargest(data));
     new ChartClass(stockNumChartEl, config);
 
     // chara income chart
-    [labels, data] = this._arrangeChartData(
-      this._charaInfo, this._charaIncome,
-      x => x.State*x.Rate, x => x.Name, threshold
-    )
-    config = this._chartConfig(labels, data.map(Math.round), 'pie', '角色股息分布', '角色股息');
+    [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State*x.Rate)
+    config = this._chartConfig(labels, data.map(Math.round), 'pie', '角色股息分布', '角色股息', findNthLargest(data));
     let charaIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(charaIncomeChartEl);
     new ChartClass(charaIncomeChartEl, config);
 
     // temple stock num chart
-    [labels, data] = this._arrangeChartData(
-      this._templeInfo, this._templeStockNum,
-      x => x.Sacrifices/2, x => x.Name, threshold
-    )
-    config = this._chartConfig(labels, data, 'pie', '圣殿计息持股分布', '圣殿计息持股量');
+    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Sacrifices/2)
+    config = this._chartConfig(labels, data, 'pie', '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data));
     let templeStockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeStockNumChartEl);
     new ChartClass(templeStockNumChartEl, config);
 
     // temple income chart
-    [labels, data] = this._arrangeChartData(
-      this._templeInfo, this._templeIncome,
-      x => x.Rate*x.Sacrifices/2, x => x.Name, threshold
-    )
-    config = this._chartConfig(labels, data.map(Math.round), 'pie', '圣殿股息分布', '圣殿股息');
+    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Rate*x.Sacrifices/2)
+    config = this._chartConfig(labels, data.map(Math.round), 'pie', '圣殿股息分布', '圣殿股息', findNthLargest(data));
     let templeIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeIncomeChartEl);
     new ChartClass(templeIncomeChartEl, config);
   }
 
+  _arrangeChartData(rawData, parseLabel, parseData) {
+    return [rawData.map(parseLabel), rawData.map(parseData)];
+  }
+
+/* 不需要在这里筛选, 用 legendFilterFunc 即可
   _arrangeChartData(rawData, total, parseData, parseLabel, threshold) {
     let others = 0;
     let labels = [], data = [];
@@ -366,21 +382,29 @@ class IncomeAnalyser {
     data.push(others);
     return [labels, data];
   }
+*/
 
-  _chartConfig(labels, chartData, chartType, titleText, labelName) {
-    // 色相偏移180度
-    const stepColor = (slice, s, l, a) => [...Array(slice).keys()].map(x => `hsla(${parseInt((360/slice*x+180)%360)},${s},${l},${a})`);
+  _chartConfig(labels, chartData, chartType, titleText, labelName, threshold) {
+    const total = chartData.reduce((sum, x) => sum + x);
+    // using currying to access the previous value, then calculate hue value (shift 180deg)
+    const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(0)).map(x => `hsla(${parseInt((360/total*x+180)%360)},${s},${l},${a})`);
+
+    //data.datasets[0].data[legendItem.index] >= threshold 时, 其 legend 才会在右侧显示出来
+    const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold;
 
     let options = {
-      responsive: false,
-      maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: true,
       title: {
         display: true,
         text: titleText
       },
       legend: {
-        display: false,
-        position: 'right'
+        display: true,
+        position: 'right',
+        labels: {
+           filter: legendFilterFunc
+        }
       }
     };
     let data = {
@@ -388,8 +412,8 @@ class IncomeAnalyser {
       datasets: [{
         label: labelName,
         data: chartData,
-        backgroundColor: stepColor(chartData.length, '100%', '50%', '50%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 0.5)', 'rgba(0, 0, 255, 0.5)'),
-        borderColor: stepColor(chartData.length, '100%', '50%', '100%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 1)', 'rgba(0, 0, 255, 1)'),
+        backgroundColor: stepColor(chartData, '100%', '50%', '50%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 0.5)', 'rgba(0, 0, 255, 0.5)'),
+        borderColor: stepColor(chartData, '100%', '50%', '100%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 1)', 'rgba(0, 0, 255, 1)'),
         borderWidth: 1
       }]
     };
@@ -416,18 +440,43 @@ let observer = new MutationObserver(function() {
   let analyser = new IncomeAnalyser();
   let $grailOptions = $('#grail .horizontalOptions');
   if(!$grailOptions.length) return;
-
   observer.disconnect();
+
+  // buttons
   let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
-  let $countBtn = $btn.clone().html('更新数据').on('click', () => {analyser.doStatistics()});
-  let $chartBtn = $btn.clone().html('显示图表').on('click', () => {analyser.$chartEl.show()});
+  let $countBtn = $btn.clone().html('更新数据').on('click', () => {analyser.doStatistics(); $ghostBtn.html('隐藏幽灵');});
+  let $chartBtn = $btn.clone().html('显示图表').on('click', () => {$grailChartWrapper.show()});
   let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()});
+  let $ghostBtn = $btn.clone().html('隐藏幽灵').attr('title', '幽灵指无持股但重组过的角色股').on('click', () => {
+    let $ghostChara = $(Array.from(document.querySelectorAll('#grail .chara_list .grail_list li'))
+      .filter(x => x.querySelector('small.feed').innerText.startsWith('0 /')));
+    if($ghostBtn.html() === '显示幽灵') {
+      $ghostChara.show();
+      $ghostBtn.html('隐藏幽灵');
+    } else {
+      $ghostChara.hide();
+      $ghostBtn.html('显示幽灵');
+    }
+  });
+  let $grailInfoBtns = $(document.createElement('div'))
+    .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn);
 
-  let $grailInfoBtns = $(document.createElement('div')).addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn);
+  // chart elements
+  const closeChartFunc = e => {if(e.target === e.currentTarget) $grailChartWrapper.hide()};
+  let $closeGrailChartBtn = $(document.createElement('div'))
+    .attr('id', 'closeGrailChartBtn').on('click', closeChartFunc);
+  let $grailChartWrapper = $(document.createElement('div'))
+    .attr('id', 'grailChartWrapper').hide()
+    .on('click', closeChartFunc)
+    .append($closeGrailChartBtn, analyser.$chartEl);
+/*     .append(
+      $closeGrailChartBtn,
+      $(document.createElement('div'))
+        .on('click', closeChartFunc).append(analyser.$chartEl)
+    ); */
+
   $grailOptions.append($grailInfoBtns, analyser.$stockEl);
-
-  analyser.$chartEl.on('click', e => {if(e.target === e.currentTarget) analyser.$chartEl.hide();});
-  $(document.body).append(analyser.$chartEl);
+  $(document.body).append($grailChartWrapper);
 });
 observer.observe(document.getElementById('user_home'), {'childList': true, 'subtree': true});
 
