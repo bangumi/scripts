@@ -417,7 +417,10 @@ class IncomeAnalyser {
         data: chartData,
         backgroundColor: stepColor(chartData, '80%', '50%', '50%'),
         borderColor: stepColor(chartData, '80%', '50%', '50%'),
-        borderWidth: 1
+        borderWidth: 1,
+        hoverBackgroundColor: stepColor(chartData, '80%', '50%', '70%'),
+        hoverBorderColor: stepColor(chartData, '80%', '50%', '70%'),
+        hoverBorderWidth: 1
       }]
     };
     let config = {
@@ -472,11 +475,6 @@ let observer = new MutationObserver(function() {
     .attr('id', 'grailChartWrapper').hide()
     .on('click', closeChartFunc)
     .append($closeGrailChartBtn, analyser.$chartEl);
-/*     .append(
-      $closeGrailChartBtn,
-      $(document.createElement('div'))
-        .on('click', closeChartFunc).append(analyser.$chartEl)
-    ); */
 
   $grailOptions.append($grailInfoBtns, analyser.$stockEl);
   $(document.body).append($grailChartWrapper);
