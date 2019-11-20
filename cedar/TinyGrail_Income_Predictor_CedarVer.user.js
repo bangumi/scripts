@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.5
+// @version      1.5.1
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -267,9 +267,10 @@ class IncomeAnalyser {
   }
 
   _addTempleCover() {
-    $('#grail .temple_list').on('click', '.item .card', e => {
+    $('#grail .temple_list .item .card').on('click', e => {
       let cid = $(e.srcElement).data('id');
       let temple = this._templeInfo.find(t => t.CharacterId == cid);
+      console.log(temple);
       showTemple(temple, null);
     });
   }
@@ -306,12 +307,12 @@ class IncomeAnalyser {
         let idx = allTempleInfo.findIndex(x => x.Id === templeId[i]);
         if(idx < 0) {
           $(title)
-            .html(`${title.title.split('/')[1].trim()} / Sold out`)
-            .attr('title', '圣殿持股 / 已售罄');
+            .html('Sold out')
+            .attr('title', '已售罄');
         } else {
           $(title).addClass('templePrice')
-            .html(`${title.title.split('/')[1].trim()} / ₵${allTempleInfo[idx].Price.toFixed(2)}`)
-            .attr('title', '圣殿持股 / 拍卖底价')
+            .html(`${allTempleInfo[idx].State} / ₵${allTempleInfo[idx].Price.toFixed(2)}`)
+            .attr('title', '可拍数量 / 拍卖底价')
             .on('click', function() {openAuctionDialog(allTempleInfo[idx])});
         }
       });
@@ -326,8 +327,8 @@ class IncomeAnalyser {
     this._templeStockNum;
     this._templeIncome;
 
-    // sort 是 inline 的, 所以这个函数有点小问题
-    const findNthLargest = (array, n=10) => array.sort((lft, ryt) => ryt - lft)[n <= array.length? n-1: array.length-1];
+    // find Nth largest, assume array is sorted
+    const findNthLargest = (array, n=10) => array[n <= array.length? n-1: array.length-1];
 
     let charaInfo = this._charaInfo.filter(x => x.State > 0); // 去掉只有圣殿股的角色
 
@@ -361,7 +362,9 @@ class IncomeAnalyser {
   }
 
   _arrangeChartData(rawData, parseLabel, parseData) {
-    return [rawData.map(parseLabel), rawData.map(parseData)];
+    // return sorted data
+    let d = rawData.slice().sort((lft, ryt) => parseData(ryt) - parseData(lft));
+    return [d.map(parseLabel), d.map(parseData)];
   }
 
 /* 不需要在这里筛选, 用 legendFilterFunc 即可
@@ -387,7 +390,7 @@ class IncomeAnalyser {
   _chartConfig(labels, chartData, chartType, titleText, labelName, threshold) {
     const total = chartData.reduce((sum, x) => sum + x);
     // using currying to access the previous value, then calculate hue value (shift 180deg)
-    const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(0)).map(x => `hsla(${parseInt((360/total*x+180)%360)},${s},${l},${a})`);
+    const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(0)).map(x => `hsla(${parseInt((360/total*x+200)%360)},${s},${l},${a})`);
 
     //data.datasets[0].data[legendItem.index] >= threshold 时, 其 legend 才会在右侧显示出来
     const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold;
@@ -412,8 +415,8 @@ class IncomeAnalyser {
       datasets: [{
         label: labelName,
         data: chartData,
-        backgroundColor: stepColor(chartData, '100%', '50%', '50%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 0.5)', 'rgba(0, 0, 255, 0.5)'),
-        borderColor: stepColor(chartData, '100%', '50%', '100%'), //this._getLinearGradientCanvas('rgba(255, 0, 0, 1)', 'rgba(0, 0, 255, 1)'),
+        backgroundColor: stepColor(chartData, '80%', '50%', '50%'),
+        borderColor: stepColor(chartData, '80%', '50%', '50%'),
         borderWidth: 1
       }]
     };
@@ -446,8 +449,8 @@ let observer = new MutationObserver(function() {
   let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
   let $countBtn = $btn.clone().html('更新数据').on('click', () => {analyser.doStatistics(); $ghostBtn.html('隐藏幽灵');});
   let $chartBtn = $btn.clone().html('显示图表').on('click', () => {$grailChartWrapper.show()});
-  let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()});
-  let $ghostBtn = $btn.clone().html('隐藏幽灵').attr('title', '幽灵指无持股但重组过的角色股').on('click', () => {
+  let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()}).attr('title', '点击圣殿下方数字可直接参与股权拍卖');
+  let $ghostBtn = $btn.clone().html('隐藏幽灵').on('click', () => {
     let $ghostChara = $(Array.from(document.querySelectorAll('#grail .chara_list .grail_list li'))
       .filter(x => x.querySelector('small.feed').innerText.startsWith('0 /')));
     if($ghostBtn.html() === '显示幽灵') {
@@ -457,7 +460,7 @@ let observer = new MutationObserver(function() {
       $ghostChara.hide();
       $ghostBtn.html('显示幽灵');
     }
-  });
+  }).attr('title', '幽灵指无持股但重组过的角色股');
   let $grailInfoBtns = $(document.createElement('div'))
     .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn);
 
