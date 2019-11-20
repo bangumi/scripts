@@ -134,17 +134,10 @@ fork自君寻组件, 详见站内讨论
 
 站内讨论https://bgm.tv/group/topic/353368#post_1520373
 
-## [小圣杯股息计算CedarVer](TinyGrail_Income_Predictor_CedarVer.user.js?raw=true)
+## [小圣杯股息分析](TinyGrail_Income_Predictor_CedarVer.user.js?raw=true)
 
-fork自chitanda的组件, 详见站内讨论.
-
-主要区别:
-* UI优化, 增加进度条
-* 提供更多信息
-* 尽量与TinyGrail组件保持同步
-* 启用Promise和MutationObserver, 提高速度与稳定性
-* 少量bug修复
+fork自chitanda的组件, 区别与功能详见站内讨论.
 
 对应组件https://bgm.tv/dev/app/1272 (对应组件一直无法过审)
 
-站内讨论https://bgm.tv/group/topic/352374#post_1505240
+站内讨论https://bgm.tv/group/topic/353544
