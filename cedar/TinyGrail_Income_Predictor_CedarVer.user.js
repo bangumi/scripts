@@ -73,16 +73,16 @@ html[data-theme='dark'] a.badgeName:hover {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 90%;
+  width: 80%;
   height: 90%;
   margin: auto;
-  background-color: rgba(0,0,0,0.9);
+  background-color: rgba(0,0,0,0.7);
   border-radius: 5px;
   z-index: 102;
 }
 #grailChart {
-  width: 70%;
-  min-width: 400px;
+  width: 80%;
+  min-width: 300px;
   margin: auto;
   overflow: auto;
 }
@@ -324,6 +324,7 @@ class IncomeAnalyser {
     this.$chartEl.empty();
 
     let labels, data, config;
+    let chartType = 'doughnut';
     this._templeStockNum;
     this._templeIncome;
 
@@ -336,26 +337,26 @@ class IncomeAnalyser {
     let stockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(stockNumChartEl);
     [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State)
-    config = this._chartConfig(labels, data, 'pie', '角色持股分布', '角色持股量', findNthLargest(data));
+    config = this._chartConfig(labels, data, chartType, '角色持股分布', '角色持股量', findNthLargest(data));
     new ChartClass(stockNumChartEl, config);
 
     // chara income chart
     [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State*x.Rate)
-    config = this._chartConfig(labels, data.map(Math.round), 'pie', '角色股息分布', '角色股息', findNthLargest(data));
+    config = this._chartConfig(labels, data.map(Math.round), chartType, '角色股息分布', '角色股息', findNthLargest(data));
     let charaIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(charaIncomeChartEl);
     new ChartClass(charaIncomeChartEl, config);
 
     // temple stock num chart
     [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Sacrifices/2)
-    config = this._chartConfig(labels, data, 'pie', '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data));
+    config = this._chartConfig(labels, data, chartType, '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data));
     let templeStockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeStockNumChartEl);
     new ChartClass(templeStockNumChartEl, config);
 
     // temple income chart
     [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Rate*x.Sacrifices/2)
-    config = this._chartConfig(labels, data.map(Math.round), 'pie', '圣殿股息分布', '圣殿股息', findNthLargest(data));
+    config = this._chartConfig(labels, data.map(Math.round), chartType, '圣殿股息分布', '圣殿股息', findNthLargest(data));
     let templeIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeIncomeChartEl);
     new ChartClass(templeIncomeChartEl, config);
@@ -406,7 +407,9 @@ class IncomeAnalyser {
         display: true,
         position: 'right',
         labels: {
-           filter: legendFilterFunc
+           filter: legendFilterFunc,
+           fontSize: 14,
+           fontColor: 'rgba(255,255,255,1)'
         }
       }
     };
@@ -415,12 +418,14 @@ class IncomeAnalyser {
       datasets: [{
         label: labelName,
         data: chartData,
-        backgroundColor: stepColor(chartData, '80%', '50%', '50%'),
-        borderColor: stepColor(chartData, '80%', '50%', '50%'),
-        borderWidth: 1,
-        hoverBackgroundColor: stepColor(chartData, '80%', '50%', '70%'),
-        hoverBorderColor: stepColor(chartData, '80%', '50%', '70%'),
-        hoverBorderWidth: 1
+        backgroundColor: stepColor(chartData, '95%', '70%', '100%'),
+        borderColor: 'rgba(0,0,0,0)',
+        borderWidth: 0,
+        hoverBackgroundColor: stepColor(chartData, '100%', '50%', '100%'),
+        hoverBorderColor: 'rgba(255,255,255,0.85)',
+        hoverBorderWidth: 5,
+        weight: 1,
+        borderAlign: 'inner'
       }]
     };
     let config = {
