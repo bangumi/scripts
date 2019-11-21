@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.5.1
+// @version      1.5.2
 // @description  Calculate income for tiny Grail, add more temple info
-// @author       Cedar, chitanda
+// @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
 // @grant        GM_addStyle
 // ==/UserScript==
@@ -76,12 +76,12 @@ html[data-theme='dark'] a.badgeName:hover {
   width: 90%;
   height: 90%;
   margin: auto;
-  background-color: rgba(0,0,0,0.9);
+  background-color: rgba(0,0,0,0.6);
   border-radius: 5px;
   z-index: 102;
 }
 #grailChart {
-  width: 70%;
+  width: 55%;
   min-width: 400px;
   margin: auto;
   overflow: auto;
@@ -400,12 +400,18 @@ class IncomeAnalyser {
       maintainAspectRatio: true,
       title: {
         display: true,
+        fontSize: 25,
+        fontColor: '#D8D8D8',
+        fontFamily: 'SimHei',
         text: titleText
       },
       legend: {
         display: true,
         position: 'right',
         labels: {
+          fontSize: 16,
+          fontColor: '#D8D8D8',
+          fontFamily: 'SimHei',
            filter: legendFilterFunc
         }
       }
@@ -415,11 +421,17 @@ class IncomeAnalyser {
       datasets: [{
         label: labelName,
         data: chartData,
-        backgroundColor: stepColor(chartData, '80%', '50%', '50%'),
-        borderColor: stepColor(chartData, '80%', '50%', '50%'),
+        /* backgroundColor: stepColor(chartData, '80%', '60%', '50%'),
+        borderColor: stepColor(chartData, '80%', '60%', '50%'),
         borderWidth: 1,
-        hoverBackgroundColor: stepColor(chartData, '80%', '50%', '70%'),
-        hoverBorderColor: stepColor(chartData, '80%', '50%', '70%'),
+        hoverBackgroundColor: stepColor(chartData, '80%', '60%', '70%'),
+        hoverBorderColor: stepColor(chartData, '80%', '60%', '70%'),
+        hoverBorderWidth: 1, */
+        backgroundColor: stepColor(chartData, '98.6%', '71%', '80%'),
+        borderColor: stepColor(chartData,  '80%', '71%', '80%'),
+        borderWidth: 1,
+        hoverBackgroundColor: stepColor(chartData, '100%', '60%', '100%'),
+        hoverBorderColor: stepColor(chartData,  '100%', '60%', '100%'),
         hoverBorderWidth: 1
       }]
     };
