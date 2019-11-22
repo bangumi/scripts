@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.5.3
+// @version      1.5.4
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -269,7 +269,6 @@ class IncomeAnalyser {
     $('#grail .temple_list .item .card').on('click', e => {
       let cid = $(e.srcElement).data('id');
       let temple = this._templeInfo.find(t => t.CharacterId == cid);
-      console.log(temple);
       showTemple(temple, null);
     });
   }
@@ -324,11 +323,14 @@ class IncomeAnalyser {
 
     let labels, data, config;
     let chartType = 'doughnut';
-    this._templeStockNum;
-    this._templeIncome;
 
     // find Nth largest, assume array is sorted (count duplicates)
     const findNthLargest = (array, n=10) => array[n <= array.length? n-1: array.length-1];
+    // hide canvas without content
+    const createChart = (canvasEl, config) => {
+      if(config.data.datasets[0].data.length > 0) new ChartClass(canvasEl, config);
+      else canvasEl.style.display = 'none';
+    }
 
     let charaInfo = this._charaInfo.filter(x => x.State > 0); // 去掉只有圣殿股的角色
 
@@ -337,28 +339,28 @@ class IncomeAnalyser {
     this.$chartEl.append(stockNumChartEl);
     [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State)
     config = this._chartConfig(labels, data, chartType, '角色持股分布', '角色持股量', findNthLargest(data));
-    new ChartClass(stockNumChartEl, config);
+    createChart(stockNumChartEl, config);
 
     // chara income chart
     [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State*x.Rate)
     config = this._chartConfig(labels, data.map(Math.round), chartType, '角色股息分布', '角色股息', findNthLargest(data));
     let charaIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(charaIncomeChartEl);
-    new ChartClass(charaIncomeChartEl, config);
+    createChart(charaIncomeChartEl, config);
 
     // temple stock num chart
     [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Sacrifices/2)
     config = this._chartConfig(labels, data, chartType, '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data, 3));
     let templeStockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeStockNumChartEl);
-    new ChartClass(templeStockNumChartEl, config);
+    createChart(templeStockNumChartEl, config);
 
     // temple income chart
     [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Rate*x.Sacrifices/2)
     config = this._chartConfig(labels, data.map(Math.round), chartType, '圣殿股息分布', '圣殿股息', findNthLargest(data));
     let templeIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeIncomeChartEl);
-    new ChartClass(templeIncomeChartEl, config);
+    createChart(templeIncomeChartEl, config);
   }
 
   _arrangeChartData(rawData, parseLabel, parseData) {
@@ -369,7 +371,7 @@ class IncomeAnalyser {
   }
 
   _chartConfig(labels, chartData, chartType, titleText, labelName, threshold) {
-    const total = chartData.reduce((sum, x) => sum + x);
+    const total = chartData.reduce((sum, x) => sum + x, 0);
     const offset = 0;
     // using currying to access the previous value, then calculate hue value (shift 180deg)
     const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(-weights[0])).map(x => `hsla(${parseInt((360/total*x+offset)%360)},${s},${l},${a})`);
