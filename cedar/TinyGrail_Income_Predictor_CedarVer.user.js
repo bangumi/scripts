@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.5.2
+// @version      1.5.3
 // @description  Calculate income for tiny Grail, add more temple info
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -73,16 +73,15 @@ html[data-theme='dark'] a.badgeName:hover {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 90%;
-  height: 90%;
+  width: 100vmin;
+  height: 95vmin;
   margin: auto;
-  background-color: rgba(0,0,0,0.6);
+  background-color: rgba(0,0,0,0.7);
   border-radius: 5px;
   z-index: 102;
 }
 #grailChart {
-  width: 55%;
-  min-width: 400px;
+  width: 95%;
   margin: auto;
   overflow: auto;
 }
@@ -140,7 +139,7 @@ class IncomeAnalyser {
         )
       );
 
-    this._canvasEl = document.createElement('canvas'); this._canvasEl.width = '400'; this._canvasEl.height = '400';
+    this._canvasEl = document.createElement('canvas'); this._canvasEl.width = '500'; this._canvasEl.height = '500';
     this.$chartEl = $(document.createElement('div')).attr('id', 'grailChart');
 
     this._badgeStockNum = 0;
@@ -324,10 +323,11 @@ class IncomeAnalyser {
     this.$chartEl.empty();
 
     let labels, data, config;
+    let chartType = 'doughnut';
     this._templeStockNum;
     this._templeIncome;
 
-    // find Nth largest, assume array is sorted
+    // find Nth largest, assume array is sorted (count duplicates)
     const findNthLargest = (array, n=10) => array[n <= array.length? n-1: array.length-1];
 
     let charaInfo = this._charaInfo.filter(x => x.State > 0); // 去掉只有圣殿股的角色
@@ -336,26 +336,26 @@ class IncomeAnalyser {
     let stockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(stockNumChartEl);
     [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State)
-    config = this._chartConfig(labels, data, 'pie', '角色持股分布', '角色持股量', findNthLargest(data));
+    config = this._chartConfig(labels, data, chartType, '角色持股分布', '角色持股量', findNthLargest(data));
     new ChartClass(stockNumChartEl, config);
 
     // chara income chart
     [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State*x.Rate)
-    config = this._chartConfig(labels, data.map(Math.round), 'pie', '角色股息分布', '角色股息', findNthLargest(data));
+    config = this._chartConfig(labels, data.map(Math.round), chartType, '角色股息分布', '角色股息', findNthLargest(data));
     let charaIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(charaIncomeChartEl);
     new ChartClass(charaIncomeChartEl, config);
 
     // temple stock num chart
     [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Sacrifices/2)
-    config = this._chartConfig(labels, data, 'pie', '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data));
+    config = this._chartConfig(labels, data, chartType, '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data, 3));
     let templeStockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeStockNumChartEl);
     new ChartClass(templeStockNumChartEl, config);
 
     // temple income chart
     [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Rate*x.Sacrifices/2)
-    config = this._chartConfig(labels, data.map(Math.round), 'pie', '圣殿股息分布', '圣殿股息', findNthLargest(data));
+    config = this._chartConfig(labels, data.map(Math.round), chartType, '圣殿股息分布', '圣殿股息', findNthLargest(data));
     let templeIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeIncomeChartEl);
     new ChartClass(templeIncomeChartEl, config);
@@ -364,35 +364,17 @@ class IncomeAnalyser {
   _arrangeChartData(rawData, parseLabel, parseData) {
     // return sorted data
     let d = rawData.slice().sort((lft, ryt) => parseData(ryt) - parseData(lft));
-    return [d.map(parseLabel), d.map(parseData)];
+    const maxLen = 10;
+    return [d.map(parseLabel).map(x => x.length>maxLen? `${x.slice(0,maxLen-3)}...`: x), d.map(parseData)];
   }
-
-/* 不需要在这里筛选, 用 legendFilterFunc 即可
-  _arrangeChartData(rawData, total, parseData, parseLabel, threshold) {
-    let others = 0;
-    let labels = [], data = [];
-    rawData.forEach(x => {
-      let d = parseData(x);
-      let n = parseLabel(x);
-      if(d/total > threshold) {
-        data.push(d);
-        labels.push(n);
-      } else {
-        others += d;
-      }
-    });
-    labels.push('其他');
-    data.push(others);
-    return [labels, data];
-  }
-*/
 
   _chartConfig(labels, chartData, chartType, titleText, labelName, threshold) {
     const total = chartData.reduce((sum, x) => sum + x);
+    const offset = 0;
     // using currying to access the previous value, then calculate hue value (shift 180deg)
-    const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(0)).map(x => `hsla(${parseInt((360/total*x+200)%360)},${s},${l},${a})`);
+    const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(-weights[0])).map(x => `hsla(${parseInt((360/total*x+offset)%360)},${s},${l},${a})`);
 
-    //data.datasets[0].data[legendItem.index] >= threshold 时, 其 legend 才会在右侧显示出来
+    //chartData[i] >= threshold 时, 其 legend 才会在右侧显示出来.
     const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold;
 
     let options = {
@@ -409,10 +391,10 @@ class IncomeAnalyser {
         display: true,
         position: 'right',
         labels: {
-          fontSize: 16,
+          fontSize: 14,
           fontColor: '#D8D8D8',
           fontFamily: 'SimHei',
-           filter: legendFilterFunc
+          filter: legendFilterFunc
         }
       }
     };
@@ -421,12 +403,6 @@ class IncomeAnalyser {
       datasets: [{
         label: labelName,
         data: chartData,
-        /* backgroundColor: stepColor(chartData, '80%', '60%', '50%'),
-        borderColor: stepColor(chartData, '80%', '60%', '50%'),
-        borderWidth: 1,
-        hoverBackgroundColor: stepColor(chartData, '80%', '60%', '70%'),
-        hoverBorderColor: stepColor(chartData, '80%', '60%', '70%'),
-        hoverBorderWidth: 1, */
         backgroundColor: stepColor(chartData, '98.6%', '71%', '80%'),
         borderColor: stepColor(chartData,  '80%', '71%', '80%'),
         borderWidth: 1,
