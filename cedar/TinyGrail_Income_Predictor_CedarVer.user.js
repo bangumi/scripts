@@ -73,16 +73,15 @@ html[data-theme='dark'] a.badgeName:hover {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 80%;
-  height: 90%;
+  width: 100vmin;
+  height: 80vmin;
   margin: auto;
   background-color: rgba(0,0,0,0.7);
   border-radius: 5px;
   z-index: 102;
 }
 #grailChart {
-  width: 80%;
-  min-width: 300px;
+  width: 80vmin;
   margin: auto;
   overflow: auto;
 }
@@ -389,9 +388,12 @@ class IncomeAnalyser {
 */
 
   _chartConfig(labels, chartData, chartType, titleText, labelName, threshold) {
-    const total = chartData.reduce((sum, x) => sum + x);
+    // const total = chartData.reduce((sum, x) => sum + x);
+    const total = chartData.length;
+    const colorOffset = Math.floor(Math.random()*360);
     // using currying to access the previous value, then calculate hue value (shift 180deg)
-    const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(0)).map(x => `hsla(${parseInt((360/total*x+200)%360)},${s},${l},${a})`);
+    // const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(0)).map(x => `hsla(${parseInt((360/total*x+200)%360)},${s},${l},${a})`);
+    const stepColor = (weights, s, l, a) => weights.map((sum => () => sum += 1)(0)).map(x => `hsla(${parseInt((360/total*x+colorOffset)%360)},${s},${l},${a})`);
 
     //data.datasets[0].data[legendItem.index] >= threshold 时, 其 legend 才会在右侧显示出来
     const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold;
@@ -401,7 +403,9 @@ class IncomeAnalyser {
       maintainAspectRatio: true,
       title: {
         display: true,
-        text: titleText
+        text: titleText,
+        fontSize: 18,
+        fontColor: "#fff"
       },
       legend: {
         display: true,
