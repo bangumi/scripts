@@ -731,7 +731,7 @@ function showTemple(temple, chara) {
       }
 
       var reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = ev => {
         var result = ev.target.result;
         $.getScript('https://cdn.jsdelivr.net/gh/emn178/js-md5/build/md5.min.js', function () {
           var hash = md5(result);
