@@ -15,7 +15,7 @@ var box = `<div id="grailBox"></div>`;
 var lastEven = false;
 
 var _chartData;
-var bgColor = '#fff';
+var bgColor = 'transparent';
 var upColor = '#ffa7cc';
 var downColor = '#a7e3ff';
 var ma5Color = '#40f343';
