@@ -2,7 +2,7 @@
 // @name         TinyGrail Helper
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
 // @version      1.0
-// @description  显示角色发行价，显示拍卖情况，把自己的圣殿排到最前面，股息高于低保隐藏签到
+// @description  为小圣杯增加一些小功能：角色页面显示角色发行价，显示拍卖情况，突出显示自己圣殿，显示各级圣殿数量，关注角色，关注竞拍，查看往期竞拍，自动拆单；股息高于低保隐藏签到
 // @author       Liaune,Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/home|rakuen\/topic\/crt).*
 // @grant        GM_addStyle
