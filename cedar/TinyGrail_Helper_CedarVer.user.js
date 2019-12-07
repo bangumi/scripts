@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.1.1
+// @version     1.1.2
 // @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
@@ -12,15 +12,6 @@ GM_addStyle(`
 .assets .my_temple.item .card {
   box-shadow: 3px 3px 5px #FFEB3B;
   border: 1px solid #FFC107;
-}
-.assets .item .card {
-  background-size: cover;
-  width: 90px;
-  height: 120px;
-  border-radius: 5px;
-  box-shadow: 3px 3px 5px #d8d8d8;
-  border: 1px solid #e0e0e0;
-  overflow: hidden;
 }
 .my_auction {
   color: #ffa7cc;
@@ -39,6 +30,7 @@ html[data-theme='dark'] .assets .my_temple.item .card {
 }
 #grailBox .trade_box button {
   min-width: 50px;
+  padding: 0 9px;
 }
 `);
 
@@ -368,8 +360,9 @@ async function retryPromise(callback, n=10) {
 
 function splitOrder(charaId) {
   let $label = $(document.createElement('div')).addClass('label').html('拆单');
-  let $split_bidButton = $(`<button id="split_bidButton" class="active bid">拆单买</button>`);
-  let $split_askButton = $(`<button id="split_askButton" class="active ask">拆单卖</button>`);
+  let $splitBtn = $(document.createElement('button')).addClass('active').css('margin-left', '1px');
+  let $split_bidButton = $splitBtn.clone().attr('id', 'split_bidButton').addClass('bid').html('拆单买');
+  let $split_askButton = $splitBtn.clone().attr('id', 'split_askButton').addClass('ask').html('拆单卖');
   $('#grailBox .bid .trade_list').append($(document.createElement('div')).append($label.clone(), $split_bidButton));
   $('#grailBox .ask .trade_list').append($(document.createElement('div')).append($label.clone(), $split_askButton));
 
