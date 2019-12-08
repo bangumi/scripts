@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Helper
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.2.0
+// @version      1.2.1
 // @description  为小圣杯增加一些小功能：角色页面显示角色发行价，显示拍卖情况，突出显示自己圣殿，显示各级圣殿数量，关注角色，关注竞拍，查看往期竞拍，自动拆单,合并相同时间订单；股息高于低保隐藏签到
 // @author       Liaune,Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/home|rakuen\/topic\/crt).*
@@ -428,7 +428,7 @@ function mergeOrder(orderHistory){
 	let mergedOrder = [], i = 0;
 	mergedOrder.push(orderHistory[0]);
 	for(let j = 1; j < orderHistory.length; j++){
-		if((orderHistory[j].Price == mergedOrder[i].Price) && (new Date(orderHistory[j].TradeTime) - new Date(mergedOrder[i].TradeTime))<10*1000){
+		if((orderHistory[j].Price == mergedOrder[i].Price) && Math.abs(new Date(orderHistory[j].TradeTime) - new Date(mergedOrder[i].TradeTime))<10*1000){
 		//10s内同价格订单合并
 			mergedOrder[i].Amount += orderHistory[j].Amount;
 		}
@@ -454,7 +454,7 @@ function mergeOrderHistory(charaId){
 				let ask = d.Value.Asks[i];
 				$('.ask .ask_list').append(`<li title="${formatDate(ask.Begin)}" class="ask">₵${formatNumber(ask.Price, 2)} / ${formatNumber(ask.Amount, 0)} / +${formatNumber(ask.Amount * ask.Price, 2)}<span class="cancel" data-id="${ask.Id}">[取消]</span></li>`);
 			}
-			$('.bid .ask_list').html(``);
+			$('.bid .bid_list').html(``);
 			for (let i = 0; i < bidHistory.length; i++) {
 				let bid = bidHistory[i];
 				$('.bid .bid_list').prepend(`<li title="${formatDate(bid.TradeTime)}">₵${formatNumber(bid.Price, 2)} / ${formatNumber(bid.Amount, 0)} / -${formatNumber(bid.Amount * bid.Price, 2)}<span class="cancel">[成交]</span></li>`);
