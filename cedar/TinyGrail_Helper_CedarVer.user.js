@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.1.2
-// @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍
+// @version     1.2.2
+// @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍. fork自Liaune的插件
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
 // @grant       GM_addStyle
@@ -27,10 +27,6 @@ html[data-theme='dark'] #grailBox .title {
 html[data-theme='dark'] .assets .my_temple.item .card {
   box-shadow: 0px 0px 15px #FFEB3B;
   border: 1px solid #FFC107;
-}
-#grailBox .trade_box button {
-  min-width: 50px;
-  padding: 0 9px;
 }
 `);
 
@@ -142,7 +138,7 @@ function formatTime(timeStr) {
     minute = Math.floor(times / 60) - Math.floor(times / (60 * 60)) * 60;
 
     if (day > 0) return `剩余${day}天${hour}小时`;
-    else if (hour > 1) return `剩余${hour}小时${minute}分钟`;
+    else if (hour > 0) return `剩余${hour}小时${minute}分钟`;
     else return `即将结束 剩余${minute}分钟`;
     //return '即将结束';
   } else {
@@ -252,22 +248,17 @@ function loadCharacterList(list,type) {
   $('#eden_tpc_list ul .load_more').remove();
   $('#eden_tpc_list ul').html('');
   for (let i = 0; i < list.length; i++) {
-    var item = list[list.length-1-i];
+    var item = list[i];
     //console.log(item);
     var chara = renderCharacter(item, type, lastEven);
     lastEven = !lastEven;
-    $('#eden_tpc_list ul').append(chara);
+    $('#eden_tpc_list ul').prepend(chara);
   }
   $('.cancel_auction').on('click', (e) => {
-    if (!confirm('确定取消关注？')) return;
+    //if (!confirm('确定取消关注？')) return;
     var id = $(e.target).data('id');
-    switch(type){
-      case 'auction':
-        followList.auctions.splice(followList.auctions.indexOf(id),1);
-        break;
-      case 'chara':
-        followList.charas.splice(followList.charas.indexOf(id),1);
-    }
+    if(type == 'auction') followList.auctions.splice(followList.auctions.indexOf(id),1);
+    else if(type == 'chara') followList.charas.splice(followList.charas.indexOf(id),1);
     localStorage.setItem('TinyGrail_followList',JSON.stringify(followList));
     $(`#eden_tpc_list li[data-id=${id}]`).remove();
   });
@@ -292,11 +283,10 @@ function renderCharacter(item,type,even) {
   if(item.CharacterId) id = item.CharacterId;
   var time = item.LastOrder;
   var avatar = `<a href="/rakuen/topic/crt/${id}?trade=true" class="avatar l" target="right"><span class="avatarNeue avatarReSize32 ll" style="background-image:url('${normalizeAvatar(item.Icon)}')"></span></a>`;
-  var cancel = `<span><small data-id="${item.Id}" class="cancel_auction">[取消关注]</small></span>`;
-  var chara;
-
+  var cancel = `<span><small data-id="${id}" class="cancel_auction">[取消关注]</small></span>`;
   var badge = '';
   if (item.Type === 1) badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
+  var chara;
   if(type=='auction'){
     chara = `<li class="${line} item_list" data-id="${id}">${avatar}<div class="inner">
 <a href="/rakuen/topic/crt/${id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(+${item.Rate.toFixed(2)})</small>
@@ -358,13 +348,26 @@ async function retryPromise(callback, n=10) {
   throw error;
 };
 
+function setSplitButton(type) {
+  let text = type === 'bid'? '拆单买入' : '拆单卖出';
+  let $splitBtn = $(document.createElement('button')).addClass(`active ${type}`).attr('id', `split_${type}Button`).html(text).hide();
+
+  $(`.${type} .amount`).on('input',function () {
+    var amount = $(`.${type} .amount`).val();
+    if(amount > 500) {
+      $(`#split_${type}Button`).show();
+      $(`#${type}Button`).hide();
+    } else {
+      $(`#split_${type}Button`).hide();
+      $(`#${type}Button`).show();
+    }
+  });
+  $(`#grailBox .${type} .trade_list #${type}Button`).before($splitBtn);
+}
+
 function splitOrder(charaId) {
-  let $label = $(document.createElement('div')).addClass('label').html('拆单');
-  let $splitBtn = $(document.createElement('button')).addClass('active').css('margin-left', '1px');
-  let $split_bidButton = $splitBtn.clone().attr('id', 'split_bidButton').addClass('bid').html('拆单买');
-  let $split_askButton = $splitBtn.clone().attr('id', 'split_askButton').addClass('ask').html('拆单卖');
-  $('#grailBox .bid .trade_list').append($(document.createElement('div')).append($label.clone(), $split_bidButton));
-  $('#grailBox .ask .trade_list').append($(document.createElement('div')).append($label.clone(), $split_askButton));
+  setSplitButton('bid');
+  setSplitButton('ask');
 
   async function doSplit(type) {
     let price = $(`.${type} .price`).val();
