@@ -376,8 +376,8 @@ class IncomeAnalyser {
     // using currying to access the previous value, then calculate hue value (shift 180deg)
     const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(-weights[0])).map(x => `hsla(${parseInt((360/total*x+offset)%360)},${s},${l},${a})`);
 
-    //chartData[i] >= threshold 时, 其 legend 才会在右侧显示出来.
-    const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold;
+    //chartData[i] >= threshold 时, 其 legend 才会在右侧显示出来. 最多显示20项.
+    const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold && legendItem.index < 20;
 
     let options = {
       responsive: true,
