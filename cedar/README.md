@@ -155,3 +155,11 @@ fork自chitanda的组件, 区别与功能详见站内讨论.
 对应组件https://bgm.tv/dev/app/1272 (对应组件一直无法过审)
 
 站内讨论https://bgm.tv/group/topic/353544
+
+## [小圣杯一键退坑](farewell_TinyGrail.user.js?raw=true)
+
+自动取消所有卖单, 并把小圣杯游戏里的活股全数献祭.
+
+对应组件 暂无组件
+
+站内讨论https://bgm.tv/group/topic/353800
