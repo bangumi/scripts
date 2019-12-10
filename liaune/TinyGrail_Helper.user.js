@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Helper
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.2.1
+// @version      1.3
 // @description  为小圣杯增加一些小功能：角色页面显示角色发行价，显示拍卖情况，突出显示自己圣殿，显示各级圣殿数量，关注角色，关注竞拍，查看往期竞拍，自动拆单,合并相同时间订单；股息高于低保隐藏签到
 // @author       Liaune,Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen\/topiclist|rakuen\/home|rakuen\/topic\/crt).*
@@ -179,28 +179,29 @@ function formatTime(timeStr) {
 }
 
 function formatNumber(number, decimals, dec_point, thousands_sep) {
-	number = (number + '').replace(/[^0-9+-Ee.]/g, '');
-	let n = !isFinite(+number) ? 0 : +number,
-		prec = !isFinite(+decimals) ? 2 : Math.abs(decimals),
-		sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
-		dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
-		s = '',
-		toFixedFix = function (n, prec) {
-			let k = Math.pow(10, prec);
-			return '' + Math.ceil(n * k) / k;
-		};
+  number = (number + '').replace(/[^0-9+-Ee.]/g, '');
+  var n = !isFinite(+number) ? 0 : +number,
+    prec = !isFinite(+decimals) ? 2 : Math.abs(decimals),
+    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+    s = '';
+    // toFixedFix = function (n, prec) {
+    //   var k = Math.pow(10, prec);
+    //   return '' + Math.ceil(n * k) / k;
+    // };
 
-	s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
-	let re = /(-?\d+)(\d{3})/;
-	while (re.test(s[0])) {
-		s[0] = s[0].replace(re, "$1" + sep + "$2");
-	}
+    //s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+    s = (prec ? n.toFixed(prec) : '' + Math.round(n)).split('.');
+  var re = /(-?\d+)(\d{3})/;
+  while (re.test(s[0])) {
+    s[0] = s[0].replace(re, "$1" + sep + "$2");
+  }
 
-	if ((s[1] || '').length < prec) {
-		s[1] = s[1] || '';
-		s[1] += new Array(prec - s[1].length + 1).join('0');
-	}
-	return s.join(dec);
+  if ((s[1] || '').length < prec) {
+    s[1] = s[1] || '';
+    s[1] += new Array(prec - s[1].length + 1).join('0');
+  }
+  return s.join(dec);
 }
 
 function closeDialog() {
@@ -271,7 +272,7 @@ function loadCharacterList(list,type) {
 	}
 	$('.cancel_auction').on('click', (e) => {
 		//if (!confirm('确定取消关注？')) return;
-		var id = $(e.target).data('id');
+		var id = $(e.target).data('id').toString();
 		if(type == 'auction') followList.auctions.splice(followList.auctions.indexOf(id),1);
 		else if(type == 'chara') followList.charas.splice(followList.charas.indexOf(id),1);
 		localStorage.setItem('TinyGrail_followList',JSON.stringify(followList));
@@ -298,7 +299,7 @@ function renderCharacter(item,type,even) {
 	if(item.CharacterId) id = item.CharacterId;
 	var time = item.LastOrder;
 	var avatar = `<a href="/rakuen/topic/crt/${id}?trade=true" class="avatar l" target="right"><span class="avatarNeue avatarReSize32 ll" style="background-image:url('${normalizeAvatar(item.Icon)}')"></span></a>`;
-	var cancel = `<span><small data-id="${id}" class="cancel_auction">[取消关注]</small></span>`;
+	var cancel = `<span><small data-id="${id}" class="cancel_auction">[取消]</small></span>`;
 	var badge = '';
 	if (item.Type === 1) badge = `<span class="badge" title="${formatNumber(item.Rate, 1)}倍分红剩余${item.Bonus}期">×${item.Bonus}</span>`;
 	var chara;
@@ -311,10 +312,11 @@ ${cancel}</div></div>${tag}</li>`
 	//ICO
 	else if (item.CharacterId) {
 		var pre = caculateICO(item);
+		console.log(item);
 		//var percent = formatNumber(item.Total / pre.Next * 100, 0);
 		chara = `<li class="${line} item_list" data-id="${id}">${avatar}<div class="inner">
 <a href="/rakuen/topic/crt/${id}?trade=true" class="title avatar l" target="right">${item.Name}${badge}</a> <small class="grey">(ICO进行中: lv${pre.Level})</small>
-<div class="row"><small class="time">${formatTime(item.End)}</small><span><small> ${formatNumber(item.Total, 0)}/100,000 </small></span>
+<div class="row"><small class="time">${formatTime(item.End)}</small><span><small>${formatNumber(item.Users, 0)}人 / ${formatNumber(item.Total, 1)} / ₵${formatNumber(pre.Price, 2)}</small></span>
 ${cancel}</div></div><div class="tags tag lv${pre.Level}">ICO进行中</div></li>`
 	}
 	else{
@@ -443,29 +445,32 @@ function mergeOrder(orderHistory){
 function mergeOrderHistory(charaId){
 	getData(`chara/user/${charaId}`, function (d, s) {
 		if (d.State === 0 && d.Value) {
-			$('.ask .ask_list').html(``);
+			$(`.ask .ask_list li[class!=ask]`).hide();
 			let askHistory = mergeOrder(d.Value.AskHistory);
-			let bidHistory = mergeOrder(d.Value.BidHistory);
 			for (let i = 0; i < askHistory.length; i++) {
 				let ask = askHistory[i];
 				$('.ask .ask_list').prepend(`<li title="${formatDate(ask.TradeTime)}">₵${formatNumber(ask.Price, 2)} / ${formatNumber(ask.Amount, 0)} / +${formatNumber(ask.Amount * ask.Price, 2)}<span class="cancel">[成交]</span></li>`);
 			}
-			for (let i = 0; i < d.Value.Asks.length; i++) {
-				let ask = d.Value.Asks[i];
-				$('.ask .ask_list').append(`<li title="${formatDate(ask.Begin)}" class="ask">₵${formatNumber(ask.Price, 2)} / ${formatNumber(ask.Amount, 0)} / +${formatNumber(ask.Amount * ask.Price, 2)}<span class="cancel" data-id="${ask.Id}">[取消]</span></li>`);
-			}
-			$('.bid .bid_list').html(``);
+			$(`.bid .bid_list li[class!=bid]`).hide();
+			let bidHistory = mergeOrder(d.Value.BidHistory);
 			for (let i = 0; i < bidHistory.length; i++) {
 				let bid = bidHistory[i];
 				$('.bid .bid_list').prepend(`<li title="${formatDate(bid.TradeTime)}">₵${formatNumber(bid.Price, 2)} / ${formatNumber(bid.Amount, 0)} / -${formatNumber(bid.Amount * bid.Price, 2)}<span class="cancel">[成交]</span></li>`);
 			}
-			for (let i = 0; i < d.Value.Bids.length; i++) {
-				let bid = d.Value.Bids[i];
-				$('.bid .bid_list').append(`<li title="${formatDate(bid.Begin)}" class="bid">₵${formatNumber(bid.Price, 2)} / ${formatNumber(bid.Amount, 0)} / -${formatNumber(bid.Amount * bid.Price, 2)}<span class="cancel" data-id="${bid.Id}">[取消]</span></li>`);
-			}
 
 		}
 	});
+	/*let orderHistory = $(`.bid .bid_list li[class!=bid]`);
+	let j = 0;
+	for(let i = 1; i < orderHistory.length; i++){
+		let tradeTime = orderHistory[i].title;
+		let price = orderHistory[i].innerText.match(/₵([1-9]\d*\.\d*|0\.\d*[1-9]\d*)/)[1];
+		let tradeTime1 = orderHistory[i-1].title;
+		let price1 = orderHistory[i-1].innerText.match(/₵([1-9]\d*\.\d*|0\.\d*[1-9]\d*)/)[1];
+		if((price == price1) && Math.abs(new Date(tradeTime) - new Date(tradeTime1))<10*1000){
+			$(`.${type} .${type}_list li[class!=${type}]`)[j]
+		}
+	}*/
 }
 
 function loadUserAuctions(ids) {
@@ -645,7 +650,7 @@ function observeChara(mutationList) {
 		fetched = true;
 		showInitialPrice(charaId);  //显示发行价
 		splitOrder(charaId);  //拆单避税
-		mergeOrderHistory(charaId);  //合并同一时间订单历史记录
+		mergeOrderHistory(charaId); //合并同一时间订单历史记录
 
 		loadUserAuctions([charaId]);  //显示竞拍情况
 		showAuctionHistory(charaId);  //历史拍卖
