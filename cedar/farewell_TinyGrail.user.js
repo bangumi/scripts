@@ -160,13 +160,13 @@ class Farewell {
   async _cancelTrades(tradeInfo) {
     let askIds = tradeInfo.Asks.map(x => x.Id);
     for(let id of askIds) {
-      //await retryPromise(resolve => cancelAsk(id, resolve));
-      console.log(`fake cancel, ask Id: ${id}`);
+      await retryPromise(resolve => cancelAsk(id, resolve));
+      //console.log(`fake cancel, ask Id: ${id}`);
     }
     let bidIds = tradeInfo.Bids.map(x => x.Id);
     for(let id of bidIds) {
-      //await retryPromise(resolve => cancelBid(id, resolve));
-      console.log(`fake cancel, bid Id: ${id}`);
+      await retryPromise(resolve => cancelBid(id, resolve));
+      //console.log(`fake cancel, bid Id: ${id}`);
     }
   }
 
@@ -181,8 +181,8 @@ class Farewell {
       $farewellCharaEl.html(chara.Name);
       let tradeInfo = await this._getTradeInfo(chara.Id);
       await this._cancelTrades(tradeInfo);
-      //await retryPromise(resolve => sacrificeCharacter(chara.Id, chara.State, this._captial, resolve));
-      console.log(`fake sacrifice, chara Id: ${chara.Id}`);
+      await retryPromise(resolve => sacrificeCharacter(chara.Id, chara.State, this._captial, resolve));
+      //console.log(`fake sacrifice, chara Id: ${chara.Id}`);
       // 等待角色消失..有点仪式感..不然感觉像清理垃圾..
       //this._charaInfoEl[i].fadeOut(1000, function() {$(this).remove()});
       //await new Promise(resolve => setTimeout(resolve, 250));
