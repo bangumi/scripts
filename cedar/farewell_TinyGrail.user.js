@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.0
+// @version     1.0.1
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -93,6 +93,10 @@ function cancelAsk(id, callback) {
   postData(`chara/ask/cancel/${id}`, null, callback);
 }
 
+function cancelBid(id, callback) {
+  postData(`chara/bid/cancel/${id}`, null, callback);
+}
+
 function sacrificeCharacter(id, count, captial, callback) {
   postData(`chara/sacrifice/${id}/${count}/${captial}`, null, (d) => {
     if (callback) { callback(d); }
@@ -135,7 +139,7 @@ class Farewell {
       getData(`chara/user/chara/${this._bgmId}/1/2000`, d => {
         console.log('got charaInfo');
         if (d.State !== 0) return;
-        this._charaInfo = d.Value.Items.filter(x => x.State); // 去除无活股的角色
+        this._charaInfo = d.Value.Items.filter(x => x.State).reverse(); // 去除无活股的角色并倒序排列
         resolve();
       })
     );
@@ -149,10 +153,21 @@ class Farewell {
     $('#grail .chara_list .loading').hide();
   }
 
-  _getAskInfo(charaId) {
-    return retryPromise(resolve => getData(`chara/user/${charaId}`, d => {
-      resolve(d.Value.Asks.map(x => x.Id));
-    }));
+  _getTradeInfo(charaId) {
+    return retryPromise(resolve => getData(`chara/user/${charaId}`, d => resolve(d.Value)));
+  }
+
+  async _cancelTrades(tradeInfo) {
+    let askIds = tradeInfo.Asks.map(x => x.Id);
+    for(let id of askIds) {
+      //await retryPromise(resolve => cancelAsk(id, resolve));
+      console.log(`fake cancel, ask Id: ${id}`);
+    }
+    let bidIds = tradeInfo.Bids.map(x => x.Id);
+    for(let id of bidIds) {
+      //await retryPromise(resolve => cancelBid(id, resolve));
+      console.log(`fake cancel, bid Id: ${id}`);
+    }
   }
 
   async farewell() {
@@ -164,15 +179,13 @@ class Farewell {
     for(let i = 0; i < this._charaInfo.length; i++) {
       let chara = this._charaInfo[i];
       $farewellCharaEl.html(chara.Name);
-      let askIds = await this._getAskInfo(chara.Id);
-      for(let id in askIds) {
-        await retryPromise(resolve => cancelAsk(id, resolve));
-        //console.log(`fake cancel, ask Id: ${id}`);
-      }
-      await retryPromise(resolve => sacrificeCharacter(chara.Id, chara.State, this._captial, resolve));
-      //console.log(`fake sacrifice, chara Id: ${chara.Id}`);
-      // 等待角色消失..有点仪式感..
-      //this._charaInfoEl[i].fadeOut(400, function() {$(this).remove()});
+      let tradeInfo = await this._getTradeInfo(chara.Id);
+      await this._cancelTrades(tradeInfo);
+      //await retryPromise(resolve => sacrificeCharacter(chara.Id, chara.State, this._captial, resolve));
+      console.log(`fake sacrifice, chara Id: ${chara.Id}`);
+      // 等待角色消失..有点仪式感..不然感觉像清理垃圾..
+      //this._charaInfoEl[i].fadeOut(1000, function() {$(this).remove()});
+      //await new Promise(resolve => setTimeout(resolve, 250));
       await new Promise(resolve => this._charaInfoEl[i].fadeOut(300, function() {
         $(this).remove(); resolve();
       }));
@@ -193,11 +206,17 @@ let observer = new MutationObserver(function() {
     .attr('href', "javascript:void(0)")
     .addClass("chiiBtn").html('一键退坑')
     .on('click', function() {
+      if(!confirm('确定退坑吗？本操作无法反悔！\n如果误操作了，请及时关闭页面、刷新页面或者断开网络，以拯救暂未献祭的股票。')) return;
       let farewell = new Farewell(document.querySelector('#captial').checked);
       $farewellBtn.html('退坑中…').off('click');
+      $captialEl.children('input').prop('disabled', true);
       $captialEl.after(farewell.$farewellInfoEl);
       farewell.farewell();
     });
-  $grailOptions.append($farewellBtn, $captialEl);
+  $grailOptions.append(
+    $(document.createElement('div'))
+      //.addClass('grailInfoBox') // 另一个组件里有这个class的CSS. 毕竟是一次性脚本, 不想重新写CSS了, 没启用那个组件也无所谓.
+      .append($farewellBtn, $captialEl)
+  );
 });
 observer.observe(document.getElementById('user_home'), {'childList': true, 'subtree': true});
