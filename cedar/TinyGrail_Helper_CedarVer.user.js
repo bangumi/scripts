@@ -28,6 +28,9 @@ html[data-theme='dark'] .assets .my_temple.item .card {
   box-shadow: 0px 0px 15px #FFEB3B;
   border: 1px solid #FFC107;
 }
+#TB_window.dialog.temple {
+  background-color: transparent;
+}
 `);
 
 const api = 'https://tinygrail.com/api/';
