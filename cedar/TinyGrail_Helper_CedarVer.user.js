@@ -614,7 +614,7 @@ function observeBonus(mutationList, observer) {
 
 let fetched = false;
 function observeChara(mutationList, observer) {
-  if(!document.querySelector('#grailBox .trade, #grailBox .assets_box')) {
+  if(!document.querySelector('#grailBox .trade .money, #grailBox .assets_box')) {
     fetched = false;
     return;
   }
@@ -630,8 +630,8 @@ function observeChara(mutationList, observer) {
     followAuctions(charaId);
     showOwnTemple();
     countTempleNum(charaId);
-  } // use '.trade' to detect ICO characters (instead of '.progress_bar')
-  else if(document.querySelector('#grailBox .trade')) {
+  } // use '.trade .money' to detect ICO characters (instead of '.progress_bar')
+  else if(document.querySelector('#grailBox .trade .money')) {
     observer.disconnect();
     new AutoFulfillICO().addButton();
   }
