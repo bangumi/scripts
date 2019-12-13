@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.2.2
-// @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍. fork自Liaune的插件
+// @version     1.2.3
+// @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍，ICO自动补款. fork自Liaune的插件
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
 // @grant       GM_addStyle
@@ -122,7 +122,7 @@ function caculateICO(ico) {
 }
 
 function formatDate(date) {
-  var date = new Date(date);
+  date = new Date(date);
   return date.format('yyyy-MM-dd hh:mm:ss');
 }
 
@@ -197,6 +197,19 @@ function closeDialog() {
 }
 
 // ============================== //
+
+async function retryPromise(callback, n=10, sleeptime=300) {
+  let error;
+  while(n--) {
+    try {
+      return await new Promise(callback);
+    } catch (err) {
+      error = err;
+      await new Promise(resolve => setTimeout(resolve, sleeptime)); // sleep 300 ms by default
+    }
+  }
+  throw error;
+};
 
 let followList = JSON.parse(localStorage.getItem('TinyGrail_followList')) || {"charas":[], "auctions":[]};
 let path = document.location.pathname;
@@ -338,19 +351,6 @@ function splitAmount(amount) {
   return splitAmounts;
 }
 
-async function retryPromise(callback, n=10) {
-  let error;
-  while(n--) {
-    try {
-      return await new Promise(callback);
-    } catch (err) {
-      error = err;
-      await new Promise(resolve => setTimeout(resolve, 300)); // sleep 300 ms
-    }
-  }
-  throw error;
-};
-
 function setSplitButton(type) {
   let text = type === 'bid'? '拆单买入' : '拆单卖出';
   let $splitBtn = $(document.createElement('button')).addClass(`active ${type}`).attr('id', `split_${type}Button`).html(text).hide();
@@ -404,9 +404,9 @@ function countTempleNum(charaId) {
   getData(`chara/temple/${charaId}`, function (d) {
     let counts = {3: 0, 2: 0, 1: 0};
     d.Value.forEach(v => counts[v.Level]++);
-    let countsEl = $(document.createElement('span'))
+    let $countsEl = $(document.createElement('span'))
       .addClass('sub').html(` (${counts[3]} + ${counts[2]} + ${counts[1]})`);
-    $('#grailBox .assets_box .bold .sub').before(countsEl);
+    $('#grailBox .assets_box .bold .sub').before($countsEl);
   });
 }
 
@@ -431,10 +431,10 @@ function loadUserAuctions(ids) {
 
 function followChara(charaId){  //关注角色
   let button;
-  if(followList.charas.includes(charaId)){
+  if(followList.charas.includes(charaId)) {
     button = `<button id="followCharaButton" class="text_button">[取消关注]</button>`;
   }
-  else{
+  else {
     button = `<button id="followCharaButton" class="text_button">[关注角色]</button>`;
   }
   $('#grailBox .title .text').append(button);
@@ -561,21 +561,66 @@ function hideBonusButton() {
   });
 }
 
-function observeBonus(mutationList) {
+class AutoFulfillICO {
+  constructor() {
+    this._$fulfillButton = $(document.createElement('button'))
+    .addClass('text_button').css('margin', '0 10px').text('[自动补款]')
+    .on('click', () => this._autoFulfill());
+  }
+
+  addButton() {
+    $('#grailBox .desc').eq(2).append(this._$fulfillButton);
+  }
+
+  async _autoFulfill() {
+    const advanceInSecond = 60;
+    let charaId = location.pathname.split('/').pop();
+    let targetAmount = prompt('自动补款，请输入目标金额：', 100000);
+    if(targetAmount === null) return;
+    if(isNaN(targetAmount) || targetAmount <= 0) {
+      alert('金额错误, 设置失败.');
+      return;
+    }
+    let endTime = await retryPromise(resolve => getData(`chara/${charaId}`, d => resolve(d.Value.EndTime)));
+    let [y, m, d, hr, min, sec] = '2019-12-15T00:42:54'.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/).slice(1).map(x => parseInt(x, 10));
+    let delay = new Date(y, m-1, d, hr, min, sec) - Date.now() - advanceInSecond*1000;
+    setTimeout(this._fulfillICO, delay, charaId, targetAmount);
+    alert(`设置成功！\n请勿关闭或刷新本页面，并保证余额充足，网络畅通。\n在ICO结束前${advanceInSecond}秒将会自动补足到${targetAmount}cc.`);
+    this._$fulfillButton.after(`已设置自动补款. 目标金额：${targetAmount}`);
+    this._$fulfillButton[0].disabled = true;
+  }
+
+  async _fulfillICO(charaId, targetAmount) {
+    let currentAmount = await retryPromise(resolve => getData(`chara/${charaId}`, d => resolve(d.Value.Total)));
+    if(targetAmount < currentAmount) {
+      alert('注资已超额');
+      return;
+    } else if(targetAmount == currentAmount) {
+      alert('注资已达标');
+      return;
+    }
+    let offer = targetAmount - currentAmount < 1000? 1000: targetAmount - currentAmount;
+    await retryPromise(resolve => postData(`chara/join/${charaId}/${offer}`, null, resolve));
+    location.reload();
+    // $('#grailBox #appendICOButton').click();
+  }
+}
+
+function observeBonus(mutationList, observer) {
   if(!document.querySelector('#grailBox.rakuen_home button.daily_bonus')) return;
   observer.disconnect();
   hideBonusButton();
 }
 
 let fetched = false;
-function observeChara(mutationList) {
-  if(!document.querySelector('#grailBox .progress_bar, #grailBox .assets_box')) {
+function observeChara(mutationList, observer) {
+  if(!document.querySelector('#grailBox .trade, #grailBox .assets_box')) {
     fetched = false;
     return;
   }
   if(fetched) return;
   let charaId = document.location.pathname.split('/').pop();
-  if(document.querySelector('#grailBox .title')) followChara(charaId);  //关注角色
+  if(document.querySelector('#grailBox .title')) followChara(charaId); //关注角色
   if(document.querySelector('#grailBox .assets_box')) {
     fetched = true;
     showInitialPrice(charaId);
@@ -585,9 +630,10 @@ function observeChara(mutationList) {
     followAuctions(charaId);
     showOwnTemple();
     countTempleNum(charaId);
-  } // use '.progress_bar' to detect (and skip) ICO characters
-  else if(document.querySelector('#grailBox .progress_bar')) {
+  } // use '.trade' to detect ICO characters (instead of '.progress_bar')
+  else if(document.querySelector('#grailBox .trade')) {
     observer.disconnect();
+    new AutoFulfillICO().addButton();
   }
 }
 
