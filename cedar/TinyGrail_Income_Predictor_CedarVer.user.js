@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.5.4
-// @description  Calculate income for tiny Grail, add more temple info
+// @version      1.6
+// @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
 // @grant        GM_addStyle
@@ -12,11 +12,11 @@
 
 
 GM_addStyle(`
-/*新番股左上角的圆圈以及名字颜色*/
+/*显示角色等级: 左上角的圆圈以及名字颜色*/
 .grail_list li{
   position:relative;
 }
-span.badgeBox {
+span.charaLevelBox {
   width: 20px;
   height: 20px;
   position: absolute;
@@ -31,38 +31,49 @@ span.badgeBox {
   font-weight:bold;
   visibility: hidden;
 }
-a.badgeName{
+a.charaLevelName{
   font-weight:bold;
   color: dodgerblue;
 }
-a.badgeName:hover{
+a.charaLevelName:hover{
   color: blueviolet;
 }
-html[data-theme='dark'] a.badgeName {
+html[data-theme='dark'] a.charaLevelName {
   font-weight:bold;
   color: lightblue;
 }
-html[data-theme='dark'] a.badgeName:hover {
+html[data-theme='dark'] a.charaLevelName:hover {
   color: lightgreen;
 }
 
-/*相关按钮与数据*/
+/*相关按钮与数据显示*/
 #grail .horizontalOptions ul li, #grail .item .templePrice {
   cursor: pointer;
-}
-#grail .grailInfoBox {
-  padding: 10px 0;
-  border-top: 1px solid #CCC;
 }
 #grail .grailInfoBox .chiiBtn {
   margin: 0 3px;
 }
-#grail .grailInfoBox div>span {
+#grail .grailInfoBox {
+  padding: 10px 0;
+  border-top: 1px solid #CCC;
+  display: flex;
+  justify-content: left;
+  flex-wrap: wrap;
+}
+#grail .grailInfoBox>span {
   font-weight: bold;
   font-size: 14px;
-  margin-right: 5px;
-  min-width: 160px;
-  display: inline-block;
+  flex-basis: 25%;
+}
+#grail .grailInfoBox>span.levelCounter {
+  flex-basis: 50%;
+  flex-grow: 2;
+}
+#grail .grailInfoBox>span.levelCounter>span {
+  display: flex;
+}
+#grail .grailInfoBox>span.levelCounter>span>span {
+  flex: 1;
 }
 
 /*图表相关*/
@@ -76,7 +87,7 @@ html[data-theme='dark'] a.badgeName:hover {
   width: 100vmin;
   height: 95vmin;
   margin: auto;
-  background-color: rgba(0,0,0,0.7);
+  background-color: rgba(0,0,0,0.5);
   border-radius: 5px;
   z-index: 102;
 }
@@ -102,50 +113,43 @@ $.getScript('https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.j
 class IncomeAnalyser {
   constructor() {
     this._bgmId = location.pathname.split('user/')[1];
-
     let numEl = document.createElement('span'); numEl.innerHTML = '-';
-    this._badgeCharaNumEl = numEl.cloneNode(true);
-    this._badgeStockNumEl = numEl.cloneNode(true);
+
     this._totalCharaStockNumEl = numEl.cloneNode(true);
-    this._totalCharaIncomeNumEl = numEl.cloneNode(true);
+    this._totalCharaIncomeEl = numEl.cloneNode(true);
     this._totalTempleStockNumEl = numEl.cloneNode(true);
     this._totalTempleIncomeNumEl = numEl.cloneNode(true);
-    this._totalStockNumEl = numEl.cloneNode(true);
+
+    // this._totalStockNumEl = numEl.cloneNode(true);
     this._totalIncomeEl = numEl.cloneNode(true);
     this._totalTaxEl = numEl.cloneNode(true);
     this._afterTaxIncomeEl = numEl.cloneNode(true);
-    this._avgHoldingCostEl = numEl.cloneNode(true);
+
+    this._$charaLevelEl = $(numEl.cloneNode(true));
+    this._$templeLevelStockEl = $(numEl.cloneNode(true));
 
     let elWrapper = $(document.createElement('span'));
     this.$stockEl = $(document.createElement('div'))
       .addClass('grailInfoBox')
       .append(
-        $(document.createElement('div')).append(
-          elWrapper.clone().html("新番角色数：").append(this._badgeCharaNumEl).attr('title', '新番角色在52周内有参与TV或剧场版'),
-          elWrapper.clone().html("新番持股量：").append(this._badgeStockNumEl),
-          elWrapper.clone().html("角色总持股：").append(this._totalCharaStockNumEl),
-          elWrapper.clone().html("角色总股息：").append(this._totalCharaIncomeNumEl)
-        ),
-        $(document.createElement('div')).append(
-          elWrapper.clone().html("计息圣殿股：").append(this._totalTempleStockNumEl).attr('title', '拥有圣殿的角色所重组的股数的一半'),
-          elWrapper.clone().html("圣殿总股息：").append(this._totalTempleIncomeNumEl),
-          elWrapper.clone().html("计息持股量：").append(this._totalStockNumEl).attr('title', '角色持股 + 圣殿持股'),
-          elWrapper.clone().html("税前总股息：").append(this._totalIncomeEl)
-        ),
-        $(document.createElement('div')).append(
+          elWrapper.clone().html("角色总持股：").append(this._totalCharaStockNumEl).attr('title', '角色持股指持有活股的数量'),
+          elWrapper.clone().html("角色总股息：").append(this._totalCharaIncomeEl),
+          elWrapper.clone().html("圣殿股总数：").append(this._totalTempleStockNumEl).attr('title', '塔内持股总量'),
+          elWrapper.clone().html("圣殿总股息：").append(this._totalTempleIncomeNumEl).attr('title', '圣殿股产生的总股息. 各圣殿股息=圣殿股数×股息加成×角色等级/2'),
+
+          // elWrapper.clone().html("计息持股量：").append(this._totalStockNumEl).attr('title', '角色持股 + 圣殿持股'),
+          elWrapper.clone().html("税前总股息：").append(this._totalIncomeEl),
           elWrapper.clone().html("个人所得税：").append(this._totalTaxEl),
           elWrapper.clone().html("税后总股息：").append(this._afterTaxIncomeEl),
-          // elWrapper.clone().html("持股成本均价：").append(this._avgHoldingCostEl).attr('title', '持有的所有股票的加权市价')
-        )
+
+          elWrapper.clone().html("各级角色数：").append(this._$charaLevelEl).addClass('levelCounter').attr('title', '角色等级=下取整(活股数量/7500). 仅统计有塔的角色.'),
+          elWrapper.clone().html("各级献祭量：").append(this._$templeLevelStockEl).addClass('levelCounter').attr('title', '各等级的角色的塔内持股量'),
       );
 
     this._canvasEl = document.createElement('canvas'); this._canvasEl.width = '500'; this._canvasEl.height = '500';
     this.$chartEl = $(document.createElement('div')).attr('id', 'grailChart');
 
-    this._badgeStockNum = 0;
-    this._normalStockNum = 0;
     this._charaIncome = 0;
-    this._templeStockNum = 0;
     this._templeIncome = 0;
 
     this._charaInfo = null;
@@ -155,11 +159,23 @@ class IncomeAnalyser {
   // 统计数据
   doStatistics() {
     this._prepare();
-    Promise.all([this._charaFetch(), this._templeFetch()])
-    .then(() => {
-      this._calcRealIncome();
-      this._totalStockNumEl.innerHTML = this._templeStockNum/2 + this._badgeStockNum + this._normalStockNum;
-    })
+    Promise.all([
+      this._charaFetch()
+      .then(() => {
+        this._countCharaLevel();
+        this._calcStockInfo();
+        this._calcTempleInfo();
+        this._calcRealIncome();
+      })
+      .then(() => {
+        this._renderCharaPage();
+      }),
+
+      this._templeFetch()
+      .then(() => {
+        this._renderTemplePage();
+      })
+    ])
     .then(() => {
       this._updateChart();
     });
@@ -182,14 +198,6 @@ class IncomeAnalyser {
         console.log('got charaInfo');
         if (d.State !== 0) return;
         this._charaInfo = d.Value.Items;
-        let $page = $(document.createElement('ul')).addClass('grail_list page1')
-          .append(this._charaInfo.map(renderUserCharacter));
-        $('#grail .chara_list').append($page);
-        $('#grail .chara_list .loading').hide();
-        $(document.createElement('span')).addClass('badgeBox').html('0').prependTo($page.find('li'));
-        this._calcStockIncome();
-        this._renderBonusStock();
-        // this._calcAvgHoldingCost();
         resolve();
       })
     );
@@ -201,76 +209,35 @@ class IncomeAnalyser {
         console.log('got templeInfo');
         if (d.State !== 0) return;
         this._templeInfo = d.Value.Items;
-        let $page = $(document.createElement('ul')).addClass('grail_list page1')
-          .append(this._templeInfo.map(renderTemple));
-        $('#grail .temple_list').append($page);
-        $('#grail .temple_list .loading').hide();
-        this._calcTempleIncome(this._templeInfo);
-        this._addTempleCover();
         resolve();
       })
     );
   }
 
-  _calcStockIncome() {
-    this._badgeStockNum = this._normalStockNum = this._charaIncome = 0;
-    let badgeBox = document.getElementsByClassName('badgeBox');
-    let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
-    let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
-    this._charaInfo.forEach((chara, i) => {
-      chara.Bonus? this._badgeStockNum += chara.State: this._normalStockNum += chara.State;
-      this._charaIncome += chara.State * chara.Rate;
-    });
-    this._badgeCharaNumEl.innerHTML = this._charaInfo.filter(chara => chara.Bonus > 0).length;
-    this._badgeStockNumEl.innerHTML = this._badgeStockNum;
-    this._totalCharaStockNumEl.innerHTML = this._badgeStockNum + this._normalStockNum;
-    this._totalCharaIncomeNumEl.innerHTML = this._charaIncome.toFixed(2);
+  _countCharaLevel() {
+    let levelCounter = Array(20).fill(0);
+    this._charaInfo.filter(chara => chara.Sacrifices >= 500).forEach(chara => {levelCounter[chara.Level]++});
+    this._$charaLevelEl.empty().append(levelCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
   }
 
-  _renderBonusStock() {
-    let badgeBox = document.getElementsByClassName('badgeBox');
-    let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
-    let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
-    this._charaInfo.forEach((chara, i) => {
-      let bonusNum = chara.Bonus;
-      if (bonusNum) {
-        badgeBox[i].innerHTML = bonusNum;
-        badgeBox[i].style.visibility = 'visible';
-        charaName[i].classList.add('badgeName');
-      }
-      if(bonusNum && chara.Rate!==0.75 || !bonusNum && chara.Rate!==0.1) {
-        let charaRate = document.createElement('span');
-        charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
-        charaRateBox[i].appendChild(charaRate);
-      }
-    });
+  _calcStockInfo() {
+    this._charaIncome = this._charaInfo.reduce((sum, chara) => sum + chara.State * chara.Rate, 0);
+    this._totalCharaStockNumEl.innerHTML = this._charaInfo.reduce((sum, chara) => sum + chara.State, 0);
+    this._totalCharaIncomeEl.innerHTML = this._charaIncome.toFixed(2);
   }
 
-  _calcAvgHoldingCost() {
-    let totalHoldingCost = 0;
-    this._charaInfo.forEach(chara => {
-      totalHoldingCost += chara.Current * chara.State;
-    });
-    this._avgHoldingCostEl.innerHTML = ((totalHoldingCost / (this._badgeStockNum + this._normalStockNum)) || 0).toFixed(2);
-  }
+  _calcTempleInfo() {
+    let templeInfoWithLevel = this._charaInfo.filter(chara => chara.Sacrifices >= 500);
 
+    // count temple stock num
+    let templeStockCounter = Array(20).fill(0);
+    templeInfoWithLevel.forEach(chara => {templeStockCounter[chara.Level] += chara.Sacrifices});
+    this._$templeLevelStockEl.empty().append(templeStockCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
+    this._totalTempleStockNumEl.innerHTML = templeStockCounter.reduce((sum, x) => sum + x, 0);
 
-  _calcTempleIncome() {
-    this._templeIncome = this._templeStockNum = 0;
-    this._templeInfo.forEach((temple, i) => {
-      this._templeIncome += temple.Rate * temple.Sacrifices/2;
-      this._templeStockNum += temple.Sacrifices;
-    });
+    //calculate temple income
+    this._templeIncome = templeInfoWithLevel.reduce((sum, chara) => sum + chara.Level*chara.Rate*chara.Sacrifices/2, 0);
     this._totalTempleIncomeNumEl.innerHTML = this._templeIncome.toFixed(2);
-    this._totalTempleStockNumEl.innerHTML = parseInt(this._templeStockNum/2);
-  }
-
-  _addTempleCover() {
-    $('#grail .temple_list .item .card').on('click', e => {
-      let cid = $(e.srcElement).data('id');
-      let temple = this._templeInfo.find(t => t.CharacterId == cid);
-      showTemple(temple, null);
-    });
   }
 
   _calcRealIncome() {
@@ -292,6 +259,50 @@ class IncomeAnalyser {
       }
     }
     return tax;
+  }
+
+  _renderCharaPage() {
+    let $page = $(document.createElement('ul')).addClass('grail_list page1')
+      .append(this._charaInfo.map(renderUserCharacter));
+    $('#grail .chara_list').append($page);
+    $('#grail .chara_list .loading').hide();
+    $(document.createElement('span')).addClass('charaLevelBox').html('0').prependTo($page.find('li'));
+    this._renderCharaLevelStock();
+  }
+
+  _renderTemplePage() {
+    let $page = $(document.createElement('ul')).addClass('grail_list page1')
+      .append(this._templeInfo.map(renderTemple));
+    $('#grail .temple_list').append($page);
+    $('#grail .temple_list .loading').hide();
+    this._addTempleCover();
+  }
+
+  _addTempleCover() {
+    $('#grail .temple_list .item .card').on('click', e => {
+      let cid = $(e.srcElement).data('id');
+      let temple = this._templeInfo.find(t => t.CharacterId == cid);
+      showTemple(temple, null);
+    });
+  }
+
+  _renderCharaLevelStock() {
+    let charaLevelBox = document.getElementsByClassName('charaLevelBox');
+    let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
+    let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
+    this._charaInfo.forEach((chara, i) => {
+      let charaLevel = chara.Level;
+      if (charaLevel) {
+        charaLevelBox[i].innerHTML = charaLevel;
+        charaLevelBox[i].style.visibility = 'visible';
+        charaName[i].classList.add('charaLevelName');
+      }
+      if(chara.Bonus && chara.Rate!==0.75 || !chara.Bonus && chara.Rate!==0.1) {
+        let charaRate = document.createElement('span');
+        charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
+        charaRateBox[i].appendChild(charaRate);
+      }
+    });
   }
 
   //获取拍卖底价
@@ -372,12 +383,12 @@ class IncomeAnalyser {
 
   _chartConfig(labels, chartData, chartType, titleText, labelName, threshold) {
     const total = chartData.reduce((sum, x) => sum + x, 0);
-    const offset = 0;
-    // using currying to access the previous value, then calculate hue value (shift 180deg)
+    const offset = 0; // shift 0deg
+    // using currying to access the previous value, then calculate hue value
     const stepColor = (weights, s, l, a) => weights.map((sum => value => sum += value)(-weights[0])).map(x => `hsla(${parseInt((360/total*x+offset)%360)},${s},${l},${a})`);
 
-    //chartData[i] >= threshold 时, 其 legend 才会在右侧显示出来. 最多显示20项.
-    const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold && legendItem.index < 20;
+    //chartData[i] >= threshold 时, 其 legend 才会在右侧显示出来. 最多显示10项.
+    const legendFilterFunc = (legendItem, data) => data.datasets[0].data[legendItem.index] >= threshold && legendItem.index < 10;
 
     let options = {
       responsive: true,
@@ -433,10 +444,11 @@ class IncomeAnalyser {
 }
 
 let observer = new MutationObserver(function() {
-  let analyser = new IncomeAnalyser();
   let $grailOptions = $('#grail .horizontalOptions');
   if(!$grailOptions.length) return;
   observer.disconnect();
+
+  let analyser = new IncomeAnalyser();
 
   // buttons
   let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
