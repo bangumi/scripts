@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6
+// @version      1.6.1
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -120,7 +120,6 @@ class IncomeAnalyser {
     this._totalTempleStockNumEl = numEl.cloneNode(true);
     this._totalTempleIncomeNumEl = numEl.cloneNode(true);
 
-    // this._totalStockNumEl = numEl.cloneNode(true);
     this._totalIncomeEl = numEl.cloneNode(true);
     this._totalTaxEl = numEl.cloneNode(true);
     this._afterTaxIncomeEl = numEl.cloneNode(true);
@@ -132,21 +131,20 @@ class IncomeAnalyser {
     this.$stockEl = $(document.createElement('div'))
       .addClass('grailInfoBox')
       .append(
-          elWrapper.clone().html("角色总持股：").append(this._totalCharaStockNumEl).attr('title', '角色持股指持有活股的数量'),
-          elWrapper.clone().html("角色总股息：").append(this._totalCharaIncomeEl),
-          elWrapper.clone().html("圣殿股总数：").append(this._totalTempleStockNumEl).attr('title', '塔内持股总量'),
-          elWrapper.clone().html("圣殿总股息：").append(this._totalTempleIncomeNumEl).attr('title', '圣殿股产生的总股息. 各圣殿股息=圣殿股数×股息加成×角色等级/2'),
+          elWrapper.clone().html("角色持股：").append(this._totalCharaStockNumEl).attr('title', '活股总持有量'),
+          elWrapper.clone().html("角色股息：").append(this._totalCharaIncomeEl),
+          elWrapper.clone().html("圣殿持股：").append(this._totalTempleStockNumEl).attr('title', '塔内持股总量'),
+          elWrapper.clone().html("圣殿股息：").append(this._totalTempleIncomeNumEl).attr('title', '圣殿股产生的总股息. 各圣殿股息=圣殿股数×股息加成×角色等级/2'),
 
-          // elWrapper.clone().html("计息持股量：").append(this._totalStockNumEl).attr('title', '角色持股 + 圣殿持股'),
-          elWrapper.clone().html("税前总股息：").append(this._totalIncomeEl),
-          elWrapper.clone().html("个人所得税：").append(this._totalTaxEl),
-          elWrapper.clone().html("税后总股息：").append(this._afterTaxIncomeEl),
+          elWrapper.clone().html("税前股息：").append(this._totalIncomeEl),
+          elWrapper.clone().html("应缴税额：").append(this._totalTaxEl),
+          elWrapper.clone().html("税后股息：").append(this._afterTaxIncomeEl),
 
           elWrapper.clone().html("各级角色数：").append(this._$charaLevelEl).addClass('levelCounter').attr('title', '角色等级=下取整(活股数量/7500). 仅统计有塔的角色.'),
           elWrapper.clone().html("各级献祭量：").append(this._$templeLevelStockEl).addClass('levelCounter').attr('title', '各等级的角色的塔内持股量'),
       );
 
-    this._canvasEl = document.createElement('canvas'); this._canvasEl.width = '500'; this._canvasEl.height = '500';
+    this._canvasEl = document.createElement('canvas'); this._canvasEl.width = this._canvasEl.height = 500;
     this.$chartEl = $(document.createElement('div')).attr('id', 'grailChart');
 
     this._charaIncome = 0;
@@ -162,10 +160,7 @@ class IncomeAnalyser {
     Promise.all([
       this._charaFetch()
       .then(() => {
-        this._countCharaLevel();
-        this._calcStockInfo();
-        this._calcTempleInfo();
-        this._calcRealIncome();
+        this._calcCharaInfo();
       })
       .then(() => {
         this._renderCharaPage();
@@ -173,9 +168,16 @@ class IncomeAnalyser {
 
       this._templeFetch()
       .then(() => {
+        this._countTempleLevel();
+        this._calcTempleInfo();
+      })
+      .then(() => {
         this._renderTemplePage();
       })
     ])
+    .then(() => {
+      this._calcRealIncome();
+    })
     .then(() => {
       this._updateChart();
     });
@@ -214,29 +216,26 @@ class IncomeAnalyser {
     );
   }
 
-  _countCharaLevel() {
+  // 计算的是圣殿对应的角色等级
+  _countTempleLevel() {
     let levelCounter = Array(20).fill(0);
-    this._charaInfo.filter(chara => chara.Sacrifices >= 500).forEach(chara => {levelCounter[chara.Level]++});
+    this._templeInfo.forEach(temple => {levelCounter[temple.CharacterLevel]++});
     this._$charaLevelEl.empty().append(levelCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
+
+    let templeStockCounter = Array(20).fill(0);
+    this._templeInfo.forEach(temple => {templeStockCounter[temple.CharacterLevel] += temple.Assets});
+    this._$templeLevelStockEl.empty().append(templeStockCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
+    this._totalTempleStockNumEl.innerHTML = templeStockCounter.reduce((sum, x) => sum + x, 0);
   }
 
-  _calcStockInfo() {
-    this._charaIncome = this._charaInfo.reduce((sum, chara) => sum + chara.State * chara.Rate, 0);
+  _calcCharaInfo() {
     this._totalCharaStockNumEl.innerHTML = this._charaInfo.reduce((sum, chara) => sum + chara.State, 0);
+    this._charaIncome = this._charaInfo.reduce((sum, chara) => sum + chara.State*chara.Rate, 0);
     this._totalCharaIncomeEl.innerHTML = this._charaIncome.toFixed(2);
   }
 
   _calcTempleInfo() {
-    let templeInfoWithLevel = this._charaInfo.filter(chara => chara.Sacrifices >= 500);
-
-    // count temple stock num
-    let templeStockCounter = Array(20).fill(0);
-    templeInfoWithLevel.forEach(chara => {templeStockCounter[chara.Level] += chara.Sacrifices});
-    this._$templeLevelStockEl.empty().append(templeStockCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
-    this._totalTempleStockNumEl.innerHTML = templeStockCounter.reduce((sum, x) => sum + x, 0);
-
-    //calculate temple income
-    this._templeIncome = templeInfoWithLevel.reduce((sum, chara) => sum + chara.Level*chara.Rate*chara.Sacrifices/2, 0);
+    this._templeIncome = this._templeInfo.reduce((sum, chara) => sum + chara.CharacterLevel*chara.Rate*chara.Assets/2, 0);
     this._totalTempleIncomeNumEl.innerHTML = this._templeIncome.toFixed(2);
   }
 
@@ -297,11 +296,9 @@ class IncomeAnalyser {
         charaLevelBox[i].style.visibility = 'visible';
         charaName[i].classList.add('charaLevelName');
       }
-      if(chara.Bonus && chara.Rate!==0.75 || !chara.Bonus && chara.Rate!==0.1) {
-        let charaRate = document.createElement('span');
-        charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
-        charaRateBox[i].appendChild(charaRate);
-      }
+      let charaRate = document.createElement('span');
+      charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
+      charaRateBox[i].appendChild(charaRate);
     });
   }
 
@@ -360,14 +357,14 @@ class IncomeAnalyser {
     createChart(charaIncomeChartEl, config);
 
     // temple stock num chart
-    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Sacrifices/2)
-    config = this._chartConfig(labels, data, chartType, '圣殿计息持股分布', '圣殿计息持股量', findNthLargest(data, 3));
+    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Assets)
+    config = this._chartConfig(labels, data, chartType, '圣殿持股分布', '圣殿持股量', findNthLargest(data, 3));
     let templeStockNumChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeStockNumChartEl);
     createChart(templeStockNumChartEl, config);
 
     // temple income chart
-    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.Rate*x.Sacrifices/2)
+    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.CharacterLevel*x.Rate*x.Assets/2)
     config = this._chartConfig(labels, data.map(Math.round), chartType, '圣殿股息分布', '圣殿股息', findNthLargest(data));
     let templeIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeIncomeChartEl);
@@ -486,24 +483,26 @@ observer.observe(document.getElementById('user_home'), {'childList': true, 'subt
 
 const api = 'https://tinygrail.com/api/';
 function getData(url, callback) {
-  if (!url.startsWith('http')) url = api + url;
+  if (!url.startsWith('http'))
+    url = api + url;
   $.ajax({
     url: url,
     type: 'GET',
-    xhrFields: {withCredentials: true},
+    xhrFields: { withCredentials: true },
     success: callback
   });
 }
 
 function postData(url, data, callback) {
   var d = JSON.stringify(data);
-  if (!url.startsWith('http')) url = api + url;
+  if (!url.startsWith('http'))
+    url = api + url;
   $.ajax({
     url: url,
     type: 'POST',
     contentType: 'application/json',
     data: d,
-    xhrFields: {withCredentials: true},
+    xhrFields: { withCredentials: true },
     success: callback
   });
 }
@@ -520,13 +519,14 @@ function formatNumber(number, decimals, dec_point, thousands_sep) {
     prec = !isFinite(+decimals) ? 2 : Math.abs(decimals),
     sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
     dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
-      s = '',
-      toFixedFix = function (n, prec) {
-        var k = Math.pow(10, prec);
-        return '' + Math.ceil(n * k) / k;
-      };
+    s = '',
+    // toFixedFix = function (n, prec) {
+    //   var k = Math.pow(10, prec);
+    //   return '' + Math.ceil(n * k) / k;
+    // };
 
-  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+    //s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+    s = (prec ? n.toFixed(prec) : '' + Math.round(n)).split('.');
   var re = /(-?\d+)(\d{3})/;
   while (re.test(s[0])) {
     s[0] = s[0].replace(re, "$1" + sep + "$2");
@@ -559,9 +559,13 @@ function renderUserCharacter(chara) {
   if (chara.Fluctuation <= 0)
     title = `₵${formatNumber(chara.Current, 2)} / ${formatNumber(chara.Fluctuation * 100, 2)}%`;
 
+  var amount = formatNumber(chara.State, 0);
+  if (chara.State == 0)
+    amount = "--";
+
   var item = `<li title="${title}"><a href="/character/${chara.Id}" target="_blank" class="avatar"><span class="groupImage"><img src="${normalizeAvatar(chara.Icon)}"></span></a>
       <div class="inner"><a href="/character/${chara.Id}" target="_blank" class="avatar name">${chara.Name}</a><br>
-        <small class="feed" title="持股数量 / 固定资产">${formatNumber(chara.State, 0)} / ${formatNumber(chara.Sacrifices, 0)}</small></div></li>`;
+        <small class="feed" title="持股数量 / 固定资产">${amount} / ${formatNumber(chara.Sacrifices, 0)}</small></div></li>`;
   return item;
 }
 
@@ -627,27 +631,29 @@ function openAuctionDialog(chara) {
   var price = Math.ceil(chara.Price);
   var total = formatNumber(price * chara.State, 2);
   var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
-  <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
-    <div class="title" title="拍卖底价 / 竞拍数量 / 流通股份">股权拍卖 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Price, 2)} / ${formatNumber(chara.State, 0)} / ${formatNumber(chara.Total, 0)}</div>
-    <div class="desc">输入竞拍出价和数量参与竞拍</div>
-    <div class="label"><span class="input">价格</span><span class="input">数量</span><span class="result">合计 -₵${total}</span></div>
-    <div class="trade auction">
-      <input class="price" type="number" min="${price}" value="${price}">
-      <input class="amount" type="number" min="1" max="${chara.State}" value="${chara.State}">
-      <button id="bidAuctionButton" class="active">确定</button><button id="cancelDialogButton">取消</button></div>
-    <div class="loading" style="display:none"></div>
-    <a id="TB_closeWindowButton" title="Close">X关闭</a>
+              <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+                <div class="title" title="拍卖底价 / 竞拍数量 / 流通股份">股权拍卖 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Price, 2)} / ${formatNumber(chara.State, 0)} / ${formatNumber(chara.Total, 0)}</div>
+                <div class="desc">输入竞拍出价和数量参与竞拍</div>
+                <div class="label"><span class="input">价格</span><span class="input">数量</span><span class="total">合计 -₵${total}</span></div>
+                <div class="trade auction">
+                  <input class="price" type="number" min="${price}" value="${price}">
+                    <input class="amount" type="number" min="1" max="${chara.State}" value="${chara.State}">
+                      <button id="bidAuctionButton" class="active">确定</button><button id="cancelDialogButton">取消</button></div>
+                    <div class="loading" style="display:none"></div>
+                    <a id="TB_closeWindowButton" title="Close">X关闭</a>
   </div>`;
   $('body').append(dialog);
-  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
-  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
+  var ids = [chara.Id];
+  loadUserAuctions(ids);
+  // $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
+  // $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
   $('#cancelDialogButton').on('click', closeDialog);
   $('#TB_closeWindowButton').on('click', closeDialog);
   $('#TB_window .auction input').on('keyup', () => {
     var price = $('.trade.auction .price').val();
     var amount = $('.trade.auction .amount').val();
     var total = formatNumber(price * amount, 2);
-    $("#TB_window .label .result").text(`合计 -₵${total}`);
+    $("#TB_window .label .total").text(`合计 -₵${total}`);
   });
   $('#bidAuctionButton').on('click', function () {
     var price = $('.trade.auction .price').val();
@@ -673,6 +679,7 @@ function openAuctionDialog(chara) {
     });
   });
 }
+
 
 function showTemple(temple, chara) {
   var cover = getLargeCover(temple.Cover);
@@ -706,20 +713,20 @@ function showTemple(temple, chara) {
   if (cover.indexOf('//lain.') >= 0)
     position = 'background-position:top;';
 
+  //var image=`<div class="card" style="background-image:url(${cover});${position}">`;
+  var image = `<img class="cover" src='${cover}' />`;
+
   var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
   <div id="TB_window" class="dialog temple" style="display:block;">
-    <div class="card" style="background-image:url(${cover});${position}">
+      ${image}
       ${action}
-      <div class="loading" style="display:none;padding-top:600px;"></div>
+      <div class="loading" style="display:none;"></div>
       <a id="TB_closeWindowButton" title="Close">X关闭</a>
     </div>
   </div>`;
   $('body').append(dialog);
-  fixRightTempleImageReso();
 
   $('#TB_closeWindowButton').on('click', closeDialog);
-  //$('#TB_window').css("margin-left", $('#TB_window').width() / -2);
-  //$('#TB_window').css("margin-top", $('#TB_window').height() / -2);
   $('#changeCoverButton').on('click', (e) => {
     $("#picture").click();
     e.stopPropagation();
@@ -733,7 +740,9 @@ function showTemple(temple, chara) {
       var file = this.files[0];
       var data = window.URL.createObjectURL(file);
 
-      $('#TB_window .card').css('background-image', `url(${data})`);
+      var newImage = `<div class="card" style="background-image:url(${data})">`;
+      $('#TB_window img.cover').hide();
+      $('#TB_window').prepend(newImage);
       $('#TB_window .action').hide();
       $('#TB_window .loading').show();
 
