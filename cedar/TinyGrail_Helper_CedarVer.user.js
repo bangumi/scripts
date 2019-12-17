@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.2.3
+// @version     1.2.4
 // @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍，ICO自动补款. fork自Liaune的插件
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
@@ -582,12 +582,13 @@ class AutoFulfillICO {
       return;
     }
     let endTime = await retryPromise(resolve => getData(`chara/${charaId}`, d => resolve(d.Value.EndTime)));
-    let [y, m, d, hr, min, sec] = '2019-12-15T00:42:54'.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/).slice(1).map(x => parseInt(x, 10));
+    let [y, m, d, hr, min, sec] = endTime.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/).slice(1).map(x => parseInt(x, 10));
     let delay = new Date(y, m-1, d, hr, min, sec) - Date.now() - advanceInSecond*1000;
     setTimeout(this._fulfillICO, delay, charaId, targetAmount);
     alert(`设置成功！\n请勿关闭或刷新本页面，并保证余额充足，网络畅通。\n在ICO结束前${advanceInSecond}秒将会自动补足到${targetAmount}cc.`);
-    this._$fulfillButton.after(`已设置自动补款. 目标金额：${targetAmount}`);
     this._$fulfillButton[0].disabled = true;
+    this._$fulfillButton[0].innerHTML = '已设置';
+    this._$fulfillButton.after(`已设置自动补款. 目标金额：${targetAmount}`);
   }
 
   async _fulfillICO(charaId, targetAmount) {
