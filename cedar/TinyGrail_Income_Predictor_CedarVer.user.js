@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.1
+// @version      1.6.2
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -23,7 +23,7 @@ span.charaLevelBox {
   top: -10px;
   left: -10px;
   border-radius: 50%;
-  background-color: rgba(255,0,0,0.7);
+  background-color: rgba(255, 0, 0, 0.5);
   text-align: center;
   line-height: 20px;
   padding: 2px;
@@ -64,16 +64,16 @@ html[data-theme='dark'] a.charaLevelName:hover {
   font-weight: bold;
   font-size: 14px;
   flex-basis: 25%;
+  min-width: 160px;
 }
-#grail .grailInfoBox>span.levelCounter {
-  flex-basis: 50%;
-  flex-grow: 2;
-}
-#grail .grailInfoBox>span.levelCounter>span {
+#grail .grailInfoBox>.levelCounter {
+  flex-basis: 100%;
   display: flex;
+  flex-wrap: wrap;
 }
-#grail .grailInfoBox>span.levelCounter>span>span {
+#grail .grailInfoBox>.levelCounter>span {
   flex: 1;
+  margin-right: 5px;
 }
 
 /*图表相关*/
@@ -119,13 +119,13 @@ class IncomeAnalyser {
     this._totalCharaIncomeEl = numEl.cloneNode(true);
     this._totalTempleStockNumEl = numEl.cloneNode(true);
     this._totalTempleIncomeNumEl = numEl.cloneNode(true);
-
     this._totalIncomeEl = numEl.cloneNode(true);
     this._totalTaxEl = numEl.cloneNode(true);
     this._afterTaxIncomeEl = numEl.cloneNode(true);
 
-    this._$charaLevelEl = $(numEl.cloneNode(true));
-    this._$templeLevelStockEl = $(numEl.cloneNode(true));
+    let $levelCounterEl = $(document.createElement('span')).addClass('levelCounter');
+    this._$charaLevelEl = $levelCounterEl.clone().html("各级角色数：").append(numEl.cloneNode(true)).attr('title', '角色等级=下取整(活股数量/7500). 仅统计有塔的角色.');
+    this._$templeLevelStockEl = $levelCounterEl.clone().html("各级献祭量：").append(numEl.cloneNode(true)).attr('title', '各等级的角色的塔内持股量');
 
     let elWrapper = $(document.createElement('span'));
     this.$stockEl = $(document.createElement('div'))
@@ -135,13 +135,10 @@ class IncomeAnalyser {
           elWrapper.clone().html("角色股息：").append(this._totalCharaIncomeEl),
           elWrapper.clone().html("圣殿持股：").append(this._totalTempleStockNumEl).attr('title', '塔内持股总量'),
           elWrapper.clone().html("圣殿股息：").append(this._totalTempleIncomeNumEl).attr('title', '圣殿股产生的总股息. 各圣殿股息=圣殿股数×股息加成×角色等级/2'),
-
           elWrapper.clone().html("税前股息：").append(this._totalIncomeEl),
           elWrapper.clone().html("应缴税额：").append(this._totalTaxEl),
           elWrapper.clone().html("税后股息：").append(this._afterTaxIncomeEl),
-
-          elWrapper.clone().html("各级角色数：").append(this._$charaLevelEl).addClass('levelCounter').attr('title', '角色等级=下取整(活股数量/7500). 仅统计有塔的角色.'),
-          elWrapper.clone().html("各级献祭量：").append(this._$templeLevelStockEl).addClass('levelCounter').attr('title', '各等级的角色的塔内持股量'),
+          this._$charaLevelEl, this._$templeLevelStockEl,
       );
 
     this._canvasEl = document.createElement('canvas'); this._canvasEl.width = this._canvasEl.height = 500;
@@ -191,7 +188,10 @@ class IncomeAnalyser {
     $('#grail .chara_list .loading').show();
     $(`#grail .temple_list .loading`).show();
 
-    $('#grail .grailInfoBox span>span').html('-'); //清除之前的数据
+    //清除之前的数据
+    this._$charaLevelEl.children('span:not(:first)').remove();
+    this._$templeLevelStockEl.children('span:not(:first)').remove();
+    $('#grail .grailInfoBox span>span').html('-');
   }
 
   _charaFetch() {
@@ -220,11 +220,13 @@ class IncomeAnalyser {
   _countTempleLevel() {
     let levelCounter = Array(20).fill(0);
     this._templeInfo.forEach(temple => {levelCounter[temple.CharacterLevel]++});
-    this._$charaLevelEl.empty().append(levelCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
+    this._$charaLevelEl.children('span').remove();
+    this._$charaLevelEl.append(levelCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
 
     let templeStockCounter = Array(20).fill(0);
     this._templeInfo.forEach(temple => {templeStockCounter[temple.CharacterLevel] += temple.Assets});
-    this._$templeLevelStockEl.empty().append(templeStockCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
+    this._$templeLevelStockEl.children('span').remove();
+    this._$templeLevelStockEl.append(templeStockCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
     this._totalTempleStockNumEl.innerHTML = templeStockCounter.reduce((sum, x) => sum + x, 0);
   }
 
