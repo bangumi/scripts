@@ -574,14 +574,14 @@ class AutoFulfillICO {
       alert('金额错误, 设置失败.');
       return;
     }
-    let endTime = await retryPromise(resolve => getData(`chara/${charaId}`, d => resolve(d.Value.EndTime)));
+    let endTime = await retryPromise(resolve => getData(`chara/${charaId}`, d => resolve(d.Value.End)));
     let [y, m, d, hr, min, sec] = endTime.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/).slice(1).map(x => parseInt(x, 10));
     let delay = new Date(y, m-1, d, hr, min, sec) - Date.now() - advanceInSecond*1000;
     setTimeout(this._fulfillICO, delay, charaId, targetAmount);
-    alert(`设置成功！\n请勿关闭或刷新本页面，并保证余额充足，网络畅通。\n在ICO结束前${advanceInSecond}秒将会自动补足到${targetAmount}cc.`);
     this._$fulfillButton[0].disabled = true;
-    this._$fulfillButton[0].innerHTML = '已设置';
-    this._$fulfillButton.after(`已设置自动补款. 目标金额：${targetAmount}`);
+    this._$fulfillButton[0].innerHTML = '[已设置自动补款]';
+    this._$fulfillButton.after(`目标金额：${targetAmount}`);
+    alert(`设置成功！\n请勿关闭或刷新本页面，并保证余额充足，网络畅通。\n在ICO结束前${advanceInSecond}秒将会自动补足到${targetAmount}cc.`);
   }
 
   async _fulfillICO(charaId, targetAmount) {
@@ -596,7 +596,6 @@ class AutoFulfillICO {
     let offer = targetAmount - currentAmount < 1000? 1000: targetAmount - currentAmount;
     await retryPromise(resolve => postData(`chara/join/${charaId}/${offer}`, null, resolve));
     location.reload();
-    // $('#grailBox #appendICOButton').click();
   }
 }
 
