@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.2.4
+// @version     1.2.5
 // @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍，ICO自动补款. fork自Liaune的插件
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
@@ -491,8 +491,6 @@ function openHistoryDialog(chara, page) {
 <a id="TB_closeWindowButton" title="Close">X关闭</a>
 </div>`;
   $('body').append(dialog);
-  $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
-  $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
   $('#TB_closeWindowButton').on('click', closeDialog);
   const week_ms = 7*24*3600*1000;
   new Promise(resolve => getData(`chara/charts/${chara.Id}/2019-08-08`, d => {
@@ -545,12 +543,7 @@ function openHistoryDialog(chara, page) {
       openHistoryDialog(chara,page);
     });
     resolve();
-  })))
-  .then(() => {
-    // should adjust window position again
-    $('#TB_window').css("margin-left", $('#TB_window').width() / -2);
-    $('#TB_window').css("margin-top", $('#TB_window').height() / -2);
-  });
+  })));
 }
 
 function hideBonusButton() {
