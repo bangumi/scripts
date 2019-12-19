@@ -29,7 +29,7 @@ html[data-theme='dark'] .assets .my_temple.item .card {
   border: 1px solid #FFC107;
 }
 img.cover, html[data-theme='dark'] img.cover,
-#TB_window, html[data-theme='dark'] #TB_window {
+#TB_window.temple, html[data-theme='dark'] #TB_window.temple {
   background-color: transparent;
 }
 `);
