@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.2
+// @version      1.6.3
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -12,37 +12,56 @@
 
 
 GM_addStyle(`
-/*显示角色等级: 左上角的圆圈以及名字颜色*/
-.grail_list li{
+/* 角色等级相关:
+左上角圆圈 名字颜色
+删除线 减弱亮度 */
+/* default */
+#grail .chara_list .grail_list li {
   position:relative;
 }
-span.charaLevelBox {
+#grail .chara_list .grail_list span.charaLevelBox {
   width: 20px;
   height: 20px;
   position: absolute;
   top: -10px;
   left: -10px;
   border-radius: 50%;
-  background-color: rgba(255, 0, 0, 0.5);
+  background-color: rgba(255, 115, 115, 0.7);
   text-align: center;
   line-height: 20px;
   padding: 2px;
   color: white;
   font-weight:bold;
+}
+.chara_list .grail_list .feed>span {
+  margin-left: 3px;
+}
+/* no-level character */
+.chara_list li.noLevelChara {
+  filter: grayscale(1);
+}
+#grail .chara_list li.noLevelChara span.charaLevelBox {
   visibility: hidden;
 }
-a.charaLevelName{
-  font-weight:bold;
+.chara_list li.noLevelChara .feed>span {
+  text-decoration: line-through;
+}
+/* high-level character */
+#grail .chara_list .grail_list li.highLevelChara span.charaLevelBox {
+  background-color: rgba(255, 0, 0, 0.7);
+}
+#grail .chara_list li.highLevelChara a.avatar.name {
+  font-weight: bold;
   color: dodgerblue;
 }
-a.charaLevelName:hover{
+#grail .chara_list li.highLevelChara a.avatar.name:hover {
   color: blueviolet;
 }
-html[data-theme='dark'] a.charaLevelName {
+html[data-theme='dark'] #grail .chara_list li.highLevelChara a.avatar.name {
   font-weight:bold;
   color: lightblue;
 }
-html[data-theme='dark'] a.charaLevelName:hover {
+html[data-theme='dark'] #grail .chara_list li.highLevelChara a.avatar.name:hover {
   color: lightgreen;
 }
 
@@ -113,8 +132,9 @@ $.getScript('https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.j
 class IncomeAnalyser {
   constructor() {
     this._bgmId = location.pathname.split('user/')[1];
-    let numEl = document.createElement('span'); numEl.innerHTML = '-';
+    this._mybgmId = document.getElementById('dock').querySelector('li.first>a').href.split('user/')[1];
 
+    let numEl = document.createElement('span'); numEl.innerHTML = '-';
     this._totalCharaStockNumEl = numEl.cloneNode(true);
     this._totalCharaIncomeEl = numEl.cloneNode(true);
     this._totalTempleStockNumEl = numEl.cloneNode(true);
@@ -149,9 +169,10 @@ class IncomeAnalyser {
 
     this._charaInfo = null;
     this._templeInfo = null;
+    this._charaListEl = null;
   }
 
-  // 统计数据
+  // ===== 统计数据 ===== //
   doStatistics() {
     this._prepare();
     Promise.all([
@@ -265,9 +286,10 @@ class IncomeAnalyser {
   _renderCharaPage() {
     let $page = $(document.createElement('ul')).addClass('grail_list page1')
       .append(this._charaInfo.map(renderUserCharacter));
+    this._charaListEl = $page[0];
     $('#grail .chara_list').append($page);
     $('#grail .chara_list .loading').hide();
-    $(document.createElement('span')).addClass('charaLevelBox').html('0').prependTo($page.find('li'));
+    $(document.createElement('span')).addClass('charaLevelBox').prependTo($page.find('li'));
     this._renderCharaLevelStock();
   }
 
@@ -288,23 +310,19 @@ class IncomeAnalyser {
   }
 
   _renderCharaLevelStock() {
-    let charaLevelBox = document.getElementsByClassName('charaLevelBox');
-    let charaName = document.querySelectorAll('.chara_list .grail_list .avatar.name');
-    let charaRateBox = document.querySelectorAll('.chara_list .grail_list .feed');
+    let charaLevelBox = this._charaListEl.getElementsByClassName('charaLevelBox');
+    let charaRateBox = this._charaListEl.querySelectorAll('.feed');
     this._charaInfo.forEach((chara, i) => {
-      let charaLevel = chara.Level;
-      if (charaLevel) {
-        charaLevelBox[i].innerHTML = charaLevel;
-        charaLevelBox[i].style.visibility = 'visible';
-        charaName[i].classList.add('charaLevelName');
-      }
       let charaRate = document.createElement('span');
-      charaRate.innerHTML = ` ×${chara.Rate.toFixed(2)}`;
+      charaRate.innerHTML = `×${chara.Rate.toFixed(2)}`;
       charaRateBox[i].appendChild(charaRate);
+      charaLevelBox[i].innerHTML = chara.Level;
+      if(chara.Level == 1) return;
+      this._charaListEl.children[i].classList.add(chara.Level? 'highLevelChara': 'noLevelChara');
     });
   }
 
-  //获取拍卖底价
+  // ===== 获取拍卖底价 ===== //
   getTemplePrice() {
     getData('chara/user/assets/valhalla@tinygrail.com/true', d => {
       if (d.State !== 0) return;
@@ -327,7 +345,7 @@ class IncomeAnalyser {
     })
   }
 
-  // 绘图
+  // ===== 绘图 ===== //
   _updateChart() {
     this.$chartEl.empty();
 
@@ -440,6 +458,31 @@ class IncomeAnalyser {
     gradient.addColorStop(0.9, endColor);
     return gradient;
   }
+
+  // ===== 显示共有角色 ===== //
+  compareChara(hide, callback) {
+    if(!this._charaInfo) {
+      alert('请先获取数据');
+      return;
+    }
+    if(hide) {
+      new Promise(resolve =>
+        getData(`chara/user/chara/${this._mybgmId}/1/2000`, d => {
+          console.log('got charaInfo');
+          if (d.State !== 0) return;
+          resolve(d.Value.Items);
+        })
+      ).then(mycharaInfo => {
+        mycharaInfo = mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
+        this._charaInfo.forEach((x, i) => {
+          if(!mycharaInfo[x.Id]) this._charaListEl.children[i].style.display = 'none';
+        });
+      }).then(() => {if(callback) callback()});
+    } else {
+      Array.from(this._charaListEl.children).forEach(x => x.style.display = null);
+      if(callback) callback();
+    }
+  }
 }
 
 let observer = new MutationObserver(function() {
@@ -451,9 +494,19 @@ let observer = new MutationObserver(function() {
 
   // buttons
   let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
-  let $countBtn = $btn.clone().html('更新数据').on('click', () => {analyser.doStatistics(); $ghostBtn.html('隐藏幽灵');});
+  let $countBtn = $btn.clone().html('获取数据').on('click', () => {analyser.doStatistics()});
   let $chartBtn = $btn.clone().html('显示图表').on('click', () => {$grailChartWrapper.show()});
   let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()}).attr('title', '点击圣殿下方数字可直接参与股权拍卖');
+  let $compareBtn = $btn.clone().html('共有角色').on('click', () => {
+    if($compareBtn.html() == '共有角色') {
+      $compareBtn.html('统计中…');
+      analyser.compareChara(true, () => {$compareBtn.html('显示全部')});
+    } else {
+      $compareBtn.html('共有角色');
+      analyser.compareChara(false);
+    }
+  }).attr('title', '查看你与该玩家共同持有的角色');
+/*
   let $ghostBtn = $btn.clone().html('隐藏幽灵').on('click', () => {
     let $ghostChara = $(Array.from(document.querySelectorAll('#grail .chara_list .grail_list li'))
       .filter(x => x.querySelector('small.feed').innerText.startsWith('0 /')));
@@ -465,8 +518,9 @@ let observer = new MutationObserver(function() {
       $ghostBtn.html('显示幽灵');
     }
   }).attr('title', '幽灵指无持股但重组过的角色股');
+*/
   let $grailInfoBtns = $(document.createElement('div'))
-    .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn);
+    .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $compareBtn);
 
   // chart elements
   const closeChartFunc = e => {if(e.target === e.currentTarget) $grailChartWrapper.hide()};
@@ -569,6 +623,25 @@ function renderUserCharacter(chara) {
       <div class="inner"><a href="/character/${chara.Id}" target="_blank" class="avatar name">${chara.Name}</a><br>
         <small class="feed" title="持股数量 / 固定资产">${amount} / ${formatNumber(chara.Sacrifices, 0)}</small></div></li>`;
   return item;
+}
+
+function fixRightTempleImageReso() {
+  let pageWidth = window.innerWidth;
+  let pageHeight = window.innerHeight;
+  let imgHeight = 640;
+  let imgWidth = 480;
+
+  if (window.innerWidth <= 640) {
+    imgHeight = pageHeight * 0.9;
+    imgWidth = imgHeight * 2 / 3;
+  }
+
+  let styles = {
+    'height': imgHeight + 'px',
+    'width': imgWidth + 'px',
+  };
+
+  $('#TB_window.dialog.temple .card').css(styles);
 }
 
 function getLargeCover(cover) {
@@ -682,7 +755,6 @@ function openAuctionDialog(chara) {
   });
 }
 
-
 function showTemple(temple, chara) {
   var cover = getLargeCover(temple.Cover);
   var action = `<div class="action">
@@ -705,7 +777,7 @@ function showTemple(temple, chara) {
         $('#changeCoverButton').show();
         $('#resetCoverButton').show();
       }
-      if (d.Value.Type == 999 || d.Value.Id == 702) {
+      if (d.Value.Type >= 999 || d.Value.Id == 702) {
         $('#resetCoverButton').show();
       }
     }
@@ -729,6 +801,9 @@ function showTemple(temple, chara) {
   $('body').append(dialog);
 
   $('#TB_closeWindowButton').on('click', closeDialog);
+  $('#TB_window.temple img.cover').on('click', closeDialog);
+  $('#TB_window.temple').on('click', '.card', closeDialog);
+
   $('#changeCoverButton').on('click', (e) => {
     $("#picture").click();
     e.stopPropagation();
@@ -796,25 +871,6 @@ function showTemple(temple, chara) {
       reader.readAsDataURL(file);
     }
   });
-}
-
-function fixRightTempleImageReso() {
-  let pageWidth = window.innerWidth;
-  let pageHeight = window.innerHeight;
-  let imgHeight = 640;
-  let imgWidth = 480;
-
-  if (window.innerWidth <= 640) {
-    imgHeight = pageHeight * 0.9;
-    imgWidth = imgHeight * 2 / 3;
-  }
-
-  let styles = {
-    'height': imgHeight + 'px',
-    'width': imgWidth + 'px',
-  };
-
-  $('#TB_window.dialog.temple .card').css(styles);
 }
 
 function resetTempleCover(temple, callback) {
