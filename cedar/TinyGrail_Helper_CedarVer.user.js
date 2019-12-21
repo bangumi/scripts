@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.2.6
+// @version     1.2.7
 // @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍，ICO自动补款. fork自Liaune的插件
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
@@ -601,7 +601,7 @@ class AutoFulfillICO {
 }
 
 function observeBonus(mutationList, observer) {
-  if(!document.querySelector('#grailBox.rakuen_home button.daily_bonus')) return;
+  if(!document.querySelector('#grailBox2.rakuen_home button.daily_bonus')) return;
   observer.disconnect();
   hideBonusButton();
 }
@@ -642,4 +642,4 @@ if(location.pathname.startsWith('/rakuen/topic/crt')) {
   parentNode = document.body;
   observer = new MutationObserver(observeBonus);
 }
-observer.observe(parentNode, {'childList': true, 'subtree': true});
+if(observer) observer.observe(parentNode, {'childList': true, 'subtree': true});
