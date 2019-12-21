@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.3
+// @version      1.6.4
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -460,27 +460,30 @@ class IncomeAnalyser {
   }
 
   // ===== 显示共有角色 ===== //
-  compareChara(hide, callback) {
+  compareChara(hide, successCallback, rejectCallback) {
     if(!this._charaInfo) {
       alert('请先获取数据');
+      if(rejectCallback) rejectCallback();
       return;
     }
     if(hide) {
       new Promise(resolve =>
         getData(`chara/user/chara/${this._mybgmId}/1/2000`, d => {
-          console.log('got charaInfo');
+          console.log('got my charaInfo');
           if (d.State !== 0) return;
           resolve(d.Value.Items);
         })
       ).then(mycharaInfo => {
         mycharaInfo = mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
         this._charaInfo.forEach((x, i) => {
-          if(!mycharaInfo[x.Id]) this._charaListEl.children[i].style.display = 'none';
+          // if(!mycharaInfo[x.Id]) this._charaListEl.children[i].style.display = 'none';
+          if(!mycharaInfo[x.Id]) this._charaListEl.children[i].style.visibility = 'hidden';
         });
-      }).then(() => {if(callback) callback()});
+      }).then(() => {if(successCallback) successCallback()});
     } else {
-      Array.from(this._charaListEl.children).forEach(x => x.style.display = null);
-      if(callback) callback();
+      // Array.from(this._charaListEl.children).forEach(x => x.style.display = null);
+      Array.from(this._charaListEl.children).forEach(x => x.style.visibility = null);
+      if(successCallback) successCallback();
     }
   }
 }
@@ -497,19 +500,9 @@ let observer = new MutationObserver(function() {
   let $countBtn = $btn.clone().html('获取数据').on('click', () => {analyser.doStatistics()});
   let $chartBtn = $btn.clone().html('显示图表').on('click', () => {$grailChartWrapper.show()});
   let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()}).attr('title', '点击圣殿下方数字可直接参与股权拍卖');
-  let $compareBtn = $btn.clone().html('共有角色').on('click', () => {
-    if($compareBtn.html() == '共有角色') {
-      $compareBtn.html('统计中…');
-      analyser.compareChara(true, () => {$compareBtn.html('显示全部')});
-    } else {
-      $compareBtn.html('共有角色');
-      analyser.compareChara(false);
-    }
-  }).attr('title', '查看你与该玩家共同持有的角色');
-/*
   let $ghostBtn = $btn.clone().html('隐藏幽灵').on('click', () => {
     let $ghostChara = $(Array.from(document.querySelectorAll('#grail .chara_list .grail_list li'))
-      .filter(x => x.querySelector('small.feed').innerText.startsWith('0 /')));
+      .filter(x => x.querySelector('small.feed').innerText.startsWith('-- /')));
     if($ghostBtn.html() === '显示幽灵') {
       $ghostChara.show();
       $ghostBtn.html('隐藏幽灵');
@@ -518,9 +511,17 @@ let observer = new MutationObserver(function() {
       $ghostBtn.html('显示幽灵');
     }
   }).attr('title', '幽灵指无持股但重组过的角色股');
-*/
+  let $compareBtn = $btn.clone().html('共有角色').on('click', () => {
+    if($compareBtn.html() == '共有角色') {
+      $compareBtn.html('统计中…');
+      analyser.compareChara(true, () => {$compareBtn.html('显示全部')}, () => {$compareBtn.html('共有角色')});
+    } else {
+      $compareBtn.html('共有角色');
+      analyser.compareChara(false);
+    }
+  }).attr('title', '查看你与该玩家共同持有的角色');
   let $grailInfoBtns = $(document.createElement('div'))
-    .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $compareBtn);
+    .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn, $compareBtn);
 
   // chart elements
   const closeChartFunc = e => {if(e.target === e.currentTarget) $grailChartWrapper.hide()};
