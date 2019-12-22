@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.0.1
+// @version     1.1
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -105,14 +105,14 @@ function sacrificeCharacter(id, count, captial, callback) {
 
 // ============================== //
 
-async function retryPromise(callback, n=10) {
+async function retryPromise(callback, n=10, sleeptime=200) {
   let error;
   while(n--) {
     try {
       return await new Promise(callback);
     } catch(e) {
       error = e;
-      await new Promise(resolve => setTimeout(resolve, 200)); // sleep a couple of miliseconds
+      await new Promise(resolve => setTimeout(resolve, sleeptime)); // sleep a couple of miliseconds
     }
   }
   throw error;
@@ -127,6 +127,22 @@ class Farewell {
     this.$farewellInfoEl = $(document.createElement('div')).css('display', 'inline-block');
   }
 
+  async farewell(callback) {
+    this._prepare();
+    this.$farewellInfoEl.html('准备中…');
+    await this._charaFetch();
+    this._renderCharaPage();
+    for(let i = 0; i < this._charaInfo.length; i++) {
+      await this._farewellChara(this._charaInfo[i], this._charaInfoEl[i]);
+    }
+    this.$farewellInfoEl.html('取消剩余买单…');
+    await this._cancelMyBids();
+    this.$farewellInfoEl.html('取消拍卖挂单…');
+    await this._cancelAuctions();
+    this.$farewellInfoEl.html(`再见，各位！`);
+    if(callback) callback();
+  }
+
   _prepare() {
     $('#grail .chara_list .grail_list').remove();
     $('#pager2').remove();
@@ -134,6 +150,7 @@ class Farewell {
     $('#grail #charaTab').click();
   }
 
+  // === get chara list === //
   _charaFetch() {
     return new Promise(resolve =>
       getData(`chara/user/chara/${this._bgmId}/1/2000`, d => {
@@ -153,6 +170,19 @@ class Farewell {
     $('#grail .chara_list .loading').hide();
   }
 
+  // === remove character === //
+  async _farewellChara(chara, charaEl) {
+    this.$farewellInfoEl.html(`再见，${chara.Name}！`);
+    let tradeInfo = await this._getTradeInfo(chara.Id);
+    await this._cancelTrades(tradeInfo);
+    await retryPromise(resolve => sacrificeCharacter(chara.Id, chara.State, this._captial, resolve));
+    //console.log(`fake sacrifice, chara Id: ${chara.Id}`);
+    // 等待角色消失..有点仪式感..不然感觉像清理垃圾..
+    await new Promise(resolve => charaEl.fadeOut(300, function() {
+      $(this).remove(); resolve();
+    }));
+  }
+
   _getTradeInfo(charaId) {
     return retryPromise(resolve => getData(`chara/user/${charaId}`, d => resolve(d.Value)));
   }
@@ -170,27 +200,39 @@ class Farewell {
     }
   }
 
-  async farewell() {
-    this._prepare();
-    await this._charaFetch();
-    this._renderCharaPage();
-    let $farewellCharaEl = $(document.createElement('span')).html('各位');
-    this.$farewellInfoEl.append('再见，', $farewellCharaEl, '！');
-    for(let i = 0; i < this._charaInfo.length; i++) {
-      let chara = this._charaInfo[i];
-      $farewellCharaEl.html(chara.Name);
-      let tradeInfo = await this._getTradeInfo(chara.Id);
+  // === remove all bids === //
+  async _cancelMyBids() {
+    let bids = await this._getBidsList();
+    if(!bids) return;
+    for(let bid of bids) {
+      let tradeInfo = await this._getTradeInfo(bid.Id);
       await this._cancelTrades(tradeInfo);
-      await retryPromise(resolve => sacrificeCharacter(chara.Id, chara.State, this._captial, resolve));
-      //console.log(`fake sacrifice, chara Id: ${chara.Id}`);
-      // 等待角色消失..有点仪式感..不然感觉像清理垃圾..
-      //this._charaInfoEl[i].fadeOut(1000, function() {$(this).remove()});
-      //await new Promise(resolve => setTimeout(resolve, 250));
-      await new Promise(resolve => this._charaInfoEl[i].fadeOut(300, function() {
-        $(this).remove(); resolve();
-      }));
     }
-    $farewellCharaEl.html('各位');
+  }
+
+  _getBidsList() {
+    return retryPromise(resolve => getData(`chara/bids/0/1/10000`, d => {
+        if (d.State === 0 && d.Value && d.Value.Items) resolve(d.Value.Items);
+        else resolve(null);
+      })
+    );
+  }
+
+  // === cancel all auctions === //
+  async _cancelAuctions() {
+    let auctionItems = await this._getAuctionsList();
+    if(!auctionItems) return;
+    for(let item of auctionItems) {
+      await retryPromise(resolve => postData(`chara/auction/cancel/${item.Id}`, null, resolve));
+      //console.log(`fake cancel, auction Id: ${item.Id}`);
+    }
+  }
+
+  _getAuctionsList() {
+    return new Promise(resolve => getData('chara/user/auction/1/1000', d => {
+      if (d.State === 0 && d.Value && d.Value.Items) resolve(d.Value.Items);
+      else resolve(null);
+    }));
   }
 }
 
@@ -211,7 +253,7 @@ let observer = new MutationObserver(function() {
       $farewellBtn.html('退坑中…').off('click');
       $captialEl.children('input').prop('disabled', true);
       $captialEl.after(farewell.$farewellInfoEl);
-      farewell.farewell();
+      farewell.farewell(() => $farewellBtn.html('退坑完成'));
     });
   $grailOptions.append(
     $(document.createElement('div'))
