@@ -523,7 +523,7 @@ let observer = new MutationObserver(function() {
 
   // buttons
   let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
-  let $countBtn = $btn.clone().html('获取数据').on('click', () => {analyser.doStatistics(() => {$hideTagBtn.html('隐藏角标')})});
+  let $countBtn = $btn.clone().html('获取数据').on('click', () => {analyser.doStatistics(() => {$hideTagBtn.html('显示角标').trigger('click')})});
   let $chartBtn = $btn.clone().html('显示图表').on('click', () => {$grailChartWrapper.show()});
   let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()}).attr('title', '点击圣殿下方数字可直接参与股权拍卖');
   let $ghostBtn = $btn.clone().html('隐藏幽灵').on('click', () => {
@@ -549,12 +549,12 @@ let observer = new MutationObserver(function() {
   let $hideTagBtn = $btn.clone().html('隐藏角标').on('click', () => {
     if($hideTagBtn.html() === '隐藏角标') {
       $('.temple_list .grail_list .tag, .temple_list .grail_list .buff').hide();
-      $('.temple_list .grail_list')
-        .on('mouseenter touchstart', '.item .card', function() {$(this).find('.tag, .buff').show()})
-        .on('mouseleave touchend', '.item .card', function() {$(this).find('.tag, .buff').hide()});
+      $('.temple_list')
+        .on('mouseenter touchstart', '.grail_list .item .card', function() {$(this).find('.tag, .buff').show()})
+        .on('mouseleave touchend', '.grail_list .item .card', function() {$(this).find('.tag, .buff').hide()});
       $hideTagBtn.html('显示角标');
     } else {
-      $('.temple_list .grail_list').off('mouseenter touchstart mouseleave touchend', '.item .card');
+      $('.temple_list').off('mouseenter touchstart mouseleave touchend', '.grail_list .item .card');
       $('.temple_list .grail_list .tag, .temple_list .grail_list .buff').show();
       $hideTagBtn.html('隐藏角标');
     }
