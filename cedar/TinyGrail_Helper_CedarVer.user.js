@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        TinyGrail Helper CedarVer
 // @namespace   tv.bgm.cedar.tinygrailhelper
-// @version     1.2.7
+// @version     1.2.8
 // @description 显示角色发行价，显示拍卖情况，自动拆单，高亮自己的圣殿，股息高于低保隐藏签到，关注角色，关注竞拍，查看往期竞拍，ICO自动补款. fork自Liaune的插件
 // @author      Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(character|rakuen/topiclist|rakuen/home|rakuen/topic/crt).*/
@@ -332,7 +332,7 @@ function showInitialPrice(charaId){
   getData(`chara/charts/${charaId}/2019-08-08`, function (d, s) {
     if (d.State === 0) {
       let price = d.Value[0].Begin.toFixed(2);
-      $('#grailBox .title .text').append(`<span>发行价：${price}</span>`);
+      $('#grailBox .title .text').eq(1).append(`<span>发行价：${price}</span>`);
     }
   });
 }
@@ -438,7 +438,7 @@ function followChara(charaId){  //关注角色
   else {
     button = `<button id="followCharaButton" class="text_button">[关注角色]</button>`;
   }
-  $('#grailBox .title .text').append(button);
+  $('#grailBox .title .text').eq(1).append(button);
   $('#followCharaButton').on('click', () => {
     if(followList.charas.includes(charaId)){
       followList.charas.splice(followList.charas.indexOf(charaId),1);
