@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.5
+// @version      1.6.6
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -12,7 +12,7 @@
 
 
 GM_addStyle(`
-/* 角色等级相关: 左上角圆圈 名字颜色 删除线 半透明 圣殿角标 */
+/* 角色等级相关: 左上角圆圈 名字颜色 删除线 半透明 */
 /* default */
 #grail .chara_list .grail_list li {
   position:relative;
@@ -61,13 +61,6 @@ html[data-theme='dark'] #grail .chara_list li.highLevelChara a.avatar.name {
 }
 html[data-theme='dark'] #grail .chara_list li.highLevelChara a.avatar.name:hover {
   color: lightgreen;
-}
-/* no-level temple */
-.temple_list div.noLevelTemple .tag {
-  filter: grayscale(1);
-}
-.temple_list div.noLevelTemple .buff {
-  text-decoration: line-through;
 }
 
 /*相关按钮与数据显示*/
@@ -127,6 +120,12 @@ html[data-theme='dark'] #grail .chara_list li.highLevelChara a.avatar.name:hover
   cursor: pointer;
   position: fixed;
 }
+
+/* 用于隐藏角标 */
+.shouldHide {
+  transition: opacity 1s;
+  opacity: 0;
+}
 `);
 
 
@@ -176,8 +175,8 @@ class IncomeAnalyser {
     this._templeInfo = null;
     this._mycharaInfo = null;
 
-    this._charaListEl = null;
-    this._templeListEl = null;
+    // this._charaListEl = null; // 暂时没用到
+    // this._templeListEl = null;
   }
 
   // ===== 统计数据 ===== //
@@ -223,12 +222,12 @@ class IncomeAnalyser {
     //清除之前的数据
     this._$charaLevelEl.children('span:not(:first)').remove();
     this._$templeLevelStockEl.children('span:not(:first)').remove();
-    $('#grail .grailInfoBox span>span').html('-');
+    this.$stockEl.find('span>span').html('-');
   }
 
   _charaFetch() {
     return new Promise(resolve =>
-      getData(`chara/user/chara/${this._bgmId}/1/2000`, d => {
+      getData(`chara/user/chara/${this._bgmId}/1/20000`, d => {
         console.log('got charaInfo');
         if (d.State !== 0) return;
         this._charaInfo = d.Value.Items;
@@ -239,7 +238,7 @@ class IncomeAnalyser {
 
   _templeFetch() {
     return new Promise(resolve =>
-      getData(`chara/user/temple/${this._bgmId}/1/2000`, d => {
+      getData(`chara/user/temple/${this._bgmId}/1/20000`, d => {
         console.log('got templeInfo');
         if (d.State !== 0) return;
         this._templeInfo = d.Value.Items;
@@ -269,7 +268,7 @@ class IncomeAnalyser {
   }
 
   _calcTempleInfo() {
-    this._templeIncome = this._templeInfo.reduce((sum, chara) => sum + chara.CharacterLevel*chara.Rate*chara.Assets/2, 0);
+    this._templeIncome = this._templeInfo.reduce((sum, temple) => sum + temple.CharacterLevel*temple.Rate*temple.Assets/2, 0);
     this._totalTempleIncomeNumEl.innerHTML = this._templeIncome.toFixed(2);
   }
 
@@ -295,23 +294,34 @@ class IncomeAnalyser {
   }
 
   _renderCharaPage() {
+    // create elements
+    let template = document.createElement('template');
+    this._charaInfo.forEach(x => {
+      template.innerHTML = renderUserCharacter(x).trim();
+      x.Element = template.content.firstChild;
+    });
     let $page = $(document.createElement('ul')).addClass('grail_list page1')
-      .append(this._charaInfo.map(renderUserCharacter));
-    this._charaListEl = $page[0];
-    $('#grail .chara_list').append($page);
-    $('#grail .chara_list .loading').hide();
+      .append(this._charaInfo.map(x => x.Element));
+    // this._charaListEl = $page[0];
     $(document.createElement('span')).addClass('charaLevelBox').prependTo($page.find('li'));
     this._renderCharaLevelStock();
+    $('#grail .chara_list').append($page);
+    $('#grail .chara_list .loading').hide();
   }
 
   _renderTemplePage() {
+    // create elements
+    let template = document.createElement('template');
+    this._templeInfo.forEach(x => {
+      template.innerHTML = renderTemple(x, 'mine');
+      x.Element = template.content.firstChild;
+    });
     let $page = $(document.createElement('ul')).addClass('grail_list page1')
-      .append(this._templeInfo.map(renderTemple));
-    this._templeListEl = $page[0];
+      .append(this._templeInfo.map(x => x.Element));
+    // this._templeListEl = $page[0];
     $('#grail .temple_list').append($page);
     $('#grail .temple_list .loading').hide();
     this._addTempleCover();
-    this._renderCharaLevelTemple();
   }
 
   _addTempleCover() {
@@ -323,23 +333,18 @@ class IncomeAnalyser {
   }
 
   _renderCharaLevelStock() {
-    let charaRateBox = this._charaListEl.querySelectorAll('.feed');
-    let charaLevelBox = this._charaListEl.getElementsByClassName('charaLevelBox');
-    this._charaInfo.forEach((chara, i) => {
+    for(let chara of this._charaInfo) {
       let charaRate = document.createElement('span');
       charaRate.innerHTML = `×${chara.Rate.toFixed(2)}`;
-      charaRateBox[i].appendChild(charaRate);
-      charaLevelBox[i].innerHTML = chara.Level;
-      if(chara.Level == 1) return;
-      this._charaListEl.children[i].classList.add(chara.Level? 'highLevelChara': 'noLevelChara');
-    });
-  }
+      let charaRateBox = chara.Element.querySelector('.feed');
+      charaRateBox.appendChild(charaRate);
 
-  _renderCharaLevelTemple() {
-    this._templeInfo.forEach((temple, i) => {
-      if(!temple.CharacterLevel)
-        this._templeListEl.children[i].classList.add('noLevelTemple');
-    });
+      let charaLevelBox = chara.Element.querySelector('.charaLevelBox');
+      charaLevelBox.innerHTML = chara.Level;
+
+      if(chara.Level == 1) continue;
+      chara.Element.classList.add(chara.Level? 'highLevelChara': 'noLevelChara');
+    };
   }
 
   // ===== 获取拍卖底价 ===== //
@@ -494,7 +499,7 @@ class IncomeAnalyser {
           this._mycharaInfo = this._charaInfo;
           resolve();
         } else {
-          getData(`chara/user/chara/${this._mybgmId}/1/2000`, d => {
+          getData(`chara/user/chara/${this._mybgmId}/1/20000`, d => {
             console.log('got my charaInfo');
             if (d.State !== 0) return;
             this._mycharaInfo = d.Value.Items;
@@ -503,15 +508,50 @@ class IncomeAnalyser {
         }
       }).then(() => {
         let mycharaInfo = this._mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
-        this._charaInfo.forEach((x, i) => {
-          if(!mycharaInfo[x.Id]) this._charaListEl.children[i].style.visibility = 'hidden';
+        const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500; // 我没有的 或 我有塔的
+        // const needToHide = id => !mycharaInfo[id];
+        this._charaInfo.forEach(x => {
+          if(needToHide(x.Id)) x.Element.style.visibility = 'hidden';
         });
       }).then(() => {if(successCallback) successCallback()});
     } else {
-      Array.from(this._charaListEl.children).forEach(x => x.style.visibility = null);
+      this._charaInfo.forEach(x => x.Element.style.visibility = null);
       if(successCallback) successCallback();
     }
   }
+
+  // ===== 筛选功能 ===== //
+  filter(bounds) {
+    // bounds的格式是 [{key: key1, min: value, max: value}, {key: key2, min: value, max: value}]
+    // 其中每个key都要在this._charaInfo[i]中有对应的key.
+    // 目前暂定的key有 角色Id, 持有量State, 献祭量Sacrifices, 角色等级Level, 角色股息Rate, 角色现价Current
+    for(let chara of this._charaInfo) {
+      if(bounds.some(x => !(x.min <= chara[x.key] && chara[x.key] <= x.max)))
+        $(chara.Element).hide();
+      else
+        $(chara.Element).show();
+    }
+  }
+}
+
+
+function FilterElemFactory ({
+  titleStr,   // title string
+  filterFunc, // triggered when 'blur' or press Enter
+  inputType,  // should be 'number' or 'datetime-local'
+  min, max,   // restirct the input range
+  width=null, // set input width
+  setPlaceholder=false  // will set placeholder with min and max if true
+}) {
+  const getInputEl = () => $(document.createElement('input')).addClass('comments-filter-input');
+  const keydownEvent = e => {if(!e.isComposing && e.keyCode === 13) filterFunc()};
+
+  const title = $(document.createElement('span')).css('font-size', '14px').text(titleStr);
+  const left  = getInputEl().attr({'type': inputType, 'min': min, 'max': max, 'placeholder': setPlaceholder? min: ''}).on('blur', filterFunc).on('keydown', keydownEvent);
+  const right = getInputEl().attr({'type': inputType, 'min': min, 'max': max, 'placeholder': setPlaceholder? max: ''}).on('blur', filterFunc).on('keydown', keydownEvent);
+  if (width) left.css('width', width), right.css('width', width);
+  const wrap  = $(document.createElement('div')).css('display', 'inline-block').append(title, left, right);
+  return { wrap, title, left, right };
 }
 
 let observer = new MutationObserver(function() {
@@ -523,9 +563,11 @@ let observer = new MutationObserver(function() {
 
   // buttons
   let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
-  let $countBtn = $btn.clone().html('获取数据').on('click', () => {analyser.doStatistics(() => {$hideTagBtn.html('显示角标').trigger('click')})});
+  let $countBtn = $btn.clone().html('获取数据').on('click', () => {
+    analyser.doStatistics(() => {$hideTagBtn.html('显示角标').trigger('click')});
+  });
   let $chartBtn = $btn.clone().html('显示图表').on('click', () => {$grailChartWrapper.show()});
-  let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()}).attr('title', '点击圣殿下方数字可直接参与股权拍卖');
+  // let $auctionBtn = $btn.clone().html('参与竞拍').on('click', () => {analyser.getTemplePrice()}).attr('title', '点击圣殿下方数字可直接参与股权拍卖');
   let $ghostBtn = $btn.clone().html('隐藏幽灵').on('click', () => {
     let $ghostChara = $(Array.from(document.querySelectorAll('#grail .chara_list .grail_list li'))
       .filter(x => x.querySelector('small.feed').innerText.startsWith('-- /')));
@@ -548,19 +590,17 @@ let observer = new MutationObserver(function() {
   }).attr('title', '查看你与该玩家共同持有的角色');
   let $hideTagBtn = $btn.clone().html('隐藏角标').on('click', () => {
     if($hideTagBtn.html() === '隐藏角标') {
-      $('.temple_list .grail_list .tag, .temple_list .grail_list .buff').hide();
-      $('.temple_list')
-        .on('mouseenter touchstart', '.grail_list .item .card', function() {$(this).find('.tag, .buff').show()})
-        .on('mouseleave touchend', '.grail_list .item .card', function() {$(this).find('.tag, .buff').hide()});
+      $('.temple_list .grail_list .tag').addClass('shouldHide');
       $hideTagBtn.html('显示角标');
     } else {
-      $('.temple_list').off('mouseenter touchstart mouseleave touchend', '.grail_list .item .card');
-      $('.temple_list .grail_list .tag, .temple_list .grail_list .buff').show();
+      $('.temple_list .grail_list .tag').removeClass('shouldHide');
       $hideTagBtn.html('隐藏角标');
     }
   }).attr('title', '显示或隐藏圣殿的角标');
+  let $filterBtn = $btn.clone().html('筛选角色').on('click', () => {$grailFilterEl.toggle();});
   let $grailInfoBtns = $(document.createElement('div'))
-    .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn, $compareBtn, $hideTagBtn);
+    .addClass('grailInfoBox').append($countBtn, $chartBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn);
+    // .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn);
 
   // chart elements
   const closeChartFunc = e => {if(e.target === e.currentTarget) $grailChartWrapper.hide()};
@@ -571,7 +611,34 @@ let observer = new MutationObserver(function() {
     .on('click', closeChartFunc)
     .append($closeGrailChartBtn, analyser.$chartEl);
 
-  $grailOptions.append($grailInfoBtns, analyser.$stockEl);
+  // filter elements
+  let filterKeys, filterEls;
+  const doFilter = () => {
+    const parseInput = ($input, dft) => isNaN(parseFloat($input.val()))? dft: parseFloat($input.val());
+    let bounds = filterEls.map((x, i) => {
+      return {
+        key: filterKeys[i],
+        min: parseInput(x.left, parseFloat(x.left.attr('min'))),
+        max: parseInput(x.right, parseFloat(x.right.attr('max')))
+      }
+    });
+    analyser.filter(bounds);
+  };
+  //角色Id, 持有量State, 献祭量Sacrifices, 角色等级Level, 角色股息Rate, 角色现价Current
+  let charaIdFilter    = FilterElemFactory({ titleStr: '角色ID', filterFunc: doFilter, inputType: "number", min: 0, max: 99999999, width: '70px', setPlaceholder: false});
+  let stateFilter      = FilterElemFactory({ titleStr: '持股量', filterFunc: doFilter, inputType: "number", min: 0, max: 1000000, width: '60px', setPlaceholder: false});
+  let sacrificesFilter = FilterElemFactory({ titleStr: '献祭量', filterFunc: doFilter, inputType: "number", min: 0, max: 1000000, width: '60px', setPlaceholder: false});
+  let charaLevelFilter = FilterElemFactory({ titleStr: '角色等级', filterFunc: doFilter, inputType: "number", min: 0, max: 10, width: '35px'});
+  let rateFilter       = FilterElemFactory({ titleStr: '股息率', filterFunc: doFilter, inputType: "number", min: 0, max: 16, width: '45px'});
+  let currentFilter    = FilterElemFactory({ titleStr: '现价', filterFunc: doFilter, inputType: "number", min: 0, max: 100000,  width: '45px', setPlaceholder: false});
+
+  filterKeys = ['Id', 'State', 'Sacrifices', 'Level', 'Rate', 'Current'];
+  filterEls = [charaIdFilter, stateFilter, sacrificesFilter, charaLevelFilter, rateFilter, currentFilter];
+  let $resetFilterBtn = $btn.clone().html('重置筛选').on('click', function() {filterEls.forEach(x => {x.left.val(""); x.right.val(""); doFilter();})});
+  let $grailFilterEl = $(document.createElement('div')).hide().addClass('grailInfoBox')
+    .append(charaIdFilter.wrap, stateFilter.wrap, sacrificesFilter.wrap, charaLevelFilter.wrap, rateFilter.wrap, currentFilter.wrap, $resetFilterBtn);
+
+  $grailOptions.append($grailInfoBtns, analyser.$stockEl, $grailFilterEl);
   $(document.body).append($grailChartWrapper);
 });
 observer.observe(document.getElementById('user_home'), {'childList': true, 'subtree': true});
@@ -704,34 +771,99 @@ function getSmallCover(cover) {
   return cover;
 }
 
-function renderTemple(temple) {
-  var cover = getSmallCover(temple.Cover);
+function renderTemple(temple, type) {
   var avatar = normalizeAvatar(temple.Avatar);
-  var name = '光辉圣殿';
-  var rate = '+0.20';
-  var full = '500';
+  var full = formatNumber(temple.Sacrifices, 0);
 
-  if (temple.Level == 2) {
-    name = '闪耀圣殿';
-    rate = '+0.40';
-    full = '2,500';
+  var charaName = temple.Name;
+  if (temple.CharacterName)
+    charaName = temple.CharacterName;
+
+  var templeLevel = temple.Level;
+  if (temple.Index)
+    templeLevel = temple.Index;
+
+  var grade = '';
+  var rate = '';
+  var level = '';
+
+  if (temple.Level == 1) {
+    grade = '光辉圣殿';
+    rate = '+0.20';
+    level = ' silver';
+  } else if (temple.Level == 2) {
+    grade = '闪耀圣殿';
+    rate = '+0.30';
+    level = ' gold';
   } else if (temple.Level == 3) {
-    name = '奇迹圣殿';
-    rate = '+0.80';
-    full = '12,500';
+    grade = '奇迹圣殿';
+    rate = '+0.60';
+    level = ' purple';
   }
 
-  var card = `<div class="item">
-          <div class="card" data-id="${temple.CharacterId}" style="background-image:url(${cover})">
-            <div class="tag"><span>${temple.Level}</span></div>
-            <div class="buff">+${formatNumber(temple.Rate, 2)}</div>
-          </div>
-          <div class="name" title="${temple.Name}">
-            <span><a href="/character/${temple.CharacterId}" target="_blank">${temple.Name}</a></span>
-          </div>
-          <div class="title">
-            <span title="${rate} / ${formatNumber(temple.Sacrifices, 0)} / ${full}">${name} ${formatNumber(temple.Sacrifices, 0)} / ${full}</span>
-          </div>
+  var title = `<div class="title" data-id="${temple.CharacterId}">
+  <span class="badge lv${temple.CharacterLevel}">lv${temple.CharacterLevel}</span><span data-id="${temple.CharacterId}" title="${charaName} ${formatNumber(temple.Assets, 0)} / ${full}">${charaName}</span>
+  </div>`;
+  var name = `<div class="name">
+  <span title="${rate} / ${formatNumber(temple.Assets, 0)} / ${full}">${formatNumber(temple.Assets, 0)} / ${full}</span>
+  </div>`;
+
+  if (type != 'fix') {
+    rate = `+${formatNumber(temple.Rate, 2)}`;
+  } else {
+    title = `<div class="title">
+    <span title="+${formatNumber(temple.Rate, 2)} / ${formatNumber(temple.Assets, 0)} / ${full}">${formatNumber(temple.Assets, 0)} / ${full}</span>
+    </div>`;
+  }
+
+  if (type == 'extra') {
+    rate = `+₵${formatNumber(temple.Extra, 0)}`;
+    grade = `超出总额 ₵${formatNumber(temple.Extra, 0)}`;
+
+    if (temple.Extra < 0) {
+      rate = `-₵${formatNumber(-temple.Extra, 0)}`;
+      grade = `未满余额 ₵${formatNumber(temple.Extra, 0)}`;
+    }
+
+    if (templeLevel == 1 && temple.Extra > 0) {
+      level = ' gold';
+    } else if (templeLevel == 2 && temple.Extra > 0) {
+      level = ' silver';
+    } else if (templeLevel == 3 && temple.Extra > 0) {
+      level = ' bronze';
+    }
+
+    name = `<div class="name auction_button" data-id="${temple.CharacterId}">
+    <span title="竞拍人数 / 竞拍数量 / 拍卖总数">${formatNumber(temple.Type, 0)} / ${formatNumber(temple.Assets, 0)} / ${full}</span>
+    </div>`;
+  }
+
+  if (type != 'mine' && type != 'extra') {
+    name = `<div class="name">
+    <a target="_blank" title="${temple.Nickname}" href="/user/${temple.Name}">@${temple.Nickname}</a>
+    </div>`;
+  }
+
+  var cover = '';
+  if (temple.Cover) {
+    //cover = getSmallCover(temple.Cover);
+    cover = ` <div class="card" data-id="${temple.UserId}#${temple.CharacterId}" style="background-image:url(${getSmallCover(temple.Cover)})">
+      <div title="${grade}" class="tag"><span>${templeLevel}</span></div>
+      <div class="buff">${rate}</div>
+    </div>`;
+  } else {
+    cover = ` <div class="card" data-id="${temple.UserId}#${temple.CharacterId}">
+    <div class="avatar_bg" style="background-image:url(${normalizeAvatar(temple.Avatar)})"></div>
+    <div class="avatar" style="background-image:url(${normalizeAvatar(temple.Avatar)})"></div>
+    <div class="tag"><span>${templeLevel}</span></div>
+    <div class="buff">${rate}</div>
+    </div>`;
+  }
+
+  var card = `<div class="item${level}">
+          ${cover}
+          ${title}
+          ${name}
         </div>`
 
   return card;
