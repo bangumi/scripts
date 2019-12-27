@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi_bilibili_link
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      0.5
+// @version      0.5.1
 // @description  为 Bangumi 动画条目添加bilibili播放链接图标
 // @author       Liaune
 // @include     /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/*
