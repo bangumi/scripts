@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.6
+// @version      1.6.7
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -314,6 +314,7 @@ class IncomeAnalyser {
     let template = document.createElement('template');
     this._templeInfo.forEach(x => {
       template.innerHTML = renderTemple(x, 'mine');
+      // $(x.Element).find('.card').data('temple', x); // 源代码更新后选择用 $.data 记录 temple 的信息. 未采用. 仍是尝试获取charaterId. 见下方 _addTempleCover 函数
       x.Element = template.content.firstChild;
     });
     let $page = $(document.createElement('ul')).addClass('grail_list page1')
@@ -326,7 +327,7 @@ class IncomeAnalyser {
 
   _addTempleCover() {
     $('#grail .temple_list .item .card').on('click', e => {
-      let cid = $(e.srcElement).data('id');
+      let cid = parseInt($(e.currentTarget).data('id').split('#')[1]);
       let temple = this._templeInfo.find(t => t.CharacterId == cid);
       showTemple(temple, null);
     });
@@ -508,7 +509,6 @@ class IncomeAnalyser {
         }
       }).then(() => {
         let mycharaInfo = this._mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
-        // const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500; // 我没有的 或 我有塔的
         const needToHide = id => !mycharaInfo[id];
         this._charaInfo.forEach(x => {
           if(needToHide(x.Id)) x.Element.style.visibility = 'hidden';
@@ -525,11 +525,33 @@ class IncomeAnalyser {
     // bounds的格式是 [{key: key1, min: value, max: value}, {key: key2, min: value, max: value}]
     // 其中每个key都要在this._charaInfo[i]中有对应的key.
     // 目前暂定的key有 角色Id, 持有量State, 献祭量Sacrifices, 角色等级Level, 角色股息Rate, 角色现价Current
+    let count = 0;
     for(let chara of this._charaInfo) {
-      if(bounds.some(x => !(x.min <= chara[x.key] && chara[x.key] <= x.max)))
+      if(bounds.some(x => !(x.min <= chara[x.key] && chara[x.key] <= x.max))) {
         $(chara.Element).hide();
-      else
+      } else {
         $(chara.Element).show();
+        count++;
+      }
+    }
+    return count;
+  }
+
+  // ===== 查询持股(前三位可见) ===== //
+  async getStockNum() {
+    if(!this._charaInfo) {
+      alert('请先获取数据');
+      return;
+    }
+    if(this._bgmId == this._mybgmId) return;
+    for(let chara of this._charaInfo) {
+      let users = await new Promise(resolve => getData(`chara/users/${chara.Id}/1/3`, d => resolve(d.Value.Items)));
+      for(let x of users) {
+        if(x.Name != this._bgmId) continue;
+        let balanceEl = chara.Element.querySelector('.feed').childNodes[0];
+        balanceEl.textContent = balanceEl.textContent.replace('--', x.Balance);
+        break;
+      }
     }
   }
 }
@@ -598,8 +620,9 @@ let observer = new MutationObserver(function() {
     }
   }).attr('title', '显示或隐藏圣殿的角标');
   let $filterBtn = $btn.clone().html('筛选角色').on('click', () => {$grailFilterEl.toggle();});
+  let $showStockBtn = $btn.clone().html('持股查询').on('click', () => {analyser.getStockNum();});
   let $grailInfoBtns = $(document.createElement('div'))
-    .addClass('grailInfoBox').append($countBtn, $chartBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn);
+    .addClass('grailInfoBox').append($countBtn, $chartBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn, $showStockBtn);
     // .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn);
 
   // chart elements
@@ -622,21 +645,23 @@ let observer = new MutationObserver(function() {
         max: parseInput(x.right, parseFloat(x.right.attr('max')))
       }
     });
-    analyser.filter(bounds);
+    let count = analyser.filter(bounds);
+    $totalEl.html(`总计${count}个`);
   };
   //角色Id, 持有量State, 献祭量Sacrifices, 角色等级Level, 角色股息Rate, 角色现价Current
-  let charaIdFilter    = FilterElemFactory({ titleStr: '角色ID', filterFunc: doFilter, inputType: "number", min: 0, max: 99999999, width: '70px', setPlaceholder: false});
-  let stateFilter      = FilterElemFactory({ titleStr: '持股量', filterFunc: doFilter, inputType: "number", min: 0, max: 1000000, width: '60px', setPlaceholder: false});
-  let sacrificesFilter = FilterElemFactory({ titleStr: '献祭量', filterFunc: doFilter, inputType: "number", min: 0, max: 1000000, width: '60px', setPlaceholder: false});
-  let charaLevelFilter = FilterElemFactory({ titleStr: '角色等级', filterFunc: doFilter, inputType: "number", min: 0, max: 10, width: '35px'});
+  let charaIdFilter    = FilterElemFactory({ titleStr: '角色ID', filterFunc: doFilter, inputType: "number", min: 0, max: 999999999, width: '70px', setPlaceholder: false});
+  let stateFilter      = FilterElemFactory({ titleStr: '持股量', filterFunc: doFilter, inputType: "number", min: 0, max: 9999999, width: '60px', setPlaceholder: false});
+  let sacrificesFilter = FilterElemFactory({ titleStr: '献祭量', filterFunc: doFilter, inputType: "number", min: 0, max: 9999999, width: '60px', setPlaceholder: false});
+  let charaLevelFilter = FilterElemFactory({ titleStr: '角色等级', filterFunc: doFilter, inputType: "number", min: -1, max: 10, width: '35px'}); // 角色等级还能是负数..
   let rateFilter       = FilterElemFactory({ titleStr: '股息率', filterFunc: doFilter, inputType: "number", min: 0, max: 16, width: '45px'});
   let currentFilter    = FilterElemFactory({ titleStr: '现价', filterFunc: doFilter, inputType: "number", min: 0, max: 100000,  width: '45px', setPlaceholder: false});
 
   filterKeys = ['Id', 'State', 'Sacrifices', 'Level', 'Rate', 'Current'];
   filterEls = [charaIdFilter, stateFilter, sacrificesFilter, charaLevelFilter, rateFilter, currentFilter];
+  let $totalEl = $(document.createElement('span'));
   let $resetFilterBtn = $btn.clone().html('重置筛选').on('click', function() {filterEls.forEach(x => {x.left.val(""); x.right.val(""); doFilter();})});
   let $grailFilterEl = $(document.createElement('div')).hide().addClass('grailInfoBox')
-    .append(charaIdFilter.wrap, stateFilter.wrap, sacrificesFilter.wrap, charaLevelFilter.wrap, rateFilter.wrap, currentFilter.wrap, $resetFilterBtn);
+    .append(charaIdFilter.wrap, stateFilter.wrap, sacrificesFilter.wrap, charaLevelFilter.wrap, rateFilter.wrap, currentFilter.wrap, $totalEl, $resetFilterBtn);
 
   $grailOptions.append($grailInfoBtns, analyser.$stockEl, $grailFilterEl);
   $(document.body).append($grailChartWrapper);
@@ -786,6 +811,12 @@ function renderTemple(temple, type) {
   var grade = '';
   var rate = '';
   var level = '';
+  var line = '';
+  var lineDisplay = 'display:none;';
+  if (temple.Line && temple.Line.length > 0) {
+    line = temple.Line;
+    lineDisplay = '';
+  }
 
   if (temple.Level == 1) {
     grade = '光辉圣殿';
@@ -847,16 +878,18 @@ function renderTemple(temple, type) {
   var cover = '';
   if (temple.Cover) {
     //cover = getSmallCover(temple.Cover);
-    cover = ` <div class="card" data-id="${temple.UserId}#${temple.CharacterId}" style="background-image:url(${getSmallCover(temple.Cover)})">
+    cover = `<div class="card" title="${line}" data-id="${temple.UserId}#${temple.CharacterId}" style="background-image:url(${getSmallCover(temple.Cover)})">
       <div title="${grade}" class="tag"><span>${templeLevel}</span></div>
       <div class="buff">${rate}</div>
+      <div class="line" style="${lineDisplay}">...</div>
     </div>`;
   } else {
-    cover = ` <div class="card" data-id="${temple.UserId}#${temple.CharacterId}">
-    <div class="avatar_bg" style="background-image:url(${normalizeAvatar(temple.Avatar)})"></div>
-    <div class="avatar" style="background-image:url(${normalizeAvatar(temple.Avatar)})"></div>
+    cover = `<div class="card" title="${line}" data-id="${temple.UserId}#${temple.CharacterId}">
+    <div class="avatar_bg" style="background-image:url(${avatar})"></div>
+    <div class="avatar" style="background-image:url(${avatar})"></div>
     <div class="tag"><span>${templeLevel}</span></div>
     <div class="buff">${rate}</div>
+    <div class="line" style="${lineDisplay}">...</div>
     </div>`;
   }
 
@@ -878,7 +911,7 @@ function openAuctionDialog(chara) {
   var price = Math.ceil(chara.Price);
   var total = formatNumber(price * chara.State, 2);
   var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
-              <div id="TB_window" class="dialog" style="display:block;max-width:640px;">
+              <div id="TB_window" class="dialog" style="display:block;">
                 <div class="title" title="拍卖底价 / 竞拍数量 / 流通股份">股权拍卖 - #${chara.Id} 「${chara.Name}」 ₵${formatNumber(chara.Price, 2)} / ${formatNumber(chara.State, 0)} / ${formatNumber(chara.Total, 0)}</div>
                 <div class="desc">输入竞拍出价和数量参与竞拍</div>
                 <div class="label"><span class="input">价格</span><span class="input">数量</span><span class="total">合计 -₵${total}</span></div>
@@ -932,6 +965,7 @@ function showTemple(temple, chara) {
   var action = `<div class="action">
       <button style="display:none" id="changeCoverButton" class="text_button">[修改]</button>
       <button style="display:none" id="resetCoverButton" class="text_button">[重置]</button>
+      <button style="display:none" id="editLineButton" class="text_button">[台词]</button>
       <input style="display:none" id="picture" type="file" accept="image/*">
     </div>`;
   // if (temple.UserId == userId) {
@@ -943,28 +977,45 @@ function showTemple(temple, chara) {
   //   });
   // }
 
-  getUserAssets((d) => {
-    if (d.State == 0) {
-      if (d.Value.Id == temple.UserId) {
-        $('#changeCoverButton').show();
-        $('#resetCoverButton').show();
-      }
-      if (d.Value.Type >= 999 || d.Value.Id == 702) {
-        $('#resetCoverButton').show();
-      }
-    }
-  });
-
   var position = '';
   if (cover.indexOf('//lain.') >= 0)
     position = 'background-position:top;';
 
   //var image=`<div class="card" style="background-image:url(${cover});${position}">`;
   var image = `<img class="cover" src='${cover}' />`;
+  var name = temple.CharacterName;
+  if (!temple.CharacterName)
+    name = temple.Name;
+  if (chara)
+    name = chara.Name;
+
+  var lineDisplay = 'display:none;';
+  var lineContent = '';
+  if (temple.Line && temple.Line.length > 0) {
+    lineContent = temple.Line;
+    var lines = lineContent.split('\n');
+    if (lines.length > 1) {
+      lineContent = '';
+      lines.forEach(l => lineContent += `<div>${l}</div>`);
+    }
+  }
+
+  if (temple.Line && temple.Line.length > 0)
+    lineDisplay = '';
+  var line = `<div class="line" style="${lineDisplay}">
+  <div class="name">${name}</div>
+  <div class="text">
+    <span>${lineContent}</span>
+    <textarea id="editLine" style="display:none;">${lineContent}</textarea>
+  </div>
+  </div>`;
 
   var dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
   <div id="TB_window" class="dialog temple" style="display:block;">
+    <div class="container">
       ${image}
+      ${line}
+    </div>
       ${action}
       <div class="loading" style="display:none;"></div>
       <a id="TB_closeWindowButton" title="Close">X关闭</a>
@@ -972,9 +1023,56 @@ function showTemple(temple, chara) {
   </div>`;
   $('body').append(dialog);
 
+  var showEdit = (e) => {
+    $('#TB_window.temple .line').show();
+    $('#TB_window.temple .line .text>span').hide();
+    $('#TB_window.temple .line .text>textarea').show();
+    $('#editLine').focus();
+    e.stopPropagation();
+  };
+
+  var commitEdit = (e) => {
+    //console.log('lost focus');
+    var value = $('#editLine').val();
+    var oldValue = $('#TB_window.temple .line .text>span').text();
+    if (value != oldValue) {
+      $('#TB_window.temple .line .text>span').text(value);
+      postData(`chara/temple/line/${temple.CharacterId}`, value, function (d) {
+        if (d.State != 0) {
+          alert(d.Message);
+        }
+      });
+    }
+    $('#TB_window.temple .line .text>span').show();
+    $('#TB_window.temple .line .text>textarea').hide();
+    e.stopPropagation();
+  };
+
+  getUserAssets((d) => {
+    if (d.State == 0) {
+      if (d.Value.Id == temple.UserId) {
+        $('#changeCoverButton').show();
+        $('#resetCoverButton').show();
+        $('#editLineButton').show();
+        $('#TB_window.temple').on('click', '.line .text', showEdit);
+      }
+      if (d.Value.Type >= 999 || d.Value.Id == 702) {
+        $('#resetCoverButton').show();
+      }
+    }
+  });
+
   $('#TB_closeWindowButton').on('click', closeDialog);
-  $('#TB_window.temple img.cover').on('click', closeDialog);
-  $('#TB_window.temple').on('click', '.card', closeDialog);
+  $('#TB_window.temple img.cover').on('click', e => {
+    //console.log('click image');
+    if ($('#TB_window.temple .line .text>textarea').is(':visible'))
+      commitEdit(e);
+    else if ($('#TB_window.temple .line').is(':visible'))
+      $('#TB_window.temple .line').hide();
+    else if (temple.Line && temple.Line.length > 0)
+      $('#TB_window.temple .line').show();
+  });
+  $('#TB_overlay').on('click', closeDialog);
 
   $('#changeCoverButton').on('click', (e) => {
     $("#picture").click();
@@ -984,6 +1082,10 @@ function showTemple(temple, chara) {
     resetTempleCover(temple);
     e.stopPropagation();
   });
+
+  $('#editLineButton').on('click', showEdit);
+  //$('#editLine').blur(commitEdit);
+
   $("#picture").on("change", function () {
     if (this.files.length > 0) {
       var file = this.files[0];
