@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         subjectPowerUp
 // @namespace    fifth26.com
-// @version      1.3.1
+// @version      1.3.2
 // @description  条目页面优化：看看你的好友是否喜欢
 // @author       fifth | aslo thanks to @everpcpc's contributions.
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+/
@@ -271,7 +271,7 @@ function listRequest(action, page = 1, limit = settings[action + 'Num']) {
             if (count >= limit) {
                 return;
             }
-            let starInfo = $(this).find('span.starstop').attr('class');
+            let starInfo = $(this).find('span.starlight').attr('class');
             if (settings.starredOnly && !starInfo) {
                 return;
             }
@@ -334,7 +334,7 @@ function buildListTitle(action, lang) {
 }
 
 function buildElement(info, lang) {
-    let starInfo = info.star ? `<span class="s${info.star.split(' ')[0]} starsinfo"></span>` : '';
+    let starInfo = info.star ? `<span class="starstop" style="float: right"><span class="${info.star}"></span></span>` : '';
     let timeInfo = info.time + ' ' + lang;
     return `<li class="clearit">
                 <a href="/user/${info.uid}" class="avatar">
