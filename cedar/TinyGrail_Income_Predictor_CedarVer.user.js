@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.7
+// @version      1.6.8
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -247,13 +247,14 @@ class IncomeAnalyser {
     );
   }
 
-  // 计算的是圣殿对应的角色等级
   _countTempleLevel() {
+    // 计算各角色等级的角色数 (只统计有圣殿的角色)
     let levelCounter = Array(20).fill(0);
     this._templeInfo.forEach(temple => {levelCounter[temple.CharacterLevel]++});
     this._$charaLevelEl.children('span').remove();
     this._$charaLevelEl.append(levelCounter.map((x, i) => x? $(document.createElement('span')).html(`LV${i}:${x}`): null).filter(x => x));
 
+    // 计算各角色等级的圣殿持股数
     let templeStockCounter = Array(20).fill(0);
     this._templeInfo.forEach(temple => {templeStockCounter[temple.CharacterLevel] += temple.Assets});
     this._$templeLevelStockEl.children('span').remove();
@@ -550,9 +551,13 @@ class IncomeAnalyser {
         if(x.Name != this._bgmId) continue;
         let balanceEl = chara.Element.querySelector('.feed').childNodes[0];
         balanceEl.textContent = balanceEl.textContent.replace('--', x.Balance);
+        chara.State = x.Balance;
+        this._calcCharaInfo();
+        this._calcRealIncome();
         break;
       }
     }
+    this._updateChart();
   }
 }
 
