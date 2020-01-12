@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.8
+// @version      1.6.9
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -262,14 +262,23 @@ class IncomeAnalyser {
     this._totalTempleStockNumEl.innerHTML = templeStockCounter.reduce((sum, x) => sum + x, 0);
   }
 
+  _calcThisCharaIncome(chara) {
+    return chara.State*chara.Rate;
+  }
+
+  _calcThisTempleIncome(temple) {
+    // return temple.CharacterLevel*temple.Rate*temple.Assets/2;
+    return temple.Assets*temple.Rate*(temple.CharacterLevel+1)*0.3;
+  }
+
   _calcCharaInfo() {
     this._totalCharaStockNumEl.innerHTML = this._charaInfo.reduce((sum, chara) => sum + chara.State, 0);
-    this._charaIncome = this._charaInfo.reduce((sum, chara) => sum + chara.State*chara.Rate, 0);
+    this._charaIncome = this._charaInfo.reduce((sum, chara) => sum + this._calcThisCharaIncome(chara), 0);
     this._totalCharaIncomeEl.innerHTML = this._charaIncome.toFixed(2);
   }
 
   _calcTempleInfo() {
-    this._templeIncome = this._templeInfo.reduce((sum, temple) => sum + temple.CharacterLevel*temple.Rate*temple.Assets/2, 0);
+    this._templeIncome = this._templeInfo.reduce((sum, temple) => sum + this._calcThisTempleIncome(temple), 0);
     this._totalTempleIncomeNumEl.innerHTML = this._templeIncome.toFixed(2);
   }
 
@@ -397,7 +406,7 @@ class IncomeAnalyser {
     createChart(stockNumChartEl, config);
 
     // chara income chart
-    [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => x.State*x.Rate)
+    [labels, data] = this._arrangeChartData(charaInfo, x => x.Name, x => this._calcThisCharaIncome(x))
     config = this._chartConfig(labels, data.map(Math.round), chartType, '角色股息分布', '角色股息', findNthLargest(data));
     let charaIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(charaIncomeChartEl);
@@ -411,7 +420,7 @@ class IncomeAnalyser {
     createChart(templeStockNumChartEl, config);
 
     // temple income chart
-    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => x.CharacterLevel*x.Rate*x.Assets/2)
+    [labels, data] = this._arrangeChartData(this._templeInfo, x => x.Name, x => this._calcThisTempleIncome(x))
     config = this._chartConfig(labels, data.map(Math.round), chartType, '圣殿股息分布', '圣殿股息', findNthLargest(data));
     let templeIncomeChartEl = this._canvasEl.cloneNode(true);
     this.$chartEl.append(templeIncomeChartEl);
@@ -625,7 +634,7 @@ let observer = new MutationObserver(function() {
     }
   }).attr('title', '显示或隐藏圣殿的角标');
   let $filterBtn = $btn.clone().html('筛选角色').on('click', () => {$grailFilterEl.toggle();});
-  let $showStockBtn = $btn.clone().html('持股查询').on('click', () => {analyser.getStockNum();});
+  let $showStockBtn = $btn.clone().html('持股查询').on('click', () => {analyser.getStockNum();}).attr('title', '若排名前三则显示持股量并重新计算活股股息');
   let $grailInfoBtns = $(document.createElement('div'))
     .addClass('grailInfoBox').append($countBtn, $chartBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn, $showStockBtn);
     // .addClass('grailInfoBox').append($countBtn, $chartBtn, $auctionBtn, $ghostBtn, $compareBtn, $hideTagBtn, $filterBtn);
