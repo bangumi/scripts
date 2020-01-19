@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Helper CedarVer
-// @namespace    https://github.com/bangumi/scripts/tree/master/liaune
-// @version      1.8.1
+// @namespace    tv.bgm.cedar.tinygrailhelper
+// @version      1.8.2
 // @description  为小圣杯增加一些小功能
 // @author       Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(user|character|rakuen\/topiclist|rakuen\/home|rakuen\/topic\/crt).*
@@ -410,7 +410,7 @@ async function withdrawBids(charas, Balance){
 
 function openSettings(){
 	closeDialog();
-	settings = JSON.parse(localStorage.getItem('TinyGrail_settings'));
+	//settings = JSON.parse(localStorage.getItem('TinyGrail_settings'));
 	let dialog = `<div id="TB_overlay" class="TB_overlayBG TB_overlayActive"></div>
 <div id="TB_window" class="dialog" style="display:block;max-width:640px;min-width:400px;">
 <table align="center" width="98%" cellspacing="0" cellpadding="5" class="settings">
@@ -1096,7 +1096,6 @@ class AutoFulfillICO {
 	}
 
 	async _autoFulfill() {
-		const advanceInSecond = 60;
 		let charaId = location.pathname.split('/').pop();
 		let targetAmount = prompt('自动补款，请输入目标金额：', 100000);
 		if(targetAmount === null) return;
@@ -1104,13 +1103,19 @@ class AutoFulfillICO {
 			alert('金额错误, 设置失败.');
 			return;
 		}
+		let advanceInSecond = prompt('请设置补款时间，ICO结束前的秒数：', 60);
+		if(advanceInSecond === null) return;
+		if(isNaN(advanceInSecond) || advanceInSecond <= 0) {
+			alert('时间错误, 设置失败.');
+			return;
+		}
 		let endTime = await retryPromise(resolve => getData(`chara/${charaId}`, d => resolve(d.Value.End)));
-		let [y, m, d, hr, min, sec] = endTime.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/).slice(1).map(x => parseInt(x, 10));
-		let delay = new Date(y, m-1, d, hr, min, sec) - Date.now() - advanceInSecond*1000;
+		endTime = new Date(endTime.slice(0, 19) + "+08:00");
+		let delay = endTime - Date.now() - advanceInSecond*1000;
 		setTimeout(this._fulfillICO, delay, charaId, targetAmount);
 		this._$fulfillButton[0].disabled = true;
 		this._$fulfillButton[0].innerHTML = '[已设置自动补款]';
-		this._$fulfillButton.after(`目标金额：${targetAmount}`);
+		this._$fulfillButton.after(`目标金额：${targetAmount} 补款时间：${new Date(endTime - advanceInSecond*1000)}`);
 		alert(`设置成功！\n请勿关闭或刷新本页面，并保证余额充足，网络畅通。\n在ICO结束前${advanceInSecond}秒将会自动补足到${targetAmount}cc.`);
 	}
 
