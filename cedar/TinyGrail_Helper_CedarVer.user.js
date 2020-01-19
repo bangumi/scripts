@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         TinyGrail Helper
+// @name         TinyGrail Helper CedarVer
 // @namespace    https://github.com/bangumi/scripts/tree/master/liaune
 // @version      1.8.1
 // @description  为小圣杯增加一些小功能
