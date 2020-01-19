@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.4.8
+// @version      1.5.0
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -26,6 +26,10 @@ GM_addStyle ( `
         padding: 10px 10px 5px 70px;
         max-width: 270px;
         display: none;
+    }
+    html[data-theme="dark"] #friend_watch_detail div.userContainer {
+        background-image: none !important;
+        background-color: #2d2e2f !important;
     }
 ` );
 
@@ -59,7 +63,7 @@ function createFriendNode(uid, friend) {
 function createMoreNode(st) {
     return $(`
         <a class="avatar" href="${location.href}/${st}?filter=friends">
-          <span class="avatarNeue ll" style="margin:16px 0 0 0; padding:1px 9px" >-></span>
+          <span class="avatarNeue ll" style="margin:16px 0 0 0; padding:1px 9px" >➡</span>
         </a>`);
 }
 
