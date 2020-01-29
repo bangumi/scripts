@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Helper CedarVer
 // @namespace    tv.bgm.cedar.tinygrailhelper
-// @version      1.8.2
+// @version      1.8.3
 // @description  为小圣杯增加一些小功能
 // @author       Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(user|character|rakuen\/topiclist|rakuen\/home|rakuen\/topic\/crt).*
@@ -13,35 +13,28 @@ ul.timelineTabs li a {
   margin: 2px 0 0 0;
   padding: 5px 10px 5px 10px;
 }
-
 img.cover {
   background-color: transparent;
 }
-
 .assets .my_temple.item .card {
   box-shadow: 3px 3px 5px #FFEB3B;
   border: 1px solid #FFC107;
 }
-
 html[data-theme='dark'] .assets .my_temple.item .card {
   box-shadow: 0px 0px 15px #FFEB3B;
   border: 1px solid #FFC107;
 }
-
 .my_auction {
   color: #ffa7cc;
   margin-right: 5px;
 }
-
 .user_auction {
   color: #a7e3ff;
   margin-right: 5px;
 }
-
 html[data-theme='dark'] #grailBox .title {
   background-color: transparent;
 }
-
 .result {
   max-height: 500px;
   overflow: auto;
@@ -284,7 +277,6 @@ function loadHelperMenu() {
 	$('#withdrawAuctionMenu').on('click', function () {
 		menuItemClicked(withdrawAuction);
 	});
-
 	$('#withdrawBidMenu').on('click', function () {
 		menuItemClicked(withdrawBid);
 	});
@@ -348,7 +340,6 @@ function withdrawAuction(){//取消拍卖(非周六时间)以提取现金，记�
 		});
 	});
 }
-
 function withdrawBid(){//取消买单以提取现金，记录原订单，再次点击存回
 	$('#eden_tpc_list ul').html('');
 	getData(`chara/user/assets`,(d) => {
@@ -362,7 +353,6 @@ function withdrawBid(){//取消买单以提取现金，记录原订单，再次�
 		});
 	});
 }
-
 async function withdrawAuctions(charas, Balance){
 	for(let i = 0; i< charas.length; i++){
 		let charaId = charas[i].CharacterId.toString();
@@ -383,7 +373,6 @@ async function withdrawAuctions(charas, Balance){
 		}
 	}
 }
-
 async function withdrawBids(charas, Balance){
 	for(let i = 0; i< charas.length; i++){
 		let charaId = charas[i].Id.toString();
@@ -578,11 +567,9 @@ function splitAmount(amount) {
 	}
 	return splitAmounts;
 }
-
 function setSplitButton(type){
 	let text = (type == 'bid') ? '拆单买入' : '拆单卖出';
 	$(`#grailBox .trade_box .${type} .trade_list`).append(`<div style="display:none"><div class="label total">0</div><button id="split_${type}Button" class="active ${type}">${text}</button></div>`);
-
 	$(`.${type} .amount`).on('input',function () {
 		let amount = $(`.${type} .amount`).val();
 		if(amount>500){
@@ -595,11 +582,9 @@ function setSplitButton(type){
 		}
 	});
 }
-
 function splitorderList(charaId){
 	setSplitButton('bid');
 	setSplitButton('ask');
-
 	async function doSplit(type) {
 		let price = $(`.${type} .price`).val();
 		let amount = $(`.${type} .amount`).val();
@@ -613,7 +598,6 @@ function splitorderList(charaId){
 		}
 		location.reload();
 	};
-
 	$('#split_bidButton').on('click', () => doSplit('bid'));
 	$('#split_askButton').on('click', () => doSplit('ask'));
 }
@@ -663,12 +647,20 @@ function showOwnTemple() {
 	}
 }
 
-function countTempleNum(charaId){
+function countTempleNum(charaId) {
 	getData(`chara/temple/${charaId}`, (d)=> {
 		let templeAll = {1:0,2:0,3:0};
-		for (let i = 0; i < d.Value.length; i++) {
-			templeAll[d.Value[i].Level]++;
-		}
+		d.Value.forEach(x => {templeAll[x.Level]++});
+		/*
+		let $myTemple = $('#grailBox .assets_box .assets .item.my_temple');
+		if($myTemple.length) {
+			let my_temple_level = 1 + ['silver', 'gold', 'purple'].findIndex(x => $myTemple.hasClass(x));
+			templeAll[my_temple_level] = $(document.createElement('span')).css({
+				'color': '#0084B4',
+				'text-decoration': 'underline',
+				'font-weight': 'bold'
+			}).html(templeAll[my_temple_level])[0].outerHTML;
+		}*/
 		$('#grailBox .assets_box .bold .sub').before(`<span class="sub"> (${templeAll[3]} + ${templeAll[2]} + ${templeAll[1]})</span>`);
 		showTempleRate(charaId); //显示圣殿股息
 	});
@@ -676,8 +668,8 @@ function countTempleNum(charaId){
 
 function showTempleRate(charaId){
 	getData(`chara/${charaId}`, (d)=> {
-		let templeRate = d.Value.Rate * (d.Value.Level+1) * 0.3 * 2;
-		$('#grailBox .assets_box .bold').append(`<span class="sub" title="圣殿股息"> (${formatNumber(templeRate,2)})</span>`);
+		let templeRate = d.Value.Rate * (d.Value.Level+1) * 0.3;
+		$('#grailBox .assets_box .bold').append(`<span class="sub" title="圣殿持股单股股息"> (${formatNumber(templeRate,2)})</span>`);
 	});
 }
 
@@ -1011,7 +1003,7 @@ function openHistoryDialog(chara, page) {
 
 function getShareBonus() {
 	let asiaTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Shanghai"});
-	asiaTime = new Date(asiaTime)
+	asiaTime = new Date(asiaTime);
 	let Day = asiaTime.getDay();
 	if(Day == 6){
 		getData('event/share/bonus/check', (d) => {
@@ -1025,7 +1017,7 @@ function getShareBonus() {
 function hideBonusButton() {
 	if(!$('#bonusButton').length) return;
 	getData('event/share/bonus/test', (d) => {
-		if(d.State == 0 && d.Value.Share > 1500*7) $('#bonusButton').remove();
+		if(d.State == 0 && d.Value.Share > 1500*7) $('#bonusButton').hide();
 		//else $('#shareBonusButton').hide();
 	});
 }
@@ -1134,7 +1126,7 @@ class AutoFulfillICO {
 	}
 }
 
-function add_grailBox_fuc(){
+function add_chara_info() {
 	let charaId = $('#grailBox .title .name a')[0].href.split('/').pop();
 	followChara(charaId);
 	fixAuctions(charaId); //修改默认拍卖底价和数量
@@ -1149,78 +1141,96 @@ function add_grailBox_fuc(){
 	countTempleNum(charaId); //显示各级圣殿数量
 }
 
-function observeRakuen(mutationList) {
-	if(!$('#grailBox2').length) return;
-	observer.disconnect();
-	if(settings.get_bonus == 'on') setTimeout(()=>{getShareBonus();},500); //周六未领取股息则自动领取
-	setTimeout(()=>{hideBonusButton();},500); //隐藏签到
-	setTimeout(()=>{showTopWeek();},500); //显示萌王榜排名数值
+function add_ico_info() {
+	let charaId = location.pathname.split('/').pop();
+	followChara(charaId);
+	showEndTime(charaId);
+	new AutoFulfillICO().addButton();
 }
 
-function observeRakuen1(mutationList) {
-	if(!$('#grailBox .assets_box').length) {
-		fetched = false;
-		return;
+
+function launchObserver({
+	parentNode,
+	selector,
+	failCallback=null,
+	successCallback=null,
+	stopWhenSuccess=true,
+	config={'childList': true, 'subtree': true},
+}) {
+	// if parent node does not exist, return
+	if(!parentNode) return;
+	const observeFunc = mutationList => {
+		if(!document.querySelector(selector)) {
+			if(failCallback) failCallback();
+			return;
+		}
+		if(stopWhenSuccess) observer.disconnect();
+		if(successCallback) successCallback();
 	}
-	if(fetched) return;
-	if($('#grailBox .assets_box').length) {
-		fetched = true;
-		add_grailBox_fuc();
-	}
+	let observer = new MutationObserver(observeFunc);
+	observer.observe(parentNode, config);
 }
 
-function observeHomepage(mutationList) {
-	if(!$('#pager1').length) return;
-	observer.disconnect();
-	showHideGrailBox();
+// character page
+if(location.pathname.startsWith('/rakuen/topic/crt') || location.pathname.startsWith('/character')) {
+	let parentNode = document.getElementById('subject_info') || document.getElementById('columnCrtB');
+	// charater trade info
+	let chara_fetched = false;
+	launchObserver({
+		parentNode: parentNode,
+		selector: '#grailBox .assets_box',
+		failCallback: () => {chara_fetched = false},
+		successCallback: () => {
+			if(chara_fetched) return;
+			chara_fetched = true;
+			add_chara_info();
+		},
+		stopWhenSuccess: false,
+	});
+	// charater ico info
+	let ico_fetched = false;
+	launchObserver({
+		parentNode: parentNode,
+		selector: '#grailBox .trade .money',
+		failCallback: () => {ico_fetched = false},
+		successCallback: () => {
+			if(ico_fetched) return;
+			ico_fetched = true;
+			add_ico_info();
+		},
+		stopWhenSuccess: false,
+	});
 }
-
-function observeMenu(mutationList) {
-	if(!$('#recentMenu').length) return;
-	observer.disconnect();
-	setTimeout(function(){loadHelperMenu()},500);
+// rakuen homepage
+else if (location.pathname.startsWith('/rakuen/home')) {
+	//周六未领取股息则自动领取
+	if(settings.get_bonus == 'on') getShareBonus();
+	//隐藏签到
+	launchObserver({
+		parentNode: document.body,
+		selector: '#grailBox2 #bonusButton',
+		successCallback: hideBonusButton,
+	});
+	//显示萌王榜排名数值
+	launchObserver({
+		parentNode: document.body,
+		selector: '#topWeek .assets .item',
+		successCallback: showTopWeek,
+	});
 }
-
-function observeChara(mutationList) {
-	if(!$('#grailBox .progress_bar, #grailBox .assets_box').length) {
-		fetched = false;
-		return;
-	}
-	if(fetched) return;
-	if($('#grailBox .assets_box').length) {
-		fetched = true;
-		add_grailBox_fuc();
-	} // use '.progress_bar' to detect (and skip) ICO characters
-	else if($('#grailBox .trade .money').length) {
-		observer.disconnect();
-		let charaId = location.pathname.split('/').pop();
-		followChara(charaId);
-		showEndTime(charaId);
-		new AutoFulfillICO().addButton();
-	}
+// menu page
+else if (location.pathname.startsWith('/rakuen/topiclist')) {
+	launchObserver({
+		parentNode: document.getElementById('rakuenTab'),
+		selector: '#recentMenu',
+		successCallback: loadHelperMenu,
+	});
 }
-
-let fetched = false;
-let parentNode=null, observer,parentNode1=null, observer1;
-if(location.pathname.startsWith('/rakuen/topic/crt')) {
-	parentNode = document.getElementById('subject_info');
-	observer = new MutationObserver(observeChara);
-} else if(location.pathname.startsWith('/character')) {
-	parentNode = document.getElementById('columnCrtB')
-	observer = new MutationObserver(observeChara);
-} else if (location.pathname.startsWith('/rakuen/home')) {
-	parentNode = document.body;
-	observer = new MutationObserver(observeRakuen);
-	parentNode1 = document.body;
-	observer1 = new MutationObserver(observeRakuen1);
-}else if (location.pathname.startsWith('/rakuen/topiclist')) {
-	parentNode = document.getElementById('rakuenTab');
-	observer = new MutationObserver(observeMenu);//加载菜单
-}
+// user homepage
 else if (location.pathname.startsWith('/user')) {
-	parentNode = document.body;
-	observer = new MutationObserver(observeHomepage);
+	launchObserver({
+		parentNode: document.body,
+		selector: '#recentMenu',
+		successCallback: showHideGrailBox,
+	});
 }
-
-if(parentNode) observer.observe(parentNode, {'childList': true, 'subtree': true});
-if(parentNode1) observer1.observe(parentNode1, {'childList': true, 'subtree': true});
