@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.9
+// @version      1.6.10
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -360,7 +360,7 @@ class IncomeAnalyser {
 
   // ===== 获取拍卖底价 ===== //
   getTemplePrice() {
-    getData('chara/user/assets/valhalla@tinygrail.com/true', d => {
+    getData('chara/user/assets/tinygrail/true', d => {
       if (d.State !== 0) return;
       let templeId = Array.from(document.querySelectorAll('.temple_list .grail_list .item .card')).map(x => $(x).data('id'));
       let titleSpan = document.querySelectorAll('.temple_list .grail_list .item .title>span');
