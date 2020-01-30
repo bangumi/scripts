@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Helper CedarVer
 // @namespace    tv.bgm.cedar.tinygrailhelper
-// @version      1.8.3
+// @version      1.8.4
 // @description  为小圣杯增加一些小功能
 // @author       Cedar, Liaune
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/(user|character|rakuen\/topiclist|rakuen\/home|rakuen\/topic\/crt).*
@@ -747,7 +747,7 @@ function showEndTime(charaId){
 }
 
 function followAuctions(charaId){  //关注竞拍情况
-	getData(`chara/user/${charaId}/valhalla@tinygrail.com/false`, (d) => {
+	getData(`chara/user/${charaId}/tinygrail/false`, (d) => {
 		if (d.State == 0 && d.Value.Amount > 0) {
 			let button;
 			if(followList.auctions.includes(charaId)){
@@ -805,7 +805,7 @@ function loadUserAuctions(ids) {
 function fixAuctions(charaId){
 	getData(`chara/${charaId}`, (d) => {
 		let chara = d.Value;
-		getData(`chara/user/${chara.Id}/valhalla@tinygrail.com/false`, (d) => {
+		getData(`chara/user/${chara.Id}/tinygrail/false`, (d) => {
 			if (d.State == 0) {
 				chara.Price = d.Value.Price;
 				chara.State = d.Value.Amount;
