@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.10
+// @version      1.6.11
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -157,8 +157,8 @@ class IncomeAnalyser {
       .append(
           elWrapper.clone().html("角色持股：").append(this._totalCharaStockNumEl).attr('title', '流通股总量'),
           elWrapper.clone().html("角色股息：").append(this._totalCharaIncomeEl),
-          elWrapper.clone().html("圣殿持股：").append(this._totalTempleStockNumEl).attr('title', '塔内持股总量'),
-          elWrapper.clone().html("圣殿股息：").append(this._totalTempleIncomeNumEl).attr('title', '圣殿股产生的总股息. 各圣殿股息=圣殿股数×股息加成×角色等级/2'),
+          elWrapper.clone().html("圣殿持股：").append(this._totalTempleStockNumEl).attr('title', '圣殿股总量'),
+          elWrapper.clone().html("圣殿股息：").append(this._totalTempleIncomeNumEl).attr('title', '圣殿股产生的总股息'),
           elWrapper.clone().html("税前股息：").append(this._totalIncomeEl),
           elWrapper.clone().html("应缴税额：").append(this._totalTaxEl),
           elWrapper.clone().html("税后股息：").append(this._afterTaxIncomeEl),
@@ -291,6 +291,8 @@ class IncomeAnalyser {
   }
 
   _collectTax(income) {
+    return Math.max(0, (income - 30 * Math.log10(income+1))) * 0.9;
+/*
     let tax = 0;
     const taxRate = [0.75, 0.5, 0.25, 0.1];
     const threshold = [400000, 200000, 100000, 50000];
@@ -301,6 +303,7 @@ class IncomeAnalyser {
       }
     }
     return tax;
+*/
   }
 
   _renderCharaPage() {
@@ -519,7 +522,8 @@ class IncomeAnalyser {
         }
       }).then(() => {
         let mycharaInfo = this._mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
-        const needToHide = id => !mycharaInfo[id];
+        const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500 || mycharaInfo[id].State <= 0; // 我没有的 或 我有塔的 或 我无持股的
+        // const needToHide = id => !mycharaInfo[id];
         this._charaInfo.forEach(x => {
           if(needToHide(x.Id)) x.Element.style.visibility = 'hidden';
         });
