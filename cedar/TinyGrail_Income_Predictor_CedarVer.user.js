@@ -522,8 +522,8 @@ class IncomeAnalyser {
         }
       }).then(() => {
         let mycharaInfo = this._mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
-        const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500 || mycharaInfo[id].State <= 0; // 我没有的 或 我有塔的 或 我无持股的
-        // const needToHide = id => !mycharaInfo[id];
+        // const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500 || mycharaInfo[id].State <= 0; // 我没有的 或 我有塔的 或 我无持股的
+        const needToHide = id => !mycharaInfo[id];
         this._charaInfo.forEach(x => {
           if(needToHide(x.Id)) x.Element.style.visibility = 'hidden';
         });
