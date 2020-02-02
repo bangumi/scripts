@@ -291,7 +291,7 @@ class IncomeAnalyser {
   }
 
   _collectTax(income) {
-    return Math.max(0, (income - 30 * Math.log10(income+10000))) * 0.9;
+    return Math.max(0, (income - Math.log10(x+10000)*75000)) * 0.9;
 /*
     let tax = 0;
     const taxRate = [0.75, 0.5, 0.25, 0.1];
