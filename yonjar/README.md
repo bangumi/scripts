@@ -1,6 +1,6 @@
 # [yonjar](https://bgm.tv/user/yonjar)
 
-## [bgm话题收藏](https://github.com/bangumi/scripts/blob/master/yonjar/topic_history.user.js?raw=true)
+## [bangumi浏览足迹](https://github.com/bangumi/scripts/blob/master/yonjar/topic_history.user.js?raw=true)
 
 记录bangumi的话题浏览历史
 
