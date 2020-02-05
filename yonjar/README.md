@@ -1,5 +1,9 @@
 # [yonjar](https://bgm.tv/user/yonjar)
 
+## [bgm话题收藏](https://github.com/bangumi/scripts/blob/master/yonjar/topic_history.user.js?raw=true)
+
+记录bangumi的话题浏览历史
+
 ## [bangumi评论统计](https://github.com/bangumi/scripts/blob/master/yonjar/comments_detail.user.js?raw=true)
 
 在标题右边显示该主题下的评论情况 
@@ -26,6 +30,10 @@
 !全站动态只有一页
 
 ## [用户详情爬取](https://github.com/bangumi/scripts/blob/master/yonjar/user_detail.user.js?raw=true)
+
+**bgm.tv下不可用!**
+**bgm.tv下不可用!**
+**bgm.tv下不可用!**
 
 本脚本不提供实际的功能 但能方便其他用户自行编写脚本
 爬取用户的资料 导出到localstorage
