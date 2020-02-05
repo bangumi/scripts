@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi浏览足迹
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.1
+// @version      0.1.2
 // @description  记录bangumi的话题浏览历史
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((blog|character|person|(group|subject)\/topic|rakuen\/topic\/(crt|group|subject|prsn))\/\S+)?(\?.*)?(#.*)?$/
@@ -47,7 +47,7 @@ class BgmHistory {
   }
 
   add(topic) {
-    if (this.has(topic)) return;
+    if (this.has(topic)) this.remove(topic); //浏览过的帖子置顶
 
     if (this.history.length >= 7) {
       this.history.shift();
