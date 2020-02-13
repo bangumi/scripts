@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.2
+// @version     1.3
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -11,6 +11,7 @@
 
 if(location.pathname.split('user/')[1] !== document.querySelector('#dock .first a').href.split('user/')[1]) return;
 
+const testing = false;
 
 function formatNumber(number, decimals, dec_point, thousands_sep) {
   number = (number + '').replace(/[^0-9+-Ee.]/g, '');
@@ -125,6 +126,10 @@ function sacrificeCharacter(id, count, captial) {
   return retryPromise(fetchPost(`chara/sacrifice/${id}/${count}/${captial}`, null));
 }
 
+function resetTempleCover(charaId, userId) {
+  return retryPromise(fetchPost(`chara/temple/cover/reset/${charaId}/${userId}`, null));
+}
+
 function getTradeInfo(charaId) {
   return retryPromise(fetchGet(`chara/user/${charaId}`)).then(d => d.Value);
 }
@@ -132,6 +137,10 @@ function getTradeInfo(charaId) {
 function getBidsList() {
   return retryPromise(fetchGet(`chara/bids/0/1/10000`))
     .then(d => d.State === 0 && d.Value && d.Value.Items? d.Value.Items: null);
+}
+
+function getCharaTemples(charaId) {
+  return retryPromise(fetchGet(`chara/temple/${charaId}`)).then(d => d.Value);
 }
 
 function getAuctionsList() {
@@ -193,10 +202,11 @@ class Farewell {
     this.$farewellInfoEl.html(`再见，${chara.Name}！`);
     let tradeInfo = await getTradeInfo(chara.Id);
     await this._cancelTrades(tradeInfo);
-    await sacrificeCharacter(chara.Id, chara.State, this._captial);
-    //console.log(`fake sacrifice, chara Id: ${chara.Id}`);
+    await this._resetTempleCover(chara);
+    if(testing) console.log(`fake sacrifice, chara Id: ${chara.Id}`);
+    else await sacrificeCharacter(chara.Id, chara.State, this._captial);
     // 高速模式只给很短的延迟, 以极快速度退坑
-    //非高速模式则增加延迟, 慢慢等待角色消失, 增强仪式感
+    // 非高速模式则增加延迟, 慢慢等待角色消失, 增强仪式感
     const fadeElapse = this._hyperMode? 20: 300;
     await new Promise(resolve => charaEl.fadeOut(fadeElapse, function() {
       $(this).remove(); resolve();
@@ -206,13 +216,13 @@ class Farewell {
   async _cancelTrades(tradeInfo) {
     let askIds = tradeInfo.Asks.map(x => x.Id);
     for(let id of askIds) {
-      await cancelAsk(id);
-      //console.log(`fake cancel, ask Id: ${id}`);
+      if(testing) console.log(`fake cancel, ask Id: ${id}`);
+      else await cancelAsk(id);
     }
     let bidIds = tradeInfo.Bids.map(x => x.Id);
     for(let id of bidIds) {
-      await cancelBid(id);
-      //console.log(`fake cancel, bid Id: ${id}`);
+      if(testing) console.log(`fake cancel, bid Id: ${id}`);
+      else await cancelBid(id);
     }
   }
 
@@ -231,8 +241,21 @@ class Farewell {
     let auctionItems = await getAuctionsList();
     if(!auctionItems) return;
     for(let item of auctionItems) {
-      await cancelAuction(item.Id);
-      //console.log(`fake cancel, auction Id: ${item.Id}`);
+      if(testing) console.log(`fake cancel, auction Id: ${item.Id}`);
+      else await cancelAuction(item.Id);
+    }
+  }
+
+  // === reset temple cover if duplicated === //
+  async _resetTempleCover(chara) {
+    if(chara.Sacrifices < 500) return;
+    let charaTemples = await getCharaTemples(chara.Id);
+    if(!charaTemples.length) return;
+    let myTemple = charaTemples.find(t => t.Name == this._bgmId);
+    if(myTemple.Cover.includes('lain.bgm.tv')) return;
+    if(charaTemples.some(t => t.Cover == myTemple.Cover && t.Name != myTemple.Name)) {
+      if(testing) console.log(`fake reset temple cover, chara id: ${chara.Id}`);
+      else await resetTempleCover(chara.Id, this._bgmId);
     }
   }
 }
