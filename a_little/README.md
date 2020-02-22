@@ -11,7 +11,7 @@
 在上传图片的页面提供模糊打码处理的功能
 
 ## [资源辅助搜索](bt_search_for_bgm.user.js?raw=true)
-讨论贴：http://bangumi.tv/group/topic/311291
+讨论贴：https://bgm.tv/group/topic/311291
 
 为bangumi条目添加bt搜索图标,方便在查阅条目的时候，搜索资源  
 默认开启三个搜索引擎: [dmhy](https://share.dmhy.org/ "dmhy") [Download Search](http://search.jayxon.com/ "google") [btdigg](http://btdigg.org/ "cilizhushou")
@@ -21,7 +21,7 @@
 ![Screenshot](images/screenshot_bt_search_for_bgm.png "Screenshot")
 
 ## [辅助创建黄油条目](bangumi_new_subject_helper.user.js?raw=true)
-讨论贴：http://bangumi.tv/group/topic/311774
+讨论贴：https://bgm.tv/group/topic/311774
 
 1. 浏览getchu和批评空间时，辅助创建游戏条目和人物条目，减少复制粘贴的操作。
 2. 关联游戏条目或者人物条目时创建一个表格，点击表格可以辅助搜索。
