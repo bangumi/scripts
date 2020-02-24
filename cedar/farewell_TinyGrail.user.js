@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.3.1
+// @version     1.3.2
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -291,7 +291,14 @@ let observer = new MutationObserver(function() {
     .addClass("chiiBtn").html('一键退坑')
     .on('click', function() {
       if(!confirm('确定退坑吗？本操作无法反悔！\n如果误操作了，请及时关闭页面、刷新页面或者断开网络，以拯救暂未献祭的股票。')) return;
-      let farewell = new Farewell(document.querySelector('#captial').checked, document.querySelector('#hypermode').checked);
+      let captial = document.querySelector('#captial').checked;
+      let hypermode = document.querySelector('#hypermode').checked;
+      let asiaTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Shanghai"}));
+      if(!captial && asiaTime.getDay() == 6) {
+        alert('周六无法进行资产重组！');
+        return;
+      }
+      let farewell = new Farewell(captial, hypermode);
 
       $farewellBtn.html('退坑中…').off('click');
       $captialEl.children('input').prop('disabled', true);
@@ -299,6 +306,7 @@ let observer = new MutationObserver(function() {
       $hyperModeEl.after(farewell.$farewellInfoEl);
 
       farewell.farewell(() => $farewellBtn.html('退坑完成'));
+      alert("退坑已完成！请刷新检查是否有遗漏。");
     });
   $grailOptions.append(
     $(document.createElement('div'))
