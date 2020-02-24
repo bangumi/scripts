@@ -305,8 +305,10 @@ let observer = new MutationObserver(function() {
       $hyperModeEl.children('input').prop('disabled', true);
       $hyperModeEl.after(farewell.$farewellInfoEl);
 
-      farewell.farewell(() => $farewellBtn.html('退坑完成'));
-      alert("退坑已完成！请刷新检查是否有遗漏。");
+      farewell.farewell(() => {
+        $farewellBtn.html('退坑完成');
+        alert("退坑已完成！请刷新检查是否有遗漏。");
+      });
     });
   $grailOptions.append(
     $(document.createElement('div'))
