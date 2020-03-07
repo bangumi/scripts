@@ -113,9 +113,9 @@
 
 站内讨论https://bgm.tv/group/topic/352335
 
-## BBCode效果补丁
+## [BBCode效果补丁](BBcode_patch.user.js?raw=true)
 
-暂无脚本 请前往组件页面启用组件
+让bangumi的BBcode中的list和indent关键字正常发挥效果.
 
 对应组件https://bgm.tv/dev/app/1252
 
