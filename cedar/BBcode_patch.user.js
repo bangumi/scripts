@@ -18,10 +18,12 @@ GM_addStyle(`
 .message ul, .reply_content ul, .cmt_sub_content ul, .blog_entry ul, .topic_content ul {
   list-style-type: disc;
 }
-.message ol ul ul, .reply_content ol ul ul, .cmt_sub_content ol ul ul, .blog_entry ol ul ul, .topic_content ol ul ul {
+.message ol ul ul, .reply_content ol ul ul, .cmt_sub_content ol ul ul, .blog_entry ol ul ul, .topic_content ol ul ul,
+.message ul ul, .reply_content ul ul, .cmt_sub_content ul ul, .blog_entry ul ul, .topic_content ul ul {
   list-style-type: circle;
 }
-.message ol ul ul ul, .reply_content ol ul ul ul, .cmt_sub_content ol ul ul ul, .blog_entry ol ul ul ul, .topic_content ol ul ul ul {
+.message ol ul ul ul, .reply_content ol ul ul ul, .cmt_sub_content ol ul ul ul, .blog_entry ol ul ul ul, .topic_content ol ul ul ul,
+.message ul ul ul, .reply_content ul ul ul, .cmt_sub_content ul ul ul, .blog_entry ul ul ul, .topic_content ul ul ul {
   list-style-type: square;
 }
 body blockquote {
