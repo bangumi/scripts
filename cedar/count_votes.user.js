@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        评分人数统计plus
 // @namespace   tv.bgm.cedar.countVotes
-// @version     1.2.1
-// @description 通过鼠标选择各分段条形图统计不同分数的打分人数与占比
+// @version     1.2.2
+// @description 用鼠标或触屏选择各分段条形图统计不同分数的打分人数与占比
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/subject/\d+(#;)?$/
 // @grant       GM_addStyle
@@ -23,13 +23,16 @@
   pointer-events: none;
 }
 .horizontalChart .chart-column-selected a .count {
-  /*background: #2D7BB2;*/
   background: #2DB264;
+  /*background: #2D7BB2;*/
   /*background: #F4AC09;*/
 }
 .horizontalChart .chart-column-selected a {
   color: #02A3FB;
   background: #D6F5E3;
+}
+html[data-theme="dark"] .horizontalChart .chart-column-selected a {
+  background: #506659;
 }
 `);
 
@@ -111,12 +114,15 @@
   // for mouse selecting
   if('onmouseup' in window) {
     let $chartBars = $chart.children('li');
-    //const whichChild = e => $chartBars.index(e.target);
 
+    //flags
     let selecting = false;
     let prevChild = -1, startChild = -1, mousemoved = false;
 
-    function log(e, i) {console.log(e.target); console.log("i =", i, "prevChild =", prevChild, "startChild =", startChild);}
+    function resetFlags() {
+      selecting = mousemoved = false;
+      prevChild = startChild = -1;
+    }
 
     $chart.on("mousedown", function(e) {
       e.preventDefault();
@@ -126,8 +132,9 @@
         $(this.children[prevChild]).toggleClass('chart-column-selected');
         updateVoteCount();
       }
-      selecting = false;
-      prevChild = -1, startChild = -1, mousemoved = false;
+      resetFlags();
+    }).on("mouseup", function() {
+      resetFlags();
     }).on("mousedown", "li", function() {
       prevChild = startChild = $chartBars.index(this);
       $(this).toggleClass('chart-column-selected');
@@ -136,11 +143,11 @@
       if(selecting) {
         let i = $chartBars.index(this);
         if (startChild <= i && i < prevChild)
-          log(i), console.log('toggle→'), $(this.nextElementSibling).toggleClass('chart-column-selected');
+          $(this.nextElementSibling).toggleClass('chart-column-selected');
         else if (prevChild < i && i <= startChild)
-          log(i), console.log('toggle←'), $(this.previousElementSibling).toggleClass('chart-column-selected');
+          $(this.previousElementSibling).toggleClass('chart-column-selected');
         else if (i != startChild)
-          log(i), console.log('toggle|'), $(this).toggleClass('chart-column-selected');
+          $(this).toggleClass('chart-column-selected');
         prevChild = i;
         mousemoved = true;
         updateVoteCount();
@@ -151,27 +158,7 @@
         $(this).toggleClass('chart-column-selected');
         updateVoteCount();
       }
-      selecting = false;
-      prevChild = -1, startChild = -1, mousemoved = false;
+      resetFlags();
     })
   }
-
-  // for mouse selecting, deprecated
-  /*if('onmouseup' in window) {
-    let selecting = false;
-    $chart.on("mousedown", function(e) {
-      e.preventDefault();
-      selecting = true;
-    }).on("mouseup mouseleave", function() {
-      selecting = false;
-    }).on("mousedown", "li", function() {
-      $(this).toggleClass('chart-column-selected');
-      updateVoteCount();
-    }).on("mouseover", "li", function() {
-      if(selecting) {
-        $(this).toggleClass('chart-column-selected');
-        updateVoteCount();
-      }
-    })
-  }*/
 }) ();
