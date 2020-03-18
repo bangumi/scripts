@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.11.1
+// @version      1.6.12
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -184,31 +184,17 @@ class IncomeAnalyser {
     this._prepare();
     Promise.all([
       this._charaFetch()
-      .then(() => {
-        this._calcCharaInfo();
-      })
-      .then(() => {
-        this._renderCharaPage();
-      }),
+      .then(() => this._calcCharaInfo())
+      .then(() => this._renderCharaPage()),
 
       this._templeFetch()
-      .then(() => {
-        this._countTempleLevel();
-        this._calcTempleInfo();
-      })
-      .then(() => {
-        this._renderTemplePage();
-      })
+      .then(() => this._countTempleLevel())
+      .then(() => this._calcTempleInfo())
+      .then(() => this._renderTemplePage())
     ])
-    .then(() => {
-      this._calcRealIncome();
-    })
-    .then(() => {
-      this._updateChart();
-    })
-    .then(() => {
-      if(callback) callback();
-    });
+    .then(() => this._calcRealIncome())
+    .then(() => this._updateChart())
+    .then(() => {if(callback) callback();});
   }
 
   _prepare() {
@@ -291,7 +277,7 @@ class IncomeAnalyser {
   }
 
   _collectTax(income) {
-    return Math.max(0, (income - Math.log10(income+10000)*75000)) * 0.9;
+    return Math.max(0, income-3e5*(Math.log10(income+1e4)-4)) * 0.9;
 /*
     let tax = 0;
     const taxRate = [0.75, 0.5, 0.25, 0.1];
