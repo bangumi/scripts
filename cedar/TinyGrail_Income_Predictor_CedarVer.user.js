@@ -177,20 +177,22 @@ class IncomeAnalyser {
   }
 
   // ===== 统计数据 ===== //
-  doStatistics(callback) {
+  async doStatistics(callback) {
     this._prepare();
-    Promise.all([
+    await Promise.all([
       this._charaFetch()
-      .then(() => this._calcCharaInfo())
-      .then(() => this._renderCharaPage()),
+      .then(() => this._calcCharaInfo()),
 
       this._templeFetch()
       .then(() => this._countTempleLevel())
       .then(() => this._calcTempleInfo())
-      .then(() => this._renderTemplePage())
     ])
-    .then(() => this._calcRealIncome())
-    .then(() => this._updateChart())
+    .then(() => this._calcRealIncome());
+    await Promise.all([
+      this._renderCharaPage(),
+      this._renderTemplePage(),
+      new Promise(resolve => {this._updateChart(); resolve()})
+    ])
     .then(() => {if(callback) callback();});
   }
 
@@ -285,13 +287,13 @@ class IncomeAnalyser {
       template.innerHTML = renderUserCharacter(chara).trim();
       chara.Element = template.content.firstChild;
       this._renderCharaLevelStock(chara);
-      await new Promise.resolve();
+      await Promise.resolve();
     }
     // 这样写减少卡顿
     $('#grail .chara_list .loading').hide();
     for(let i = 0; i < this._charaInfo.length; i += 48) {
       $page.append(this._charaInfo.slice(i, i+48).map(x => x.Element));
-      await new Promise.resolve();
+      await Promise.resolve();
     }
   }
 
