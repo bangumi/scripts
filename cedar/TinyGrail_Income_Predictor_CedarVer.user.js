@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.12
+// @version      1.6.13
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -174,9 +174,6 @@ class IncomeAnalyser {
     this._charaInfo = null;
     this._templeInfo = null;
     this._mycharaInfo = null;
-
-    // this._charaListEl = null; // 暂时没用到
-    // this._templeListEl = null;
   }
 
   // ===== 统计数据 ===== //
@@ -278,73 +275,71 @@ class IncomeAnalyser {
 
   _collectTax(income) {
     return Math.max(0, income-3e5*(Math.log10(income+1e4)-4)) * 0.9;
-/*
-    let tax = 0;
-    const taxRate = [0.75, 0.5, 0.25, 0.1];
-    const threshold = [400000, 200000, 100000, 50000];
-    for(let i = 0; i < taxRate.length; i++) {
-      if(income > threshold[i]) {
-        tax += (income - threshold[i]) * taxRate[i];
-        income = threshold[i];
-      }
-    }
-    return tax;
-*/
   }
 
-  _renderCharaPage() {
-    // create elements
-    let template = document.createElement('template');
-    this._charaInfo.forEach(x => {
-      template.innerHTML = renderUserCharacter(x).trim();
-      x.Element = template.content.firstChild;
-    });
-    let $page = $(document.createElement('ul')).addClass('grail_list page1')
-      .append(this._charaInfo.map(x => x.Element));
-    // this._charaListEl = $page[0];
-    $(document.createElement('span')).addClass('charaLevelBox').prependTo($page.find('li'));
-    this._renderCharaLevelStock();
+  async _renderCharaPage() {
+    let $page = $(document.createElement('ul')).addClass('grail_list page1');
     $('#grail .chara_list').append($page);
+    let template = document.createElement('template');
+    for(let chara of this._charaInfo) {
+      template.innerHTML = renderUserCharacter(chara).trim();
+      chara.Element = template.content.firstChild;
+      this._renderCharaLevelStock(chara);
+      await new Promise.resolve();
+    }
+    // 这样写减少卡顿
     $('#grail .chara_list .loading').hide();
+    for(let i = 0; i < this._charaInfo.length; i += 48) {
+      $page.append(this._charaInfo.slice(i, i+48).map(x => x.Element));
+      await new Promise.resolve();
+    }
   }
 
-  _renderTemplePage() {
+  async _renderTemplePage() {
     // create elements
     let template = document.createElement('template');
-    this._templeInfo.forEach(x => {
-      template.innerHTML = renderTemple(x, 'mine');
-      // $(x.Element).find('.card').data('temple', x); // 源代码更新后选择用 $.data 记录 temple 的信息. 未采用. 仍是尝试获取charaterId. 见下方 _addTempleCover 函数
-      x.Element = template.content.firstChild;
-    });
-    let $page = $(document.createElement('ul')).addClass('grail_list page1')
+    for(let temple of this._templeInfo) {
+      template.innerHTML = renderTemple(temple, 'mine');
+      temple.Element = template.content.firstChild;
+      $(temple.Element).find('.card').data('temple', temple); // 源代码更新后选择用 $.data 记录 temple 的信息
+      await new Promise.resolve();
+    };
+    /* let $page = $(document.createElement('ul')).addClass('grail_list page1')
       .append(this._templeInfo.map(x => x.Element));
-    // this._templeListEl = $page[0];
+    $('#grail .temple_list').append($page); */
+    let $page = $(document.createElement('ul')).addClass('grail_list page1');
     $('#grail .temple_list').append($page);
+    // 这样写减少卡顿
     $('#grail .temple_list .loading').hide();
     this._addTempleCover();
+    for (let i = 0; i < this._templeInfo.length; i += 48) {
+      $page.append(this._templeInfo.slice(i, i+48).map(x =>x.Element));
+      await new Promise.resolve();
+    }
   }
 
   _addTempleCover() {
-    $('#grail .temple_list .item .card').on('click', e => {
-      let cid = parseInt($(e.currentTarget).data('id').split('#')[1]);
-      let temple = this._templeInfo.find(t => t.CharacterId == cid);
+    $('#grail .temple_list .grail_list').on('click', '.item .card', e => {
+      // let cid = parseInt($(e.currentTarget).data('id').split('#')[1]);
+      // let temple = this._templeInfo.find(t => t.CharacterId == cid);
+      let temple = $(e.currentTarget).data('temple');
       showTemple(temple, null);
     });
   }
 
-  _renderCharaLevelStock() {
-    for(let chara of this._charaInfo) {
-      let charaRate = document.createElement('span');
-      charaRate.innerHTML = `×${chara.Rate.toFixed(2)}`;
-      let charaRateBox = chara.Element.querySelector('.feed');
-      charaRateBox.appendChild(charaRate);
+  _renderCharaLevelStock(chara) {
+    $(document.createElement('span')).addClass('charaLevelBox').prependTo(chara.Element);
 
-      let charaLevelBox = chara.Element.querySelector('.charaLevelBox');
-      charaLevelBox.innerHTML = chara.Level;
+    let charaRate = document.createElement('span');
+    charaRate.innerHTML = `×${chara.Rate.toFixed(2)}`;
+    let charaRateBox = chara.Element.querySelector('.feed');
+    charaRateBox.appendChild(charaRate);
 
-      if(chara.Level == 1) continue;
-      chara.Element.classList.add(chara.Level? 'highLevelChara': 'noLevelChara');
-    };
+    let charaLevelBox = chara.Element.querySelector('.charaLevelBox');
+    charaLevelBox.innerHTML = chara.Level;
+
+    if(chara.Level == 1) return;
+    chara.Element.classList.add(chara.Level? 'highLevelChara': 'noLevelChara');
   }
 
   // ===== 获取拍卖底价 ===== //
@@ -508,8 +503,8 @@ class IncomeAnalyser {
         }
       }).then(() => {
         let mycharaInfo = this._mycharaInfo.reduce((m, x) => Object.assign(m, {[x.Id]: x}), {});
-        const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500 || mycharaInfo[id].State <= 0; // 我没有的 或 我有塔的 或 我无持股的
-        // const needToHide = id => !mycharaInfo[id];
+        //const needToHide = id => !mycharaInfo[id] || mycharaInfo[id].Sacrifices >= 500 || mycharaInfo[id].State <= 0; // 我没有的 或 我有塔的 或 我无持股的
+        const needToHide = id => !mycharaInfo[id];
         this._charaInfo.forEach(x => {
           if(needToHide(x.Id)) x.Element.style.visibility = 'hidden';
         });
@@ -818,13 +813,13 @@ function renderTemple(temple, type) {
   var line = '';
   var lineDisplay = 'display:none;';
   if (temple.Line && temple.Line.length > 0) {
-    line = temple.Line;
+    line = encodeHtml(temple.Line);
     lineDisplay = '';
   }
 
   if (temple.Level == 1) {
     grade = '光辉圣殿';
-    rate = '+0.20';
+    rate = '+0.10';
     level = ' silver';
   } else if (temple.Level == 2) {
     grade = '闪耀圣殿';
@@ -874,8 +869,14 @@ function renderTemple(temple, type) {
   }
 
   if (type != 'mine' && type != 'extra') {
+    var replicates = '';
+
+    if (temple.Replicates && temple.Replicates > 0)
+      replicates = `<span class="replicates">×${temple.Replicates + 1}</span>`;
+
     name = `<div class="name">
     <a target="_blank" title="${temple.Nickname}" href="/user/${temple.Name}">@${temple.Nickname}</a>
+    ${replicates}
     </div>`;
   }
 
@@ -897,7 +898,11 @@ function renderTemple(temple, type) {
     </div>`;
   }
 
-  var card = `<div class="item${level}">
+  var replicated = '';
+  if (temple.Replicated)
+    replicated = ' replicated';
+
+  var card = `<div class="item${level}${replicated}" data-id="${temple.UserId}#${temple.CharacterId}">
           ${cover}
           ${title}
           ${name}
@@ -910,6 +915,18 @@ function closeDialog() {
   $('#TB_overlay').remove();
   $('#TB_window').remove();
 }
+
+function encodeHtml(s) {
+  var regx = /"|&|'|<|>|[\x00-\x20]|[\x7F-\xFF]|[\u0100-\u2700]/g;
+  return (typeof s != 'string') ? s :
+    s.replace(regx,
+      function ($0) {
+        var c = $0.charCodeAt(0), r = ['&#'];
+        c = (c == 0x20) ? 0xA0 : c;
+        r.push(c); r.push(';');
+        return r.join('');
+      });
+};
 
 function openAuctionDialog(chara) {
   var price = Math.ceil(chara.Price);
@@ -970,16 +987,9 @@ function showTemple(temple, chara) {
       <button style="display:none" id="changeCoverButton" class="text_button">[修改]</button>
       <button style="display:none" id="resetCoverButton" class="text_button">[重置]</button>
       <button style="display:none" id="editLineButton" class="text_button">[台词]</button>
+      <button style="display:none" id="chaosCubeButton" class="text_button">[混沌魔方]</button>
       <input style="display:none" id="picture" type="file" accept="image/*">
     </div>`;
-  // if (temple.UserId == userId) {
-  //   $('#changeCoverButton').show();
-  //   $('#resetCoverButton').show();
-  // } else {
-  //   getGameMaster((r) => {
-  //     $('#resetCoverButton').show();
-  //   });
-  // }
 
   var position = '';
   if (cover.indexOf('//lain.') >= 0)
@@ -996,11 +1006,11 @@ function showTemple(temple, chara) {
   var lineDisplay = 'display:none;';
   var lineContent = '';
   if (temple.Line && temple.Line.length > 0) {
-    lineContent = temple.Line;
-    var lines = lineContent.split('\n');
+    lineContent = encodeHtml(temple.Line);
+    var lines = temple.Line.split('\n');
     if (lines.length > 1) {
       lineContent = '';
-      lines.forEach(l => lineContent += `<div>${l}</div>`);
+      lines.forEach(l => lineContent += `<div>${encodeHtml(l)}</div>`);
     }
   }
 
@@ -1058,6 +1068,7 @@ function showTemple(temple, chara) {
         $('#changeCoverButton').show();
         $('#resetCoverButton').show();
         $('#editLineButton').show();
+        $('#chaosCubeButton').show();
         $('#TB_window.temple').on('click', '.line .text', showEdit);
       }
       if (d.Value.Type >= 999 || d.Value.Id == 702) {
@@ -1084,6 +1095,11 @@ function showTemple(temple, chara) {
   });
   $('#resetCoverButton').on('click', (e) => {
     resetTempleCover(temple);
+    e.stopPropagation();
+  });
+  $('#chaosCubeButton').on('click', e => {
+    closeDialog();
+    openScratchDialog(temple.CharacterId);
     e.stopPropagation();
   });
 
