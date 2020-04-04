@@ -53,13 +53,9 @@
 
 也许是因为这个组件太小了, 审核一直没过..我把对应组件的链接放这儿作备用吧
 
-## [吐槽列表排序与筛选](sort_and_filter_comments.user.js?raw=true)
+## [多页面排序与筛选](sort_and_filter_multiple_pages.user.js?raw=true)
 
-可以根据如下顺序排序和筛选**当前页面**的吐槽.
-* 字数顺序
-* 评分顺序
-* 日期顺序
-* 注册排序
+可以根据多种顺序排序和筛选**当前页面**的内容. 适配多个页面.
 
 想排序多个页面, 请配合[liaune](https://bgm.tv/user/liaune)的 脚本/组件 bangumi_unlimited_pages.user.js 使用. 详见站内讨论.
 
