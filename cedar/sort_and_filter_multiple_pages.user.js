@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name        多页面排序与筛选
+// @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
 // @version     2.0
-// @description 排序与筛选多个页面
+// @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/reviews.*/

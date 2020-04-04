@@ -55,7 +55,7 @@
 
 ## [多页面排序与筛选](sort_and_filter_multiple_pages.user.js?raw=true)
 
-可以根据多种顺序排序和筛选**当前页面**的内容. 适配多个页面.
+可以根据多种顺序排序和筛选**当前页面**的内容. 适配多种不同的页面.
 
 想排序多个页面, 请配合[liaune](https://bgm.tv/user/liaune)的 脚本/组件 bangumi_unlimited_pages.user.js 使用. 详见站内讨论.
 
