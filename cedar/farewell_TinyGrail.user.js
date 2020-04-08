@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.3.3
+// @version     1.3.4
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -260,9 +260,11 @@ class Farewell {
   async _cancelMyBids() {
     let bids = await getBidsList();
     if(!bids) return;
-    for(let bid of bids) {
+    for(let i = 0; i < bids.length; i++) {
+      let bid = bids[i];
       let tradeInfo = await getTradeInfo(bid.Id);
       await this._cancelTrades(tradeInfo);
+      this.$farewellInfoEl.html(`取消剩余买单…(${i+1}/${bids.length})`);
     }
   }
 
@@ -270,9 +272,11 @@ class Farewell {
   async _cancelMyAuctions() {
     let auctionItems = await getAuctionsList();
     if(!auctionItems) return;
-    for(let item of auctionItems) {
+    for(let i = 0; i < auctionItems.length; i++) {
+      let item = auctionItems[i];
       if(testing) console.log(`fake cancel, auction Id: ${item.Id}`);
       else await cancelAuction(item.Id);
+      this.$farewellInfoEl.html(`取消拍卖挂单…(${i+1}/${auctionItems.length})`);
     }
   }
 }
