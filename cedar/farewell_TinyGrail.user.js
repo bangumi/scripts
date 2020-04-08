@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.3.4
+// @version     1.3.2
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -126,7 +126,7 @@ function sacrificeCharacter(id, count, captial) {
   return retryPromise(fetchPost(`chara/sacrifice/${id}/${count}/${captial}`, null));
 }
 
-function resetTempleCover(charaId, userId) { // userId 是内部ID 不是bgmId
+function resetTempleCover(charaId, userId) {
   return retryPromise(fetchPost(`chara/temple/cover/reset/${charaId}/${userId}`, null));
 }
 
@@ -167,16 +167,15 @@ class Farewell {
     for(let i = 0; i < this._charaInfo.length; i++) {
       await this._farewellChara(this._charaInfo[i], this._charaInfoEl[i]);
     }
+    this.$farewellInfoEl.html('重复圣殿图重置中…');
+    await this._templeFetch();
+    for(let temple of this._templeInfo) {
+      await this._resetTempleCover(temple);
+    }
     this.$farewellInfoEl.html('取消剩余买单…');
     await this._cancelMyBids();
     this.$farewellInfoEl.html('取消拍卖挂单…');
     await this._cancelMyAuctions();
-    this.$farewellInfoEl.html('重复圣殿图重置中…');
-    await this._templeFetch();
-    for(let temple of this._templeInfo) {
-      this.$farewellInfoEl.html(`重复圣殿图重置中…正在检测：#${temple.CharacterId} ${temple.Name}`);
-      await this._resetTempleCover(temple);
-    }
     this.$farewellInfoEl.html(`再见，各位！`);
     if(callback) callback();
   }
@@ -251,8 +250,9 @@ class Farewell {
     let charaTemples = await getCharaTemples(myTemple.CharacterId);
     if(charaTemples.length <= 1) return;
     if(charaTemples.some(x => x.Cover == myTemple.Cover && x.Name != this._bgmId)) {
+      this.$farewellInfoEl.html(`重复圣殿图重置中…进度：#${myTemple.CharacterId} ${myTemple.Name}`);
       if(testing) console.log(`fake reset temple cover, chara id: ${myTemple.CharacterId}`);
-      else await resetTempleCover(myTemple.CharacterId, myTemple.UserId);
+      else await resetTempleCover(myTemple.CharacterId, this._bgmId);
     }
   }
 
@@ -260,11 +260,9 @@ class Farewell {
   async _cancelMyBids() {
     let bids = await getBidsList();
     if(!bids) return;
-    for(let i = 0; i < bids.length; i++) {
-      let bid = bids[i];
+    for(let bid of bids) {
       let tradeInfo = await getTradeInfo(bid.Id);
       await this._cancelTrades(tradeInfo);
-      this.$farewellInfoEl.html(`取消剩余买单…(${i+1}/${bids.length})`);
     }
   }
 
@@ -272,12 +270,9 @@ class Farewell {
   async _cancelMyAuctions() {
     let auctionItems = await getAuctionsList();
     if(!auctionItems) return;
-    auctionItems = auctionItems.filter(x => x.State == 0);
-    for(let i = 0; i < auctionItems.length; i++) {
-      let item = auctionItems[i];
+    for(let item of auctionItems) {
       if(testing) console.log(`fake cancel, auction Id: ${item.Id}`);
       else await cancelAuction(item.Id);
-      this.$farewellInfoEl.html(`取消拍卖挂单…(${i+1}/${auctionItems.length})`);
     }
   }
 }
