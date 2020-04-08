@@ -272,6 +272,7 @@ class Farewell {
   async _cancelMyAuctions() {
     let auctionItems = await getAuctionsList();
     if(!auctionItems) return;
+    auctionItems = auctionItems.filter(x => x.State == 0);
     for(let i = 0; i < auctionItems.length; i++) {
       let item = auctionItems[i];
       if(testing) console.log(`fake cancel, auction Id: ${item.Id}`);
