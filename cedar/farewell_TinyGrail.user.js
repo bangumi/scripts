@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Farewell TinyGrail
 // @namespace   xd.cedar.farewellTinyGrail
-// @version     1.3.2
+// @version     1.3.3
 // @description 小圣杯一键退坑
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -126,7 +126,7 @@ function sacrificeCharacter(id, count, captial) {
   return retryPromise(fetchPost(`chara/sacrifice/${id}/${count}/${captial}`, null));
 }
 
-function resetTempleCover(charaId, userId) {
+function resetTempleCover(charaId, userId) { // userId 是内部ID 不是bgmId
   return retryPromise(fetchPost(`chara/temple/cover/reset/${charaId}/${userId}`, null));
 }
 
@@ -167,15 +167,16 @@ class Farewell {
     for(let i = 0; i < this._charaInfo.length; i++) {
       await this._farewellChara(this._charaInfo[i], this._charaInfoEl[i]);
     }
-    this.$farewellInfoEl.html('重复圣殿图重置中…');
-    await this._templeFetch();
-    for(let temple of this._templeInfo) {
-      await this._resetTempleCover(temple);
-    }
     this.$farewellInfoEl.html('取消剩余买单…');
     await this._cancelMyBids();
     this.$farewellInfoEl.html('取消拍卖挂单…');
     await this._cancelMyAuctions();
+    this.$farewellInfoEl.html('重复圣殿图重置中…');
+    await this._templeFetch();
+    for(let temple of this._templeInfo) {
+      this.$farewellInfoEl.html(`重复圣殿图重置中…正在检测：#${temple.CharacterId} ${temple.Name}`);
+      await this._resetTempleCover(temple);
+    }
     this.$farewellInfoEl.html(`再见，各位！`);
     if(callback) callback();
   }
@@ -250,9 +251,8 @@ class Farewell {
     let charaTemples = await getCharaTemples(myTemple.CharacterId);
     if(charaTemples.length <= 1) return;
     if(charaTemples.some(x => x.Cover == myTemple.Cover && x.Name != this._bgmId)) {
-      this.$farewellInfoEl.html(`重复圣殿图重置中…进度：#${myTemple.CharacterId} ${myTemple.Name}`);
       if(testing) console.log(`fake reset temple cover, chara id: ${myTemple.CharacterId}`);
-      else await resetTempleCover(myTemple.CharacterId, this._bgmId);
+      else await resetTempleCover(myTemple.CharacterId, myTemple.UserId);
     }
   }
 
