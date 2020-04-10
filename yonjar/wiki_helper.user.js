@@ -54,28 +54,63 @@
       list = document.querySelectorAll("div.actorBadge a.l");
     }
 
-    let output = `bgm_id=${Array.from(list)
-      .map((el) => el.href.match(/\d+/)[0])
-      .join(",")}`;
-    prompt("bgm_id=", output);
+    let id_list = [];
+    let tmp = Array.from(list).map((el) => el.href.match(/\d+/)[0]);
+
+    if (tmp.length > 10) {
+      while (tmp.length != 0) {
+        id_list.push(tmp.splice(0, 10));
+      }
+    } else {
+      id_list = tmp;
+    }
+
+    let output = JSON.stringify(id_list);
+    copy(output);
+    //prompt("bgm_id=", output);
   }
 
   // 关联条目时链接转bgm_id=\d+
   function bgm_id_format() {
     let textarea = document.querySelector("#subjectName");
+
     let parameters = [
       {
-        regx: /\S+?(\d+)/,
+        regx: /\S+?\/(\d+)/,
         substitute: "bgm_id=$1",
       },
     ];
 
     //事件处理函数 回复框失去焦点时触发
     textarea.addEventListener("blur", () => {
-      for (let a of parameters) {
-        textarea.value = textarea.value.replace(a.regx, a.substitute);
+      try {
+        let data = JSON.parse(textarea.value);
+        let btn_list = [];
+        for (let i = 0; i < data.length; i++) {
+          var btn = document.createElement("button");
+          // btn_list.push();
+          btn.textContent = "id分组" + i;
+          btn.addEventListener("click", () => {
+            textarea.value = "bgm_id=" + data[i].join(",");
+          });
+          document.querySelector("#subject_inner_info").append(btn);
+        }
+      } catch (e) {
+        for (let a of parameters) {
+          textarea.value = textarea.value.replace(a.regx, a.substitute);
+        }
       }
     });
+  }
+
+  // 复制
+  function copy(text) {
+    let copyText = document.createElement("input");
+    document.body.append(copyText);
+    copyText.value = text;
+    copyText.select();
+    document.execCommand("Copy");
+    copyText.style.display = "none";
   }
 
   // 新增人物时假名转罗马字
