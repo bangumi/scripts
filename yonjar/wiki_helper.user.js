@@ -118,7 +118,7 @@
         // 名字列表
         let map_data = JSON.parse(localStorage.getItem("bgm_cv_id"));
         // let raw = textarea.value;
-        let names = textarea.value.split(/[-\|\/]/).map((e) => {
+        let names = textarea.value.split(/[、-\|\/&\s]/).map((e) => {
           name = e.trim();
           return name in map_data ? map_data[name] : name;
         });
