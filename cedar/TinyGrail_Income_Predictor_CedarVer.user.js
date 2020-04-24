@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TinyGrail Income Predictor CedarVer
 // @namespace    Cedar.chitanda.TinyGrailIncomePredictor
-// @version      1.6.13
+// @version      1.6.14
 // @description  Calculate income for tiny Grail, add more information
 // @author       Cedar, chitanda, mucc
 // @include      /^https?://(bgm\.tv|bangumi\.tv)/user/.+$/
@@ -585,7 +585,7 @@ let observer = new MutationObserver(function() {
   let analyser = new IncomeAnalyser();
 
   // buttons
-  let $btn = $(document.createElement('a')).attr('href', "javascript:void(0)").addClass("chiiBtn");
+  let $btn = $(document.createElement('a')).css('cursor', 'pointer').addClass("chiiBtn");
   let $countBtn = $btn.clone().html('获取数据').on('click', () => {
     analyser.doStatistics(() => {$hideTagBtn.html('显示角标').trigger('click')});
   });
@@ -671,6 +671,7 @@ observer.observe(document.getElementById('user_home'), {'childList': true, 'subt
 
 
 const api = 'https://tinygrail.com/api/';
+const cdn = 'https://tinygrail.mange.cn';
 function getData(url, callback) {
   if (!url.startsWith('http'))
     url = api + url;
@@ -732,7 +733,9 @@ function normalizeAvatar(avatar) {
   if (!avatar) return '//lain.bgm.tv/pic/user/l/icon.jpg';
 
   if (avatar.startsWith('https://tinygrail.oss-cn-hangzhou.aliyuncs.com/'))
-    return avatar + "!w120";
+    return cdn + avatar.substr(46) + '!w120';
+  else if (avatar.startsWith('/avatar'))
+    return cdn + avatar + '!w120';
 
   var a = avatar.replace("http://", "//");
 
@@ -781,8 +784,10 @@ function getLargeCover(cover) {
   if (cover.indexOf('/crt/m/') >= 0)
     return cover.replace('/m/', '/l/');
 
-  if (cover.indexOf('tinygrail.') >= 0)
-    return cover + '!w480';
+  if (cover.startsWith('https://tinygrail.oss-cn-hangzhou.aliyuncs.com/'))
+    return cdn + cover.substr(46) + '!w480';
+  else if (cover.startsWith('/cover'))
+    return cdn + cover + '!w480';
 
   return cover;
 }
@@ -791,8 +796,10 @@ function getSmallCover(cover) {
   if (cover.indexOf('/crt/g/') >= 0)
     return cover.replace('/g/', '/m/');
 
-  if (cover.indexOf('tinygrail.') >= 0)
-    return cover + '!w150';
+  if (cover.startsWith('https://tinygrail.oss-cn-hangzhou.aliyuncs.com/'))
+    return cdn + cover.substr(46) + '!w150';
+  else if (cover.startsWith('/cover'))
+    return cdn + cover + '!w150';
 
   return cover;
 }
@@ -913,11 +920,6 @@ function renderTemple(temple, type) {
   return card;
 }
 
-function closeDialog() {
-  $('#TB_overlay').remove();
-  $('#TB_window').remove();
-}
-
 function encodeHtml(s) {
   var regx = /"|&|'|<|>|[\x00-\x20]|[\x7F-\xFF]|[\u0100-\u2700]/g;
   return (typeof s != 'string') ? s :
@@ -929,6 +931,11 @@ function encodeHtml(s) {
         return r.join('');
       });
 };
+
+function closeDialog() {
+  $('#TB_overlay').remove();
+  $('#TB_window').remove();
+}
 
 function openAuctionDialog(chara) {
   var price = Math.ceil(chara.Price);
