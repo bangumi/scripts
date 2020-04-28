@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wiki helper
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1
+// @version      0.1.1
 // @description  个人自用wiki助手
 // @require      https://unpkg.com/wanakana@4.0.2/umd/wanakana.min.js
 // @author       Yonjar
@@ -19,52 +19,58 @@
 
   // 关联人物页面
   if (/add_related/.test(location.href)) {
-    bgm_id_format();
+    bgmIdFormat();
   }
 
+  // 添加章节页面
+  if (/ep\/create/.test(location.href)) {
+    createNewEp();
+  }
   // 角色页面
   if (/\/\d+\/characters/.test(location.href)) {
-    let btn_chara = document.createElement("button");
-    let btn_prn = document.createElement("button");
-
-    btn_chara.textContent = "导出角色id";
-    btn_prn.textContent = "导出人物id";
-
-    btn_chara.addEventListener(
-      "click",
-      () => {
-        toIDstr(true);
-      },
-      false
-    );
-    btn_prn.addEventListener(
-      "click",
-      () => {
-        toIDstr(false);
-      },
-      false
-    );
-
-    document.querySelector("#columnInSubjectB").append(btn_chara, btn_prn);
+    addBtn("导出角色id", "click", toIDstr, true);
+    addBtn("导出人物id", "click", toIDstr, false);
   }
 
   // 人物页面
   if (/\/\d+\/persons/.test(location.href)) {
+    addBtn("导出人物id", "click", toIDstr, true);
+  }
+
+  // 加个btn
+  function addBtn(describe, type, callback, arg) {
     let btn_prn = document.createElement("button");
 
-    btn_prn.textContent = "导出人物id";
+    btn_prn.textContent = describe;
 
     btn_prn.addEventListener(
-      "click",
+      type,
       () => {
-        toIDstr(true); // 特殊情况
+        callback(arg);
       },
       false
     );
 
     document.querySelector("#columnInSubjectB").append(btn_prn);
   }
+  // 章节页面获取最新一集的数字
+  // function getBangumiRecent() {
+  //   let ul_el = document.querySelector("#columnInSubjectA ul");
+  //   ul_el.childElementCount;
+  // }
 
+  // local_data
+  function setLocalData(data) {
+    localStorage.setItem("wiki_helper_by_yonjar", JSON.stringify(data));
+  }
+
+  function getLocalData() {
+    try {
+      return JSON.parse(localStorage.getItem("wiki_helper_by_yonjar")) || {};
+    } catch (e) {
+      console.error("JSON字符串有错", e);
+    }
+  }
   // 导出当前页面的角色或人物的id
   // 默认导出角色的id
   function toIDstr(isChara = true) {
@@ -84,7 +90,7 @@
   }
 
   // 关联条目时链接转bgm_id=\d+
-  function bgm_id_format() {
+  function bgmIdFormat() {
     let textarea = document.querySelector("#subjectName");
     let btn_container = document.querySelector("#subject_inner_info");
     let handler = document.createElement("button");
@@ -148,6 +154,18 @@
     copyText.select();
     document.execCommand("Copy");
     copyText.style.display = "none";
+  }
+
+  // 添加新章节
+  function createNewEp() {
+    let date = new Date();
+    let today = `${date.getFullYear()}-${
+      date.getMonth() + 1
+    }-${date.getDate()}`;
+    document.querySelector("input[name=airdate]").value = today;
+    addBtn("添加新章节", "click", () => {
+      document.querySelector("textarea[name=eplist]").value += `||||${today}\n`;
+    });
   }
 
   // 新增人物时假名转罗马字
