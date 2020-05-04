@@ -1,14 +1,16 @@
 // ==UserScript==
 // @name        bangumi new wiki helper
-// @name:zh-CN  bangumi创建条目助手
+// @name:zh-CN  bangumi 创建条目助手
 // @namespace   https://github.com/22earth
 // @description assist to create new subject
-// @description:zh-cn 辅助创建Bangumi条目
+// @description:zh-cn 辅助创建 bangumi.tv 上的条目
 // @include     http://www.getchu.com/soft.phtml?id=*
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @author      22earth
-// @version     0.1.5
+// @homepage    https://github.com/22earth/bangumi-new-wiki-helper
+// @version     0.3.1
+// @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
 // @grant       GM_openInTab
@@ -16,1931 +18,2093 @@
 // @grant       GM_xmlhttpRequest
 // @grant       GM_getValue
 // @grant       GM_setValue
-// @require     https://cdn.staticfile.org/fuse.js/2.6.2/fuse.min.js
+// @require     https://cdn.staticfile.org/fuse.js/3.6.1/fuse.min.js
 // ==/UserScript==
 
+var __enable_header = '';  // 避免 header 被清除的 hack
+console.info(__enable_header);
 
-/******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__webpack_require__.m = modules;
-/******/
-/******/ 	// expose the module cache
-/******/ 	__webpack_require__.c = installedModules;
-/******/
-/******/ 	// define getter function for harmony exports
-/******/ 	__webpack_require__.d = function(exports, name, getter) {
-/******/ 		if(!__webpack_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
-/******/ 		}
-/******/ 	};
-/******/
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__webpack_require__.n = function(module) {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			function getDefault() { return module['default']; } :
-/******/ 			function getModuleExports() { return module; };
-/******/ 		__webpack_require__.d(getter, 'a', getter);
-/******/ 		return getter;
-/******/ 	};
-/******/
-/******/ 	// Object.prototype.hasOwnProperty.call
-/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
-/******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "";
-/******/
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 2);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
 
-"use strict";
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
 
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
 
-function gmFetchBinary(url, TIMEOUT) {
-  return new Promise(function (resolve, reject) {
-    GM_xmlhttpRequest({
-      method: "GET",
-      timeout: TIMEOUT || 10 * 1000,
-      url: url,
-      overrideMimeType: "text\/plain; charset=x-user-defined",
-      onreadystatechange: function onreadystatechange(response) {
-        if (response.readyState === 4 && response.status === 200) {
-          resolve(response.responseText);
-        }
-      },
-      onerror: function onerror(err) {
-        reject(err);
-      },
-      ontimeout: function ontimeout(err) {
-        reject(err);
-      }
+function __awaiter(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
-  });
 }
 
-function gmFetch(url, TIMEOUT) {
-  return new Promise(function (resolve, reject) {
-    GM_xmlhttpRequest({
-      method: "GET",
-      timeout: TIMEOUT || 10 * 1000,
-      url: url,
-      onreadystatechange: function onreadystatechange(response) {
-        if (response.readyState === 4 && response.status === 200) {
-          resolve(response.responseText);
+var SubjectTypeId;
+(function (SubjectTypeId) {
+    SubjectTypeId[SubjectTypeId["book"] = 1] = "book";
+    SubjectTypeId[SubjectTypeId["anime"] = 2] = "anime";
+    SubjectTypeId[SubjectTypeId["music"] = 3] = "music";
+    SubjectTypeId[SubjectTypeId["game"] = 4] = "game";
+    SubjectTypeId[SubjectTypeId["real"] = 6] = "real";
+    SubjectTypeId["all"] = "all";
+})(SubjectTypeId || (SubjectTypeId = {}));
+
+// TODO: 区分 kindle 页面和 纸质书页面
+const amazonSubjectModel = {
+    key: 'amazon_jp_book',
+    host: ['amazon.co.jp'],
+    description: '日亚图书',
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#nav-subnav .nav-a:first-child',
+            subSelector: '.nav-a-content',
+            keyWord: '(?<!Kindle)本'
+        },
+        {
+            selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
+            subSelector: '.a-link-normal',
+            keyWord: '(?<!Kindle)本'
         }
-      },
-      onerror: function onerror(err) {
-        reject(err);
-      },
-      ontimeout: function ontimeout(err) {
-        reject(err);
-      }
-    });
-  });
-}
-
-module.exports = {
-  gmFetch: gmFetch,
-  gmFetchBinary: gmFetchBinary
+    ],
+    controlSelector: {
+        selector: '#title',
+    },
+    itemList: []
 };
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var gmFetchBinary = __webpack_require__(0).gmFetchBinary;
-
-function getImageSuffix(url) {
-  var m = url.match(/png|jpg|jpeg|gif|bmp/);
-  if (m) {
-    switch (m[0]) {
-      case 'png':
-        return 'png';
-      case 'jpg':
-      case 'jpeg':
-        return 'jpeg';
-      case 'gif':
-        return 'gif';
-      case 'bmp':
-        return 'bmp';
+amazonSubjectModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '#productTitle',
+    },
+    category: 'subject_title'
+}, {
+    name: 'cover',
+    selector: {
+        selector: 'img#imgBlkFront',
+    },
+    // selector: 'img#igImage'
+    category: 'cover'
+}, {
+    name: 'ASIN',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        keyWord: 'ISBN-10',
+        separator: ':',
+    },
+    category: 'ASIN'
+}, {
+    name: 'ISBN',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        keyWord: 'ISBN-13',
+        separator: ':',
+    },
+    category: 'ISBN'
+}, {
+    name: '发售日',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        keyWord: '発売日',
+        separator: ':',
+    },
+    category: 'date'
+}, {
+    name: '作者',
+    selector: [
+        {
+            selector: '#byline .author span.a-size-medium'
+        },
+        {
+            selector: '#bylineInfo .author > a'
+        },
+        {
+            selector: '#bylineInfo .contributorNameID'
+        },
+    ]
+}, {
+    name: '出版社',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        separator: ':',
+        keyWord: '出版社'
     }
-  }
-  return '';
-}
+}, {
+    name: '页数',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        separator: ':',
+        keyWord: 'ページ'
+    },
+}, {
+    name: '价格',
+    selector: [
+        {
+            selector: '.swatchElement.selected .a-color-base .a-size-base'
+        },
+        {
+            selector: '.swatchElement.selected .a-color-base'
+        }
+    ]
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '#productDescription',
+            subSelector: 'h3',
+            sibling: true,
+            keyWord: ['内容紹介', '内容'],
+        },
+        {
+            selector: '#bookDesc_iframe',
+            subSelector: '#iframeContent',
+            isIframe: true
+        }
+    ],
+    category: 'subject_summary'
+});
 
-function getImageBase64(url) {
-  return gmFetchBinary(url).then(function (info) {
-    var binary = '';
-    for (var i = 0; i < info.length; i++) {
-      binary += String.fromCharCode(info.charCodeAt(i) & 0xff);
-    }
-    return 'data:image/' + getImageSuffix(url) + ';base64,' + btoa(binary);
-  });
-}
-
-module.exports = getImageBase64;
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var fetchBangumiDataBySearch = __webpack_require__(3).fetchBangumiDataBySearch;
-var getImageBase64 = __webpack_require__(1);
-var dealImageWidget = __webpack_require__(6);
-var getInfoTool = __webpack_require__(8);
-var configModels = __webpack_require__(9);
-var fillInfoBox = __webpack_require__(11);
-
-function setDomain() {
-  bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
-  GM_setValue('bgm', bgm_domain);
-  return bgm_domain;
-}
-function setProtocol() {
-  var p = prompt('\u9884\u8BBE\u7684 bangumi \u9875\u9762\u534F\u8BAE\u662Fhttps \u6839\u636E\u9700\u8981\u8F93\u5165 http', 'https');
-  GM_setValue('E_USERJS_protocol', p);
-}
-var bgm_domain = GM_getValue('bgm') || '';
-if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
-  bgm_domain = setDomain();
-  bgm_domain = GM_getValue('bgm');
-}
-if (GM_registerMenuCommand) {
-  GM_registerMenuCommand('\u8BBE\u7F6E\u57DF\u540D', setDomain, 'b');
-  GM_registerMenuCommand("新建条目页面(http 或者 https)", setProtocol, 'h');
-}
-var addStyle = function addStyle(css) {
-  if (css) {
-    GM_addStyle(css);
-  } else {
-    GM_addStyle('\n.e-wiki-new-character,.e-wiki-new-subject,.e-wiki-search-subject,.e-wiki-fill-form{color: rgb(0, 180, 30) !important;margin-left: 4px !important;}\n.e-wiki-new-subject {\n  margin-left: 8px;\n}\n.e-wiki-new-character:hover,.e-wiki-new-subject:hover,.e-wiki-search-subject:hover,.e-wiki-fill-form:hover{color:red !important;cursor:pointer;}\n');
-  }
+const getchuGameModel = {
+    key: 'getchu_game',
+    description: 'Getchu游戏',
+    host: ['getchu.com'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.genretab.current',
+            subSelector: 'a',
+            keyWord: 'ゲーム'
+        }
+    ],
+    controlSelector: {
+        selector: '#soft-title'
+    },
+    itemList: []
 };
+const commonSelector = {
+    selector: '#soft_table table',
+    subSelector: 'td',
+    sibling: true
+};
+const dict = {
+    "定価": "售价",
+    "発売日": "发行日期",
+    "ジャンル": "游戏类型",
+    "ブランド": "开发",
+    "原画": "原画",
+    "音楽": "音乐",
+    "シナリオ": "剧本",
+    "アーティスト": "主题歌演出",
+    "作詞": "主题歌作词",
+    "作曲": "主题歌作曲",
+};
+const configArr = Object.keys(dict).map(key => {
+    const r = {
+        name: dict[key],
+        selector: Object.assign({ 
+            // 匹配关键字开头 2020/03/18
+            keyWord: '^' + key }, commonSelector)
+    };
+    if (key === '発売日') {
+        r.category = 'date';
+    }
+    return r;
+});
+getchuGameModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#soft-title',
+    },
+    category: 'subject_title'
+}, {
+    name: 'cover',
+    selector: {
+        selector: '#soft_table .highslide',
+    },
+    category: 'cover'
+}, ...configArr, {
+    name: '游戏简介',
+    selector: [
+        {
+            selector: '#wrapper',
+            subSelector: '.tabletitle',
+            sibling: true,
+            keyWord: 'ストーリー',
+        },
+        {
+            selector: '#wrapper',
+            subSelector: '.tabletitle',
+            sibling: true,
+            keyWord: '商品紹介',
+        }
+    ],
+    category: 'subject_summary'
+});
+getchuGameModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform'
+    }
+];
 
 /**
- * 插入脚本
- *
+ * 为页面添加样式
+ * @param style
  */
-function injectScript(fn, data) {
-  var selfInvokeScript = document.createElement("script");
-  selfInvokeScript.innerHTML = '(' + fn.toString() + ')(' + data + ');';
-  document.body.appendChild(selfInvokeScript);
-}
-
-// 变更url的域名
-function changeDomain(url, domain) {
-  if (url.match(domain)) return url;
-  if (domain === 'bangumi.tv') {
-    // bangumi.tv https 和 http 登录状态不统一。采取的临时方案
-    var p = GM_getValue('E_USERJS_protocol');
-    if (p && p === 'http') {
-      return url.replace(/^https/, 'http').replace('bgm.tv', domain);
-    }
-    return url.replace('bgm.tv', domain);
-  }
-}
-
-async function handleClick(config, checkFlag) {
-  var subjectInfoList = config.itemList.map(function (i) {
-    return getInfoTool.getWikiItem(i);
-  });
-  console.info('fetch info: ', subjectInfoList);
-  var queryInfo = getInfoTool.getQueryInfo(subjectInfoList);
-  var type = config.newSubjectType;
-  var result = null;
-  if (checkFlag) {
-    result = await checkSubjectExist(queryInfo, type);
-  }
-  if (result && result.subjectURL) {
-    GM_openInTab(changeDomain(result.subjectURL, bgm_domain));
-  } else {
-    var coverInfo = getInfoTool.getCoverURL(config.cover);
-    var subjectCover = '';
-    if (coverInfo && coverInfo.coverURL) {
-      subjectCover = await getImageBase64(coverInfo.coverURL);
-    }
-    var subType = getInfoTool.getSubType(config.subType);
-    // 重置自动填表
-    GM_setValue('disableAutofill', 0);
-    GM_setValue('subjectData', JSON.stringify({
-      subjectInfoList: subjectInfoList,
-      subjectCover: subjectCover,
-      subType: subType
-    }));
-    GM_openInTab(changeDomain('https://bgm.tv/new_subject/' + type, bgm_domain));
-  }
-}
-
-async function checkSubjectExist() {
-  var queryInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var newSubjectType = arguments[1];
-
-  var searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn13);
-  console.info('First: search result of bangumi: ', searchResult);
-  if (searchResult && searchResult.subjectURL) {
-    return searchResult;
-  }
-
-  searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType, queryInfo.isbn);
-  console.info('Second: search result of bangumi: ', searchResult);
-  if (searchResult && searchResult.subjectURL) {
-    return searchResult;
-  }
-
-  // 默认使用名称搜索
-  searchResult = await fetchBangumiDataBySearch(queryInfo, newSubjectType);
-  console.info('Third: search result of bangumi: ', searchResult);
-  return searchResult;
-}
-var amazon = {
-  init: function init() {
-    var configKey = this.getConfigKey();
-    if (!configKey) return;
-    addStyle();
-    var $title = document.querySelector('#title');
-    this.insertBtn($title, configKey);
-  },
-  getConfigKey: function getConfigKey() {
-    var $nav = document.querySelector('#nav-subnav .nav-a-content') || {};
-    var $navAll = document.querySelector('#wayfinding-breadcrumbs_container') || {};
-    // kindle 没有图书信息
-    if (/kindle/i.test($navAll.textContent) || /kindle/i.test($nav.textContent)) return;
-    if (/本/.test($nav.textContent) || /本|コミック/.test($navAll.textContent)) return 'amazon_jp_book';
-  },
-  insertBtn: function insertBtn($t, configKey) {
-    var $s = document.createElement('span');
-    $s.classList.add('e-wiki-new-subject');
-    $s.innerHTML = '新建';
-    var $search = $s.cloneNode();
-    $search.innerHTML = '新建并查重';
-    $t.appendChild($s);
-    $t.appendChild($search);
-    $s.addEventListener('click', function () {
-      var config = configModels[configKey];
-      handleClick(config, false);
-    }, false);
-    $search.addEventListener('click', async function () {
-      if ($search.innerHTML !== '新建并查重') return;
-      $search.innerHTML = '查重中...';
-      var config = configModels[configKey];
-      await handleClick(config, true);
-      $search.innerHTML = '新建并查重';
-    }, false);
-  }
-};
-
-var bangumi = {
-  init: function init() {
-    var re = new RegExp(['new_subject', 'add_related', 'character\/new', 'upload_img'].join('|'));
-    var page = document.location.href.match(re);
-    if (page) {
-      addStyle();
-      switch (page[0]) {
-        case 'new_subject':
-          // 非添加新书页面返回
-          if (!/new_subject\/1/.test(document.location.pathname)) return;
-          var $t = document.querySelector('form[name=create_subject] [name=subject_title]').parentElement;
-          this.insertBtn($t);
-          var disableAutofill = GM_getValue('disableAutofill');
-          if (disableAutofill) return;
-          setTimeout(function () {
-            var subjectData = JSON.parse(GM_getValue('subjectData'));
-            fillInfoBox(subjectData);
-            GM_setValue('disableAutofill', 1);
-          }, 300);
-          break;
-        case 'add_related':
-          // this.addRelated();
-          break;
-        case 'character\/new':
-          // this.newCharacter();
-          break;
-        case 'upload_img':
-          addStyle('\n.e-wiki-cover-container {\n  margin-top: 1rem;\n}\n.e-wiki-cover-container img {\n  display: \'none\';\n}\n#e-wiki-cover-amount {\n  padding-left: 10px;\n  border: 0;\n  color: #f6931f;\n  font-size: 20px;\n  font-weight: bold;\n}\n#e-wiki-cover-reset {\n  display: inline-block;\n  text-align: center;\n  width: 60px;\n  height: 30px;\n  line-height: 30px;\n  font-size: 18px;\n  background-color: #f09199;\n  text-decoration: none;\n  color: #fff;\n  margin-left: 50px;\n  margin-bottom: 30px;\n  border-radius: 5px;\n  box-shadow:1px 1px 2px #333;\n}\n#e-wiki-cover-preview {\n  margin-top: 0.5rem;\n}\n#e-wiki-cover-preview:active {\n  cursor: crosshair;\n}\n#e-wiki-cover-preview {\n  display: block;\n}\n.e-wiki-cover-blur-loading {\n  width: 208px;\n  height: 13px;\n  background-image: url("https://bgm.tv/img/loadingAnimation.gif");\n}\n.e-wiki-search-cover {\n  width: 84px;\n  height: auto;\n}\n          ');
-          var subjectData = JSON.parse(GM_getValue('subjectData'));
-          dealImageWidget(document.querySelector('form[name=img_upload]'), subjectData.subjectCover);
-          // this.addSubjectCover();
-          break;
-      }
-    }
-  },
-  insertBtn: function insertBtn($t) {
-    var $s = document.createElement('span');
-    $s.classList.add('e-wiki-fill-form');
-    $s.innerHTML = 'wiki 填表';
-    $t.appendChild($s);
-    $s.addEventListener('click', function () {
-      var subjectData = JSON.parse(GM_getValue('subjectData'));
-      fillInfoBox(subjectData);
-    }, false);
-
-    var $cancel = $s.cloneNode();
-    $cancel.innerHTML = '清空';
-    $cancel.addEventListener('click', function () {
-      document.querySelectorAll('input[name=platform]').forEach(function (element) {
-        element.checked = false;
-      });
-      var $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-      $wikiMode.click();
-      document.querySelector('#subject_infobox').value = '{{Infobox animanga/Manga\n|\u4E2D\u6587\u540D=\n|\u4F5C\u8005= * \n|\u51FA\u7248\u793E= *\n|\u4EF7\u683C=\n|\u4F5C\u753B=\n|\u5176\u4ED6\u51FA\u7248\u793E=\n|\u8FDE\u8F7D\u6742\u5FD7=\n|\u53D1\u552E\u65E5=\n|\u9875\u6570=\n|\u8BDD\u6570=\n|\u5176\u4ED6=\n}}\n      ';
-      document.querySelector('#columnInSubjectA [name=subject_title]').value = '';
-      document.querySelector('#subject_summary').value = '';
-    });
-    $t.appendChild($cancel);
-  }
-};
-
-var init = function init() {
-  var re = new RegExp(['getchu', 'bangumi', 'bgm', 'amazon'].join('|'));
-  var page = document.location.host.match(re);
-  if (page) {
-    switch (page[0]) {
-      case 'amazon':
-        amazon.init();
-        break;
-      case 'bangumi':
-      case 'bgm':
-        bangumi.init();
-        break;
-      default:
-      // bangumi.init();
-    }
-  }
-};
-init();
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-var gmFetch = __webpack_require__(0).gmFetch;
-var delayPromise = __webpack_require__(4);
-var filterResults = __webpack_require__(5);
-
-function dealDate(dateStr) {
-  return dateStr.replace(/年|月|日/g, '/').replace(/\/$/, '');
-}
-
-function htmlToElement(html) {
-  var template = document.createElement('template');
-  template.innerHTML = html;
-  return template.content.firstChild;
+/**
+ * 获取节点文本
+ * @param elem
+ */
+function getText(elem) {
+    if (!elem)
+        return '';
+    return elem.textContent || elem.innerText || "";
 }
 /**
- * @return {array}
+ * dollar 选择单个
+ * @param {string} selector
  */
-function dealRawHTML(info) {
-  var rawInfoList = [];
-  var $doc = new DOMParser().parseFromString(info, "text/html");
+function $q(selector) {
+    if (window._parsedEl) {
+        return window._parsedEl.querySelector(selector);
+    }
+    return document.querySelector(selector);
+}
+/**
+ * dollar 选择所有元素
+ * @param {string} selector
+ */
+function $qa(selector) {
+    if (window._parsedEl) {
+        return window._parsedEl.querySelectorAll(selector);
+    }
+    return document.querySelectorAll(selector);
+}
+/**
+ * 查找包含文本的标签
+ * @param {string} selector
+ * @param {string} text
+ */
+function contains(selector, text, $parent) {
+    let elements;
+    if ($parent) {
+        elements = $parent.querySelectorAll(selector);
+    }
+    else {
+        elements = $qa(selector);
+    }
+    let t;
+    if (typeof text === "string") {
+        t = text;
+    }
+    else {
+        t = text.join("|");
+    }
+    return [].filter.call(elements, function (element) {
+        return new RegExp(t).test(getText(element));
+    });
+}
+function findElementByKeyWord(selector) {
+    let res = null;
+    const targets = contains(selector.subSelector, selector.keyWord, $q(selector.selector));
+    if (targets && targets.length) {
+        let $t = targets[targets.length - 1];
+        // 相邻节点
+        if (selector.sibling) {
+            $t = targets[targets.length - 1].nextElementSibling;
+        }
+        return $t;
+    }
+    return res;
+}
+function findElement(selector) {
+    let r = null;
+    if (selector) {
+        if (selector instanceof Array) {
+            let i = 0;
+            let targetSelector = selector[i];
+            while (targetSelector && !(r = findElement(targetSelector))) {
+                targetSelector = selector[++i];
+            }
+        }
+        else {
+            if (selector.isIframe) {
+                const $iframeDoc = $q(selector.selector).contentDocument;
+                r = $iframeDoc.querySelector(selector.subSelector);
+            }
+            else if (!selector.subSelector) {
+                r = $q(selector.selector);
+            }
+            else {
+                r = findElementByKeyWord(selector);
+            }
+        }
+    }
+    return r;
+}
 
-  var items = $doc.querySelectorAll('#browserItemList>li>div.inner');
-  // get number of page
-  var numOfPage = 1;
-  var pList = $doc.querySelectorAll('.page_inner>.p');
-  if (pList && pList.length) {
-    var tempNum = parseInt(pList[pList.length - 2].getAttribute('href').match(/page=(\d*)/)[1]);
-    numOfPage = parseInt(pList[pList.length - 1].getAttribute('href').match(/page=(\d*)/)[1]);
-    numOfPage = numOfPage > tempNum ? numOfPage : tempNum;
-  }
-  if (items && items.length) {
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = items[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var item = _step.value;
-
-        var $subjectTitle = item.querySelector('h3>a.l');
-        var itemSubject = {
-          subjectTitle: $subjectTitle.textContent.trim(),
-          subjectURL: 'https://bgm.tv' + $subjectTitle.getAttribute('href'),
-          subjectGreyTitle: item.querySelector('h3>.grey') ? item.querySelector('h3>.grey').textContent.trim() : ''
+// support GM_XMLHttpRequest
+function fetchBinary(url, opts = {}, TIMEOUT = 10 * 1000) {
+    return internalFetch(fetch(url, Object.assign({ method: 'GET', credentials: 'include' }, opts)), TIMEOUT)
+        .then(response => response.blob(), err => console.log('fetch err: ', err));
+}
+function fetchText(url, TIMEOUT = 10 * 1000) {
+    // @ts-ignore
+    {
+        return new Promise((resolve, reject) => {
+            // @ts-ignore
+            GM_xmlhttpRequest({
+                method: "GET",
+                timeout: TIMEOUT || 10 * 1000,
+                url: url,
+                // @ts-ignore
+                onreadystatechange: function (response) {
+                    if (response.readyState === 4 && response.status === 200) {
+                        resolve(response.responseText);
+                    }
+                },
+                // @ts-ignore
+                onerror: function (err) {
+                    reject(err);
+                },
+                // @ts-ignore
+                ontimeout: function (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
+}
+// TODO: promise type
+function internalFetch(fetchPromise, TIMEOUT) {
+    let abortFn = null;
+    const abortPromise = new Promise(function (resolve, reject) {
+        abortFn = function () {
+            reject('abort promise');
         };
-        var matchDate = item.querySelector('.info').textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
-        if (matchDate) {
-          itemSubject.startDate = dealDate(matchDate[0]);
-        }
-        var $rateInfo = item.querySelector('.rateInfo');
-        if ($rateInfo) {
-          if ($rateInfo.querySelector('.fade')) {
-            itemSubject.averageScore = $rateInfo.querySelector('.fade').textContent;
-            itemSubject.ratingsCount = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '');
-          } else {
-            itemSubject.averageScore = '0';
-            itemSubject.ratingsCount = '少于10';
-          }
-        } else {
-          itemSubject.averageScore = '0';
-          itemSubject.ratingsCount = '0';
-        }
-        rawInfoList.push(itemSubject);
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
-  } else {
-    return [];
-  }
-  return [rawInfoList, numOfPage];
+    });
+    let abortablePromise = Promise.race([
+        fetchPromise,
+        abortPromise
+    ]);
+    setTimeout(function () {
+        abortFn();
+    }, TIMEOUT);
+    return abortablePromise;
 }
 
+function blobToBase64(myBlob) {
+    return new Promise((resolve, reject) => {
+        const reader = new window.FileReader();
+        reader.readAsDataURL(myBlob);
+        reader.onloadend = function () {
+            // @ts-ignore TODO: type
+            resolve(reader.result);
+        };
+        reader.onerror = reject;
+    });
+}
 /**
- * 搜索bgm条目
- * @param {Object} subjectInfo
- * @param {number} typeNumber
+ * convert base64/URLEncoded data component to raw binary data held in a string
+ * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+ * @param dataURI
  */
-function fetchBangumiDataBySearch(subjectInfo, typeNumber, queryStr) {
-  var startDate;
-  if (subjectInfo && subjectInfo.startDate) {
-    startDate = subjectInfo.startDate;
-  }
-  typeNumber = typeNumber || 'all';
-  // 去掉末尾的括号加上引号搜索
-  var query = (subjectInfo.subjectName || '').trim().replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
-  query = '"' + query + '"';
-  console.log(subjectInfo);
-  // if (subjectInfo.isbn13) {
-  //   query = subjectInfo.isbn13;
-  // }
-  if (queryStr) {
-    query = queryStr;
-  }
-  if (!query) {
-    console.info('Query string is empty');
-    return Promise.resolve();
-  }
-  var url = 'https://bgm.tv/subject_search/' + encodeURIComponent(query) + '?cat=' + typeNumber;
-  console.info('seach bangumi subject URL: ', url);
-  return gmFetch(url).then(function (info) {
-    var rawInfoList = dealRawHTML(info)[0] || [];
-    // 使用ISBN 搜索时, 并且结果只有一条时，不再使用名称过滤
-    if (subjectInfo.isbn && rawInfoList && rawInfoList.length === 1) {
-      return rawInfoList[0];
-    }
-    return filterResults(rawInfoList, subjectInfo.subjectName, {
-      keys: ['subjectTitle', 'subjectGreyTitle'],
-      startDate: startDate
-    });
-  });
-}
-
-function fetchBangumiDataByDate(subjectInfo, pageNumber, type, allInfoList) {
-  if (!subjectInfo || !subjectInfo.startDate) throw 'no date info';
-  var startDate = new Date(subjectInfo.startDate);
-  var SUBJECT_TYPE = type || 'game';
-  var sort = startDate.getDate() > 15 ? 'sort=date' : '';
-  var page = pageNumber ? 'page=' + pageNumber : '';
-  var query = '';
-  if (sort && page) {
-    query = '?' + sort + '&' + page;
-  } else if (sort) {
-    query = '?' + sort;
-  } else if (page) {
-    query = '?' + page;
-  }
-  var url = 'https://bgm.tv/' + SUBJECT_TYPE + '/browser/airtime/' + startDate.getFullYear() + '-' + (startDate.getMonth() + 1) + query;
-
-  console.log('uuuuuuuu', url);
-  return gmFetch(url).then(function (info) {
-    var _dealRawHTML = dealRawHTML(info),
-        _dealRawHTML2 = _slicedToArray(_dealRawHTML, 2),
-        rawInfoList = _dealRawHTML2[0],
-        numOfPage = _dealRawHTML2[1];
-
-    pageNumber = pageNumber || 1;
-
-    if (allInfoList) {
-      numOfPage = 3;
-      allInfoList = [].concat(_toConsumableArray(allInfoList), _toConsumableArray(rawInfoList));
-      if (pageNumber < numOfPage) {
-        return delayPromise(1000).then(function () {
-          return fetchBangumiDataByDate(subjectInfo, pageNumber + 1, SUBJECT_TYPE, allInfoList);
-        });
-      }
-      return allInfoList;
-    }
-
-    var result = filterResults(rawInfoList, subjectInfo.subjectName, {
-      keys: ['subjectTitle', 'subjectGreyTitle'],
-      startDate: subjectInfo.startDate
-    });
-    pageNumber = pageNumber || 1;
-    if (!result) {
-      if (pageNumber < numOfPage) {
-        return delayPromise(300).then(function () {
-          return fetchBangumiDataByDate(subjectInfo, pageNumber + 1, SUBJECT_TYPE);
-        });
-      } else {
-        throw 'notmatched';
-      }
-    }
-    return result;
-  });
-}
-
-module.exports = {
-  fetchBangumiDataByDate: fetchBangumiDataByDate,
-  fetchBangumiDataBySearch: fetchBangumiDataBySearch
-};
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function delayPromise(t) {
-  var max = 400;
-  var min = 200;
-  t = t || Math.floor(Math.random() * (max - min + 1)) + min;
-  return new Promise(function (resolve) {
-    setTimeout(resolve, t);
-  });
-}
-
-module.exports = delayPromise;
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function filterResults(items, searchstring, opts) {
-  if (!items) return;
-  var results = new Fuse(items, Object.assign({}, opts)).search(searchstring);
-  if (!results.length) return;
-  if (opts.startDate) {
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = results[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var result = _step.value;
-
-        if (result.startDate && new Date(result.startDate) - new Date(opts.startDate) === 0) {
-          return result;
-        }
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
-  } else {
-    return results[0];
-  }
-}
-
-module.exports = filterResults;
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var StackBlur = __webpack_require__(7);
-
-var _require = __webpack_require__(0),
-    gmFetch = _require.gmFetch;
-
-var getImageBase64 = __webpack_require__(1);
-
-function insertBlurInfo($target) {
-  var rawHTML = '\n    <input style="vertical-align: top;" class="inputBtn" value="\u4E0A\u4F20\u5904\u7406\u540E\u7684\u56FE\u7247" name="submit" type="button">\n    <canvas id="e-wiki-cover-preview" width="8" height="10"></canvas>\n    <br>\n    <label for="e-wiki-cover-amount">Blur width and radius:</label>\n    <input id="e-wiki-cover-amount" type="text" readonly>\n    <br>\n    <input id="e-wiki-cover-slider-width" type="range" value="20" name="width" min="1" max="100"><canvas></canvas>\n    <br>\n    <input id="e-wiki-cover-slider-radius" type="range" value="20" name="radius" min="1" max="100">\n    <br>\n    <a href="javascript:void(0)" id="e-wiki-cover-reset">reset</a>\n    <img src="" alt="" style="display:none;">\n  ';
-  var $info = document.createElement('div');
-  $info.classList.add('e-wiki-cover-container');
-  $info.innerHTML = rawHTML;
-  $target.parentElement.insertBefore($info, $target.nextElementSibling);
-  var $width = document.querySelector('#e-wiki-cover-slider-width');
-  var $radius = document.querySelector('#e-wiki-cover-slider-radius');
-  drawRec($width);
-  changeInfo($width, $radius);
-  $width.addEventListener('change', function (e) {
-    drawRec($width);
-    changeInfo($width, $radius);
-  });
-  $radius.addEventListener('change', function (e) {
-    changeInfo($width, $radius);
-  });
-}
-
-function drawRec($width) {
-  var $canvas = $width.nextElementSibling;
-  var ctx = $canvas.getContext('2d');
-  var width = Number($width.value);
-  $canvas.width = width * 1.4;
-  $canvas.height = width * 1.4;
-  ctx.strokeStyle = '#f09199';
-  ctx.strokeRect(0.2 * width, 0.2 * width, width, width);
-  window.dispatchEvent(new Event('resize'));
-}
-
-function previewSelectedImage($file, $canvas) {
-  var $img = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Image();
-
-  var ctx = $canvas.getContext('2d');
-  // var $img = new Image();
-  $img.addEventListener('load', function () {
-    $canvas.width = $img.width;
-    $canvas.height = $img.height;
-    ctx.drawImage($img, 0, 0);
-    window.dispatchEvent(new Event('resize')); // let img cut tool at right position
-  }, false);
-  function loadImgData() {
-    var file = $file.files[0];
-    var reader = new FileReader();
-    reader.addEventListener('load', function () {
-      $img.src = reader.result;
-    }, false);
-    if (file) {
-      reader.readAsDataURL(file);
-    }
-  }
-  if ($file) {
-    $file.addEventListener('change', loadImgData, false);
-  }
-}
-
-function blur(el, $width, $radius) {
-  var isDrawing;
-  var ctx = el.getContext('2d');
-  el.onmousedown = function (e) {
-    isDrawing = true;
-    var pos = getMousePos(el, e);
-    ctx.moveTo(pos.x, pos.y);
-  };
-  el.onmousemove = function (e) {
-    if (isDrawing) {
-      //ctx.lineTo(e.layerX, e.layerY);
-      //ctx.stroke();
-      var width = Number($width.value);
-      var radius = Number($radius.value);
-      var pos = getMousePos(el, e);
-      StackBlur.canvasRGBA(el, pos.x - width / 2, pos.y - width / 2, width, width, radius);
-    }
-  };
-  el.onmouseup = function () {
-    isDrawing = false;
-  };
-}
-
-function getMousePos(canvas, evt) {
-  var rect = canvas.getBoundingClientRect();
-  return {
-    x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
-    y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
-  };
-}
-
-function changeInfo($width, $radius) {
-  var $info = document.querySelector('#e-wiki-cover-amount');
-  var radius = $radius.value;
-  var width = $width.value;
-  $info.value = width + ', ' + radius;
-}
-
-function sendFormDataPic($form, dataURL) {
-  var genString = Array.apply(null, Array(5)).map(function () {
-    return function (charset) {
-      return charset.charAt(Math.floor(Math.random() * charset.length));
-    }('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
-  }).join('');
-  function dataURItoBlob(dataURI) {
-    // convert base64/URLEncoded data component to raw binary data held in a string
+function dataURItoBlob(dataURI) {
     var byteString;
-    if (dataURI.split(',')[0].indexOf('base64') >= 0) byteString = atob(dataURI.split(',')[1]);else byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
+    if (dataURI.split(',')[0].indexOf('base64') >= 0)
+        byteString = atob(dataURI.split(',')[1]);
+    else
+        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
     // separate out the mime component
     var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
     // write the bytes of the string to a typed array
     var ia = new Uint8Array(byteString.length);
     for (var i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+        ia[i] = byteString.charCodeAt(i);
     }
     return new Blob([ia], { type: mimeString });
-  }
-  function dataURLtoFile(dataurl, filename) {
-    var arr = dataurl.split(','),
-        mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]),
-        n = bstr.length,
-        u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
-  }
-  // loading
-  var $submit = $form.querySelector('[type=submit]');
-  $submit.style.display = 'none';
-  var $loading = document.createElement('div');
-  $loading.style = 'width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif");';
-  $form.appendChild($loading);
+}
+function getImageDataByURL(url) {
+    if (!url)
+        return Promise.reject('invalid img url');
+    return fetchBinary(url, {
+        method: 'GET',
+        credentials: 'same-origin',
+        mode: 'no-cors',
+        cache: 'default',
+    }).then(myBlob => {
+        return blobToBase64(myBlob);
+    });
+}
+/**
+ * convert to img Element to base64 string
+ * @param $img
+ */
+function convertImgToBase64($img) {
+    const canvas = document.createElement("canvas");
+    canvas.width = $img.width;
+    canvas.height = $img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage($img, 0, 0, $img.width, $img.height);
+    const dataURL = canvas.toDataURL("image/png");
+    return dataURL;
+}
 
-  // ajax
-  var fd = new FormData($form);
-  var $file = $form.querySelector('input[type=file]');
-  var inputFileName = $file.name ? $file.name : 'picfile';
-  fd.set(inputFileName, dataURItoBlob(dataURL), genString + '.jpg');
-  if ($submit && $submit.name && $submit.value) {
-    fd.set($submit.name, $submit.value);
+const getchuTools = {
+    dealTitle(str) {
+        str = str.trim().split('\n')[0];
+        str = str.split('＋')[0].trim();
+        return str.replace(/\s[^ ]*?(限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
+    },
+    getCharacterInfo($t) {
+        const charaData = [];
+        const $name = $t.previousElementSibling;
+        let name;
+        if ($name.querySelector('charalist')) {
+            const $charalist = $name.querySelector('charalist');
+            name = getText($charalist);
+        }
+        else {
+            name = getText($name).split(/（|\(|\sCV|新建角色/)[0];
+        }
+        charaData.push({
+            name: '姓名',
+            value: name.replace(/\s/g, ''),
+            category: 'crt_name'
+        });
+        charaData.push({
+            name: '日文名',
+            value: name
+        });
+        const nameTxt = getText($name);
+        if (nameTxt.match(/（(.*)）/)) {
+            charaData.push({
+                name: '纯假名',
+                value: nameTxt.match(/（(.*)）/)[1]
+            });
+        }
+        const cvMatch = nameTxt.match(/(?<=CV[：:]).+/);
+        if (cvMatch) {
+            charaData.push({
+                name: 'CV',
+                value: cvMatch[0]
+            });
+        }
+        const $img = $t.closest('tr').querySelector('td > img');
+        if ($img) {
+            charaData.push({
+                name: 'cover',
+                value: convertImgToBase64($img),
+                category: 'crt_cover'
+            });
+        }
+        // 处理杂项 参考 id=1074002 id=735329
+        // id=1080431
+        // dd tag
+        const $dd = $t.closest('dt').nextElementSibling;
+        const $clonedDd = $dd.cloneNode(true);
+        Array.prototype.forEach.call($clonedDd.querySelectorAll('span[style^="font-weight"]'), (node) => {
+            const t = getText(node).trim();
+            t.split(/\n/g).forEach((el) => {
+                const alist = el.trim().split(/：|:/);
+                if (alist && alist.length === 2) {
+                    charaData.push({
+                        name: alist[0].trim(),
+                        value: alist[1]
+                    });
+                }
+                else {
+                    const c = el.match(/B.*W.*H\d+/);
+                    if (c) {
+                        charaData.push({
+                            name: 'BWH',
+                            value: c[0]
+                        });
+                    }
+                }
+            });
+            node.remove();
+        });
+        charaData.push({
+            name: '人物简介',
+            value: getText($clonedDd).trim(),
+            category: 'crt_summary'
+        });
+        return charaData;
+    }
+};
+
+const amazonTools = {
+    dealTitle(str) {
+        str = str.trim().split('\n')[0].trim();
+        // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
+        // 去掉尾部括号的内容, (1) （1） 这类不处理
+        return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
+        // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
+    }
+};
+
+function genRandomStr(len) {
+    return Array.apply(null, Array(len)).map(function () {
+        return (function (chars) {
+            return chars.charAt(Math.floor(Math.random() * chars.length));
+        })('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+    }).join('');
+}
+function dealDate(dataStr) {
+    // 2019年12月19
+    let l = [];
+    if (/\d{4}年\d{1,2}月(\d{1,2}日?)?/.test(dataStr)) {
+        l = dataStr.replace('日', '').split(/年|月/).filter(i => i);
+    }
+    else if (/\d{4}\/\d{1,2}(\/\d{1,2})?/.test(dataStr)) {
+        l = dataStr.split('/');
+    }
+    else if (/\d{4}-\d{1,2}(-\d{1,2})?/.test(dataStr)) {
+        return dataStr;
+    }
+    else {
+        throw new Error('invalid date str');
+    }
+    return l.map((i) => {
+        if (i.length === 1) {
+            return `0${i}`;
+        }
+        return i;
+    }).join('-');
+}
+function isEqualDate(d1, d2) {
+    const resultDate = new Date(d1);
+    const originDate = new Date(d2);
+    if (resultDate.getFullYear() === originDate.getFullYear() &&
+        resultDate.getMonth() === originDate.getMonth() &&
+        resultDate.getDate() === originDate.getDate()) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 处理单项 wiki 信息
+ * @param str
+ * @param category
+ * @param keyWords
+ */
+function dealItemText(str, category = '', keyWords = []) {
+    const separators = [':', '：'];
+    if (['subject_summary', 'subject_title'].indexOf(category) !== -1) {
+        return str;
+    }
+    const textList = ['\\(.*?\\)', '（.*?）']; // 去掉多余的括号信息
+    // const keyStr = keyWords.sort((a, b) => b.length - a.length).join('|')
+    // `(${keyStr})(${separators.join('|')})?`
+    return str.replace(new RegExp(textList.join('|'), 'g'), '')
+        .replace(new RegExp(keyWords.join('|')), '')
+        .replace(new RegExp(`^.*?${separators.join('|')}`), '')
+        .trim();
+}
+function getWikiItem(infoConfig, site = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        const sl = infoConfig.selector;
+        let $d;
+        let targetSelector;
+        if (sl instanceof Array) {
+            let i = 0;
+            targetSelector = sl[i];
+            while (!($d = findElement(targetSelector)) && i < sl.length) {
+                targetSelector = sl[++i];
+            }
+        }
+        else {
+            targetSelector = sl;
+            $d = findElement(targetSelector);
+        }
+        if (!$d)
+            return;
+        let keyWords;
+        if (targetSelector.keyWord instanceof Array) {
+            keyWords = targetSelector.keyWord;
+        }
+        else {
+            keyWords = [targetSelector.keyWord];
+        }
+        let val;
+        const txt = getText($d);
+        switch (infoConfig.category) {
+            case 'cover':
+                let url;
+                if ($d.tagName.toLowerCase() === 'a') {
+                    url = $d.getAttribute('href');
+                }
+                else if ($d.tagName.toLowerCase() === 'img') {
+                    url = $d.getAttribute('src');
+                }
+                val = {
+                    url: $d.getAttribute('src'),
+                    dataUrl: yield getImageDataByURL(url),
+                    height: $d.clientHeight,
+                    width: $d.clientWidth,
+                };
+                break;
+            case 'subject_title':
+                if (site === 'getchu_game') {
+                    val = getchuTools.dealTitle(txt);
+                }
+                else if (site == 'amazon_jp_book') {
+                    val = amazonTools.dealTitle(txt);
+                }
+                else {
+                    val = dealItemText(txt, infoConfig.category, keyWords);
+                }
+                break;
+            case 'website':
+                val = $d.getAttribute('href');
+                break;
+            default:
+                val = dealItemText(txt, infoConfig.category, keyWords);
+        }
+        if (val) {
+            return {
+                name: infoConfig.name,
+                value: val,
+                category: infoConfig.category
+            };
+        }
+    });
+}
+/**
+ * 过滤搜索结果： 通过名称以及日期
+ * @param items
+ * @param subjectInfo
+ * @param opts
+ */
+function filterResults(items, subjectInfo, opts = {}) {
+    if (!items)
+        return;
+    // 只有一个结果时只比较日期
+    if (items.length === 1) {
+        const result = items[0];
+        if (isEqualDate(result.releaseDate, subjectInfo.releaseDate)) {
+            return result;
+        }
+    }
+    let results = new Fuse(items, Object.assign({
+        shouldSort: true,
+        threshold: 0.6,
+        location: 0,
+        distance: 100,
+        minMatchCharLength: 1,
+        keys: [
+            "name"
+        ]
+    }, opts))
+        .search(subjectInfo.name);
+    if (!results.length)
+        return;
+    // 有参考的发布时间
+    if (subjectInfo.releaseDate) {
+        for (const result of results) {
+            if (result.releaseDate) {
+                if (isEqualDate(result.releaseDate, subjectInfo.releaseDate)) {
+                    return result;
+                }
+            }
+        }
+    }
+    // 比较名称
+    const nameRe = new RegExp(subjectInfo.name.trim());
+    for (const result of results) {
+        if (nameRe.test(result.name) || nameRe.test(result.greyName)) {
+            return result;
+        }
+    }
+    return results[0];
+}
+function getQueryInfo(items) {
+    let info = {};
+    items.forEach((item) => {
+        if (item.category === 'subject_title') {
+            info.name = item.value;
+        }
+        if (item.category === 'date') {
+            info.releaseDate = item.value;
+        }
+        if (item.category === 'ASIN') {
+            info.asin = item.value;
+        }
+        if (item.category === 'ISBN') {
+            info.isbn = item.value;
+        }
+    });
+    return info;
+}
+/**
+ * 插入控制的按钮
+ * @param $t 父节点
+ * @param cb 返回 Promise 的回调
+ */
+function insertControlBtn($t, cb) {
+    if (!$t)
+        return;
+    const $s = document.createElement("span");
+    $s.classList.add("e-wiki-new-subject");
+    $s.innerHTML = "新建";
+    const $search = $s.cloneNode();
+    $search.innerHTML = "新建并查重";
+    $t.appendChild($s);
+    $t.appendChild($search);
+    $s.addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
+        yield cb(e);
+    }));
+    $search.addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
+        if ($search.innerHTML !== "新建并查重")
+            return;
+        $search.innerHTML = "查重中...";
+        yield cb(e, true);
+        $search.innerHTML = "新建并查重";
+    }));
+}
+/**
+ * 插入新建角色控制的按钮
+ * @param $t 父节点
+ * @param cb 返回 Promise 的回调
+ */
+function insertControlBtnChara($t, cb) {
+    if (!$t)
+        return;
+    const $s = document.createElement("a");
+    $s.classList.add("e-wiki-new-character");
+    // $s.setAttribute('target', '_blank')
+    $s.innerHTML = "添加新虚拟角色";
+    $t.appendChild($s);
+    $s.addEventListener("click", (e) => __awaiter(this, void 0, void 0, function* () {
+        yield cb(e);
+    }));
+}
+
+function sleep(num) {
+    return new Promise(resolve => {
+        setTimeout(resolve, num);
+    });
+}
+
+const subjectTypeDict = {
+    [SubjectTypeId.game]: 'game',
+    [SubjectTypeId.anime]: "anime",
+    [SubjectTypeId.music]: "music",
+    [SubjectTypeId.book]: "book",
+    [SubjectTypeId.real]: "real",
+    [SubjectTypeId.all]: "all",
+};
+var BangumiDomain;
+(function (BangumiDomain) {
+    BangumiDomain["chii"] = "chii.in";
+    BangumiDomain["bgm"] = "bgm.tv";
+    BangumiDomain["bangumi"] = "bangumi.tv";
+})(BangumiDomain || (BangumiDomain = {}));
+var Protocol;
+(function (Protocol) {
+    Protocol["http"] = "http";
+    Protocol["https"] = "https";
+})(Protocol || (Protocol = {}));
+/**
+ * 处理搜索页面的 html
+ * @param info 字符串 html
+ */
+function dealSearchResults(info) {
+    const results = [];
+    let $doc = (new DOMParser()).parseFromString(info, "text/html");
+    let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
+    // get number of page
+    let numOfPage = 1;
+    let pList = $doc.querySelectorAll('.page_inner>.p');
+    if (pList && pList.length) {
+        let tempNum = parseInt(pList[pList.length - 2].getAttribute('href').match(/page=(\d*)/)[1]);
+        numOfPage = parseInt(pList[pList.length - 1].getAttribute('href').match(/page=(\d*)/)[1]);
+        numOfPage = numOfPage > tempNum ? numOfPage : tempNum;
+    }
+    if (items && items.length) {
+        for (const item of Array.prototype.slice.call(items)) {
+            let $subjectTitle = item.querySelector('h3>a.l');
+            let itemSubject = {
+                name: $subjectTitle.textContent.trim(),
+                // url 没有协议和域名
+                url: $subjectTitle.getAttribute('href'),
+                greyName: item.querySelector('h3>.grey') ?
+                    item.querySelector('h3>.grey').textContent.trim() : '',
+            };
+            let matchDate = item.querySelector('.info').textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
+            if (matchDate) {
+                itemSubject.releaseDate = dealDate(matchDate[0]);
+            }
+            let $rateInfo = item.querySelector('.rateInfo');
+            if ($rateInfo) {
+                if ($rateInfo.querySelector('.fade')) {
+                    itemSubject.score = $rateInfo.querySelector('.fade').textContent;
+                    itemSubject.count = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '');
+                }
+                else {
+                    itemSubject.score = '0';
+                    itemSubject.count = '少于10';
+                }
+            }
+            else {
+                itemSubject.score = '0';
+                itemSubject.count = '0';
+            }
+            results.push(itemSubject);
+        }
+    }
+    else {
+        return [];
+    }
+    return [results, numOfPage];
+}
+/**
+ * 搜索条目
+ * @param subjectInfo
+ * @param type
+ * @param uniqueQueryStr
+ */
+function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTypeId.all, uniqueQueryStr = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        let releaseDate;
+        if (subjectInfo && subjectInfo.releaseDate) {
+            releaseDate = subjectInfo.releaseDate;
+        }
+        let query = (subjectInfo.name || '').trim();
+        if (type === SubjectTypeId.book) {
+            // 去掉末尾的括号并加上引号
+            query = query.replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
+            query = `"${query}"`;
+        }
+        if (uniqueQueryStr) {
+            query = `"${uniqueQueryStr}"`;
+        }
+        if (!query) {
+            console.info('Query string is empty');
+            return [];
+        }
+        const url = `${bgmHost}/subject_search/${encodeURIComponent(query)}?cat=${type}`;
+        console.info('search bangumi subject URL: ', url);
+        const rawText = yield fetchText(url);
+        const rawInfoList = dealSearchResults(rawText)[0] || [];
+        // 使用指定搜索字符串如 ISBN 搜索时, 并且结果只有一条时，不再使用名称过滤
+        if (uniqueQueryStr && rawInfoList && rawInfoList.length === 1) {
+            return rawInfoList[0];
+        }
+        const options = {
+            keys: [
+                "name",
+                "greyName"
+            ]
+        };
+        return filterResults(rawInfoList, subjectInfo, options);
+    });
+}
+/**
+ * 通过时间查找条目
+ * @param subjectInfo 条目信息
+ * @param pageNumber 页码
+ * @param type 条目类型
+ */
+function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNumber = 1, type) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!subjectInfo || !subjectInfo.releaseDate || !subjectInfo.name) {
+            throw new Error('invalid subject info');
+        }
+        const releaseDate = new Date(subjectInfo.releaseDate);
+        const sort = releaseDate.getDate() > 15 ? 'sort=date' : '';
+        const page = pageNumber ? `page=${pageNumber}` : '';
+        let query = '';
+        if (sort && page) {
+            query = '?' + sort + '&' + page;
+        }
+        else if (sort) {
+            query = '?' + sort;
+        }
+        else if (page) {
+            query = '?' + page;
+        }
+        const url = `${bgmHost}/${type}/browser/airtime/${releaseDate.getFullYear()}-${releaseDate.getMonth() + 1}${query}`;
+        console.info('find subject by date: ', url);
+        const rawText = yield fetchText(url);
+        let [rawInfoList, numOfPage] = dealSearchResults(rawText);
+        const options = {
+            keys: [
+                "name",
+                "greyName"
+            ]
+        };
+        let result = filterResults(rawInfoList, subjectInfo, options);
+        if (!result) {
+            if (pageNumber < numOfPage) {
+                yield sleep(300);
+                return yield findSubjectByDate(subjectInfo, bgmHost, pageNumber + 1, type);
+            }
+            else {
+                throw 'notmatched';
+            }
+        }
+        return result;
+    });
+}
+function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let searchResult = yield searchSubject(subjectInfo, bgmHost, type, subjectInfo.isbn);
+        console.info(`First: search result of bangumi: `, searchResult);
+        if (searchResult && searchResult.url) {
+            return searchResult;
+        }
+        searchResult = yield searchSubject(subjectInfo, bgmHost, type, subjectInfo.asin);
+        console.info('Second: search result of bangumi: ', searchResult);
+        if (searchResult && searchResult.url) {
+            return searchResult;
+        }
+        // 默认使用名称搜索
+        searchResult = yield searchSubject(subjectInfo, bgmHost, type);
+        console.info('Third: search result of bangumi: ', searchResult);
+        return searchResult;
+    });
+}
+/**
+ * 查找条目是否存在： 通过名称搜索或者日期加上名称的过滤查询
+ * @param subjectInfo 条目基本信息
+ * @param bgmHost bangumi 域名
+ * @param type 条目类型
+ */
+function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let searchResult = yield searchSubject(subjectInfo, bgmHost, type);
+        console.info(`First: search result of bangumi: `, searchResult);
+        if (searchResult && searchResult.url) {
+            return searchResult;
+        }
+        searchResult = yield findSubjectByDate(subjectInfo, bgmHost, 1, subjectTypeDict[type]);
+        console.info(`Second: search result by date: `, searchResult);
+        return searchResult;
+    });
+}
+function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let result;
+        switch (type) {
+            case SubjectTypeId.book:
+                result = yield checkBookSubjectExist(subjectInfo, bgmHost, type);
+                break;
+            case SubjectTypeId.game:
+                result = yield checkExist(subjectInfo, bgmHost, type);
+                break;
+            case SubjectTypeId.anime:
+            case SubjectTypeId.real:
+            case SubjectTypeId.music:
+            default:
+                console.info('not support type: ', type);
+        }
+        return result;
+    });
+}
+
+// 配置变量
+const SCRIPT_PREFIX = 'E_USERJS_';
+const AUTO_FILL_FORM = SCRIPT_PREFIX + 'autofill';
+const WIKI_DATA = SCRIPT_PREFIX + 'wiki_data';
+const CHARA_DATA = SCRIPT_PREFIX + 'wiki_data';
+const PROTOCOL = SCRIPT_PREFIX + 'protocol';
+const BGM_DOMAIN = SCRIPT_PREFIX + 'bgm_domain';
+
+const getData = (list) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield Promise.all(list);
+});
+function initCommon(siteConfig, subtype = 0) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const $page = findElement(siteConfig.pageSelectors);
+        if (!$page)
+            return;
+        const $title = findElement(siteConfig.controlSelector);
+        if (!$title)
+            return;
+        insertControlBtn($title.parentElement, (e, flag) => __awaiter(this, void 0, void 0, function* () {
+            const protocol = GM_getValue(PROTOCOL) || 'https';
+            const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+            const bgmHost = `${protocol}://${bgm_domain}`;
+            console.info('init');
+            // getWikiItem promise
+            const rawList = yield getData(siteConfig.itemList.map(item => getWikiItem(item, siteConfig.key)));
+            const infoList = rawList.filter(i => i);
+            console.info('wiki info list: ', infoList);
+            const wikiData = {
+                type: siteConfig.type,
+                subtype,
+                infos: infoList
+            };
+            GM_setValue(WIKI_DATA, JSON.stringify(wikiData));
+            if (flag) {
+                const result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type);
+                console.info('search results: ', result);
+                if (result && result.url) {
+                    GM_openInTab(bgmHost + result.url);
+                }
+                else {
+                    // 重置自动填表
+                    GM_setValue(AUTO_FILL_FORM, 1);
+                    setTimeout(() => {
+                        GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
+                    }, 200);
+                }
+            }
+            else {
+                // 重置自动填表
+                GM_setValue(AUTO_FILL_FORM, 1);
+                setTimeout(() => {
+                    GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
+                }, 200);
+            }
+        }));
+    });
+}
+function addStyle() {
+    GM_addStyle(`
+.e-wiki-new-character, .e-wiki-new-subject, .e-wiki-search-subject, .e-wiki-fill-form {
+  color: rgb(0, 180, 30) !important;
+  margin-left: 4px !important;
+}
+
+.e-wiki-new-subject {
+  margin-left: 8px;
+}
+
+.e-wiki-new-character:hover,
+.e-wiki-new-subject:hover,
+.e-wiki-search-subject:hover,
+.e-wiki-fill-form:hover {
+  color: red !important;
+  cursor: pointer;
+}
+
+/* upload img */
+.e-wiki-cover-container {
+  margin-top: 1rem;
+}
+
+.e-wiki-cover-container img {
+  display: none;
+}
+
+#e-wiki-cover-amount {
+  padding-left: 10px;
+  border: 0;
+  color: #f6931f;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#e-wiki-cover-reset {
+  display: inline-block;
+  text-align: center;
+  width: 60px;
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  background-color: #f09199;
+  text-decoration: none;
+  color: #fff;
+  margin-left: 50px;
+  margin-bottom: 30px;
+  border-radius: 5px;
+  box-shadow: 1px 1px 2px #333;
+}
+
+#e-wiki-cover-preview {
+  margin-top: 0.5rem;
+}
+
+#e-wiki-cover-preview:active {
+  cursor: crosshair;
+}
+
+#e-wiki-cover-preview {
+  display: block;
+}
+
+.e-wiki-cover-blur-loading {
+  width: 208px;
+  height: 13px;
+  background-image: url("https://bgm.tv/img/loadingAnimation.gif");
+}
+
+.e-wiki-search-cover {
+  width: 84px;
+  height: auto;
+}
+  `);
+}
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+    _typeof = function (obj) {
+      return typeof obj;
+    };
+  } else {
+    _typeof = function (obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
   }
-  console.info('pic file: ', fd.get(inputFileName));
-  var xhr = new XMLHttpRequest();
-  xhr.open($form.method.toLowerCase(), $form.action, true);
-  xhr.onreadystatechange = function () {
-    var _location;
-    if (xhr.readyState === 2 && xhr.status === 200) {
-      _location = xhr.responseURL;
-      $loading.remove();
-      $submit.style.display = '';
-      if (_location) {
-        location.assign(_location);
+
+  return _typeof(obj);
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+/**
+* StackBlur - a fast almost Gaussian Blur For Canvas
+*
+* In case you find this class useful - especially in commercial projects -
+* I am not totally unhappy for a small donation to my PayPal account
+* mario@quasimondo.de
+*
+* Or support me on flattr:
+* {@link https://flattr.com/thing/72791/StackBlur-a-fast-almost-Gaussian-Blur-Effect-for-CanvasJavascript}
+* @module StackBlur
+* @version 0.5
+* @author Mario Klingemann
+* Contact: mario@quasimondo.com
+* Website: {@link http://www.quasimondo.com/StackBlurForCanvas/StackBlurDemo.html}
+* Twitter: @quasimondo
+*
+* @copyright (c) 2010 Mario Klingemann
+*
+* Permission is hereby granted, free of charge, to any person
+* obtaining a copy of this software and associated documentation
+* files (the "Software"), to deal in the Software without
+* restriction, including without limitation the rights to use,
+* copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the
+* Software is furnished to do so, subject to the following
+* conditions:
+*
+* The above copyright notice and this permission notice shall be
+* included in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+* HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+* WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+* OTHER DEALINGS IN THE SOFTWARE.
+*/
+var mulTable = [512, 512, 456, 512, 328, 456, 335, 512, 405, 328, 271, 456, 388, 335, 292, 512, 454, 405, 364, 328, 298, 271, 496, 456, 420, 388, 360, 335, 312, 292, 273, 512, 482, 454, 428, 405, 383, 364, 345, 328, 312, 298, 284, 271, 259, 496, 475, 456, 437, 420, 404, 388, 374, 360, 347, 335, 323, 312, 302, 292, 282, 273, 265, 512, 497, 482, 468, 454, 441, 428, 417, 405, 394, 383, 373, 364, 354, 345, 337, 328, 320, 312, 305, 298, 291, 284, 278, 271, 265, 259, 507, 496, 485, 475, 465, 456, 446, 437, 428, 420, 412, 404, 396, 388, 381, 374, 367, 360, 354, 347, 341, 335, 329, 323, 318, 312, 307, 302, 297, 292, 287, 282, 278, 273, 269, 265, 261, 512, 505, 497, 489, 482, 475, 468, 461, 454, 447, 441, 435, 428, 422, 417, 411, 405, 399, 394, 389, 383, 378, 373, 368, 364, 359, 354, 350, 345, 341, 337, 332, 328, 324, 320, 316, 312, 309, 305, 301, 298, 294, 291, 287, 284, 281, 278, 274, 271, 268, 265, 262, 259, 257, 507, 501, 496, 491, 485, 480, 475, 470, 465, 460, 456, 451, 446, 442, 437, 433, 428, 424, 420, 416, 412, 408, 404, 400, 396, 392, 388, 385, 381, 377, 374, 370, 367, 363, 360, 357, 354, 350, 347, 344, 341, 338, 335, 332, 329, 326, 323, 320, 318, 315, 312, 310, 307, 304, 302, 299, 297, 294, 292, 289, 287, 285, 282, 280, 278, 275, 273, 271, 269, 267, 265, 263, 261, 259];
+var shgTable = [9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24];
+/**
+ * @param {string|HTMLCanvasElement} canvas
+ * @param {Integer} topX
+ * @param {Integer} topY
+ * @param {Integer} width
+ * @param {Integer} height
+ * @throws {Error|TypeError}
+ * @returns {ImageData} See {@link https://html.spec.whatwg.org/multipage/canvas.html#imagedata}
+ */
+
+
+function getImageDataFromCanvas(canvas, topX, topY, width, height) {
+  if (typeof canvas === 'string') {
+    canvas = document.getElementById(canvas);
+  }
+
+  if (!canvas || _typeof(canvas) !== 'object' || !('getContext' in canvas)) {
+    throw new TypeError('Expecting canvas with `getContext` method in processCanvasRGB(A) calls!');
+  }
+
+  var context = canvas.getContext('2d');
+
+  try {
+    return context.getImageData(topX, topY, width, height);
+  } catch (e) {
+    throw new Error('unable to access image data: ' + e);
+  }
+}
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {Integer} topX
+ * @param {Integer} topY
+ * @param {Integer} width
+ * @param {Integer} height
+ * @param {Float} radius
+ * @returns {undefined}
+ */
+
+
+function processCanvasRGBA(canvas, topX, topY, width, height, radius) {
+  if (isNaN(radius) || radius < 1) {
+    return;
+  }
+
+  radius |= 0;
+  var imageData = getImageDataFromCanvas(canvas, topX, topY, width, height);
+  imageData = processImageDataRGBA(imageData, topX, topY, width, height, radius);
+  canvas.getContext('2d').putImageData(imageData, topX, topY);
+}
+/**
+ * @param {ImageData} imageData
+ * @param {Integer} topX
+ * @param {Integer} topY
+ * @param {Integer} width
+ * @param {Integer} height
+ * @param {Float} radius
+ * @returns {ImageData}
+ */
+
+
+function processImageDataRGBA(imageData, topX, topY, width, height, radius) {
+  var pixels = imageData.data;
+  var x, y, i, p, yp, yi, yw, rSum, gSum, bSum, aSum, rOutSum, gOutSum, bOutSum, aOutSum, rInSum, gInSum, bInSum, aInSum, pr, pg, pb, pa, rbs;
+  var div = 2 * radius + 1; // const w4 = width << 2;
+
+  var widthMinus1 = width - 1;
+  var heightMinus1 = height - 1;
+  var radiusPlus1 = radius + 1;
+  var sumFactor = radiusPlus1 * (radiusPlus1 + 1) / 2;
+  var stackStart = new BlurStack();
+  var stack = stackStart;
+  var stackEnd;
+
+  for (i = 1; i < div; i++) {
+    stack = stack.next = new BlurStack();
+
+    if (i === radiusPlus1) {
+      stackEnd = stack;
+    }
+  }
+
+  stack.next = stackStart;
+  var stackIn = null;
+  var stackOut = null;
+  yw = yi = 0;
+  var mulSum = mulTable[radius];
+  var shgSum = shgTable[radius];
+
+  for (y = 0; y < height; y++) {
+    rInSum = gInSum = bInSum = aInSum = rSum = gSum = bSum = aSum = 0;
+    rOutSum = radiusPlus1 * (pr = pixels[yi]);
+    gOutSum = radiusPlus1 * (pg = pixels[yi + 1]);
+    bOutSum = radiusPlus1 * (pb = pixels[yi + 2]);
+    aOutSum = radiusPlus1 * (pa = pixels[yi + 3]);
+    rSum += sumFactor * pr;
+    gSum += sumFactor * pg;
+    bSum += sumFactor * pb;
+    aSum += sumFactor * pa;
+    stack = stackStart;
+
+    for (i = 0; i < radiusPlus1; i++) {
+      stack.r = pr;
+      stack.g = pg;
+      stack.b = pb;
+      stack.a = pa;
+      stack = stack.next;
+    }
+
+    for (i = 1; i < radiusPlus1; i++) {
+      p = yi + ((widthMinus1 < i ? widthMinus1 : i) << 2);
+      rSum += (stack.r = pr = pixels[p]) * (rbs = radiusPlus1 - i);
+      gSum += (stack.g = pg = pixels[p + 1]) * rbs;
+      bSum += (stack.b = pb = pixels[p + 2]) * rbs;
+      aSum += (stack.a = pa = pixels[p + 3]) * rbs;
+      rInSum += pr;
+      gInSum += pg;
+      bInSum += pb;
+      aInSum += pa;
+      stack = stack.next;
+    }
+
+    stackIn = stackStart;
+    stackOut = stackEnd;
+
+    for (x = 0; x < width; x++) {
+      pixels[yi + 3] = pa = aSum * mulSum >> shgSum;
+
+      if (pa !== 0) {
+        pa = 255 / pa;
+        pixels[yi] = (rSum * mulSum >> shgSum) * pa;
+        pixels[yi + 1] = (gSum * mulSum >> shgSum) * pa;
+        pixels[yi + 2] = (bSum * mulSum >> shgSum) * pa;
+      } else {
+        pixels[yi] = pixels[yi + 1] = pixels[yi + 2] = 0;
+      }
+
+      rSum -= rOutSum;
+      gSum -= gOutSum;
+      bSum -= bOutSum;
+      aSum -= aOutSum;
+      rOutSum -= stackIn.r;
+      gOutSum -= stackIn.g;
+      bOutSum -= stackIn.b;
+      aOutSum -= stackIn.a;
+      p = yw + ((p = x + radius + 1) < widthMinus1 ? p : widthMinus1) << 2;
+      rInSum += stackIn.r = pixels[p];
+      gInSum += stackIn.g = pixels[p + 1];
+      bInSum += stackIn.b = pixels[p + 2];
+      aInSum += stackIn.a = pixels[p + 3];
+      rSum += rInSum;
+      gSum += gInSum;
+      bSum += bInSum;
+      aSum += aInSum;
+      stackIn = stackIn.next;
+      rOutSum += pr = stackOut.r;
+      gOutSum += pg = stackOut.g;
+      bOutSum += pb = stackOut.b;
+      aOutSum += pa = stackOut.a;
+      rInSum -= pr;
+      gInSum -= pg;
+      bInSum -= pb;
+      aInSum -= pa;
+      stackOut = stackOut.next;
+      yi += 4;
+    }
+
+    yw += width;
+  }
+
+  for (x = 0; x < width; x++) {
+    gInSum = bInSum = aInSum = rInSum = gSum = bSum = aSum = rSum = 0;
+    yi = x << 2;
+    rOutSum = radiusPlus1 * (pr = pixels[yi]);
+    gOutSum = radiusPlus1 * (pg = pixels[yi + 1]);
+    bOutSum = radiusPlus1 * (pb = pixels[yi + 2]);
+    aOutSum = radiusPlus1 * (pa = pixels[yi + 3]);
+    rSum += sumFactor * pr;
+    gSum += sumFactor * pg;
+    bSum += sumFactor * pb;
+    aSum += sumFactor * pa;
+    stack = stackStart;
+
+    for (i = 0; i < radiusPlus1; i++) {
+      stack.r = pr;
+      stack.g = pg;
+      stack.b = pb;
+      stack.a = pa;
+      stack = stack.next;
+    }
+
+    yp = width;
+
+    for (i = 1; i <= radius; i++) {
+      yi = yp + x << 2;
+      rSum += (stack.r = pr = pixels[yi]) * (rbs = radiusPlus1 - i);
+      gSum += (stack.g = pg = pixels[yi + 1]) * rbs;
+      bSum += (stack.b = pb = pixels[yi + 2]) * rbs;
+      aSum += (stack.a = pa = pixels[yi + 3]) * rbs;
+      rInSum += pr;
+      gInSum += pg;
+      bInSum += pb;
+      aInSum += pa;
+      stack = stack.next;
+
+      if (i < heightMinus1) {
+        yp += width;
       }
     }
-  };
-  xhr.send(fd);
-}
 
-async function uploadTargetCover(subjectId) {
-  var d = await gmFetch('/' + subjectId + '/upload_img', 3000);
-  var $canvas = document.querySelector('#e-wiki-cover-preview');
+    yi = x;
+    stackIn = stackStart;
+    stackOut = stackEnd;
 
-  var $doc = new DOMParser().parseFromString(d, "text/html");
-  var $form = $doc.querySelector('form[name=img_upload]');
-  if (!$form) return;
+    for (y = 0; y < height; y++) {
+      p = yi << 2;
+      pixels[p + 3] = pa = aSum * mulSum >> shgSum;
 
-  if ($canvas.width > 8 && $canvas.height > 10) {
-    sendFormDataPic($form, $canvas.toDataURL('image/jpg', 1));
+      if (pa > 0) {
+        pa = 255 / pa;
+        pixels[p] = (rSum * mulSum >> shgSum) * pa;
+        pixels[p + 1] = (gSum * mulSum >> shgSum) * pa;
+        pixels[p + 2] = (bSum * mulSum >> shgSum) * pa;
+      } else {
+        pixels[p] = pixels[p + 1] = pixels[p + 2] = 0;
+      }
+
+      rSum -= rOutSum;
+      gSum -= gOutSum;
+      bSum -= bOutSum;
+      aSum -= aOutSum;
+      rOutSum -= stackIn.r;
+      gOutSum -= stackIn.g;
+      bOutSum -= stackIn.b;
+      aOutSum -= stackIn.a;
+      p = x + ((p = y + radiusPlus1) < heightMinus1 ? p : heightMinus1) * width << 2;
+      rSum += rInSum += stackIn.r = pixels[p];
+      gSum += gInSum += stackIn.g = pixels[p + 1];
+      bSum += bInSum += stackIn.b = pixels[p + 2];
+      aSum += aInSum += stackIn.a = pixels[p + 3];
+      stackIn = stackIn.next;
+      rOutSum += pr = stackOut.r;
+      gOutSum += pg = stackOut.g;
+      bOutSum += pb = stackOut.b;
+      aOutSum += pa = stackOut.a;
+      rInSum -= pr;
+      gInSum -= pg;
+      bInSum -= pb;
+      aInSum -= pa;
+      stackOut = stackOut.next;
+      yi += width;
+    }
   }
+
+  return imageData;
+}
+/**
+ *
+ */
+
+
+var BlurStack = function BlurStack() {
+  _classCallCheck(this, BlurStack);
+
+  this.r = 0;
+  this.g = 0;
+  this.b = 0;
+  this.a = 0;
+  this.next = null;
+};
+
+/**
+ * send form data with image
+ * @param $form
+ * @param dataURL
+ */
+function sendFormImg($form, dataURL) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const info = [];
+        const $file = $form.querySelector('input[type=file]');
+        const inputFileName = $file.name ? $file.name : 'picfile';
+        info.push({
+            name: inputFileName,
+            value: dataURItoBlob(dataURL),
+            filename: genRandomStr(5) + '.png'
+        });
+        return yield sendForm($form, info);
+    });
+}
+/**
+ * send form as xhr promise
+ * TODO: return type
+ * @param $form
+ * @param extraInfo
+ */
+function sendForm($form, extraInfo = []) {
+    return new Promise((resolve, reject) => {
+        const fd = new FormData($form);
+        extraInfo.forEach(item => {
+            if (item.filename) {
+                fd.set(item.name, item.value, item.filename);
+            }
+            else {
+                fd.set(item.name, item.value);
+            }
+        });
+        const $submit = $form.querySelector('[name=submit]');
+        if ($submit && $submit.name && $submit.value) {
+            fd.set($submit.name, $submit.value);
+        }
+        const xhr = new XMLHttpRequest();
+        xhr.open($form.method.toLowerCase(), $form.action, true);
+        xhr.onload = function () {
+            let _location;
+            if (xhr.status === 200) {
+                _location = xhr.responseURL;
+                if (_location) {
+                    resolve(_location);
+                }
+                else {
+                    reject('no location');
+                }
+            }
+        };
+        xhr.send(fd);
+    });
 }
 
-function blobToBase64(myBlob) {
-  return new Promise(function (resolve, reject) {
-    var reader = new window.FileReader();
-    reader.readAsDataURL(myBlob);
-    reader.onloadend = function () {
-      resolve(reader.result);
+function getMousePos(canvas, evt) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
     };
-    reader.onerror = reject;
-  });
 }
-
-async function getImageDataByURL(url) {
-  var myBlob = await gmFetchBinary(url);
-  console.info('Content: cover pic: ', myBlob);
-  return await blobToBase64(myBlob);
+/**
+ * blur canvas
+ * @param el target canvas
+ * @param width blur rect width
+ * @param radius blur rect height
+ */
+function blur(el) {
+    let isDrawing = false;
+    let ctx = el.getContext('2d');
+    el.onmousedown = function (e) {
+        isDrawing = true;
+        const pos = getMousePos(el, e);
+        ctx.moveTo(pos.x, pos.y);
+    };
+    const $width = document.querySelector('#e-wiki-cover-slider-width');
+    const $radius = document.querySelector('#e-wiki-cover-slider-radius');
+    el.onmousemove = function (e) {
+        if (isDrawing) {
+            const pos = getMousePos(el, e);
+            const width = +$width.value;
+            const radius = +$radius.value;
+            // stack blur operation
+            processCanvasRGBA(el, pos.x - width / 2, pos.y - width / 2, width, width, radius);
+        }
+    };
+    el.onmouseup = function () {
+        isDrawing = false;
+    };
 }
-
+function initContainer($target) {
+    const rawHTML = `
+    <input style="vertical-align: top;" class="inputBtn" value="上传处理后的图片" name="submit" type="button">
+    <canvas id="e-wiki-cover-preview" width="8" height="10"></canvas>
+    <br>
+    <label for="e-wiki-cover-amount">Blur width and radius:</label>
+    <input id="e-wiki-cover-amount" type="text" readonly>
+    <br>
+    <input id="e-wiki-cover-slider-width" type="range" value="20" name="width" min="1" max="100">
+    <canvas></canvas>
+    <br>
+    <input id="e-wiki-cover-slider-radius" type="range" value="20" name="radius" min="1" max="100">
+    <br>
+    <a href="javascript:void(0)" id="e-wiki-cover-reset">reset</a>
+    <img src="" alt="" style="display:none;">
+  `;
+    const $info = document.createElement('div');
+    $info.classList.add('e-wiki-cover-container');
+    $info.innerHTML = rawHTML;
+    $target.parentElement.insertBefore($info, $target.nextElementSibling);
+    const $width = document.querySelector('#e-wiki-cover-slider-width');
+    const $radius = document.querySelector('#e-wiki-cover-slider-radius');
+    drawRec($width);
+    changeInfo($width, $radius);
+    $width.addEventListener('change', (e) => {
+        drawRec($width);
+        changeInfo($width, $radius);
+    });
+    $radius.addEventListener('change', (e) => {
+        changeInfo($width, $radius);
+    });
+}
+function drawRec($width) {
+    // TODO: canvas type
+    const $canvas = $width.nextElementSibling;
+    const ctx = $canvas.getContext('2d');
+    const width = Number($width.value);
+    $canvas.width = width * 1.4;
+    $canvas.height = width * 1.4;
+    ctx.strokeStyle = '#f09199';
+    ctx.strokeRect(0.2 * width, 0.2 * width, width, width);
+    // resize page
+    window.dispatchEvent(new Event('resize'));
+}
+function changeInfo($width, $radius) {
+    var $info = document.querySelector('#e-wiki-cover-amount');
+    var radius = $radius.value;
+    var width = $width.value;
+    $info.value = width + ', ' + radius;
+}
+function previewFileImage($file, $canvas, $img = new Image()) {
+    const ctx = $canvas.getContext('2d');
+    $img.addEventListener('load', function () {
+        $canvas.width = $img.width;
+        $canvas.height = $img.height;
+        ctx.drawImage($img, 0, 0);
+        window.dispatchEvent(new Event('resize')); // let img cut tool at right position
+    }, false);
+    function loadImgData() {
+        var file = $file.files[0];
+        var reader = new FileReader();
+        reader.addEventListener('load', function () {
+            $img.src = reader.result;
+        }, false);
+        if (file) {
+            reader.readAsDataURL(file);
+        }
+    }
+    if ($file) {
+        $file.addEventListener('change', loadImgData, false);
+    }
+}
 /**
  * 初始化上传处理图片组件
  * @param {Object} $form - 包含 input file 的 DOM
- * @param {string} base64Data - 图片链接或者 base64 信息 
+ * @param {string} base64Data - 图片链接或者 base64 信息
  */
 function dealImageWidget($form, base64Data) {
-  if (document.querySelector('.e-wiki-cover-container')) return;
-  insertBlurInfo($form);
-  var $canvas = document.querySelector('#e-wiki-cover-preview');
-  var $img = document.querySelector('.e-wiki-cover-container img');
-  if (base64Data) {
-    if (base64Data.match(/^http/)) {
-      // base64Data = getImageDataByURL(base64Data);
-      base64Data = getImageBase64(base64Data);
-    }
-    $img.src = base64Data;
-  }
-  var $file = $form.querySelector('input[type = file]');
-  previewSelectedImage($file, $canvas, $img);
-
-  var $width = document.querySelector('#e-wiki-cover-slider-width');
-  var $radius = document.querySelector('#e-wiki-cover-slider-radius');
-  blur($canvas, $width, $radius);
-  document.querySelector('#e-wiki-cover-reset').addEventListener('click', function (e) {
-    var $fillForm = document.querySelector('.fill-form');
-    if (base64Data) {
-      $img.dispatchEvent(new Event('load'));
-    } else if ($file && $file.files[0]) {
-      $file.dispatchEvent(new Event('change'));
-    } else if ($fillForm) {
-      $fillForm.dispatchEvent(new Event('click'));
-    }
-  }, false);
-  var $inputBtn = document.querySelector('.e-wiki-cover-container .inputBtn');
-  if ($file) {
-    $inputBtn.addEventListener('click', function (e) {
-      e.preventDefault();
-      if ($canvas.width > 8 && $canvas.height > 10) {
-        sendFormDataPic($form, $canvas.toDataURL('image/jpg', 1));
-      }
-    }, false);
-  } else {
-    $inputBtn.value = '处理图片';
-  }
-}
-
-module.exports = dealImageWidget;
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports) {
-
-/*
-    StackBlur - a fast almost Gaussian Blur For Canvas
-
-    Version:     0.5
-    Author:        Mario Klingemann
-    Contact:     mario@quasimondo.com
-    Website:    http://www.quasimondo.com/StackBlurForCanvas
-    Twitter:    @quasimondo
-
-    In case you find this class useful - especially in commercial projects -
-    I am not totally unhappy for a small donation to my PayPal account
-    mario@quasimondo.de
-
-    Or support me on flattr:
-    https://flattr.com/thing/72791/StackBlur-a-fast-almost-Gaussian-Blur-Effect-for-CanvasJavascript
-
-    Copyright (c) 2010 Mario Klingemann
-
-    Permission is hereby granted, free of charge, to any person
-    obtaining a copy of this software and associated documentation
-    files (the "Software"), to deal in the Software without
-    restriction, including without limitation the rights to use,
-    copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following
-    conditions:
-
-    The above copyright notice and this permission notice shall be
-    included in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-    OTHER DEALINGS IN THE SOFTWARE.
-    */
-
-
-var mul_table = [
-    512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,
-    454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,
-    482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,
-    437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,
-    497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,
-    320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,
-    446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,
-    329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,
-    505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,
-    399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,
-    324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,
-    268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,
-    451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,
-    385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,
-    332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,
-    289,287,285,282,280,278,275,273,271,269,267,265,263,261,259];
-
-
-var shg_table = [
-    9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17,
-    17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19,
-    19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20,
-    20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21,
-    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
-    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22,
-    22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22,
-    22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23,
-    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-    23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 ];
-
-
-function processImage(img, canvas, radius, blurAlphaChannel)
-{
-    if (typeof(img) == 'string') {
-        var img = document.getElementById(img);
-    }
-    else if (typeof HTMLImageElement !== 'undefined' && !img instanceof HTMLImageElement) {
-        return;
-    }
-    var w = img.naturalWidth;
-    var h = img.naturalHeight;
-
-    if (typeof(canvas) == 'string') {
-        var canvas = document.getElementById(canvas);
-    }
-    else if (typeof HTMLCanvasElement !== 'undefined' && !canvas instanceof HTMLCanvasElement) {
-        return;
-    }
-
-    canvas.style.width  = w + 'px';
-    canvas.style.height = h + 'px';
-    canvas.width = w;
-    canvas.height = h;
-
-    var context = canvas.getContext('2d');
-    context.clearRect(0, 0, w, h);
-    context.drawImage(img, 0, 0);
-
-    if (isNaN(radius) || radius < 1) return;
-
-    if (blurAlphaChannel)
-        processCanvasRGBA(canvas, 0, 0, w, h, radius);
-    else
-        processCanvasRGB(canvas, 0, 0, w, h, radius);
-}
-
-function getImageDataFromCanvas(canvas, top_x, top_y, width, height)
-{
-    if (typeof(canvas) == 'string')
-        var canvas  = document.getElementById(canvas);
-    else if (typeof HTMLCanvasElement !== 'undefined' && !canvas instanceof HTMLCanvasElement)
-        return;
-
-    var context = canvas.getContext('2d');
-    var imageData;
-
-    try {
-        try {
-            imageData = context.getImageData(top_x, top_y, width, height);
-        } catch(e) {
-            throw new Error("unable to access local image data: " + e);
+    return __awaiter(this, void 0, void 0, function* () {
+        if (document.querySelector('.e-wiki-cover-container'))
             return;
-        }
-    } catch(e) {
-        throw new Error("unable to access image data: " + e);
-    }
-
-    return imageData;
-}
-
-function processCanvasRGBA(canvas, top_x, top_y, width, height, radius)
-{
-    if (isNaN(radius) || radius < 1) return;
-    radius |= 0;
-
-    var imageData = getImageDataFromCanvas(canvas, top_x, top_y, width, height);
-
-    imageData = processImageDataRGBA(imageData, top_x, top_y, width, height, radius);
-
-    canvas.getContext('2d').putImageData(imageData, top_x, top_y);
-}
-
-function processImageDataRGBA(imageData, top_x, top_y, width, height, radius)
-{
-    var pixels = imageData.data;
-
-    var x, y, i, p, yp, yi, yw, r_sum, g_sum, b_sum, a_sum,
-        r_out_sum, g_out_sum, b_out_sum, a_out_sum,
-        r_in_sum, g_in_sum, b_in_sum, a_in_sum,
-        pr, pg, pb, pa, rbs;
-
-    var div = radius + radius + 1;
-    var w4 = width << 2;
-    var widthMinus1  = width - 1;
-    var heightMinus1 = height - 1;
-    var radiusPlus1  = radius + 1;
-    var sumFactor = radiusPlus1 * (radiusPlus1 + 1) / 2;
-
-    var stackStart = new BlurStack();
-    var stack = stackStart;
-    for (i = 1; i < div; i++)
-    {
-        stack = stack.next = new BlurStack();
-        if (i == radiusPlus1) var stackEnd = stack;
-    }
-    stack.next = stackStart;
-    var stackIn = null;
-    var stackOut = null;
-
-    yw = yi = 0;
-
-    var mul_sum = mul_table[radius];
-    var shg_sum = shg_table[radius];
-
-    for (y = 0; y < height; y++)
-    {
-        r_in_sum = g_in_sum = b_in_sum = a_in_sum = r_sum = g_sum = b_sum = a_sum = 0;
-
-        r_out_sum = radiusPlus1 * (pr = pixels[yi]);
-        g_out_sum = radiusPlus1 * (pg = pixels[yi+1]);
-        b_out_sum = radiusPlus1 * (pb = pixels[yi+2]);
-        a_out_sum = radiusPlus1 * (pa = pixels[yi+3]);
-
-        r_sum += sumFactor * pr;
-        g_sum += sumFactor * pg;
-        b_sum += sumFactor * pb;
-        a_sum += sumFactor * pa;
-
-        stack = stackStart;
-
-        for (i = 0; i < radiusPlus1; i++)
-        {
-            stack.r = pr;
-            stack.g = pg;
-            stack.b = pb;
-            stack.a = pa;
-            stack = stack.next;
-        }
-
-        for (i = 1; i < radiusPlus1; i++)
-        {
-            p = yi + ((widthMinus1 < i ? widthMinus1 : i) << 2);
-            r_sum += (stack.r = (pr = pixels[p])) * (rbs = radiusPlus1 - i);
-            g_sum += (stack.g = (pg = pixels[p+1])) * rbs;
-            b_sum += (stack.b = (pb = pixels[p+2])) * rbs;
-            a_sum += (stack.a = (pa = pixels[p+3])) * rbs;
-
-            r_in_sum += pr;
-            g_in_sum += pg;
-            b_in_sum += pb;
-            a_in_sum += pa;
-
-            stack = stack.next;
-        }
-
-
-        stackIn = stackStart;
-        stackOut = stackEnd;
-        for (x = 0; x < width; x++)
-        {
-            pixels[yi+3] = pa = (a_sum * mul_sum) >> shg_sum;
-            if (pa != 0)
-            {
-                pa = 255 / pa;
-                pixels[yi]   = ((r_sum * mul_sum) >> shg_sum) * pa;
-                pixels[yi+1] = ((g_sum * mul_sum) >> shg_sum) * pa;
-                pixels[yi+2] = ((b_sum * mul_sum) >> shg_sum) * pa;
-            } else {
-                pixels[yi] = pixels[yi+1] = pixels[yi+2] = 0;
+        initContainer($form);
+        const $canvas = document.querySelector('#e-wiki-cover-preview');
+        const $img = document.querySelector('.e-wiki-cover-container img');
+        if (base64Data) {
+            if (base64Data.match(/^http/)) {
+                base64Data = yield getImageDataByURL(base64Data);
             }
-
-            r_sum -= r_out_sum;
-            g_sum -= g_out_sum;
-            b_sum -= b_out_sum;
-            a_sum -= a_out_sum;
-
-            r_out_sum -= stackIn.r;
-            g_out_sum -= stackIn.g;
-            b_out_sum -= stackIn.b;
-            a_out_sum -= stackIn.a;
-
-            p =  (yw + ((p = x + radius + 1) < widthMinus1 ? p : widthMinus1)) << 2;
-
-            r_in_sum += (stackIn.r = pixels[p]);
-            g_in_sum += (stackIn.g = pixels[p+1]);
-            b_in_sum += (stackIn.b = pixels[p+2]);
-            a_in_sum += (stackIn.a = pixels[p+3]);
-
-            r_sum += r_in_sum;
-            g_sum += g_in_sum;
-            b_sum += b_in_sum;
-            a_sum += a_in_sum;
-
-            stackIn = stackIn.next;
-
-            r_out_sum += (pr = stackOut.r);
-            g_out_sum += (pg = stackOut.g);
-            b_out_sum += (pb = stackOut.b);
-            a_out_sum += (pa = stackOut.a);
-
-            r_in_sum -= pr;
-            g_in_sum -= pg;
-            b_in_sum -= pb;
-            a_in_sum -= pa;
-
-            stackOut = stackOut.next;
-
-            yi += 4;
+            $img.src = base64Data;
         }
-        yw += width;
-    }
-
-
-    for (x = 0; x < width; x++)
-    {
-        g_in_sum = b_in_sum = a_in_sum = r_in_sum = g_sum = b_sum = a_sum = r_sum = 0;
-
-        yi = x << 2;
-        r_out_sum = radiusPlus1 * (pr = pixels[yi]);
-        g_out_sum = radiusPlus1 * (pg = pixels[yi+1]);
-        b_out_sum = radiusPlus1 * (pb = pixels[yi+2]);
-        a_out_sum = radiusPlus1 * (pa = pixels[yi+3]);
-
-        r_sum += sumFactor * pr;
-        g_sum += sumFactor * pg;
-        b_sum += sumFactor * pb;
-        a_sum += sumFactor * pa;
-
-        stack = stackStart;
-
-        for (i = 0; i < radiusPlus1; i++)
-        {
-            stack.r = pr;
-            stack.g = pg;
-            stack.b = pb;
-            stack.a = pa;
-            stack = stack.next;
+        const $file = $form.querySelector('input[type = file]');
+        previewFileImage($file, $canvas, $img);
+        blur($canvas);
+        document.querySelector('#e-wiki-cover-reset').addEventListener('click', (e) => {
+            // wiki 填表按钮
+            const $fillForm = document.querySelector('.e-wiki-fill-form');
+            if (base64Data) {
+                $img.dispatchEvent(new Event('load'));
+            }
+            else if ($file && $file.files[0]) {
+                $file.dispatchEvent(new Event('change'));
+            }
+            else if ($fillForm) {
+                $fillForm.dispatchEvent(new Event('click'));
+            }
+        }, false);
+        const $inputBtn = document.querySelector('.e-wiki-cover-container .inputBtn');
+        if ($file) {
+            $inputBtn.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+                e.preventDefault();
+                if ($canvas.width > 8 && $canvas.height > 10) {
+                    const $el = e.target;
+                    $el.style.display = 'none';
+                    const $loading = insertLoading($el);
+                    try {
+                        try {
+                            // 执行标准化表单，避免修改后表单没有更新
+                            // @ts-ignore
+                            NormaltoWCODE();
+                        }
+                        catch (e) {
+                        }
+                        const url = yield sendFormImg($form, $canvas.toDataURL('image/png', 1));
+                        $el.style.display = '';
+                        $loading.remove();
+                        location.assign(url);
+                    }
+                    catch (e) {
+                        console.log('send form err: ', e);
+                    }
+                }
+            }), false);
         }
+        else {
+            $inputBtn.value = '处理图片';
+        }
+    });
+}
+function insertLoading($sibling) {
+    const $loading = document.createElement('div');
+    $loading.setAttribute('style', 'width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif");');
+    $sibling.parentElement.insertBefore($loading, $sibling);
+    return $loading;
+}
 
-        yp = width;
-
-        for (i = 1; i <= radius; i++)
-        {
-            yi = (yp + x) << 2;
-
-            r_sum += (stack.r = (pr = pixels[yi])) * (rbs = radiusPlus1 - i);
-            g_sum += (stack.g = (pg = pixels[yi+1])) * rbs;
-            b_sum += (stack.b = (pb = pixels[yi+2])) * rbs;
-            a_sum += (stack.a = (pa = pixels[yi+3])) * rbs;
-
-            r_in_sum += pr;
-            g_in_sum += pg;
-            b_in_sum += pb;
-            a_in_sum += pa;
-
-            stack = stack.next;
-
-            if(i < heightMinus1)
-            {
-                yp += width;
+/**
+ * 转换 wiki 模式下 infobox 内容
+ * @param originValue
+ * @param infoArr
+ */
+function convertInfoValue(originValue, infoArr) {
+    const arr = originValue.trim().split('\n').filter(v => !!v);
+    const newArr = [];
+    for (const info of infoArr) {
+        let isDefault = false;
+        for (let i = 0, len = arr.length; i < len; i++) {
+            //  |发行日期=  ---> 发行日期
+            // [纯假名|] ---> 纯假名
+            const m = arr[i].match(/(?:\||\[)(.+?)([|=])/);
+            if (!m || m.length < 2)
+                continue;
+            const n = m[1];
+            if (n === info.name) {
+                let d = info.value;
+                // 处理时间格式
+                if (info.category === 'date') {
+                    d = dealDate(d);
+                }
+                // 匹配到 [英文名|]
+                if (/\[.+\|\]/.test(arr[i])) {
+                    arr[i] = arr[i].replace(']', '') + d + ']';
+                }
+                else if (/\|.+={/.test(arr[i])) {
+                    // |平台={
+                    arr[i] = `${arr[i]}\n[${info.value}]`;
+                }
+                else {
+                    // 拼接： |发行日期=2020-01-01
+                    arr[i] = arr[i].replace(/=[^{[]+/, '=') + d;
+                }
+                isDefault = true;
+                break;
             }
         }
-
-        yi = x;
-        stackIn = stackStart;
-        stackOut = stackEnd;
-        for (y = 0; y < height; y++)
-        {
-            p = yi << 2;
-            pixels[p+3] = pa = (a_sum * mul_sum) >> shg_sum;
-            if (pa > 0)
-            {
-                pa = 255 / pa;
-                pixels[p]   = ((r_sum * mul_sum) >> shg_sum) * pa;
-                pixels[p+1] = ((g_sum * mul_sum) >> shg_sum) * pa;
-                pixels[p+2] = ((b_sum * mul_sum) >> shg_sum) * pa;
-            } else {
-                pixels[p] = pixels[p+1] = pixels[p+2] = 0;
-            }
-
-            r_sum -= r_out_sum;
-            g_sum -= g_out_sum;
-            b_sum -= b_out_sum;
-            a_sum -= a_out_sum;
-
-            r_out_sum -= stackIn.r;
-            g_out_sum -= stackIn.g;
-            b_out_sum -= stackIn.b;
-            a_out_sum -= stackIn.a;
-
-            p = (x + (((p = y + radiusPlus1) < heightMinus1 ? p : heightMinus1) * width)) << 2;
-
-            r_sum += (r_in_sum += (stackIn.r = pixels[p]));
-            g_sum += (g_in_sum += (stackIn.g = pixels[p+1]));
-            b_sum += (b_in_sum += (stackIn.b = pixels[p+2]));
-            a_sum += (a_in_sum += (stackIn.a = pixels[p+3]));
-
-            stackIn = stackIn.next;
-
-            r_out_sum += (pr = stackOut.r);
-            g_out_sum += (pg = stackOut.g);
-            b_out_sum += (pb = stackOut.b);
-            a_out_sum += (pa = stackOut.a);
-
-            r_in_sum -= pr;
-            g_in_sum -= pg;
-            b_in_sum -= pb;
-            a_in_sum -= pa;
-
-            stackOut = stackOut.next;
-
-            yi += width;
+        if (!isDefault && info.name) {
+            newArr.push(`|${info.name}=${info.value}`);
         }
     }
-    return imageData;
+    arr.pop();
+    return [...arr, ...newArr, '}}'].join('\n');
 }
-
-function processCanvasRGB(canvas, top_x, top_y, width, height, radius)
-{
-    if (isNaN(radius) || radius < 1) return;
-    radius |= 0;
-
-    var imageData = getImageDataFromCanvas(canvas, top_x, top_y, width, height);
-    imageData = processImageDataRGB(imageData, top_x, top_y, width, height, radius);
-
-    canvas.getContext('2d').putImageData(imageData, top_x, top_y);
-}
-
-function processImageDataRGB(imageData, top_x, top_y, width, height, radius)
-{
-    var pixels = imageData.data;
-
-    var x, y, i, p, yp, yi, yw, r_sum, g_sum, b_sum,
-        r_out_sum, g_out_sum, b_out_sum,
-        r_in_sum, g_in_sum, b_in_sum,
-        pr, pg, pb, rbs;
-
-    var div = radius + radius + 1;
-    var w4 = width << 2;
-    var widthMinus1  = width - 1;
-    var heightMinus1 = height - 1;
-    var radiusPlus1  = radius + 1;
-    var sumFactor = radiusPlus1 * (radiusPlus1 + 1) / 2;
-
-    var stackStart = new BlurStack();
-    var stack = stackStart;
-    for (i = 1; i < div; i++)
-    {
-        stack = stack.next = new BlurStack();
-        if (i == radiusPlus1) var stackEnd = stack;
-    }
-    stack.next = stackStart;
-    var stackIn = null;
-    var stackOut = null;
-
-    yw = yi = 0;
-
-    var mul_sum = mul_table[radius];
-    var shg_sum = shg_table[radius];
-
-    for (y = 0; y < height; y++)
-    {
-        r_in_sum = g_in_sum = b_in_sum = r_sum = g_sum = b_sum = 0;
-
-        r_out_sum = radiusPlus1 * (pr = pixels[yi]);
-        g_out_sum = radiusPlus1 * (pg = pixels[yi+1]);
-        b_out_sum = radiusPlus1 * (pb = pixels[yi+2]);
-
-        r_sum += sumFactor * pr;
-        g_sum += sumFactor * pg;
-        b_sum += sumFactor * pb;
-
-        stack = stackStart;
-
-        for (i = 0; i < radiusPlus1; i++)
-        {
-            stack.r = pr;
-            stack.g = pg;
-            stack.b = pb;
-            stack = stack.next;
-        }
-
-        for (i = 1; i < radiusPlus1; i++)
-        {
-            p = yi + ((widthMinus1 < i ? widthMinus1 : i) << 2);
-            r_sum += (stack.r = (pr = pixels[p])) * (rbs = radiusPlus1 - i);
-            g_sum += (stack.g = (pg = pixels[p+1])) * rbs;
-            b_sum += (stack.b = (pb = pixels[p+2])) * rbs;
-
-            r_in_sum += pr;
-            g_in_sum += pg;
-            b_in_sum += pb;
-
-            stack = stack.next;
-        }
-
-
-        stackIn = stackStart;
-        stackOut = stackEnd;
-        for (x = 0; x < width; x++)
-        {
-            pixels[yi]   = (r_sum * mul_sum) >> shg_sum;
-            pixels[yi+1] = (g_sum * mul_sum) >> shg_sum;
-            pixels[yi+2] = (b_sum * mul_sum) >> shg_sum;
-
-            r_sum -= r_out_sum;
-            g_sum -= g_out_sum;
-            b_sum -= b_out_sum;
-
-            r_out_sum -= stackIn.r;
-            g_out_sum -= stackIn.g;
-            b_out_sum -= stackIn.b;
-
-            p =  (yw + ((p = x + radius + 1) < widthMinus1 ? p : widthMinus1)) << 2;
-
-            r_in_sum += (stackIn.r = pixels[p]);
-            g_in_sum += (stackIn.g = pixels[p+1]);
-            b_in_sum += (stackIn.b = pixels[p+2]);
-
-            r_sum += r_in_sum;
-            g_sum += g_in_sum;
-            b_sum += b_in_sum;
-
-            stackIn = stackIn.next;
-
-            r_out_sum += (pr = stackOut.r);
-            g_out_sum += (pg = stackOut.g);
-            b_out_sum += (pb = stackOut.b);
-
-            r_in_sum -= pr;
-            g_in_sum -= pg;
-            b_in_sum -= pb;
-
-            stackOut = stackOut.next;
-
-            yi += 4;
-        }
-        yw += width;
-    }
-
-
-    for (x = 0; x < width; x++)
-    {
-        g_in_sum = b_in_sum = r_in_sum = g_sum = b_sum = r_sum = 0;
-
-        yi = x << 2;
-        r_out_sum = radiusPlus1 * (pr = pixels[yi]);
-        g_out_sum = radiusPlus1 * (pg = pixels[yi+1]);
-        b_out_sum = radiusPlus1 * (pb = pixels[yi+2]);
-
-        r_sum += sumFactor * pr;
-        g_sum += sumFactor * pg;
-        b_sum += sumFactor * pb;
-
-        stack = stackStart;
-
-        for (i = 0; i < radiusPlus1; i++)
-        {
-            stack.r = pr;
-            stack.g = pg;
-            stack.b = pb;
-            stack = stack.next;
-        }
-
-        yp = width;
-
-        for (i = 1; i <= radius; i++)
-        {
-            yi = (yp + x) << 2;
-
-            r_sum += (stack.r = (pr = pixels[yi])) * (rbs = radiusPlus1 - i);
-            g_sum += (stack.g = (pg = pixels[yi+1])) * rbs;
-            b_sum += (stack.b = (pb = pixels[yi+2])) * rbs;
-
-            r_in_sum += pr;
-            g_in_sum += pg;
-            b_in_sum += pb;
-
-            stack = stack.next;
-
-            if(i < heightMinus1)
-            {
-                yp += width;
+/**
+ * 填写 wiki 表单
+ * TODO: 使用 MutationObserver 实现
+ * @param wikiData
+ */
+function fillInfoBox(wikiData) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const dict = {
+            '誕生日': '生日',
+            'スリーサイズ': 'BWH'
+        };
+        const { infos } = wikiData;
+        const subType = +wikiData.subtype;
+        const infoArray = [];
+        const $typeInput = $qa('table tr:nth-of-type(2) > td:nth-of-type(2) input');
+        if ($typeInput) {
+            // @ts-ignore
+            $typeInput[0].click();
+            if (!isNaN(subType)) {
+                // @ts-ignore
+                $typeInput[subType].click();
             }
         }
-
-        yi = x;
-        stackIn = stackStart;
-        stackOut = stackEnd;
-        for (y = 0; y < height; y++)
-        {
-            p = yi << 2;
-            pixels[p]   = (r_sum * mul_sum) >> shg_sum;
-            pixels[p+1] = (g_sum * mul_sum) >> shg_sum;
-            pixels[p+2] = (b_sum * mul_sum) >> shg_sum;
-
-            r_sum -= r_out_sum;
-            g_sum -= g_out_sum;
-            b_sum -= b_out_sum;
-
-            r_out_sum -= stackIn.r;
-            g_out_sum -= stackIn.g;
-            b_out_sum -= stackIn.b;
-
-            p = (x + (((p = y + radiusPlus1) < heightMinus1 ? p : heightMinus1) * width)) << 2;
-
-            r_sum += (r_in_sum += (stackIn.r = pixels[p]));
-            g_sum += (g_in_sum += (stackIn.g = pixels[p+1]));
-            b_sum += (b_in_sum += (stackIn.b = pixels[p+2]));
-
-            stackIn = stackIn.next;
-
-            r_out_sum += (pr = stackOut.r);
-            g_out_sum += (pg = stackOut.g);
-            b_out_sum += (pb = stackOut.b);
-
-            r_in_sum -= pr;
-            g_in_sum -= pg;
-            b_in_sum -= pb;
-
-            stackOut = stackOut.next;
-
-            yi += width;
+        yield sleep(100);
+        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+        const $newbieMode = $q('table small a:nth-of-type(2)[href="javascript:void(0)"]');
+        for (let i = 0, len = infos.length; i < len; i++) {
+            if (infos[i].category === 'subject_title') {
+                let $title = $q('input[name=subject_title]');
+                $title.value = (infos[i].value || '').trim();
+                continue;
+            }
+            if (infos[i].category === 'subject_summary') {
+                let $summary = $q('#subject_summary');
+                $summary.value = (infos[i].value || '').trim();
+                continue;
+            }
+            if (infos[i].category === 'crt_summary') {
+                let $t = $q('#crt_summary');
+                $t.value = (infos[i].value || '').trim();
+                continue;
+            }
+            if (infos[i].category === 'crt_name') {
+                let $t = $q('#crt_name');
+                $t.value = (infos[i].value || '').trim();
+                continue;
+            }
+            // 有名称并且category不在特定列表里面
+            if (infos[i].name && ['cover', 'crt_cover'].indexOf(infos[i].category) === -1) {
+                const name = infos[i].name;
+                if (dict.hasOwnProperty(name)) {
+                    infoArray.push(Object.assign(Object.assign({}, infos[i]), { name: dict[name] }));
+                }
+                else {
+                    infoArray.push(infos[i]);
+                }
+            }
         }
+        $wikiMode.click();
+        yield sleep(200);
+        const $infoBox = $q('#subject_infobox');
+        $infoBox.value = convertInfoValue($infoBox.value, infoArray);
+        yield sleep(200);
+        $newbieMode.click();
+    });
+}
+/**
+ * 插入控制填表的按钮
+ * @param $t 插入按钮的父元素
+ * @param cb 填表回调
+ * @param cancelCb 清空表单回调
+ */
+function insertFillFormBtn($t, cb, cancelCb) {
+    // 存在节点后，不再插入
+    const clx = 'e-wiki-fill-form';
+    if ($qa('.' + clx).length >= 2)
+        return;
+    const $s = document.createElement('span');
+    $s.classList.add(clx);
+    $s.innerHTML = 'wiki 填表';
+    $t.appendChild($s);
+    $s.addEventListener('click', cb);
+    const $cancel = $s.cloneNode();
+    $cancel.innerHTML = '清空';
+    $cancel.classList.add(clx + '-cancel');
+    $cancel.addEventListener('click', cancelCb);
+    $t.appendChild($cancel);
+}
+function initNewSubject(wikiInfo) {
+    const $t = $q('form[name=create_subject] [name=subject_title]').parentElement;
+    const defaultVal = $q('#subject_infobox').value;
+    insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
+        yield fillInfoBox(wikiInfo);
+    }), () => {
+        // 清除默认值
+        $qa('input[name=platform]').forEach(element => {
+            element.checked = false;
+        });
+        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+        $wikiMode.click();
+        // @ts-ignore
+        $q('#subject_infobox').value = defaultVal;
+        // @ts-ignore
+        $q('#columnInSubjectA [name=subject_title]').value = '';
+        // @ts-ignore
+        $q('#subject_summary').value = '';
+    });
+}
+function initNewCharacter(wikiInfo) {
+    const $t = $q('form[name=new_character] #crt_name').parentElement;
+    const defaultVal = $q('#subject_infobox').value;
+    insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
+        yield fillInfoBox(wikiInfo);
+    }), () => {
+        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+        $wikiMode.click();
+        // @ts-ignore
+        $q('#subject_infobox').value = defaultVal;
+        // @ts-ignore
+        $q('#columnInSubjectA #crt_name').value = '';
+        // @ts-ignore
+        $q('#crt_summary').value = '';
+    });
+    const coverInfo = wikiInfo.infos
+        .filter((item) => item.category === 'crt_cover')[0];
+    if (coverInfo && coverInfo.value && coverInfo.value.match(/^data:image/)) {
+        dealImageWidget($q('form[name=new_character]'), coverInfo.value);
+        // 修改文本
+        setTimeout(() => {
+            const $input = $q('.e-wiki-cover-container [name=submit]');
+            if ($input) {
+                $input.value = '添加人物并上传肖像';
+            }
+        }, 200);
     }
-
-    return imageData;
+}
+function initUploadImg(wikiInfo) {
+    const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
+    if (coverInfo && coverInfo.value && coverInfo.value.dataUrl) {
+        dealImageWidget($q('form[name=img_upload]'), coverInfo.value.dataUrl);
+    }
 }
 
-function BlurStack()
-{
-    this.r = 0;
-    this.g = 0;
-    this.b = 0;
-    this.a = 0;
-    this.next = null;
-}
-
-module.exports = {
-    image: processImage,
-    canvasRGBA: processCanvasRGBA,
-    canvasRGB: processCanvasRGB,
-    imageDataRGBA: processImageDataRGBA,
-    imageDataRGB: processImageDataRGB
+const bangumi = {
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const re = new RegExp(['new_subject', 'add_related', 'character\/new', 'upload_img'].join('|'));
+            const page = document.location.href.match(re);
+            if (!page)
+                return;
+            const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
+            const charaData = JSON.parse(GM_getValue(CHARA_DATA) || null);
+            const autoFill = GM_getValue(AUTO_FILL_FORM);
+            switch (page[0]) {
+                case 'new_subject':
+                    if (wikiData) {
+                        initNewSubject(wikiData);
+                        if (autoFill == 1) {
+                            setTimeout(() => {
+                                // @ts-ignore
+                                $q('.e-wiki-fill-form').click();
+                                GM_setValue(AUTO_FILL_FORM, 0);
+                            }, 300);
+                        }
+                    }
+                    break;
+                case 'add_related':
+                    break;
+                case 'character\/new':
+                    if (charaData) {
+                        initNewCharacter(charaData);
+                        if (autoFill == 1) {
+                            setTimeout(() => {
+                                // @ts-ignore
+                                $q('.e-wiki-fill-form').click();
+                                GM_setValue(AUTO_FILL_FORM, 0);
+                            }, 300);
+                        }
+                    }
+                    break;
+                case 'upload_img':
+                    if (wikiData) {
+                        initUploadImg(wikiData);
+                    }
+                    break;
+            }
+        });
+    }
 };
 
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-/**
- * dollar 选择符
- * @param {string} selector 
- */
-function $qs(selector) {
-  return document.querySelector(selector);
-}
-/**
- * 获取查找条目需要的信息
- * @param {Object[]} items
- */
-function getQueryInfo(items) {
-  var info = {};
-  items.forEach(function (item) {
-    if (item.category === 'subject_title') {
-      info.subjectName = item.data;
-    }
-    if (item.category === 'date') {
-      info.startDate = item.data;
-    }
-    if (item.category === 'ISBN') {
-      info.isbn = item.data;
-    }
-    if (item.category === 'ISBN-13') {
-      info.isbn13 = item.data;
-    }
-  });
-  if (info.subjectName) {
-    return info;
-  }
-  return;
-}
-function getCoverURL(coverConfig) {
-  if (!coverConfig) return;
-  var $cover = $qs(coverConfig.selector);
-  if ($cover) {
-    return {
-      coverURL: $cover.getAttribute('src'),
-      height: $cover.height,
-      width: $cover.width
-    };
-  }
-}
-function getSubType(itemConfig) {
-  if (!itemConfig) return;
-  var dict = {
-    'コミック': 0
-  };
-  var $t;
-  if (itemConfig.selector && !itemConfig.subSelector) {
-    $t = $qs(itemConfig.selector);
-  } else if (itemConfig.keyWord) {
-    // 使用关键字搜索节点
-    $t = getDOMByKeyWord(itemConfig);
-  }
-  if ($t) {
-    var m = $t.innerText.match(new RegExp(Object.keys(dict).join('|')));
-    if (m) return dict[m[0]];
-  }
-}
-/**
- * 生成wiki的项目
- * @param {Object} itemConfig 
- * @returns {Object}
- */
-function getWikiItem(itemConfig) {
-  var data = getItemData(itemConfig);
-  if (data) {
-    return {
-      name: itemConfig.name,
-      data: data,
-      category: itemConfig.category
-    };
-  }
-  return {};
-}
-/**
- * 生成wiki的项目数据
- * @param {Object} itemConfig 
- * @returns {string}
- */
-function getItemData(itemConfig) {
-  var $t;
-  if (itemConfig.selector && !itemConfig.subSelector) {
-    $t = $qs(itemConfig.selector);
-  } else if (itemConfig.keyWord) {
-    // 使用关键字搜索节点
-    $t = getDOMByKeyWord(itemConfig);
-  }
-  if ($t) {
-    return dealRawText($t.innerText, [itemConfig.keyWord], itemConfig);
-  } else if (!$t && itemConfig.otherRules && itemConfig.otherRules.length) {
-    var rule = itemConfig.otherRules.pop();
-    return getItemData(Object.assign(itemConfig, rule));
-  }
-}
-/**
- * 处理无关字符
- * @param {string} str 
- * @param {Object[]} filterArry
- */
-function dealRawText(str) {
-  var filterArray = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  var itemConfig = arguments[2];
-
-  if (itemConfig && itemConfig.category === 'subject_summary') {
-    return str;
-  }
-  if (itemConfig && itemConfig.category === 'subject_title') {
-    return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2');
-  }
-  if (itemConfig && itemConfig.separator) {
-    str = splitText(str, itemConfig);
-  }
-  var textList = ['\\(.*\\)', '（.*）'].concat(_toConsumableArray(filterArray));
-  return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
-}
-/**
- * 通过关键字查找DOM
- * @param {Object} itemConfig 
- * @returns {Object[]}
- */
-function getDOMByKeyWord(itemConfig) {
-  var targets = void 0;
-  // 有父节点, 基于二级选择器
-  if (itemConfig.selector) {
-    targets = contains(itemConfig.subSelector, itemConfig.keyWord, $qs(itemConfig.selector));
-  } else {
-    targets = contains(itemConfig.subSelector, itemConfig.keyWord);
-  }
-  if (targets && targets.length) {
-    var $t = targets[targets.length - 1];
-    // 相邻节点
-    if (itemConfig.sibling) {
-      $t = targets[targets.length - 1].nextElementSibling;
-    }
-    return $t;
-  }
-}
-function splitText(text, itemConfig) {
-  var s = {
-    ':': ':|：',
-    ',': ',|，'
-  };
-  var t = text.split(new RegExp(s[itemConfig.separator]));
-  return t[t.length - 1].trim();
-}
-/**
- * 查找包含文本的标签
- * @param {string} selector 
- * @param {string} text 
- */
-function contains(selector, text, $parent) {
-  var elements;
-  if ($parent) {
-    elements = $parent.querySelectorAll(selector);
-  } else {
-    elements = $qs(selector);
-  }
-  if (Array.isArray(text)) {
-    text = text.join('|');
-  }
-  return [].filter.call(elements, function (element) {
-    return new RegExp(text).test(element.innerText);
-  });
-}
-
-module.exports = {
-  getCoverURL: getCoverURL,
-  getWikiItem: getWikiItem,
-  getQueryInfo: getQueryInfo,
-  getSubType: getSubType
+const erogamescapeModel = {
+    key: 'erogamescape',
+    description: 'erogamescape',
+    host: ['erogamescape.org', 'erogamescape.dyndns.org'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '#soft-title',
+        }
+    ],
+    controlSelector: {
+        selector: '#soft-title > span'
+    },
+    itemList: []
 };
-
-/***/ }),
-/* 9 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var amazon_jp_book = __webpack_require__(10);
-
-module.exports = {
-  amazon_jp_book: amazon_jp_book
-};
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var amazonSubjectModel = {
-  key: 'amazon_jp_book',
-  description: '日亚图书',
-  newSubjectType: 1,
-  entrySelector: 'xx',
-  targetURL: 'xxx',
-  cover: {
-    selector: 'img#imgBlkFront'
-    // selector: 'img#igImage'
-  },
-  subType: {
-    selector: '#detail_bullets_id .bucket .content',
-    subSelector: 'li',
-    separator: ':',
-    keyWord: 'ページ'
-  },
-  itemList: []
-};
-
-amazonSubjectModel.itemList.push({
-  name: '名称',
-  selector: '#productTitle',
-  keyWord: '',
-  category: 'subject_title'
+erogamescapeModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#soft-title > span',
+    },
+    category: 'subject_title'
 }, {
-  name: 'ASIN',
-  selector: '#detail_bullets_id .bucket .content',
-  subSelector: 'li',
-  keyWord: 'ISBN-10',
-  separator: ':',
-  category: 'ISBN'
+    name: '开发',
+    selector: {
+        selector: '#brand a',
+    }
 }, {
-  name: 'ISBN',
-  selector: '#detail_bullets_id .bucket .content',
-  subSelector: 'li',
-  keyWord: 'ISBN-13',
-  separator: ':',
-  category: 'ISBN-13'
+    name: '发行日期',
+    selector: {
+        selector: '#sellday a',
+    },
+    category: 'date',
 }, {
-  name: '发售日',
-  selector: '#detail_bullets_id .bucket .content',
-  subSelector: 'li',
-  keyWord: '発売日',
-  separator: ':',
-  category: 'date'
+    name: 'cover',
+    selector: {
+        selector: '#image_and_basic_infomation img',
+    },
+    category: 'cover'
 }, {
-  name: '作者',
-  selector: '#bylineInfo .author span.a-size-medium',
-  otherRules: [{
-    selector: '#bylineInfo .author > a'
-  }]
+    name: 'website',
+    selector: [
+        {
+            selector: '#links',
+            subSelector: 'a',
+            keyWord: 'game_OHP'
+        },
+        {
+            selector: '#bottom_inter_links_main',
+            subSelector: 'a',
+            keyWord: 'game_OHP'
+        }
+    ],
+    category: 'website'
 }, {
-  name: '出版社',
-  selector: '#detail_bullets_id .bucket .content',
-  subSelector: 'li',
-  separator: ':',
-  keyWord: '出版社'
+    name: '原画',
+    selector: {
+        selector: '#genga > td:last-child',
+    },
 }, {
-  name: '页数',
-  selector: '#detail_bullets_id .bucket .content',
-  subSelector: 'li',
-  separator: ':',
-  keyWord: 'ページ'
+    name: '剧本',
+    selector: {
+        selector: '#shinario > td:last-child',
+    },
 }, {
-  name: '价格',
-  selector: '.swatchElement.selected .a-color-base'
-}, {
-  name: '内容简介',
-  selector: '#productDescription',
-  subSelector: 'h3',
-  sibling: true,
-  keyWord: ['内容紹介', '内容'],
-  category: 'subject_summary'
+    name: '歌手',
+    selector: {
+        selector: '#kasyu > td:last-child',
+    },
 });
 
-module.exports = amazonSubjectModel;
+const getchu = {
+    init(siteConfig) {
+        // 查找标志性的元素
+        const $page = findElement(siteConfig.pageSelectors);
+        if (!$page)
+            return;
+        const protocol = GM_getValue(PROTOCOL) || 'https';
+        const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+        const bgmHost = `${protocol}://${bgm_domain}`;
+        Array.prototype.forEach.call($qa('h2.chara-name'), (node) => {
+            insertControlBtnChara(node.parentElement, (e) => __awaiter(this, void 0, void 0, function* () {
+                const charaInfo = getchuTools.getCharacterInfo(e.target);
+                console.info('character info list: ', charaInfo);
+                const charaData = {
+                    type: siteConfig.type,
+                    infos: charaInfo
+                };
+                GM_setValue(CHARA_DATA, JSON.stringify(charaData));
+                // @TODO 不使用定时器
+                setTimeout(() => {
+                    GM_openInTab(`${bgmHost}/character/new`);
+                }, 200);
+            }));
+        });
+    }
+};
 
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-/**
- * dollar 选择符
- * @param {string} selector 
- */
-function $(selector) {
-  return document.querySelector(selector);
+function setDomain() {
+    bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
+    GM_setValue('bgm', bgm_domain);
+    return bgm_domain;
 }
-
-function sleep(t) {
-  return new Promise(function (resolve) {
-    setTimeout(function () {
-      resolve(t);
-    }, t);
-  });
+function setProtocol() {
+    var p = prompt(`预设的 bangumi 页面协议是https 根据需要输入 http`, 'https');
+    GM_setValue(PROTOCOL, p);
 }
-
-/**
- * 填写条目信息
- * @param {Object[]} info
- */
-async function fillInfoBox(data) {
-
-  var info = data.subjectInfoList;
-  var subType = data.subType;
-  var infoArray = [];
-  var $typeInput = document.querySelectorAll('table tr:nth-of-type(2) > td:nth-of-type(2) input');
-  if ($typeInput) {
-    $typeInput[0].click();
-    if (!isNaN(subType)) {
-      $typeInput[subType].click();
-    }
-  }
-  await sleep(100);
-
-  var $wikiMode = $('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-  var $newbeeMode = $('table small a:nth-of-type(2)[href="javascript:void(0)"]');
-  for (var i = 0, len = info.length; i < len; i++) {
-    if (info[i].category === 'subject_title') {
-      var $title = $('input[name=subject_title]');
-      $title.value = info[i].data;
-      continue;
-    }
-    if (info[i].category === 'subject_summary') {
-      var $summary = $('#subject_summary');
-      $summary.value = info[i].data;
-      continue;
-    }
-    // 有名称并且category不在制定列表里面
-    if (info[i].name && ['cover'].indexOf(info[i].category) === -1) {
-      infoArray.push(info[i]);
-    }
-  }
-  $wikiMode.click();
-  setTimeout(async function () {
-    _fillInfoBox(infoArray);
-    await sleep(300);
-    $newbeeMode.click();
-  }, 100);
+var bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+// if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
+//   bgm_domain = setDomain();
+//   bgm_domain = GM_getValue(BGM_DOMAIN);
+// }
+if (GM_registerMenuCommand) {
+    GM_registerMenuCommand("\u8bbe\u7f6e\u57df\u540d", setDomain, 'b');
+    GM_registerMenuCommand("新建条目页面(http 或者 https)", setProtocol, 'h');
 }
-
-function dealDate(dataStr) {
-  var l = dataStr.split('/');
-  return l.map(function (i) {
-    if (i.length === 1) {
-      return '0' + i;
-    }
-    return i;
-  }).join('-');
-}
-
-function _fillInfoBox(infoArray) {
-  var $infobox = $('#subject_infobox');
-  var arr = $infobox.value.split('\n');
-  var newArr = [];
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = infoArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var info = _step.value;
-
-      var isDefault = false;
-      for (var i = 0, len = arr.length; i < len; i++) {
-        var n = arr[i].replace(/\||=.*/g, '');
-        if (n === info.name) {
-          var d = info.data;
-          if (info.category === 'date') {
-            d = dealDate(d);
-          }
-          arr[i] = arr[i].replace(/=[^{[]+/, '=') + d;
-          isDefault = true;
-          break;
+const init = () => __awaiter(void 0, void 0, void 0, function* () {
+    const re = new RegExp([
+        ...getchuGameModel.host,
+        ...amazonSubjectModel.host,
+        ...erogamescapeModel.host,
+        'bangumi.tv', 'bgm.tv', 'chii.tv',
+    ].map(h => h.replace('.', '\\.'))
+        .join('|'));
+    const page = document.location.host.match(re);
+    if (page) {
+        addStyle();
+        switch (page[0]) {
+            case 'amazon.co.jp':
+                initCommon(amazonSubjectModel);
+                break;
+            case 'getchu.com':
+                initCommon(getchuGameModel);
+                getchu.init(getchuGameModel);
+                break;
+            case 'erogamescape.org':
+            case 'erogamescape.dyndns.org':
+                initCommon(erogamescapeModel);
+                break;
+            case 'bangumi.tv':
+            case 'chii.tv':
+            case 'bgm.tv':
+                bangumi.init();
+                break;
+            // bangumi.init();
         }
-      }
-      if (!isDefault && info.name) {
-        newArr.push('|' + info.name + '=' + info.data);
-      }
     }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  arr.pop();
-  $infobox.value = [].concat(_toConsumableArray(arr), newArr, ['}}']).join('\n');
-}
-module.exports = fillInfoBox;
-
-/***/ })
-/******/ ]);
+});
+init();
