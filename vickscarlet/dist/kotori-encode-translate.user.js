@@ -184,4 +184,5 @@ const selectHandler = selecter => $(selecter).each((idx,element)=>handler(elemen
 $(document).ready(function(){
     selectHandler(".topic_content");
     selectHandler(".message");
+    selectHandler(".cmt_sub_content");
 });
