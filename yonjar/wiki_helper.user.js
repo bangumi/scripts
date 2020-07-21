@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         wiki helper
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.1
+// @version      0.1.2
 // @description  个人自用wiki助手
 // @require      https://unpkg.com/wanakana@4.0.2/umd/wanakana.min.js
+// @require      https://cdn.bootcdn.net/ajax/libs/dayjs/1.8.29/dayjs.min.js
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)/
 // @grant        none
@@ -53,6 +54,19 @@
 
     document.querySelector("#columnInSubjectB").append(btn_prn);
   }
+
+  // 加个输入框
+  function addInput(id, type, describe) {
+    let ipt_prn = document.createElement("input");
+
+    ipt_prn.placeholder = describe;
+
+    ipt_prn.setAttribute("id", id);
+    ipt_prn.setAttribute("type", type);
+
+    document.querySelector("#columnInSubjectB").append(ipt_prn);
+  }
+
   // 章节页面获取最新一集的数字
   // function getBangumiRecent() {
   //   let ul_el = document.querySelector("#columnInSubjectA ul");
@@ -124,8 +138,8 @@
         // 名字列表
         let map_data = JSON.parse(localStorage.getItem("bgm_cv_id"));
         // let raw = textarea.value;
-        let names = textarea.value.split(/[、-\|\/&\s]/).map((e) => {
-          name = e.trim();
+        let names = textarea.value.split(/[-、\|\/&\s]/).map((e) => {
+          let name = e.trim();
           return name in map_data ? map_data[name] : name;
         });
         textarea.value = JSON.stringify(ids_list(names));
@@ -158,13 +172,27 @@
 
   // 添加新章节
   function createNewEp() {
-    let date = new Date();
-    let today = `${date.getFullYear()}-${
-      date.getMonth() + 1
-    }-${date.getDate()}`;
-    document.querySelector("input[name=airdate]").value = today;
+    // let date = new Date();
+    // let today = `${date.getFullYear()}-${
+    //   date.getMonth() + 1
+    // }-${date.getDate()}`;
+    // document.querySelector("input[name=airdate]").value = today;
+
+    let today = dayjs();
+
+    addInput("chap", "number", "章节编号");
+    addInput("num", "number", "添加几个章节");
     addBtn("添加新章节", "click", () => {
-      document.querySelector("textarea[name=eplist]").value += `||||${today}\n`;
+      let chap = parseInt(document.querySelector("#chap").value);
+      let num = parseInt(document.querySelector("#num").value);
+      let str = "";
+
+      for (let i = 1; i <= num; i++) {
+        str += `${chap + i - 1}||||${today
+          .add(7 * i, "day")
+          .format("YYYY-MM-DD")}\n`;
+      }
+      document.querySelector("textarea[name=eplist]").value = str;
     });
   }
 
