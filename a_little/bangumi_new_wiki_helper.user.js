@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.2
+// @version     0.3.3
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -609,6 +609,10 @@ const amazonTools = {
     }
 };
 
+function trimParenthesis(str) {
+    const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
+    return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
+}
 const dealUtils = {
     steam_game: [
         {
@@ -652,6 +656,20 @@ const dealUtils = {
             dealFunc: amazonTools.dealTitle,
         },
     ],
+    dangdang_book: [
+        {
+            category: 'date',
+            dealFunc(str) {
+                return dealDate(str.replace(/出版时间[:：]/, '').trim());
+            },
+        },
+        {
+            category: 'subject_title',
+            dealFunc(str) {
+                return trimParenthesis(str);
+            },
+        },
+    ],
 };
 function dealFuncByCategory(key, category) {
     let fn;
@@ -674,7 +692,6 @@ function dealFuncByCategory(key, category) {
  * @param keyWords
  */
 function dealItemText(str, category = '', keyWords = []) {
-    const separators = [':', '：'];
     if (['subject_summary', 'subject_title'].indexOf(category) !== -1) {
         return str;
     }
@@ -683,8 +700,8 @@ function dealItemText(str, category = '', keyWords = []) {
     // `(${keyStr})(${separators.join('|')})?`
     return str
         .replace(new RegExp(textList.join('|'), 'g'), '')
-        .replace(new RegExp(keyWords.join('|')), '')
-        .replace(new RegExp(`^.*?${separators.join('|')}`), '')
+        .replace(new RegExp(keyWords.map((k) => `${k}\s*?(:|：)?`).join('|'), 'g'), '')
+        .replace(/[^\d:]+?(:|：)/, '')
         .trim();
 }
 function getWikiItem(infoConfig, site) {
@@ -742,10 +759,9 @@ function getWikiItem(infoConfig, site) {
                 val = dealFuncByCategory(site, 'website')($d.getAttribute('href'));
                 break;
             case 'date':
-                if (!['amazon_jp_book', 'getchu_game'].includes(site)) {
-                    val = dealFuncByCategory(site, infoConfig.category)(txt);
-                    break;
-                }
+                val = dealItemText(txt, infoConfig.category, keyWords);
+                val = dealFuncByCategory(site, infoConfig.category)(val);
+                break;
             default:
                 val = dealItemText(txt, infoConfig.category, keyWords);
         }
@@ -891,11 +907,11 @@ function sleep(num) {
 
 const subjectTypeDict = {
     [SubjectTypeId.game]: 'game',
-    [SubjectTypeId.anime]: "anime",
-    [SubjectTypeId.music]: "music",
-    [SubjectTypeId.book]: "book",
-    [SubjectTypeId.real]: "real",
-    [SubjectTypeId.all]: "all",
+    [SubjectTypeId.anime]: 'anime',
+    [SubjectTypeId.music]: 'music',
+    [SubjectTypeId.book]: 'book',
+    [SubjectTypeId.real]: 'real',
+    [SubjectTypeId.all]: 'all',
 };
 var BangumiDomain;
 (function (BangumiDomain) {
@@ -914,7 +930,7 @@ var Protocol;
  */
 function dealSearchResults(info) {
     const results = [];
-    let $doc = (new DOMParser()).parseFromString(info, "text/html");
+    let $doc = new DOMParser().parseFromString(info, 'text/html');
     let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
     // get number of page
     let numOfPage = 1;
@@ -931,10 +947,13 @@ function dealSearchResults(info) {
                 name: $subjectTitle.textContent.trim(),
                 // url 没有协议和域名
                 url: $subjectTitle.getAttribute('href'),
-                greyName: item.querySelector('h3>.grey') ?
-                    item.querySelector('h3>.grey').textContent.trim() : '',
+                greyName: item.querySelector('h3>.grey')
+                    ? item.querySelector('h3>.grey').textContent.trim()
+                    : '',
             };
-            let matchDate = item.querySelector('.info').textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
+            let matchDate = item
+                .querySelector('.info')
+                .textContent.match(/\d{4}[\-\/\年]\d{1,2}[\-\/\月]\d{1,2}/);
             if (matchDate) {
                 itemSubject.releaseDate = dealDate(matchDate[0]);
             }
@@ -942,7 +961,9 @@ function dealSearchResults(info) {
             if ($rateInfo) {
                 if ($rateInfo.querySelector('.fade')) {
                     itemSubject.score = $rateInfo.querySelector('.fade').textContent;
-                    itemSubject.count = $rateInfo.querySelector('.tip_j').textContent.replace(/[^0-9]/g, '');
+                    itemSubject.count = $rateInfo
+                        .querySelector('.tip_j')
+                        .textContent.replace(/[^0-9]/g, '');
                 }
                 else {
                     itemSubject.score = '0';
@@ -980,11 +1001,11 @@ function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTy
             query = `"${query}"`;
         }
         if (uniqueQueryStr) {
-            query = `"${uniqueQueryStr}"`;
+            query = `"${uniqueQueryStr || ''}"`;
         }
-        if (!query) {
+        if (!query || query === '""') {
             console.info('Query string is empty');
-            return [];
+            return;
         }
         const url = `${bgmHost}/subject_search/${encodeURIComponent(query)}?cat=${type}`;
         console.info('search bangumi subject URL: ', url);
@@ -995,10 +1016,7 @@ function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTy
             return rawInfoList[0];
         }
         const options = {
-            keys: [
-                "name",
-                "greyName"
-            ]
+            keys: ['name', 'greyName'],
         };
         return filterResults(rawInfoList, subjectInfo, options);
     });
@@ -1036,10 +1054,7 @@ function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNumber =
         let [rawInfoList, numOfPage] = dealSearchResults(rawText);
         const options = {
             threshold: 0.3,
-            keys: [
-                "name",
-                "greyName"
-            ]
+            keys: ['name', 'greyName'],
         };
         let result = filterResults(rawInfoList, subjectInfo, options, false);
         if (!result) {
@@ -1062,7 +1077,7 @@ function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
             return searchResult;
         }
         searchResult = yield searchSubject(subjectInfo, bgmHost, type, subjectInfo.asin);
-        console.info('Second: search book of bangumi: ', searchResult);
+        console.info(`Second: search book by ${subjectInfo.asin}: `, searchResult);
         if (searchResult && searchResult.url) {
             return searchResult;
         }
@@ -1078,19 +1093,22 @@ function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
  * @param bgmHost bangumi 域名
  * @param type 条目类型
  */
-function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type, disabelDate) {
     return __awaiter(this, void 0, void 0, function* () {
         let searchResult = yield searchSubject(subjectInfo, bgmHost, type);
         console.info(`First: search result of bangumi: `, searchResult);
         if (searchResult && searchResult.url) {
             return searchResult;
         }
+        if (disabelDate) {
+            return;
+        }
         searchResult = yield findSubjectByDate(subjectInfo, bgmHost, 1, subjectTypeDict[type]);
         console.info(`Second: search result by date: `, searchResult);
         return searchResult;
     });
 }
-function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type, disableDate) {
     return __awaiter(this, void 0, void 0, function* () {
         let result;
         switch (type) {
@@ -1098,7 +1116,7 @@ function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type) {
                 result = yield checkBookSubjectExist(subjectInfo, bgmHost, type);
                 break;
             case SubjectTypeId.game:
-                result = yield checkExist(subjectInfo, bgmHost, type);
+                result = yield checkExist(subjectInfo, bgmHost, type, disableDate);
                 break;
             case SubjectTypeId.anime:
             case SubjectTypeId.real:
@@ -1140,7 +1158,15 @@ function initCommon(siteConfig, subtype = 0) {
             };
             GM_setValue(WIKI_DATA, JSON.stringify(wikiData));
             if (flag) {
-                const result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type);
+                let result;
+                // steam 禁用时间筛选
+                if (siteConfig.key === 'steam_game' ||
+                    siteConfig.key === 'steamdb_game') {
+                    result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, true);
+                }
+                else {
+                    result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type);
+                }
                 console.info('search results: ', result);
                 if (result && result.url) {
                     GM_openInTab(bgmHost + result.url);
@@ -1832,7 +1858,10 @@ function insertLoading($sibling) {
  * @param infoArr
  */
 function convertInfoValue(originValue, infoArr) {
-    const arr = originValue.trim().split('\n').filter(v => !!v);
+    const arr = originValue
+        .trim()
+        .split('\n')
+        .filter((v) => !!v);
     const newArr = [];
     for (const info of infoArr) {
         let isDefault = false;
@@ -1871,6 +1900,29 @@ function convertInfoValue(originValue, infoArr) {
         }
     }
     arr.pop();
+    // 图书条目的 infobox 作者放在出版社之前
+    if (/animanga/.test(arr[0])) {
+        let pressIdx;
+        let authorIdx;
+        let resArr = [...arr, ...newArr, '}}'];
+        for (let i = 0; i < resArr.length; i++) {
+            if (/\|(\s*)出版社(\s*)=/.test(resArr[i])) {
+                pressIdx = i;
+                continue;
+            }
+            if (/作者/.test(resArr[i])) {
+                authorIdx = i;
+                continue;
+            }
+        }
+        if (pressIdx && authorIdx && authorIdx > pressIdx) {
+            const press = resArr[pressIdx];
+            const author = resArr[authorIdx];
+            resArr.splice(pressIdx, 1, author, press);
+            resArr.splice(authorIdx + 1, 1);
+            return resArr.join('\n');
+        }
+    }
     return [...arr, ...newArr, '}}'].join('\n');
 }
 /**
@@ -1881,8 +1933,8 @@ function convertInfoValue(originValue, infoArr) {
 function fillInfoBox(wikiData) {
     return __awaiter(this, void 0, void 0, function* () {
         const dict = {
-            '誕生日': '生日',
-            'スリーサイズ': 'BWH'
+            誕生日: '生日',
+            スリーサイズ: 'BWH',
         };
         const { infos } = wikiData;
         const subType = +wikiData.subtype;
@@ -1921,7 +1973,8 @@ function fillInfoBox(wikiData) {
                 continue;
             }
             // 有名称并且category不在特定列表里面
-            if (infos[i].name && ['cover', 'crt_cover'].indexOf(infos[i].category) === -1) {
+            if (infos[i].name &&
+                ['cover', 'crt_cover'].indexOf(infos[i].category) === -1) {
                 const name = infos[i].name;
                 if (dict.hasOwnProperty(name)) {
                     infoArray.push(Object.assign(Object.assign({}, infos[i]), { name: dict[name] }));
@@ -1968,7 +2021,7 @@ function initNewSubject(wikiInfo) {
         yield fillInfoBox(wikiInfo);
     }), () => {
         // 清除默认值
-        $qa('input[name=platform]').forEach(element => {
+        $qa('input[name=platform]').forEach((element) => {
             element.checked = false;
         });
         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
@@ -1996,8 +2049,7 @@ function initNewCharacter(wikiInfo) {
         // @ts-ignore
         $q('#crt_summary').value = '';
     });
-    const coverInfo = wikiInfo.infos
-        .filter((item) => item.category === 'crt_cover')[0];
+    const coverInfo = wikiInfo.infos.filter((item) => item.category === 'crt_cover')[0];
     if (coverInfo && coverInfo.value && coverInfo.value.match(/^data:image/)) {
         dealImageWidget($q('form[name=new_character]'), coverInfo.value);
         // 修改文本
@@ -2342,12 +2394,148 @@ steamModel.defaultInfos = [
     },
 ];
 
+// TODO: 区分 kindle 页面和 纸质书页面
+const dangdangBookModel = {
+    key: 'dangdang_book',
+    host: ['product.dangdang.com'],
+    description: '当当图书',
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#breadcrumb',
+            subSelector: 'a',
+            keyWord: '图书',
+        },
+    ],
+    controlSelector: {
+        selector: '.name_info h1',
+    },
+    itemList: [],
+};
+const infoSelector = {
+    selector: '.messbox_info',
+    subSelector: 'span',
+};
+const descSelector = {
+    selector: '#detail_describe',
+    subSelector: 'li',
+};
+dangdangBookModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '.name_info h1',
+    },
+    category: 'subject_title',
+}, 
+// {
+//   name: 'cover',
+//   selector: {
+//     selector: 'img#largePic',
+//   },
+//   category: 'cover',
+// },
+{
+    name: 'ISBN',
+    selector: Object.assign(Object.assign({}, descSelector), { keyWord: '国际标准书号ISBN' }),
+    category: 'ISBN',
+}, {
+    name: '发售日',
+    selector: Object.assign(Object.assign({}, infoSelector), { keyWord: '出版时间' }),
+    category: 'date',
+}, {
+    name: '作者',
+    selector: [
+        Object.assign(Object.assign({}, infoSelector), { keyWord: '作者' }),
+    ],
+}, {
+    name: '出版社',
+    selector: Object.assign(Object.assign({}, infoSelector), { keyWord: '出版社' }),
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '#content .descrip',
+        },
+    ],
+    category: 'subject_summary',
+});
+
+// TODO: 区分 kindle 页面和 纸质书页面
+const jdBookModel = {
+    key: 'jd_book',
+    host: ['item.jd.com'],
+    description: '京东图书',
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#crumb-wrap',
+            subSelector: '.item > a',
+            keyWord: '图书',
+        },
+    ],
+    controlSelector: {
+        selector: '#name .sku-name',
+    },
+    itemList: [],
+};
+const descSelector$1 = {
+    selector: '#parameter2',
+    subSelector: 'li',
+};
+jdBookModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '#name .sku-name',
+    },
+    category: 'subject_title',
+}, 
+// {
+//   name: 'cover',
+//   selector: {
+//     selector: '#preview img',
+//   },
+//   category: 'cover',
+// },
+{
+    name: 'ISBN',
+    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: 'ISBN' }),
+    category: 'ISBN',
+}, {
+    name: '发售日',
+    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: '出版时间' }),
+    category: 'date',
+}, {
+    name: '作者',
+    selector: [
+        {
+            selector: '#p-author',
+            keyWord: '著',
+        },
+    ],
+}, {
+    name: '出版社',
+    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: '出版社' }),
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '.book-detail-item',
+            subSelector: '.item-mt',
+            keyWord: '内容简介',
+            sibling: true,
+        },
+    ],
+    category: 'subject_summary',
+});
+
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
     [erogamescapeModel.key]: erogamescapeModel,
     [amazonSubjectModel.key]: amazonSubjectModel,
     [steamdbModel.key]: steamdbModel,
     [steamModel.key]: steamModel,
+    [dangdangBookModel.key]: dangdangBookModel,
+    [jdBookModel.key]: jdBookModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
