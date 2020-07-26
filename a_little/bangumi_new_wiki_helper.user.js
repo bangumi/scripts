@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.3
+// @version     0.3.4
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -188,37 +188,42 @@ const getchuGameModel = {
         {
             selector: '.genretab.current',
             subSelector: 'a',
-            keyWord: 'ゲーム'
-        }
+            keyWord: 'ゲーム',
+        },
     ],
-    controlSelector: {
-        selector: '#soft-title'
-    },
-    itemList: []
+    controlSelector: [
+        {
+            selector: '#soft-title > :first-child',
+        },
+        {
+            selector: '#soft-title',
+        },
+    ],
+    itemList: [],
 };
 const commonSelector = {
     selector: '#soft_table table',
     subSelector: 'td',
-    sibling: true
+    sibling: true,
 };
 const dict = {
-    "定価": "售价",
-    "発売日": "发行日期",
-    "ジャンル": "游戏类型",
-    "ブランド": "开发",
-    "原画": "原画",
-    "音楽": "音乐",
-    "シナリオ": "剧本",
-    "アーティスト": "主题歌演出",
-    "作詞": "主题歌作词",
-    "作曲": "主题歌作曲",
+    定価: '售价',
+    発売日: '发行日期',
+    ジャンル: '游戏类型',
+    ブランド: '开发',
+    原画: '原画',
+    音楽: '音乐',
+    シナリオ: '剧本',
+    アーティスト: '主题歌演出',
+    作詞: '主题歌作词',
+    作曲: '主题歌作曲',
 };
-const configArr = Object.keys(dict).map(key => {
+const configArr = Object.keys(dict).map((key) => {
     const r = {
         name: dict[key],
         selector: Object.assign({ 
             // 匹配关键字开头 2020/03/18
-            keyWord: '^' + key }, commonSelector)
+            keyWord: '^' + key }, commonSelector),
     };
     if (key === '発売日') {
         r.category = 'date';
@@ -230,13 +235,13 @@ getchuGameModel.itemList.push({
     selector: {
         selector: '#soft-title',
     },
-    category: 'subject_title'
+    category: 'subject_title',
 }, {
     name: 'cover',
     selector: {
         selector: '#soft_table .highslide',
     },
-    category: 'cover'
+    category: 'cover',
 }, ...configArr, {
     name: '游戏简介',
     selector: [
@@ -251,16 +256,16 @@ getchuGameModel.itemList.push({
             subSelector: '.tabletitle',
             sibling: true,
             keyWord: '商品紹介',
-        }
+        },
     ],
-    category: 'subject_summary'
+    category: 'subject_summary',
 });
 getchuGameModel.defaultInfos = [
     {
         name: '平台',
         value: 'PC',
-        category: 'platform'
-    }
+        category: 'platform',
+    },
 ];
 
 /**
@@ -274,6 +279,9 @@ getchuGameModel.defaultInfos = [
 function getText(elem) {
     if (!elem)
         return '';
+    if (elem.tagName.toLowerCase() === 'meta') {
+        return elem.content;
+    }
     return elem.textContent || elem.innerText || '';
 }
 /**
@@ -358,7 +366,7 @@ function findElement(selector, $parent) {
             else {
                 r = findElementByKeyWord(selector, $parent);
             }
-            if (selector.nextSelector) {
+            if (r && selector.nextSelector) {
                 const nextSelector = selector.nextSelector;
                 r = findElement(nextSelector, r);
             }
@@ -685,6 +693,431 @@ function dealFuncByCategory(key, category) {
     }
 }
 
+const erogamescapeModel = {
+    key: 'erogamescape',
+    description: 'erogamescape',
+    host: ['erogamescape.org', 'erogamescape.dyndns.org'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '#soft-title',
+        }
+    ],
+    controlSelector: {
+        selector: '#soft-title > span'
+    },
+    itemList: []
+};
+erogamescapeModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#soft-title > span',
+    },
+    category: 'subject_title'
+}, {
+    name: '开发',
+    selector: {
+        selector: '#brand a',
+    }
+}, {
+    name: '发行日期',
+    selector: {
+        selector: '#sellday a',
+    },
+    category: 'date',
+}, {
+    name: 'cover',
+    selector: {
+        selector: '#image_and_basic_infomation img',
+    },
+    category: 'cover'
+}, {
+    name: 'website',
+    selector: [
+        {
+            selector: '#links',
+            subSelector: 'a',
+            keyWord: 'game_OHP'
+        },
+        {
+            selector: '#bottom_inter_links_main',
+            subSelector: 'a',
+            keyWord: 'game_OHP'
+        }
+    ],
+    category: 'website'
+}, {
+    name: '原画',
+    selector: {
+        selector: '#genga > td:last-child',
+    },
+}, {
+    name: '剧本',
+    selector: {
+        selector: '#shinario > td:last-child',
+    },
+}, {
+    name: '歌手',
+    selector: {
+        selector: '#kasyu > td:last-child',
+    },
+});
+
+const steamdbModel = {
+    key: 'steamdb_game',
+    description: 'steamdb',
+    host: ['steamdb.info'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.pagehead h1',
+        },
+    ],
+    controlSelector: {
+        selector: '.pagehead h1',
+    },
+    itemList: [],
+};
+const commonSelector$1 = {
+    selector: '.scope-app .app-row table',
+    subSelector: 'td',
+    sibling: true,
+};
+const dictArr = [
+    {
+        name: '发行日期',
+        keyWord: 'Release Date',
+    },
+    {
+        name: '开发',
+        keyWord: 'Developer',
+    },
+    {
+        name: '发行',
+        keyWord: 'Publisher',
+    },
+];
+const configArr$1 = dictArr.map((item) => {
+    const r = {
+        name: item.name,
+        selector: Object.assign({ keyWord: item.keyWord }, commonSelector$1),
+    };
+    if (item.name === '发行日期') {
+        r.category = 'date';
+    }
+    return r;
+});
+const detailsTableSelector = {
+    selector: '#info table',
+    subSelector: 'td',
+    sibling: true,
+};
+const subTableSelector = {
+    selector: 'table.web-assets',
+    subSelector: 'td',
+    sibling: true,
+};
+steamdbModel.itemList.push({
+    name: '游戏名',
+    selector: [
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'japanese' }) }),
+        {
+            selector: '.pagehead h1',
+        },
+    ],
+    category: 'subject_title',
+}, {
+    name: '中文名',
+    selector: [
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'schinese' }) }),
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'tchinese' }) }),
+    ],
+}, {
+    name: '别名',
+    selector: [
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'english' }) }),
+    ],
+    category: 'alias',
+}, {
+    name: 'cover',
+    selector: [
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'library_assets', nextSelector: {
+                selector: 'table.web-assets',
+                subSelector: 'td',
+                keyWord: 'library_capsule',
+                sibling: true,
+                nextSelector: {
+                    selector: 'a',
+                },
+            } }),
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'Web Assets', nextSelector: {
+                selector: 'table.web-assets',
+                subSelector: 'td > a',
+                keyWord: 'library_600x900',
+            } }),
+    ],
+    category: 'cover',
+}, ...configArr$1, {
+    name: '游戏简介',
+    selector: [
+        {
+            selector: 'head meta[name="description"]',
+        },
+        {
+            selector: '.scope-app header-description',
+        },
+    ],
+    category: 'subject_summary',
+}, {
+    name: 'website',
+    selector: {
+        selector: '.app-links a[aria-label^="Games homepage"]',
+    },
+    category: 'website',
+});
+steamdbModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+];
+
+const steamModel = {
+    key: 'steam_game',
+    description: 'steam',
+    host: ['store.steampowered.com'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.apphub_AppName',
+        },
+    ],
+    controlSelector: {
+        selector: '.apphub_AppName',
+    },
+    itemList: [],
+};
+steamModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '.apphub_AppName',
+    },
+    category: 'subject_title',
+}, {
+    name: '发行日期',
+    selector: {
+        selector: '.release_date .date',
+    },
+    category: 'date',
+}, {
+    name: '开发',
+    selector: {
+        selector: '.glance_ctn_responsive_left .user_reviews',
+        subSelector: '.dev_row .subtitle',
+        keyWord: ['开发商', 'DEVELOPER'],
+        sibling: true,
+    },
+}, {
+    name: '发行',
+    selector: {
+        selector: '.glance_ctn_responsive_left .user_reviews',
+        subSelector: '.dev_row .subtitle',
+        keyWord: ['发行商', 'PUBLISHER'],
+        sibling: true,
+    },
+}, {
+    name: 'website',
+    selector: {
+        selector: '.responsive_apppage_details_left.game_details',
+        subSelector: '.details_block > .linkbar',
+        keyWord: ['访问网站', 'Visit the website'],
+    },
+    category: 'website',
+}, {
+    name: '游戏简介',
+    selector: [
+        {
+            selector: '.game_description_snippet',
+        },
+        {
+            selector: 'head meta[name="description"]',
+        },
+        {
+            selector: '#game_area_description',
+        },
+    ],
+    category: 'subject_summary',
+}
+// {
+//   name: 'cover',
+//   selector: {
+//     selector: '#soft_table .highslide',
+//   },
+//   category: 'cover',
+// }
+);
+steamModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+];
+
+// TODO: 区分 kindle 页面和 纸质书页面
+const dangdangBookModel = {
+    key: 'dangdang_book',
+    host: ['product.dangdang.com'],
+    description: '当当图书',
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#breadcrumb',
+            subSelector: 'a',
+            keyWord: '图书',
+        },
+    ],
+    controlSelector: {
+        selector: '.name_info h1',
+    },
+    itemList: [],
+};
+const infoSelector = {
+    selector: '.messbox_info',
+    subSelector: 'span',
+};
+const descSelector = {
+    selector: '#detail_describe',
+    subSelector: 'li',
+};
+dangdangBookModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '.name_info h1',
+    },
+    category: 'subject_title',
+}, 
+// {
+//   name: 'cover',
+//   selector: {
+//     selector: 'img#largePic',
+//   },
+//   category: 'cover',
+// },
+{
+    name: 'ISBN',
+    selector: Object.assign(Object.assign({}, descSelector), { keyWord: '国际标准书号ISBN' }),
+    category: 'ISBN',
+}, {
+    name: '发售日',
+    selector: Object.assign(Object.assign({}, infoSelector), { keyWord: '出版时间' }),
+    category: 'date',
+}, {
+    name: '作者',
+    selector: [
+        Object.assign(Object.assign({}, infoSelector), { keyWord: '作者' }),
+    ],
+}, {
+    name: '出版社',
+    selector: Object.assign(Object.assign({}, infoSelector), { keyWord: '出版社' }),
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '#content .descrip',
+        },
+    ],
+    category: 'subject_summary',
+});
+
+// TODO: 区分 kindle 页面和 纸质书页面
+const jdBookModel = {
+    key: 'jd_book',
+    host: ['item.jd.com'],
+    description: '京东图书',
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#crumb-wrap',
+            subSelector: '.item > a',
+            keyWord: '图书',
+        },
+    ],
+    controlSelector: {
+        selector: '#name .sku-name',
+    },
+    itemList: [],
+};
+const descSelector$1 = {
+    selector: '#parameter2',
+    subSelector: 'li',
+};
+jdBookModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '#name .sku-name',
+    },
+    category: 'subject_title',
+}, 
+// {
+//   name: 'cover',
+//   selector: {
+//     selector: '#preview img',
+//   },
+//   category: 'cover',
+// },
+{
+    name: 'ISBN',
+    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: 'ISBN' }),
+    category: 'ISBN',
+}, {
+    name: '发售日',
+    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: '出版时间' }),
+    category: 'date',
+}, {
+    name: '作者',
+    selector: [
+        {
+            selector: '#p-author',
+            keyWord: '著',
+        },
+    ],
+}, {
+    name: '出版社',
+    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: '出版社' }),
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '.book-detail-item',
+            subSelector: '.item-mt',
+            keyWord: '内容简介',
+            sibling: true,
+        },
+    ],
+    category: 'subject_summary',
+});
+
+const configs = {
+    [getchuGameModel.key]: getchuGameModel,
+    [erogamescapeModel.key]: erogamescapeModel,
+    [amazonSubjectModel.key]: amazonSubjectModel,
+    [steamdbModel.key]: steamdbModel,
+    [steamModel.key]: steamModel,
+    [dangdangBookModel.key]: dangdangBookModel,
+    [jdBookModel.key]: jdBookModel,
+};
+function findModelByHost(host) {
+    const keys = Object.keys(configs);
+    for (let i = 0; i < keys.length; i++) {
+        const hosts = configs[keys[i]].host;
+        if (hosts.includes(host)) {
+            return configs[keys[i]];
+        }
+    }
+}
+
 /**
  * 处理单项 wiki 信息
  * @param str
@@ -855,13 +1288,15 @@ function getQueryInfo(items) {
 function insertControlBtn($t, cb) {
     if (!$t)
         return;
+    const $div = document.createElement('div');
     const $s = document.createElement('span');
     $s.classList.add('e-wiki-new-subject');
     $s.innerHTML = '新建';
     const $search = $s.cloneNode();
     $search.innerHTML = '新建并查重';
-    $t.appendChild($s);
-    $t.appendChild($search);
+    $div.appendChild($s);
+    $div.appendChild($search);
+    $t.insertAdjacentElement('afterend', $div);
     $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
         yield cb(e);
     }));
@@ -897,6 +1332,115 @@ function insertControlBtnChara($t, cb) {
     $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
         yield cb(e);
     }));
+}
+function isChineseStr(str) {
+    return /^[\u4e00-\u9fa5]+/i.test(str) && !hasJpStr(str);
+}
+function hasJpStr(str) {
+    var pHiragana = /[\u3040-\u309Fー]/;
+    var pKatakana = /[\u30A0-\u30FF]/;
+    return pHiragana.test(str) || pKatakana.test(str);
+}
+function getTargetStr(str1, str2, checkFunc) {
+    if (checkFunc(str1))
+        return str1;
+    if (checkFunc(str2))
+        return str2;
+    return '';
+}
+// 综合两个单项信息
+function combineObj(current, target) {
+    const obj = Object.assign(Object.assign({}, current), target);
+    if (current.category === 'subject_title') {
+        // 中日  日英  中英
+        let cnName = { name: '中文名', value: '' };
+        let titleObj = Object.assign({}, current);
+        let otherName = { name: '别名', value: '' };
+        let chineseStr = getTargetStr(current.value, target.value, isChineseStr);
+        let jpStr = getTargetStr(current.value, target.value, hasJpStr);
+        // TODO 状态机？
+        if (chineseStr) {
+            cnName.value = chineseStr;
+            if (current.value === chineseStr) {
+                titleObj.value = target.value;
+            }
+            else {
+                titleObj.value = current.value;
+            }
+        }
+        if (jpStr) {
+            titleObj.value = jpStr;
+            if (!chineseStr) {
+                if (current.value === jpStr) {
+                    otherName.value = target.value;
+                }
+                else {
+                    otherName.value = current.value;
+                }
+            }
+        }
+        return [titleObj, cnName, otherName];
+    }
+    if (['游戏简介', '开发', '发行'].includes(current.name)) {
+        return [Object.assign({}, current)];
+    }
+    if (current.value.length < target.value.length) {
+        obj.value = target.value;
+    }
+    else {
+        obj.value = current.value;
+    }
+    return [obj];
+}
+/**
+ * 结合不用网站的信息
+ * @param infoList 当前的条目信息
+ * @param otherInfoList 参考的条目信息
+ */
+function combineInfoList(infoList, otherInfoList) {
+    const multipleNames = ['平台', '别名'];
+    const res = [];
+    const idxSetOther = new Set();
+    for (let i = 0; i < infoList.length; i++) {
+        const current = infoList[i];
+        if (multipleNames.includes(current.name)) {
+            res.push(current);
+            continue;
+        }
+        const idxOther = otherInfoList.findIndex((info) => info.name === current.name);
+        if (idxOther === -1) {
+            res.push(current);
+        }
+        else {
+            const objArr = combineObj(current, otherInfoList[idxOther]);
+            res.push(...objArr);
+            idxSetOther.add(idxOther);
+        }
+    }
+    for (let j = 0; j < otherInfoList.length; j++) {
+        const other = otherInfoList[j];
+        if (multipleNames.includes(other.name)) {
+            res.push(other);
+            continue;
+        }
+        if (idxSetOther.has(j))
+            continue;
+        res.push(other);
+    }
+    const noEmptyArr = res.filter((v) => v.value);
+    // ref: https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
+    return noEmptyArr.filter((v, i, a) => a.findIndex((t) => t.value === v.value && t.name === v.name) === i);
+}
+function getWikiDataByURL(url) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const urlObj = new URL(url);
+        const model = findModelByHost(urlObj.hostname);
+        if (model) {
+            const rawText = yield fetchText(url, 4 * 1000);
+            let $doc = new DOMParser().parseFromString(rawText, 'text/html');
+            return yield getWikiData(model, $doc);
+        }
+    });
 }
 
 function sleep(num) {
@@ -1136,7 +1680,29 @@ const CHARA_DATA = SCRIPT_PREFIX + 'wiki_data';
 const PROTOCOL = SCRIPT_PREFIX + 'protocol';
 const BGM_DOMAIN = SCRIPT_PREFIX + 'bgm_domain';
 
-function initCommon(siteConfig, subtype = 0) {
+function updateAuxData(auxSite) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            console.info('the start of updating aux data');
+            const auxData = yield getWikiDataByURL(auxSite);
+            const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
+            let infos = combineInfoList(wikiData.infos, auxData);
+            if (auxSite.match(/store\.steampowered\.com/)) {
+                infos = combineInfoList(auxData, wikiData.infos);
+            }
+            GM_setValue(WIKI_DATA, JSON.stringify({
+                type: wikiData.type,
+                subtype: wikiData.subType || 0,
+                infos,
+            }));
+            console.info('the end of updating aux data');
+        }
+        catch (e) {
+            console.error(e);
+        }
+    });
+}
+function initCommon(siteConfig, config = {}) {
     return __awaiter(this, void 0, void 0, function* () {
         const $page = findElement(siteConfig.pageSelectors);
         if (!$page)
@@ -1144,7 +1710,9 @@ function initCommon(siteConfig, subtype = 0) {
         const $title = findElement(siteConfig.controlSelector);
         if (!$title)
             return;
+        const { payload = {} } = config;
         insertControlBtn($title.parentElement, (e, flag) => __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const protocol = GM_getValue(PROTOCOL) || 'https';
             const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
             const bgmHost = `${protocol}://${bgm_domain}`;
@@ -1153,25 +1721,18 @@ function initCommon(siteConfig, subtype = 0) {
             console.info('wiki info list: ', infoList);
             const wikiData = {
                 type: siteConfig.type,
-                subtype,
+                subtype: siteConfig.subType,
                 infos: infoList,
             };
             GM_setValue(WIKI_DATA, JSON.stringify(wikiData));
             if (flag) {
-                let result;
-                // steam 禁用时间筛选
-                if (siteConfig.key === 'steam_game' ||
-                    siteConfig.key === 'steamdb_game') {
-                    result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, true);
-                }
-                else {
-                    result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type);
-                }
+                let result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, (_a = config === null || config === void 0 ? void 0 : config.payload) === null || _a === void 0 ? void 0 : _a.disableDate);
                 console.info('search results: ', result);
                 if (result && result.url) {
                     GM_openInTab(bgmHost + result.url);
                 }
                 else {
+                    payload.auxSite && (yield updateAuxData(payload.auxSite));
                     // 重置自动填表
                     GM_setValue(AUTO_FILL_FORM, 1);
                     setTimeout(() => {
@@ -1182,6 +1743,7 @@ function initCommon(siteConfig, subtype = 0) {
             else {
                 // 重置自动填表
                 GM_setValue(AUTO_FILL_FORM, 1);
+                payload.auxSite && (yield updateAuxData(payload.auxSite));
                 setTimeout(() => {
                     GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
                 }, 200);
@@ -2115,76 +2677,6 @@ const bangumi = {
     }
 };
 
-const erogamescapeModel = {
-    key: 'erogamescape',
-    description: 'erogamescape',
-    host: ['erogamescape.org', 'erogamescape.dyndns.org'],
-    type: SubjectTypeId.game,
-    pageSelectors: [
-        {
-            selector: '#soft-title',
-        }
-    ],
-    controlSelector: {
-        selector: '#soft-title > span'
-    },
-    itemList: []
-};
-erogamescapeModel.itemList.push({
-    name: '游戏名',
-    selector: {
-        selector: '#soft-title > span',
-    },
-    category: 'subject_title'
-}, {
-    name: '开发',
-    selector: {
-        selector: '#brand a',
-    }
-}, {
-    name: '发行日期',
-    selector: {
-        selector: '#sellday a',
-    },
-    category: 'date',
-}, {
-    name: 'cover',
-    selector: {
-        selector: '#image_and_basic_infomation img',
-    },
-    category: 'cover'
-}, {
-    name: 'website',
-    selector: [
-        {
-            selector: '#links',
-            subSelector: 'a',
-            keyWord: 'game_OHP'
-        },
-        {
-            selector: '#bottom_inter_links_main',
-            subSelector: 'a',
-            keyWord: 'game_OHP'
-        }
-    ],
-    category: 'website'
-}, {
-    name: '原画',
-    selector: {
-        selector: '#genga > td:last-child',
-    },
-}, {
-    name: '剧本',
-    selector: {
-        selector: '#shinario > td:last-child',
-    },
-}, {
-    name: '歌手',
-    selector: {
-        selector: '#kasyu > td:last-child',
-    },
-});
-
 const getchu = {
     init(siteConfig) {
         // 查找标志性的元素
@@ -2212,339 +2704,23 @@ const getchu = {
     }
 };
 
-const steamdbModel = {
-    key: 'steamdb_game',
-    description: 'steamdb',
-    host: ['steamdb.info'],
-    type: SubjectTypeId.game,
-    pageSelectors: [
-        {
-            selector: '.pagehead h1',
-        },
-    ],
-    controlSelector: {
-        selector: '.pagehead h1',
-    },
-    itemList: [],
-};
-const commonSelector$1 = {
-    selector: '.scope-app .app-row table',
-    subSelector: 'td',
-    sibling: true,
-};
-const dictArr = [
-    {
-        name: '发行日期',
-        keyWord: 'Release Date',
-    },
-    {
-        name: '开发',
-        keyWord: 'Developer',
-    },
-    {
-        name: '发行',
-        keyWord: 'Publisher',
-    },
-];
-const configArr$1 = dictArr.map((item) => {
-    const r = {
-        name: item.name,
-        selector: Object.assign({ keyWord: item.keyWord }, commonSelector$1),
-    };
-    if (item.name === '发行日期') {
-        r.category = 'date';
+function getSteamdbURL(href) {
+    var _a;
+    href = href || (location === null || location === void 0 ? void 0 : location.href);
+    const id = (_a = href.match(/store\.steampowered\.com\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
+    if (id) {
+        return `https://steamdb.info/app/${id}/info/`;
     }
-    return r;
-});
-const detailsTableSelector = {
-    selector: '#info table',
-    subSelector: 'td',
-    sibling: true,
-};
-const subTableSelector = {
-    selector: 'table.web-assets',
-    subSelector: 'td',
-    sibling: true,
-};
-steamdbModel.itemList.push({
-    name: '游戏名',
-    selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'japanese' }) }),
-        {
-            selector: '.pagehead h1',
-        }
-    ],
-    category: 'subject_title',
-}, {
-    name: '中文名',
-    selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'schinese' }) }),
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'tchinese' }) }),
-    ],
-}, {
-    name: '别名',
-    selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'english' }) }),
-    ],
-    category: 'alias',
-}, {
-    name: 'cover',
-    selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'library_assets', nextSelector: {
-                selector: 'table.web-assets',
-                subSelector: 'td',
-                keyWord: 'library_capsule',
-                sibling: true,
-                nextSelector: {
-                    selector: 'a',
-                },
-            } }),
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'Web Assets', nextSelector: {
-                selector: 'table.web-assets',
-                subSelector: 'td > a',
-                keyWord: 'library_600x900',
-            } }),
-    ],
-    category: 'cover',
-}, ...configArr$1);
-steamdbModel.defaultInfos = [
-    {
-        name: '平台',
-        value: 'PC',
-        category: 'platform',
-    },
-];
-
-const steamModel = {
-    key: 'steam_game',
-    description: 'steam',
-    host: ['store.steampowered.com'],
-    type: SubjectTypeId.game,
-    pageSelectors: [
-        {
-            selector: '.apphub_AppName',
-        },
-    ],
-    controlSelector: {
-        selector: '.apphub_AppName',
-    },
-    itemList: [],
-};
-steamModel.itemList.push({
-    name: '游戏名',
-    selector: {
-        selector: '.apphub_AppName',
-    },
-    category: 'subject_title',
-}, {
-    name: '发行日期',
-    selector: {
-        selector: '.release_date .date',
-    },
-    category: 'date',
-}, {
-    name: '开发',
-    selector: {
-        selector: '.glance_ctn_responsive_left .user_reviews',
-        subSelector: '.dev_row .subtitle',
-        keyWord: ['开发商', 'DEVELOPER'],
-        sibling: true,
-    },
-}, {
-    name: '发行',
-    selector: {
-        selector: '.glance_ctn_responsive_left .user_reviews',
-        subSelector: '.dev_row .subtitle',
-        keyWord: ['发行商', 'PUBLISHER'],
-        sibling: true,
-    },
-}, {
-    name: 'website',
-    selector: {
-        selector: '.responsive_apppage_details_left.game_details',
-        subSelector: '.details_block > .linkbar',
-        keyWord: ['访问网站', 'Visit the website'],
-    },
-    category: 'website',
-}, {
-    name: '游戏简介',
-    selector: [
-        {
-            selector: '#game_area_description',
-        },
-        {
-            selector: '.game_description_snippet',
-        },
-    ],
-    category: 'subject_summary',
+    return '';
 }
-// {
-//   name: 'cover',
-//   selector: {
-//     selector: '#soft_table .highslide',
-//   },
-//   category: 'cover',
-// }
-);
-steamModel.defaultInfos = [
-    {
-        name: '平台',
-        value: 'PC',
-        category: 'platform',
-    },
-];
-
-// TODO: 区分 kindle 页面和 纸质书页面
-const dangdangBookModel = {
-    key: 'dangdang_book',
-    host: ['product.dangdang.com'],
-    description: '当当图书',
-    type: SubjectTypeId.book,
-    pageSelectors: [
-        {
-            selector: '#breadcrumb',
-            subSelector: 'a',
-            keyWord: '图书',
-        },
-    ],
-    controlSelector: {
-        selector: '.name_info h1',
-    },
-    itemList: [],
-};
-const infoSelector = {
-    selector: '.messbox_info',
-    subSelector: 'span',
-};
-const descSelector = {
-    selector: '#detail_describe',
-    subSelector: 'li',
-};
-dangdangBookModel.itemList.push({
-    name: '名称',
-    selector: {
-        selector: '.name_info h1',
-    },
-    category: 'subject_title',
-}, 
-// {
-//   name: 'cover',
-//   selector: {
-//     selector: 'img#largePic',
-//   },
-//   category: 'cover',
-// },
-{
-    name: 'ISBN',
-    selector: Object.assign(Object.assign({}, descSelector), { keyWord: '国际标准书号ISBN' }),
-    category: 'ISBN',
-}, {
-    name: '发售日',
-    selector: Object.assign(Object.assign({}, infoSelector), { keyWord: '出版时间' }),
-    category: 'date',
-}, {
-    name: '作者',
-    selector: [
-        Object.assign(Object.assign({}, infoSelector), { keyWord: '作者' }),
-    ],
-}, {
-    name: '出版社',
-    selector: Object.assign(Object.assign({}, infoSelector), { keyWord: '出版社' }),
-}, {
-    name: '内容简介',
-    selector: [
-        {
-            selector: '#content .descrip',
-        },
-    ],
-    category: 'subject_summary',
-});
-
-// TODO: 区分 kindle 页面和 纸质书页面
-const jdBookModel = {
-    key: 'jd_book',
-    host: ['item.jd.com'],
-    description: '京东图书',
-    type: SubjectTypeId.book,
-    pageSelectors: [
-        {
-            selector: '#crumb-wrap',
-            subSelector: '.item > a',
-            keyWord: '图书',
-        },
-    ],
-    controlSelector: {
-        selector: '#name .sku-name',
-    },
-    itemList: [],
-};
-const descSelector$1 = {
-    selector: '#parameter2',
-    subSelector: 'li',
-};
-jdBookModel.itemList.push({
-    name: '名称',
-    selector: {
-        selector: '#name .sku-name',
-    },
-    category: 'subject_title',
-}, 
-// {
-//   name: 'cover',
-//   selector: {
-//     selector: '#preview img',
-//   },
-//   category: 'cover',
-// },
-{
-    name: 'ISBN',
-    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: 'ISBN' }),
-    category: 'ISBN',
-}, {
-    name: '发售日',
-    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: '出版时间' }),
-    category: 'date',
-}, {
-    name: '作者',
-    selector: [
-        {
-            selector: '#p-author',
-            keyWord: '著',
-        },
-    ],
-}, {
-    name: '出版社',
-    selector: Object.assign(Object.assign({}, descSelector$1), { keyWord: '出版社' }),
-}, {
-    name: '内容简介',
-    selector: [
-        {
-            selector: '.book-detail-item',
-            subSelector: '.item-mt',
-            keyWord: '内容简介',
-            sibling: true,
-        },
-    ],
-    category: 'subject_summary',
-});
-
-const configs = {
-    [getchuGameModel.key]: getchuGameModel,
-    [erogamescapeModel.key]: erogamescapeModel,
-    [amazonSubjectModel.key]: amazonSubjectModel,
-    [steamdbModel.key]: steamdbModel,
-    [steamModel.key]: steamModel,
-    [dangdangBookModel.key]: dangdangBookModel,
-    [jdBookModel.key]: jdBookModel,
-};
-function findModelByHost(host) {
-    const keys = Object.keys(configs);
-    for (let i = 0; i < keys.length; i++) {
-        const hosts = configs[keys[i]].host;
-        if (hosts.includes(host)) {
-            return configs[keys[i]];
-        }
+function getSteamURL(href) {
+    var _a;
+    href = href || (location === null || location === void 0 ? void 0 : location.href);
+    const id = (_a = href.match(/steamdb\.info\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
+    if (id) {
+        return `https://store.steampowered.com/app/${id}/_/`;
     }
+    return '';
 }
 
 function setDomain() {
@@ -2586,6 +2762,22 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
             case 'erogamescape.org':
             case 'erogamescape.dyndns.org':
                 initCommon(erogamescapeModel);
+                break;
+            case 'steamdb.info':
+                initCommon(steamdbModel, {
+                    payload: {
+                        disableDate: true,
+                        auxSite: getSteamURL(window.location.href),
+                    },
+                });
+                break;
+            case 'store.steampowered.com':
+                initCommon(steamModel, {
+                    payload: {
+                        disableDate: true,
+                        auxSite: getSteamdbURL(window.location.href),
+                    },
+                });
                 break;
             case 'bangumi.tv':
             case 'chii.tv':
