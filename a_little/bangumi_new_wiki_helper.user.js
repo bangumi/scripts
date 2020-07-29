@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.4
+// @version     0.3.5
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -22,6 +22,7 @@
 // @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
 // ==/UserScript==
 
+// @TODO 更新版本时 不需要修改 header manifest package 的版本
 var __enable_header = ''; // 避免 header 被清除的 hack
 console.info(__enable_header);
 
@@ -69,32 +70,36 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: '(?<!Kindle)本'
+            keyWord: '(?<!Kindle)本',
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: '(?<!Kindle)本'
-        }
+            keyWord: '(?<!Kindle)本',
+        },
     ],
     controlSelector: {
         selector: '#title',
     },
-    itemList: []
+    itemList: [],
 };
 amazonSubjectModel.itemList.push({
     name: '名称',
     selector: {
         selector: '#productTitle',
     },
-    category: 'subject_title'
+    category: 'subject_title',
 }, {
     name: 'cover',
-    selector: {
-        selector: 'img#imgBlkFront',
-    },
-    // selector: 'img#igImage'
-    category: 'cover'
+    selector: [
+        {
+            selector: 'img#igImage',
+        },
+        {
+            selector: 'img#imgBlkFront',
+        },
+    ],
+    category: 'cover',
 }, {
     name: 'ASIN',
     selector: {
@@ -103,7 +108,7 @@ amazonSubjectModel.itemList.push({
         keyWord: 'ISBN-10',
         separator: ':',
     },
-    category: 'ASIN'
+    category: 'ASIN',
 }, {
     name: 'ISBN',
     selector: {
@@ -112,7 +117,7 @@ amazonSubjectModel.itemList.push({
         keyWord: 'ISBN-13',
         separator: ':',
     },
-    category: 'ISBN'
+    category: 'ISBN',
 }, {
     name: '发售日',
     selector: {
@@ -121,46 +126,47 @@ amazonSubjectModel.itemList.push({
         keyWord: '発売日',
         separator: ':',
     },
-    category: 'date'
+    category: 'date',
 }, {
     name: '作者',
     selector: [
         {
-            selector: '#byline .author span.a-size-medium'
+            selector: '#byline .author span.a-size-medium',
         },
         {
-            selector: '#bylineInfo .author > a'
+            selector: '#bylineInfo .author > a',
         },
         {
-            selector: '#bylineInfo .contributorNameID'
+            selector: '#bylineInfo .contributorNameID',
         },
-    ]
+    ],
+    category: 'creator',
 }, {
     name: '出版社',
     selector: {
         selector: '#detail_bullets_id .bucket .content',
         subSelector: 'li',
         separator: ':',
-        keyWord: '出版社'
-    }
+        keyWord: '出版社',
+    },
 }, {
     name: '页数',
     selector: {
         selector: '#detail_bullets_id .bucket .content',
         subSelector: 'li',
         separator: ':',
-        keyWord: 'ページ'
+        keyWord: 'ページ',
     },
 }, {
     name: '价格',
     selector: [
         {
-            selector: '.swatchElement.selected .a-color-base .a-size-base'
+            selector: '.swatchElement.selected .a-color-base .a-size-base',
         },
         {
-            selector: '.swatchElement.selected .a-color-base'
-        }
-    ]
+            selector: '.swatchElement.selected .a-color-base',
+        },
+    ],
 }, {
     name: '内容简介',
     selector: [
@@ -173,10 +179,10 @@ amazonSubjectModel.itemList.push({
         {
             selector: '#bookDesc_iframe',
             subSelector: '#iframeContent',
-            isIframe: true
-        }
+            isIframe: true,
+        },
     ],
-    category: 'subject_summary'
+    category: 'subject_summary',
 });
 
 const getchuGameModel = {
@@ -192,9 +198,6 @@ const getchuGameModel = {
         },
     ],
     controlSelector: [
-        {
-            selector: '#soft-title > :first-child',
-        },
         {
             selector: '#soft-title',
         },
@@ -238,9 +241,14 @@ getchuGameModel.itemList.push({
     category: 'subject_title',
 }, {
     name: 'cover',
-    selector: {
-        selector: '#soft_table .highslide',
-    },
+    selector: [
+        {
+            selector: '#soft_table .highslide',
+        },
+        {
+            selector: '#soft_table .highslide img',
+        },
+    ],
     category: 'cover',
 }, ...configArr, {
     name: '游戏简介',
@@ -375,86 +383,6 @@ function findElement(selector, $parent) {
     return r;
 }
 
-// support GM_XMLHttpRequest
-function fetchText(url, TIMEOUT = 10 * 1000) {
-    // @ts-ignore
-    {
-        return new Promise((resolve, reject) => {
-            // @ts-ignore
-            GM_xmlhttpRequest({
-                method: "GET",
-                timeout: TIMEOUT || 10 * 1000,
-                url: url,
-                // @ts-ignore
-                onreadystatechange: function (response) {
-                    if (response.readyState === 4 && response.status === 200) {
-                        resolve(response.responseText);
-                    }
-                },
-                // @ts-ignore
-                onerror: function (err) {
-                    reject(err);
-                },
-                // @ts-ignore
-                ontimeout: function (err) {
-                    reject(err);
-                }
-            });
-        });
-    }
-}
-
-/**
- * convert base64/URLEncoded data component to raw binary data held in a string
- * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
- * @param dataURI
- */
-function dataURItoBlob(dataURI) {
-    var byteString;
-    if (dataURI.split(',')[0].indexOf('base64') >= 0)
-        byteString = atob(dataURI.split(',')[1]);
-    else
-        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
-    // separate out the mime component
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    // write the bytes of the string to a typed array
-    var ia = new Uint8Array(byteString.length);
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ia], { type: mimeString });
-}
-function getImageDataByURL(url) {
-    if (!url)
-        return Promise.reject('invalid img url');
-    return new Promise((resolve) => {
-        var xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result);
-            };
-            reader.readAsDataURL(xhr.response);
-        };
-        xhr.open('GET', url);
-        xhr.responseType = 'blob';
-        xhr.send();
-    });
-}
-/**
- * convert to img Element to base64 string
- * @param $img
- */
-function convertImgToBase64($img) {
-    const canvas = document.createElement("canvas");
-    canvas.width = $img.width;
-    canvas.height = $img.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage($img, 0, 0, $img.width, $img.height);
-    const dataURL = canvas.toDataURL("image/png");
-    return dataURL;
-}
-
 function genRandomStr(len) {
     return Array.apply(null, Array(len))
         .map(function () {
@@ -523,10 +451,94 @@ function isEqualDate(d1, d2) {
     return false;
 }
 
+const amazonTools = {
+    dealTitle(str) {
+        str = str.trim().split('\n')[0].trim();
+        // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
+        // 去掉尾部括号的内容, (1) （1） 这类不处理
+        return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
+        // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
+    }
+};
+
+// support GM_XMLHttpRequest
+function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
+    // @ts-ignore
+    {
+        return new Promise((resolve, reject) => {
+            // @ts-ignore
+            GM_xmlhttpRequest(Object.assign({ method: 'GET', timeout: TIMEOUT, url, responseType: type, onload: function (res) {
+                    resolve(res.response);
+                }, onerror: reject }, opts));
+        });
+    }
+}
+function fetchBinary(url, opts = {}) {
+    return fetchInfo(url, 'blob', opts);
+}
+function fetchText(url, TIMEOUT = 10 * 1000) {
+    return fetchInfo(url, 'text', {}, TIMEOUT);
+}
+
+/**
+ * convert base64/URLEncoded data component to raw binary data held in a string
+ * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+ * @param dataURI
+ */
+function dataURItoBlob(dataURI) {
+    var byteString;
+    if (dataURI.split(',')[0].indexOf('base64') >= 0)
+        byteString = atob(dataURI.split(',')[1]);
+    else
+        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
+    // separate out the mime component
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    // write the bytes of the string to a typed array
+    var ia = new Uint8Array(byteString.length);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ia], { type: mimeString });
+}
+function getImageDataByURL(url) {
+    if (!url)
+        return Promise.reject('invalid img url');
+    return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+        try {
+            const blob = yield fetchBinary(url);
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+            reader.onerror = reject;
+        }
+        catch (e) {
+            reject(e);
+        }
+    }));
+}
+/**
+ * convert to img Element to base64 string
+ * @param $img
+ */
+function convertImgToBase64($img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = $img.width;
+    canvas.height = $img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage($img, 0, 0, $img.width, $img.height);
+    const dataURL = canvas.toDataURL('image/png');
+    return dataURL;
+}
+
 const getchuTools = {
     dealTitle(str) {
         str = str.trim().split('\n')[0];
-        str = str.split('＋')[0].replace(/（このタイトルの関連商品）/, '').trim();
+        str = str
+            .split('＋')[0]
+            .replace(/（このタイトルの関連商品）/, '')
+            .trim();
         return str.replace(/\s[^ ]*?(限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
     },
     getCharacterInfo($t) {
@@ -538,29 +550,36 @@ const getchuTools = {
             name = getText($charalist);
         }
         else {
-            name = getText($name).split(/（|\(|\sCV|新建角色/)[0];
+            if ($name.classList.contains('chara-name') && $name.querySelector('br')) {
+                name = $name
+                    .querySelector('br')
+                    .nextSibling.textContent.split(/（|\(|\sCV|新建角色/)[0];
+            }
+            else {
+                name = getText($name).split(/（|\(|\sCV|新建角色/)[0];
+            }
         }
         charaData.push({
             name: '姓名',
             value: name.replace(/\s/g, ''),
-            category: 'crt_name'
+            category: 'crt_name',
         });
         charaData.push({
             name: '日文名',
-            value: name
+            value: name,
         });
         const nameTxt = getText($name);
         if (nameTxt.match(/（(.*)）/)) {
             charaData.push({
                 name: '纯假名',
-                value: nameTxt.match(/（(.*)）/)[1]
+                value: nameTxt.match(/（(.*)）/)[1],
             });
         }
         const cvMatch = nameTxt.match(/(?<=CV[：:]).+/);
         if (cvMatch) {
             charaData.push({
                 name: 'CV',
-                value: cvMatch[0]
+                value: cvMatch[0],
             });
         }
         const $img = $t.closest('tr').querySelector('td > img');
@@ -568,7 +587,7 @@ const getchuTools = {
             charaData.push({
                 name: 'cover',
                 value: convertImgToBase64($img),
-                category: 'crt_cover'
+                category: 'crt_cover',
             });
         }
         // 处理杂项 参考 id=1074002 id=735329
@@ -583,7 +602,7 @@ const getchuTools = {
                 if (alist && alist.length === 2) {
                     charaData.push({
                         name: alist[0].trim(),
-                        value: alist[1]
+                        value: alist[1],
                     });
                 }
                 else {
@@ -591,7 +610,7 @@ const getchuTools = {
                     if (c) {
                         charaData.push({
                             name: 'BWH',
-                            value: c[0]
+                            value: c[0],
                         });
                     }
                 }
@@ -601,97 +620,142 @@ const getchuTools = {
         charaData.push({
             name: '人物简介',
             value: getText($clonedDd).trim(),
-            category: 'crt_summary'
+            category: 'crt_summary',
+        });
+        charaData.forEach((item) => {
+            if (item.name === '3サイズ') {
+                item.name = 'BWH';
+            }
         });
         return charaData;
-    }
-};
-
-const amazonTools = {
-    dealTitle(str) {
-        str = str.trim().split('\n')[0].trim();
-        // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
-        // 去掉尾部括号的内容, (1) （1） 这类不处理
-        return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
-        // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
-    }
+    },
 };
 
 function trimParenthesis(str) {
     const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
     return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
 }
-const dealUtils = {
-    steam_game: [
-        {
-            category: 'website',
-            dealFunc(str) {
-                // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
-                const arr = str.split('?url=');
-                return arr[1] || '';
-            },
-        },
-        {
-            category: 'date',
-            dealFunc(str) {
-                if (/年/.test(str)) {
-                    return dealDate(str);
-                }
-                return formatDate(str);
-            },
-        },
-    ],
-    steamdb_game: [
-        {
-            category: 'date',
-            dealFunc(str) {
-                const arr = str.split('–');
-                if (!arr[0])
-                    return '';
-                return formatDate(arr[0].trim());
-            },
-        },
-    ],
-    getchu_game: [
-        {
-            category: 'subject_title',
-            dealFunc: getchuTools.dealTitle,
-        },
-    ],
-    amazon_jp_book: [
-        {
-            category: 'subject_title',
-            dealFunc: amazonTools.dealTitle,
-        },
-    ],
-    dangdang_book: [
-        {
-            category: 'date',
-            dealFunc(str) {
-                return dealDate(str.replace(/出版时间[:：]/, '').trim());
-            },
-        },
-        {
-            category: 'subject_title',
-            dealFunc(str) {
-                return trimParenthesis(str);
-            },
-        },
-    ],
-};
+function identity(x) {
+    return x;
+}
+function getCover($d, site) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let url;
+        let dataUrl = '';
+        if ($d.tagName.toLowerCase() === 'a') {
+            url = $d.getAttribute('href');
+        }
+        else if ($d.tagName.toLowerCase() === 'img') {
+            url = $d.getAttribute('src');
+        }
+        if (!url)
+            return;
+        try {
+            // 跨域的图片不能用这种方式
+            // dataUrl = convertImgToBase64($d as any);
+            dataUrl = yield getImageDataByURL(url);
+            if (dataUrl) {
+                return {
+                    dataUrl,
+                };
+            }
+        }
+        catch (error) {
+            return {
+                dataUrl: url,
+            };
+        }
+    });
+}
 function dealFuncByCategory(key, category) {
+    var _a;
     let fn;
-    if (dealUtils[key]) {
-        const obj = dealUtils[key].find((x) => x.category === category);
+    if ((_a = sitesFuncDict[key]) === null || _a === void 0 ? void 0 : _a.filters) {
+        const obj = sitesFuncDict[key].filters.find((x) => x.category === category);
         fn = obj && obj.dealFunc;
     }
     if (fn) {
         return fn;
     }
     else {
-        return (str) => str.trim();
+        return (str) => identity(str.trim());
     }
 }
+const sitesFuncDict = {
+    amazon_jp_book: {
+        hooks: {
+            beforeCreate() {
+                return __awaiter(this, void 0, void 0, function* () {
+                    console.info('create');
+                });
+            },
+        },
+        filters: [
+            {
+                category: 'subject_title',
+                dealFunc: amazonTools.dealTitle,
+            },
+        ],
+    },
+    dangdang_book: {
+        filters: [
+            {
+                category: 'date',
+                dealFunc(str) {
+                    return dealDate(str.replace(/出版时间[:：]/, '').trim());
+                },
+            },
+            {
+                category: 'subject_title',
+                dealFunc(str) {
+                    return trimParenthesis(str);
+                },
+            },
+        ],
+    },
+    getchu_game: {
+        filters: [
+            {
+                category: 'subject_title',
+                dealFunc: getchuTools.dealTitle,
+            },
+        ],
+    },
+    steam_game: {
+        filters: [
+            {
+                category: 'website',
+                dealFunc(str) {
+                    // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
+                    const arr = str.split('?url=');
+                    return arr[1] || '';
+                },
+            },
+            {
+                category: 'date',
+                dealFunc(str) {
+                    if (/年/.test(str)) {
+                        return dealDate(str);
+                    }
+                    return formatDate(str);
+                },
+            },
+        ],
+    },
+    steamdb_game: {
+        filters: [
+            {
+                category: 'date',
+                dealFunc(str) {
+                    const arr = str.split('–');
+                    if (!arr[0])
+                        return '';
+                    return formatDate(arr[0].trim());
+                },
+            },
+        ],
+    },
+};
 
 const erogamescapeModel = {
     key: 'erogamescape',
@@ -701,24 +765,24 @@ const erogamescapeModel = {
     pageSelectors: [
         {
             selector: '#soft-title',
-        }
+        },
     ],
     controlSelector: {
-        selector: '#soft-title > span'
+        selector: '#soft-title',
     },
-    itemList: []
+    itemList: [],
 };
 erogamescapeModel.itemList.push({
     name: '游戏名',
     selector: {
         selector: '#soft-title > span',
     },
-    category: 'subject_title'
+    category: 'subject_title',
 }, {
     name: '开发',
     selector: {
         selector: '#brand a',
-    }
+    },
 }, {
     name: '发行日期',
     selector: {
@@ -730,22 +794,22 @@ erogamescapeModel.itemList.push({
     selector: {
         selector: '#image_and_basic_infomation img',
     },
-    category: 'cover'
+    category: 'cover',
 }, {
     name: 'website',
     selector: [
         {
             selector: '#links',
             subSelector: 'a',
-            keyWord: 'game_OHP'
+            keyWord: 'game_OHP',
         },
         {
             selector: '#bottom_inter_links_main',
             subSelector: 'a',
-            keyWord: 'game_OHP'
-        }
+            keyWord: 'game_OHP',
+        },
     ],
-    category: 'website'
+    category: 'website',
 }, {
     name: '原画',
     selector: {
@@ -774,7 +838,7 @@ const steamdbModel = {
         },
     ],
     controlSelector: {
-        selector: '.pagehead h1',
+        selector: '.pagehead',
     },
     itemList: [],
 };
@@ -965,7 +1029,6 @@ steamModel.defaultInfos = [
     },
 ];
 
-// TODO: 区分 kindle 页面和 纸质书页面
 const dangdangBookModel = {
     key: 'dangdang_book',
     host: ['product.dangdang.com'],
@@ -1031,7 +1094,6 @@ dangdangBookModel.itemList.push({
     category: 'subject_summary',
 });
 
-// TODO: 区分 kindle 页面和 纸质书页面
 const jdBookModel = {
     key: 'jd_book',
     host: ['item.jd.com'],
@@ -1166,23 +1228,7 @@ function getWikiItem(infoConfig, site) {
         const txt = getText($d);
         switch (infoConfig.category) {
             case 'cover':
-                let url;
-                if ($d.tagName.toLowerCase() === 'a') {
-                    url = $d.getAttribute('href');
-                    val = {
-                        url: url,
-                        dataUrl: url,
-                    };
-                }
-                else if ($d.tagName.toLowerCase() === 'img') {
-                    url = $d.getAttribute('src');
-                    val = {
-                        url: url,
-                        dataUrl: yield getImageDataByURL(url),
-                        height: $d.clientHeight,
-                        width: $d.clientWidth,
-                    };
-                }
+                val = yield getCover($d);
                 break;
             case 'alias':
             case 'subject_title':
@@ -1197,6 +1243,10 @@ function getWikiItem(infoConfig, site) {
                 break;
             default:
                 val = dealItemText(txt, infoConfig.category, keyWords);
+        }
+        // 信息后处理
+        if (infoConfig.category === 'creator') {
+            val = val.replace(/\s/g, '');
         }
         if (val) {
             return {
@@ -1431,6 +1481,7 @@ function combineInfoList(infoList, otherInfoList) {
     // ref: https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
     return noEmptyArr.filter((v, i, a) => a.findIndex((t) => t.value === v.value && t.name === v.name) === i);
 }
+// 后台抓取其它网站的 wiki 信息
 function getWikiDataByURL(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const urlObj = new URL(url);
@@ -1711,7 +1762,7 @@ function initCommon(siteConfig, config = {}) {
         if (!$title)
             return;
         const { payload = {} } = config;
-        insertControlBtn($title.parentElement, (e, flag) => __awaiter(this, void 0, void 0, function* () {
+        insertControlBtn($title, (e, flag) => __awaiter(this, void 0, void 0, function* () {
             var _a;
             const protocol = GM_getValue(PROTOCOL) || 'https';
             const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
@@ -2226,8 +2277,8 @@ function sendForm($form, extraInfo = []) {
 function getMousePos(canvas, evt) {
     const rect = canvas.getBoundingClientRect();
     return {
-        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
-        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+        x: ((evt.clientX - rect.left) / (rect.right - rect.left)) * canvas.width,
+        y: ((evt.clientY - rect.top) / (rect.bottom - rect.top)) * canvas.height,
     };
 }
 /**
@@ -2353,7 +2404,9 @@ function dealImageWidget($form, base64Data) {
                 link.setAttribute('rel', 'noopener noreferrer nofollow');
                 link.setAttribute('target', '_blank');
                 link.innerText = '查看抓取封面';
-                document.querySelector('.e-wiki-cover-container').insertBefore(link, document.querySelector('#e-wiki-cover-preview'));
+                document
+                    .querySelector('.e-wiki-cover-container')
+                    .insertBefore(link, document.querySelector('#e-wiki-cover-preview'));
             }
             else {
                 $img.src = base64Data;
@@ -2384,13 +2437,9 @@ function dealImageWidget($form, base64Data) {
                     $el.style.display = 'none';
                     const $loading = insertLoading($el);
                     try {
-                        try {
-                            // 执行标准化表单，避免修改后表单没有更新
-                            // @ts-ignore
-                            NormaltoWCODE();
-                        }
-                        catch (e) {
-                        }
+                        const $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                        $wikiMode && $wikiMode.click();
+                        yield sleep(200);
                         const url = yield sendFormImg($form, $canvas.toDataURL('image/png', 1));
                         $el.style.display = '';
                         $loading.remove();
@@ -2414,6 +2463,20 @@ function insertLoading($sibling) {
     return $loading;
 }
 
+const subjectTypeDict$1 = {
+    [SubjectTypeId.game]: 'game',
+    [SubjectTypeId.anime]: 'anime',
+    [SubjectTypeId.music]: 'music',
+    [SubjectTypeId.book]: 'book',
+    [SubjectTypeId.real]: 'real',
+    [SubjectTypeId.all]: 'all',
+};
+function getSubjectId(url) {
+    const m = url.match(/(?:subject|character)\/(\d+)/);
+    if (!m)
+        return '';
+    return m[1];
+}
 /**
  * 转换 wiki 模式下 infobox 内容
  * @param originValue
@@ -2577,6 +2640,7 @@ function insertFillFormBtn($t, cb, cancelCb) {
     $t.appendChild($cancel);
 }
 function initNewSubject(wikiInfo) {
+    var _a;
     const $t = $q('form[name=create_subject] [name=subject_title]').parentElement;
     const defaultVal = $q('#subject_infobox').value;
     insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
@@ -2595,6 +2659,49 @@ function initNewSubject(wikiInfo) {
         // @ts-ignore
         $q('#subject_summary').value = '';
     });
+    const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
+    const dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
+    if (dataUrl.match(/^data:image/)) {
+        dealImageWidget($q('form[name=create_subject]'), dataUrl);
+        // 修改文本
+        setTimeout(() => {
+            const $form = $q('form[name=create_subject]');
+            const $input = $q('.e-wiki-cover-container [name=submit]');
+            const $clonedInput = $input.cloneNode(true);
+            if ($clonedInput) {
+                $clonedInput.value = '添加条目并上传封面';
+            }
+            $input.insertAdjacentElement('afterend', $clonedInput);
+            $input.remove();
+            const $canvas = $q('#e-wiki-cover-preview');
+            $clonedInput.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+                e.preventDefault();
+                if ($canvas.width > 8 && $canvas.height > 10) {
+                    const $el = e.target;
+                    $el.style.display = 'none';
+                    $clonedInput.style.display = 'none';
+                    const $loading = insertLoading($el);
+                    try {
+                        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                        $wikiMode && $wikiMode.click();
+                        yield sleep(200);
+                        const url = yield sendForm($form);
+                        const subjectId = getSubjectId(url);
+                        if (subjectId) {
+                            yield uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
+                        }
+                        $loading.remove();
+                        $el.style.display = '';
+                        $clonedInput.style.display = '';
+                        location.assign(url);
+                    }
+                    catch (e) {
+                        console.log('send form err: ', e);
+                    }
+                }
+            }));
+        }, 300);
+    }
 }
 function initNewCharacter(wikiInfo) {
     const $t = $q('form[name=new_character] #crt_name').parentElement;
@@ -2603,7 +2710,7 @@ function initNewCharacter(wikiInfo) {
         yield fillInfoBox(wikiInfo);
     }), () => {
         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-        $wikiMode.click();
+        $wikiMode && $wikiMode.click();
         // @ts-ignore
         $q('#subject_infobox').value = defaultVal;
         // @ts-ignore
@@ -2622,6 +2729,18 @@ function initNewCharacter(wikiInfo) {
             }
         }, 200);
     }
+}
+function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!bgmHost) {
+            bgmHost = `${location.protocol}//${location.host}`;
+        }
+        const url = `${bgmHost}/subject/${subjectId}/upload_img`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('form[name=img_upload');
+        yield sendFormImg($form, dataUrl);
+    });
 }
 function initUploadImg(wikiInfo) {
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
@@ -2692,8 +2811,10 @@ const getchu = {
                 console.info('character info list: ', charaInfo);
                 const charaData = {
                     type: siteConfig.type,
-                    infos: charaInfo
+                    infos: charaInfo,
                 };
+                // 重置自动填表
+                GM_setValue(AUTO_FILL_FORM, 1);
                 GM_setValue(CHARA_DATA, JSON.stringify(charaData));
                 // @TODO 不使用定时器
                 setTimeout(() => {
@@ -2701,7 +2822,7 @@ const getchu = {
                 }, 200);
             }));
         });
-    }
+    },
 };
 
 function getSteamdbURL(href) {
