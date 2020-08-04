@@ -183,7 +183,7 @@
     // document.querySelector("input[name=airdate]").value = today;
 
     let a = addInput("chap", "number", "章节编号");
-    let b = addInput("onair", "text", "该章节的首播日期");
+    let b = addInput("onair", "", "该章节的首播日期");
     let c = addInput("num", "number", "添加几个章节");
 
     // 章节首播日期默认为当天
