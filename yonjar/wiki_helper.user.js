@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wiki helper
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.2
+// @version      0.1.3
 // @description  个人自用wiki助手
 // @require      https://unpkg.com/wanakana@4.0.2/umd/wanakana.min.js
 // @require      https://cdn.bootcdn.net/ajax/libs/dayjs/1.8.29/dayjs.min.js
