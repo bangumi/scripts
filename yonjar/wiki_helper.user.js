@@ -53,6 +53,8 @@
     );
 
     document.querySelector("#columnInSubjectB").append(btn_prn);
+
+    return btn_prn;
   }
 
   // 加个输入框
@@ -65,6 +67,8 @@
     ipt_prn.setAttribute("type", type);
 
     document.querySelector("#columnInSubjectB").append(ipt_prn);
+
+    return ipt_prn;
   }
 
   // 章节页面获取最新一集的数字
@@ -178,17 +182,21 @@
     // }-${date.getDate()}`;
     // document.querySelector("input[name=airdate]").value = today;
 
-    let today = dayjs();
+    let a = addInput("chap", "number", "章节编号");
+    let b = addInput("onair", "text", "该章节的首播日期");
+    let c = addInput("num", "number", "添加几个章节");
 
-    addInput("chap", "number", "章节编号");
-    addInput("num", "number", "添加几个章节");
+    // 章节首播日期默认为当天
+    b.value = dayjs().format("YYYY-MM-DD");
+
     addBtn("添加新章节", "click", () => {
-      let chap = parseInt(document.querySelector("#chap").value);
-      let num = parseInt(document.querySelector("#num").value);
+      let chap = parseInt(a.value);
+      let today = dayjs(b.value);
+      let num = parseInt(c.value);
       let str = "";
 
-      for (let i = 1; i <= num; i++) {
-        str += `${chap + i - 1}||||${today
+      for (let i = 0; i < num; i++) {
+        str += `${chap + i}||||${today
           .add(7 * i, "day")
           .format("YYYY-MM-DD")}\n`;
       }
