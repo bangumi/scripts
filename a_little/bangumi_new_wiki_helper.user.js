@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.6
+// @version     0.3.6.1
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -687,7 +687,7 @@ const doubanTools = {
                         if (val && typeof val === 'string') {
                             const v = info.value.split('/');
                             if (v && v.length > 1) {
-                                val = v.map((s) => s.trim()).join('/');
+                                val = v.map((s) => s.trim()).join(',');
                             }
                         }
                         res.push(Object.assign(Object.assign({}, info), { value: val }));
@@ -1279,7 +1279,10 @@ doubanGameModel.itemList.push({
     category: 'subject_title',
 }, {
     name: '发行日期',
-    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '发行日期' }),
+    selector: [
+        Object.assign(Object.assign({}, gameAttr), { keyWord: '发行日期' }),
+        Object.assign(Object.assign({}, gameAttr), { keyWord: '预计上市时间' }),
+    ],
     category: 'date',
 }, {
     name: '平台',
