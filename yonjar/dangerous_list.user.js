@@ -98,14 +98,14 @@ class User {
       e.preventDefault();
       document.querySelector(
         ".bio"
-      ).textContent = `! https://bgm.tv 屏蔽首页侧边栏&超展开&小组页面的帖子
-      bgm.tv##li:has(> a[title="${this.name}"])
-      bgm.tv##li:has(img[title="${this.name}"])
-      bgm.tv##tr:has(a[href="/user/${this.id}"])
+      ).textContent = `! ${location.host} 屏蔽首页侧边栏&超展开&小组页面的帖子
+      ${location.host}##li:has(> a[title="${this.name}"])
+      ${location.host}##li:has(img[title="${this.name}"])
+      ${location.host}##tr:has(a[href="/user/${this.id}"])
       
-      ! https://bgm.tv 屏蔽贴内的回复
-      bgm.tv##.topic_sub_reply > div:has(> a[href="/user/${this.id}"])
-      bgm.tv##.row_reply:has(> a[href="/user/${this.id}"])
+      ! ${location.host} 屏蔽贴内的回复
+      ${location.host}##.topic_sub_reply > div:has(> a[href="/user/${this.id}"])
+      ${location.host}##.row_reply:has(> a[href="/user/${this.id}"])
       `;
       document.querySelector(".bio").style.whiteSpace = "pre-line";
     });
@@ -136,7 +136,7 @@ class User {
   commentUsers.forEach((e) => {
     let userId = e.href.split("user/")[1];
     if (dangerousList.includes(userId)) {
-      e.style.color = "#f1cfcf";
+      e.style.color = "#e4ff00";
       e.style.background = "#ff2424";
     }
   });
