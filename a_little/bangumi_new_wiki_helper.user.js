@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.5
+// @version     0.3.6
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -274,6 +274,11 @@ getchuGameModel.defaultInfos = [
         value: 'PC',
         category: 'platform',
     },
+    {
+        name: 'subject_nsfw',
+        value: '1',
+        category: 'checkbox',
+    },
 ];
 
 /**
@@ -479,6 +484,9 @@ function fetchBinary(url, opts = {}) {
 function fetchText(url, TIMEOUT = 10 * 1000) {
     return fetchInfo(url, 'text', {}, TIMEOUT);
 }
+function fetchJson(url, opts = {}) {
+    return fetchInfo(url, 'json', opts);
+}
 
 /**
  * convert base64/URLEncoded data component to raw binary data held in a string
@@ -541,9 +549,27 @@ const getchuTools = {
             .trim();
         return str.replace(/\s[^ ]*?(限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
     },
+    getExtraCharaInfo(txt) {
+        const re = /[^\s]+?[:：]/g;
+        const matchedArr = txt.match(re);
+        if (!matchedArr)
+            return [];
+        const infoArr = txt.split(re);
+        const res = [];
+        matchedArr.forEach((item, idx) => {
+            const val = (infoArr[idx + 1] || '').trim();
+            if (val) {
+                res.push({
+                    name: item.replace(/:|：/, ''),
+                    value: val,
+                });
+            }
+        });
+        return res;
+    },
     getCharacterInfo($t) {
         const charaData = [];
-        const $name = $t.previousElementSibling;
+        const $name = $t.closest('dt').querySelector('h2');
         let name;
         if ($name.querySelector('charalist')) {
             const $charalist = $name.querySelector('charalist');
@@ -579,7 +605,7 @@ const getchuTools = {
         if (cvMatch) {
             charaData.push({
                 name: 'CV',
-                value: cvMatch[0],
+                value: cvMatch[0].replace(/\s/g, ''),
             });
         }
         const $img = $t.closest('tr').querySelector('td > img');
@@ -590,20 +616,18 @@ const getchuTools = {
                 category: 'crt_cover',
             });
         }
-        // 处理杂项 参考 id=1074002 id=735329
+        // 处理杂项 参考 id=1074002 id=735329 id=1080370
         // id=1080431
+        // id=840936
         // dd tag
         const $dd = $t.closest('dt').nextElementSibling;
         const $clonedDd = $dd.cloneNode(true);
         Array.prototype.forEach.call($clonedDd.querySelectorAll('span[style^="font-weight"]'), (node) => {
             const t = getText(node).trim();
             t.split(/\n/g).forEach((el) => {
-                const alist = el.trim().split(/：|:/);
-                if (alist && alist.length === 2) {
-                    charaData.push({
-                        name: alist[0].trim(),
-                        value: alist[1],
-                    });
+                const extraInfo = getchuTools.getExtraCharaInfo(el);
+                if (extraInfo.length) {
+                    charaData.push(...extraInfo);
                 }
                 else {
                     const c = el.match(/B.*W.*H\d+/);
@@ -622,13 +646,58 @@ const getchuTools = {
             value: getText($clonedDd).trim(),
             category: 'crt_summary',
         });
+        const dict = {
+            誕生日: '生日',
+            '3サイズ': 'BWH',
+            スリーサイズ: 'BWH',
+            身長: '身高',
+            血液型: '血型',
+        };
         charaData.forEach((item) => {
-            if (item.name === '3サイズ') {
-                item.name = 'BWH';
+            if (dict[item.name]) {
+                item.name = dict[item.name];
             }
         });
         return charaData;
     },
+};
+
+const doubanTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return /\/game\//.test(window.location.href);
+            });
+        },
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                infos.forEach((info) => {
+                    if (['平台', '别名'].includes(info.name)) {
+                        const pArr = info.value.split('/').map((i) => {
+                            return Object.assign(Object.assign({}, info), { value: i.trim() });
+                        });
+                        res.push(...pArr);
+                    }
+                    else if (info.category === 'cover') {
+                        res.push(Object.assign({}, info));
+                    }
+                    else {
+                        let val = info.value;
+                        if (val && typeof val === 'string') {
+                            const v = info.value.split('/');
+                            if (v && v.length > 1) {
+                                val = v.map((s) => s.trim()).join('/');
+                            }
+                        }
+                        res.push(Object.assign(Object.assign({}, info), { value: val }));
+                    }
+                });
+                return res;
+            });
+        },
+    },
+    filters: [],
 };
 
 function trimParenthesis(str) {
@@ -637,6 +706,12 @@ function trimParenthesis(str) {
 }
 function identity(x) {
     return x;
+}
+const noOps = () => Promise.resolve(true);
+function getHooks(siteConfig, timing) {
+    var _a;
+    const hooks = ((_a = sitesFuncDict[siteConfig.key]) === null || _a === void 0 ? void 0 : _a.hooks) || {};
+    return hooks[timing] || noOps;
 }
 function getCover($d, site) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -686,7 +761,7 @@ const sitesFuncDict = {
         hooks: {
             beforeCreate() {
                 return __awaiter(this, void 0, void 0, function* () {
-                    console.info('create');
+                    return true;
                 });
             },
         },
@@ -705,6 +780,16 @@ const sitesFuncDict = {
                     return dealDate(str.replace(/出版时间[:：]/, '').trim());
                 },
             },
+            {
+                category: 'subject_title',
+                dealFunc(str) {
+                    return trimParenthesis(str);
+                },
+            },
+        ],
+    },
+    jd_book: {
+        filters: [
             {
                 category: 'subject_title',
                 dealFunc(str) {
@@ -755,6 +840,7 @@ const sitesFuncDict = {
             },
         ],
     },
+    douban_game: doubanTools,
 };
 
 const erogamescapeModel = {
@@ -896,10 +982,14 @@ steamdbModel.itemList.push({
         Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'schinese' }) }),
         Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'tchinese' }) }),
     ],
+    category: 'alias',
 }, {
     name: '别名',
     selector: [
         Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'english' }) }),
+        {
+            selector: '.pagehead h1',
+        },
     ],
     category: 'alias',
 }, {
@@ -1161,6 +1251,81 @@ jdBookModel.itemList.push({
     category: 'subject_summary',
 });
 
+const doubanGameModel = {
+    key: 'douban_game',
+    description: 'douban game',
+    host: ['douban.com'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '#content h1',
+        },
+    ],
+    controlSelector: {
+        selector: '#content h1',
+    },
+    itemList: [],
+};
+const gameAttr = {
+    selector: '#content .game-attr',
+    subSelector: 'dt',
+    sibling: true,
+};
+doubanGameModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#content h1',
+    },
+    category: 'subject_title',
+}, {
+    name: '发行日期',
+    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '发行日期' }),
+    category: 'date',
+}, {
+    name: '平台',
+    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '平台' }),
+    category: 'platform',
+}, {
+    name: '别名',
+    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '别名' }),
+    category: 'alias',
+}, {
+    name: '游戏类型',
+    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '类型' }),
+}, {
+    name: '开发',
+    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '开发商' }),
+}, {
+    name: '发行',
+    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '发行商' }),
+}, 
+// {
+//   name: 'website',
+//   selector: {
+//     selector: '.responsive_apppage_details_left.game_details',
+//   },
+//   category: 'website',
+// },
+{
+    name: '游戏简介',
+    selector: [
+        {
+            selector: '.mod.item-desc',
+            subSelector: 'h2',
+            keyWord: '简介',
+            sibling: true,
+        },
+    ],
+    category: 'subject_summary',
+}, {
+    name: 'cover',
+    selector: {
+        selector: '#content .item-subject-info .pic > a',
+    },
+    category: 'cover',
+});
+
+// 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
     [erogamescapeModel.key]: erogamescapeModel,
@@ -1169,6 +1334,7 @@ const configs = {
     [steamModel.key]: steamModel,
     [dangdangBookModel.key]: dangdangBookModel,
     [jdBookModel.key]: jdBookModel,
+    [doubanGameModel.key]: doubanGameModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1268,7 +1434,12 @@ function getWikiData(siteConfig, el) {
         const r = yield Promise.all(siteConfig.itemList.map((item) => getWikiItem(item, siteConfig.key)));
         delete window._parsedEl;
         const defaultInfos = siteConfig.defaultInfos || [];
-        return [...r.filter((i) => i), ...defaultInfos];
+        let rawInfo = r.filter((i) => i);
+        const hookRes = yield getHooks(siteConfig, 'afterGetWikiData')(rawInfo);
+        if (Array.isArray(hookRes)) {
+            rawInfo = hookRes;
+        }
+        return [...rawInfo, ...defaultInfos];
     });
 }
 /**
@@ -1374,11 +1545,13 @@ function insertControlBtn($t, cb) {
 function insertControlBtnChara($t, cb) {
     if (!$t)
         return;
+    const $div = document.createElement('div');
     const $s = document.createElement('a');
     $s.classList.add('e-wiki-new-character');
     // $s.setAttribute('target', '_blank')
     $s.innerHTML = '添加新虚拟角色';
-    $t.appendChild($s);
+    $div.appendChild($s);
+    $t.insertAdjacentElement('afterend', $div);
     $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
         yield cb(e);
     }));
@@ -1405,7 +1578,7 @@ function combineObj(current, target) {
         // 中日  日英  中英
         let cnName = { name: '中文名', value: '' };
         let titleObj = Object.assign({}, current);
-        let otherName = { name: '别名', value: '' };
+        let otherName = { name: '别名', value: '', category: 'alias' };
         let chineseStr = getTargetStr(current.value, target.value, isChineseStr);
         let jpStr = getTargetStr(current.value, target.value, hasJpStr);
         // TODO 状态机？
@@ -1479,7 +1652,15 @@ function combineInfoList(infoList, otherInfoList) {
     }
     const noEmptyArr = res.filter((v) => v.value);
     // ref: https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
-    return noEmptyArr.filter((v, i, a) => a.findIndex((t) => t.value === v.value && t.name === v.name) === i);
+    return noEmptyArr
+        .filter((v, i, a) => a.findIndex((t) => t.value === v.value && t.name === v.name) === i)
+        .filter((v, i, a) => {
+        if (v.name !== '别名')
+            return true;
+        else {
+            return a.findIndex((t) => t.value === v.value) === i;
+        }
+    });
 }
 // 后台抓取其它网站的 wiki 信息
 function getWikiDataByURL(url) {
@@ -1500,14 +1681,6 @@ function sleep(num) {
     });
 }
 
-const subjectTypeDict = {
-    [SubjectTypeId.game]: 'game',
-    [SubjectTypeId.anime]: 'anime',
-    [SubjectTypeId.music]: 'music',
-    [SubjectTypeId.book]: 'book',
-    [SubjectTypeId.real]: 'real',
-    [SubjectTypeId.all]: 'all',
-};
 var BangumiDomain;
 (function (BangumiDomain) {
     BangumiDomain["chii"] = "chii.in";
@@ -1690,6 +1863,14 @@ function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
  */
 function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type, disabelDate) {
     return __awaiter(this, void 0, void 0, function* () {
+        const subjectTypeDict = {
+            [SubjectTypeId.game]: 'game',
+            [SubjectTypeId.anime]: 'anime',
+            [SubjectTypeId.music]: 'music',
+            [SubjectTypeId.book]: 'book',
+            [SubjectTypeId.real]: 'real',
+            [SubjectTypeId.all]: 'all',
+        };
         let searchResult = yield searchSubject(subjectInfo, bgmHost, type);
         console.info(`First: search result of bangumi: `, searchResult);
         if (searchResult && searchResult.url) {
@@ -1730,6 +1911,183 @@ const WIKI_DATA = SCRIPT_PREFIX + 'wiki_data';
 const CHARA_DATA = SCRIPT_PREFIX + 'wiki_data';
 const PROTOCOL = SCRIPT_PREFIX + 'protocol';
 const BGM_DOMAIN = SCRIPT_PREFIX + 'bgm_domain';
+const SUBJECT_ID = SCRIPT_PREFIX + 'subject_id';
+
+/**
+ * send form data with image
+ * @param $form
+ * @param dataURL
+ */
+function sendFormImg($form, dataURL) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const info = [];
+        const $file = $form.querySelector('input[type=file]');
+        const inputFileName = $file.name ? $file.name : 'picfile';
+        info.push({
+            name: inputFileName,
+            value: dataURItoBlob(dataURL),
+            filename: genRandomStr(5) + '.png'
+        });
+        return yield sendForm($form, info);
+    });
+}
+/**
+ * send form as xhr promise
+ * TODO: return type
+ * @param $form
+ * @param extraInfo
+ */
+function sendForm($form, extraInfo = []) {
+    return new Promise((resolve, reject) => {
+        const fd = new FormData($form);
+        extraInfo.forEach(item => {
+            if (item.filename) {
+                fd.set(item.name, item.value, item.filename);
+            }
+            else {
+                fd.set(item.name, item.value);
+            }
+        });
+        const $submit = $form.querySelector('[name=submit]');
+        if ($submit && $submit.name && $submit.value) {
+            fd.set($submit.name, $submit.value);
+        }
+        const xhr = new XMLHttpRequest();
+        xhr.open($form.method.toLowerCase(), $form.action, true);
+        xhr.onload = function () {
+            let _location;
+            if (xhr.status === 200) {
+                _location = xhr.responseURL;
+                if (_location) {
+                    resolve(_location);
+                }
+                else {
+                    reject('no location');
+                }
+            }
+        };
+        xhr.send(fd);
+    });
+}
+
+function getBgmHost() {
+    return `${location.protocol}//${location.host}`;
+}
+function genLinkText(url, text = '地址') {
+    const $div = document.createElement('div');
+    const $link = document.createElement('a');
+    $link.href = url;
+    $link.innerText = text;
+    $div.appendChild($link);
+    return $div.innerHTML;
+}
+function insertLogInfo($sibling, txt) {
+    const $log = document.createElement('div');
+    $log.classList.add('.e-wiki-log-info');
+    $log.setAttribute('style', 'color: tomato;');
+    $log.innerHTML = txt;
+    $sibling.parentElement.insertBefore($log, $sibling);
+    $sibling.insertAdjacentElement('afterend', $log);
+    return $log;
+}
+function getSubjectId(url) {
+    const m = url.match(/(?:subject|character)\/(\d+)/);
+    if (!m)
+        return '';
+    return m[1];
+}
+function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!bgmHost) {
+            bgmHost = `${location.protocol}//${location.host}`;
+        }
+        const url = `${bgmHost}/subject/${subjectId}/upload_img`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('form[name=img_upload');
+        yield sendFormImg($form, dataUrl);
+    });
+}
+function searchCVByName(name, charaId = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        const bgmHost = getBgmHost();
+        let url = `${bgmHost}/json/search-cv_person/${name.replace(/\s/g, '')}`;
+        if (charaId) {
+            url = `${url}?character_id=${charaId}`;
+        }
+        const res = yield fetchJson(url, 'json');
+        return Object.keys(res)[0];
+    });
+}
+// 添加角色的关联条目
+function addPersonRelatedSubject(subjectIds, charaId, typeId, charaType = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const typeDict = {
+            [SubjectTypeId.game]: 'game',
+            [SubjectTypeId.anime]: 'anime',
+            [SubjectTypeId.music]: 'music',
+            [SubjectTypeId.book]: 'book',
+            [SubjectTypeId.real]: 'real',
+            [SubjectTypeId.all]: 'all',
+        };
+        const bgmHost = `${location.protocol}//${location.host}`;
+        const type = typeDict[typeId];
+        const url = `${bgmHost}/character/${charaId}/add_related/${type}`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('.mainWrapper form');
+        const extroInfo = [];
+        // 1 主角 2 配角 3 客串
+        subjectIds.forEach((v, i) => {
+            extroInfo.push({
+                name: `infoArr[n${i}][crt_type]`,
+                value: charaType,
+            });
+            extroInfo.push({
+                name: `infoArr[n${i}][subject_id]`,
+                value: v,
+            });
+        });
+        // {name: 'submit', value: '保存关联数据'}
+        yield sendForm($form, [...extroInfo]);
+    });
+}
+// 未设置域名的兼容，只能在 Bangumi 本身上面使用
+// 添加角色的关联 CV
+function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const typeDict = {
+            [SubjectTypeId.game]: 'game',
+            [SubjectTypeId.anime]: 'anime',
+            [SubjectTypeId.music]: 'music',
+            [SubjectTypeId.book]: 'book',
+            [SubjectTypeId.real]: 'real',
+            [SubjectTypeId.all]: 'all',
+        };
+        const bgmHost = `${location.protocol}//${location.host}`;
+        const type = typeDict[typeId];
+        const url = `${bgmHost}/character/${charaId}/add_related/person/${type}`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('.mainWrapper form');
+        const personInfo = personIds.map((v, i) => ({
+            name: `infoArr[n${i}][prsn_id]`,
+            value: v,
+        }));
+        // {name: 'submit', value: '保存关联数据'}
+        yield sendForm($form, [
+            {
+                name: 'infoArr[n0][subject_id]',
+                value: subjectId,
+            },
+            {
+                name: 'infoArr[n0][subject_type_id]',
+                value: typeId,
+            },
+            ...personInfo,
+        ]);
+    });
+}
 
 function updateAuxData(auxSite) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -1761,6 +2119,9 @@ function initCommon(siteConfig, config = {}) {
         const $title = findElement(siteConfig.controlSelector);
         if (!$title)
             return;
+        const bcRes = yield getHooks(siteConfig, 'beforeCreate')();
+        if (!bcRes)
+            return;
         const { payload = {} } = config;
         insertControlBtn($title, (e, flag) => __awaiter(this, void 0, void 0, function* () {
             var _a;
@@ -1780,6 +2141,8 @@ function initCommon(siteConfig, config = {}) {
                 let result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, (_a = config === null || config === void 0 ? void 0 : config.payload) === null || _a === void 0 ? void 0 : _a.disableDate);
                 console.info('search results: ', result);
                 if (result && result.url) {
+                    GM_setValue(SUBJECT_ID, getSubjectId(result.url));
+                    yield sleep(100);
                     GM_openInTab(bgmHost + result.url);
                 }
                 else {
@@ -2217,63 +2580,6 @@ var BlurStack = function BlurStack() {
   this.next = null;
 };
 
-/**
- * send form data with image
- * @param $form
- * @param dataURL
- */
-function sendFormImg($form, dataURL) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const info = [];
-        const $file = $form.querySelector('input[type=file]');
-        const inputFileName = $file.name ? $file.name : 'picfile';
-        info.push({
-            name: inputFileName,
-            value: dataURItoBlob(dataURL),
-            filename: genRandomStr(5) + '.png'
-        });
-        return yield sendForm($form, info);
-    });
-}
-/**
- * send form as xhr promise
- * TODO: return type
- * @param $form
- * @param extraInfo
- */
-function sendForm($form, extraInfo = []) {
-    return new Promise((resolve, reject) => {
-        const fd = new FormData($form);
-        extraInfo.forEach(item => {
-            if (item.filename) {
-                fd.set(item.name, item.value, item.filename);
-            }
-            else {
-                fd.set(item.name, item.value);
-            }
-        });
-        const $submit = $form.querySelector('[name=submit]');
-        if ($submit && $submit.name && $submit.value) {
-            fd.set($submit.name, $submit.value);
-        }
-        const xhr = new XMLHttpRequest();
-        xhr.open($form.method.toLowerCase(), $form.action, true);
-        xhr.onload = function () {
-            let _location;
-            if (xhr.status === 200) {
-                _location = xhr.responseURL;
-                if (_location) {
-                    resolve(_location);
-                }
-                else {
-                    reject('no location');
-                }
-            }
-        };
-        xhr.send(fd);
-    });
-}
-
 function getMousePos(canvas, evt) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -2463,20 +2769,6 @@ function insertLoading($sibling) {
     return $loading;
 }
 
-const subjectTypeDict$1 = {
-    [SubjectTypeId.game]: 'game',
-    [SubjectTypeId.anime]: 'anime',
-    [SubjectTypeId.music]: 'music',
-    [SubjectTypeId.book]: 'book',
-    [SubjectTypeId.real]: 'real',
-    [SubjectTypeId.all]: 'all',
-};
-function getSubjectId(url) {
-    const m = url.match(/(?:subject|character)\/(\d+)/);
-    if (!m)
-        return '';
-    return m[1];
-}
 /**
  * 转换 wiki 模式下 infobox 内容
  * @param originValue
@@ -2577,6 +2869,7 @@ function fillInfoBox(wikiData) {
         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
         const $newbieMode = $q('table small a:nth-of-type(2)[href="javascript:void(0)"]');
         for (let i = 0, len = infos.length; i < len; i++) {
+            const currentInfo = infos[i];
             if (infos[i].category === 'subject_title') {
                 let $title = $q('input[name=subject_title]');
                 $title.value = (infos[i].value || '').trim();
@@ -2595,6 +2888,11 @@ function fillInfoBox(wikiData) {
             if (infos[i].category === 'crt_name') {
                 let $t = $q('#crt_name');
                 $t.value = (infos[i].value || '').trim();
+                continue;
+            }
+            if (currentInfo.category === 'checkbox') {
+                const $t = $q(`input[name=${currentInfo.name}]`);
+                $t.checked = currentInfo.value ? true : false;
                 continue;
             }
             // 有名称并且category不在特定列表里面
@@ -2703,7 +3001,7 @@ function initNewSubject(wikiInfo) {
         }, 300);
     }
 }
-function initNewCharacter(wikiInfo) {
+function initNewCharacter(wikiInfo, subjectId) {
     const $t = $q('form[name=new_character] #crt_name').parentElement;
     const defaultVal = $q('#subject_infobox').value;
     insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
@@ -2720,27 +3018,58 @@ function initNewCharacter(wikiInfo) {
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'crt_cover')[0];
     if (coverInfo && coverInfo.value && coverInfo.value.match(/^data:image/)) {
-        dealImageWidget($q('form[name=new_character]'), coverInfo.value);
+        const $form = $q('form[name=new_character]');
+        dealImageWidget($form, coverInfo.value);
         // 修改文本
         setTimeout(() => {
             const $input = $q('.e-wiki-cover-container [name=submit]');
-            if ($input) {
-                $input.value = '添加人物并上传肖像';
+            const $clonedInput = $input.cloneNode(true);
+            if ($clonedInput) {
+                $clonedInput.value = '添加人物并上传肖像';
             }
-        }, 200);
+            $input.insertAdjacentElement('afterend', $clonedInput);
+            $input.remove();
+            const $canvas = $q('#e-wiki-cover-preview');
+            $clonedInput.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+                e.preventDefault();
+                if ($canvas.width > 8 && $canvas.height > 10) {
+                    const $el = e.target;
+                    $el.style.display = 'none';
+                    $clonedInput.style.display = 'none';
+                    const $loading = insertLoading($el);
+                    try {
+                        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                        $wikiMode && $wikiMode.click();
+                        yield sleep(200);
+                        const currentHost = getBgmHost();
+                        const url = yield sendFormImg($form, coverInfo.value);
+                        insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
+                        const charaId = getSubjectId(url);
+                        if (charaId && subjectId) {
+                            insertLogInfo($el, '存在条目 id, 开始关联条目');
+                            yield addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
+                            insertLogInfo($el, `关联条目成功: ${genLinkText(`${currentHost}/subject/${subjectId}`, '条目地址')}`);
+                            const cvInfo = wikiInfo.infos.filter((item) => item.name.toUpperCase() === 'CV')[0];
+                            if (cvInfo) {
+                                const cvId = yield searchCVByName(cvInfo.value, charaId);
+                                cvId &&
+                                    (yield addPersonRelatedCV(subjectId, charaId, [cvId], wikiInfo.type));
+                                insertLogInfo($el, `关联 CV 成功: ${genLinkText(`${currentHost}/person/${cvId}`)}`);
+                            }
+                        }
+                        $loading.remove();
+                        $el.style.display = '';
+                        $clonedInput.style.display = '';
+                        location.assign(url);
+                    }
+                    catch (e) {
+                        console.log('send form err: ', e);
+                        insertLogInfo($el, `出错了: ${e}`);
+                    }
+                }
+            }));
+        }, 300);
     }
-}
-function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!bgmHost) {
-            bgmHost = `${location.protocol}//${location.host}`;
-        }
-        const url = `${bgmHost}/subject/${subjectId}/upload_img`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('form[name=img_upload');
-        yield sendFormImg($form, dataUrl);
-    });
 }
 function initUploadImg(wikiInfo) {
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
@@ -2752,12 +3081,13 @@ function initUploadImg(wikiInfo) {
 const bangumi = {
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            const re = new RegExp(['new_subject', 'add_related', 'character\/new', 'upload_img'].join('|'));
+            const re = new RegExp(['new_subject', 'add_related', 'character/new', 'upload_img'].join('|'));
             const page = document.location.href.match(re);
             if (!page)
                 return;
             const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
             const charaData = JSON.parse(GM_getValue(CHARA_DATA) || null);
+            const subjectId = GM_getValue(SUBJECT_ID);
             const autoFill = GM_getValue(AUTO_FILL_FORM);
             switch (page[0]) {
                 case 'new_subject':
@@ -2774,9 +3104,9 @@ const bangumi = {
                     break;
                 case 'add_related':
                     break;
-                case 'character\/new':
+                case 'character/new':
                     if (charaData) {
-                        initNewCharacter(charaData);
+                        initNewCharacter(charaData, subjectId);
                         if (autoFill == 1) {
                             setTimeout(() => {
                                 // @ts-ignore
@@ -2793,7 +3123,7 @@ const bangumi = {
                     break;
             }
         });
-    }
+    },
 };
 
 const getchu = {
@@ -2806,7 +3136,7 @@ const getchu = {
         const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
         const bgmHost = `${protocol}://${bgm_domain}`;
         Array.prototype.forEach.call($qa('h2.chara-name'), (node) => {
-            insertControlBtnChara(node.parentElement, (e) => __awaiter(this, void 0, void 0, function* () {
+            insertControlBtnChara(node, (e) => __awaiter(this, void 0, void 0, function* () {
                 const charaInfo = getchuTools.getCharacterInfo(e.target);
                 console.info('character info list: ', charaInfo);
                 const charaData = {
