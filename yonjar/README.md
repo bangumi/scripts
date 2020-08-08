@@ -85,7 +85,7 @@
 
 ## [bangumi 危险名单](https://github.com/bangumi/scripts/blob/master/yonjar/dangerous_list.user.js?raw=true)
 
-标记用户 暂无屏蔽功能
+标记用户 带简易屏蔽功能[讨论帖](https://bgm.tv/group/topic/358209)
 
 ## [wiki helper](https://github.com/bangumi/scripts/blob/master/yonjar/wiki_helper.user.js?raw=true)
 
