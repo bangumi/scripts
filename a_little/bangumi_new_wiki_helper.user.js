@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.6.1
+// @version     0.3.6.2
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -50,237 +50,6 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
-var SubjectTypeId;
-(function (SubjectTypeId) {
-    SubjectTypeId[SubjectTypeId["book"] = 1] = "book";
-    SubjectTypeId[SubjectTypeId["anime"] = 2] = "anime";
-    SubjectTypeId[SubjectTypeId["music"] = 3] = "music";
-    SubjectTypeId[SubjectTypeId["game"] = 4] = "game";
-    SubjectTypeId[SubjectTypeId["real"] = 6] = "real";
-    SubjectTypeId["all"] = "all";
-})(SubjectTypeId || (SubjectTypeId = {}));
-
-// TODO: 区分 kindle 页面和 纸质书页面
-const amazonSubjectModel = {
-    key: 'amazon_jp_book',
-    host: ['amazon.co.jp'],
-    description: '日亚图书',
-    type: SubjectTypeId.book,
-    pageSelectors: [
-        {
-            selector: '#nav-subnav .nav-a:first-child',
-            subSelector: '.nav-a-content',
-            keyWord: '(?<!Kindle)本',
-        },
-        {
-            selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
-            subSelector: '.a-link-normal',
-            keyWord: '(?<!Kindle)本',
-        },
-    ],
-    controlSelector: {
-        selector: '#title',
-    },
-    itemList: [],
-};
-amazonSubjectModel.itemList.push({
-    name: '名称',
-    selector: {
-        selector: '#productTitle',
-    },
-    category: 'subject_title',
-}, {
-    name: 'cover',
-    selector: [
-        {
-            selector: 'img#igImage',
-        },
-        {
-            selector: 'img#imgBlkFront',
-        },
-    ],
-    category: 'cover',
-}, {
-    name: 'ASIN',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        keyWord: 'ISBN-10',
-        separator: ':',
-    },
-    category: 'ASIN',
-}, {
-    name: 'ISBN',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        keyWord: 'ISBN-13',
-        separator: ':',
-    },
-    category: 'ISBN',
-}, {
-    name: '发售日',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        keyWord: '発売日',
-        separator: ':',
-    },
-    category: 'date',
-}, {
-    name: '作者',
-    selector: [
-        {
-            selector: '#byline .author span.a-size-medium',
-        },
-        {
-            selector: '#bylineInfo .author > a',
-        },
-        {
-            selector: '#bylineInfo .contributorNameID',
-        },
-    ],
-    category: 'creator',
-}, {
-    name: '出版社',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        separator: ':',
-        keyWord: '出版社',
-    },
-}, {
-    name: '页数',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        separator: ':',
-        keyWord: 'ページ',
-    },
-}, {
-    name: '价格',
-    selector: [
-        {
-            selector: '.swatchElement.selected .a-color-base .a-size-base',
-        },
-        {
-            selector: '.swatchElement.selected .a-color-base',
-        },
-    ],
-}, {
-    name: '内容简介',
-    selector: [
-        {
-            selector: '#productDescription',
-            subSelector: 'h3',
-            sibling: true,
-            keyWord: ['内容紹介', '内容'],
-        },
-        {
-            selector: '#bookDesc_iframe',
-            subSelector: '#iframeContent',
-            isIframe: true,
-        },
-    ],
-    category: 'subject_summary',
-});
-
-const getchuGameModel = {
-    key: 'getchu_game',
-    description: 'Getchu游戏',
-    host: ['getchu.com'],
-    type: SubjectTypeId.game,
-    pageSelectors: [
-        {
-            selector: '.genretab.current',
-            subSelector: 'a',
-            keyWord: 'ゲーム',
-        },
-    ],
-    controlSelector: [
-        {
-            selector: '#soft-title',
-        },
-    ],
-    itemList: [],
-};
-const commonSelector = {
-    selector: '#soft_table table',
-    subSelector: 'td',
-    sibling: true,
-};
-const dict = {
-    定価: '售价',
-    発売日: '发行日期',
-    ジャンル: '游戏类型',
-    ブランド: '开发',
-    原画: '原画',
-    音楽: '音乐',
-    シナリオ: '剧本',
-    アーティスト: '主题歌演出',
-    作詞: '主题歌作词',
-    作曲: '主题歌作曲',
-};
-const configArr = Object.keys(dict).map((key) => {
-    const r = {
-        name: dict[key],
-        selector: Object.assign({ 
-            // 匹配关键字开头 2020/03/18
-            keyWord: '^' + key }, commonSelector),
-    };
-    if (key === '発売日') {
-        r.category = 'date';
-    }
-    return r;
-});
-getchuGameModel.itemList.push({
-    name: '游戏名',
-    selector: {
-        selector: '#soft-title',
-    },
-    category: 'subject_title',
-}, {
-    name: 'cover',
-    selector: [
-        {
-            selector: '#soft_table .highslide',
-        },
-        {
-            selector: '#soft_table .highslide img',
-        },
-    ],
-    category: 'cover',
-}, ...configArr, {
-    name: '游戏简介',
-    selector: [
-        {
-            selector: '#wrapper',
-            subSelector: '.tabletitle',
-            sibling: true,
-            keyWord: 'ストーリー',
-        },
-        {
-            selector: '#wrapper',
-            subSelector: '.tabletitle',
-            sibling: true,
-            keyWord: '商品紹介',
-        },
-    ],
-    category: 'subject_summary',
-});
-getchuGameModel.defaultInfos = [
-    {
-        name: '平台',
-        value: 'PC',
-        category: 'platform',
-    },
-    {
-        name: 'subject_nsfw',
-        value: '1',
-        category: 'checkbox',
-    },
-];
-
 /**
  * 为页面添加样式
  * @param style
@@ -294,6 +63,9 @@ function getText(elem) {
         return '';
     if (elem.tagName.toLowerCase() === 'meta') {
         return elem.content;
+    }
+    if (elem.tagName.toLowerCase() === 'input') {
+        return elem.value;
     }
     return elem.textContent || elem.innerText || '';
 }
@@ -361,7 +133,7 @@ function findElement(selector, $parent) {
         if (selector instanceof Array) {
             let i = 0;
             let targetSelector = selector[i];
-            while (targetSelector && !(r = findElement(targetSelector))) {
+            while (targetSelector && !(r = findElement(targetSelector, $parent))) {
                 targetSelector = selector[++i];
             }
         }
@@ -456,14 +228,22 @@ function isEqualDate(d1, d2) {
     return false;
 }
 
-const amazonTools = {
+const amazonUtils = {
     dealTitle(str) {
         str = str.trim().split('\n')[0].trim();
         // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
         // 去掉尾部括号的内容, (1) （1） 这类不处理
         return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
         // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
-    }
+    },
+};
+const amazonJpBookTools = {
+    filters: [
+        {
+            category: 'subject_title',
+            dealFunc: amazonUtils.dealTitle,
+        },
+    ],
 };
 
 // support GM_XMLHttpRequest
@@ -666,13 +446,23 @@ const doubanTools = {
     hooks: {
         beforeCreate() {
             return __awaiter(this, void 0, void 0, function* () {
-                return /\/game\//.test(window.location.href);
+                const href = window.location.href;
+                if (/\/game\//.test(href) && !/\/game\/\d+\/edit/.test(href)) {
+                    return {
+                        payload: {
+                            auxSite: document.querySelector('.th-modify > a').href,
+                            auxPrefs: {
+                                targetNames: 'all',
+                            },
+                        },
+                    };
+                }
             });
         },
         afterGetWikiData(infos) {
             return __awaiter(this, void 0, void 0, function* () {
                 const res = [];
-                infos.forEach((info) => {
+                for (const info of infos) {
                     if (['平台', '别名'].includes(info.name)) {
                         const pArr = info.value.split('/').map((i) => {
                             return Object.assign(Object.assign({}, info), { value: i.trim() });
@@ -687,10 +477,108 @@ const doubanTools = {
                         if (val && typeof val === 'string') {
                             const v = info.value.split('/');
                             if (v && v.length > 1) {
-                                val = v.map((s) => s.trim()).join(',');
+                                val = v.map((s) => s.trim()).join(', ');
                             }
                         }
+                        if (info.name === '游戏类型' && val) {
+                            val = val.replace('游戏, ', '').trim();
+                        }
                         res.push(Object.assign(Object.assign({}, info), { value: val }));
+                    }
+                }
+                // 特殊处理平台
+                const $plateform = findElement({
+                    selector: '#content .game-attr',
+                    subSelector: 'dt',
+                    sibling: true,
+                    keyWord: '平台',
+                });
+                if ($plateform) {
+                    const aList = $plateform.querySelectorAll('a') || [];
+                    for (const $a of aList) {
+                        res.push({
+                            name: '平台',
+                            value: getText($a).replace(/\/.*/, '').trim(),
+                            category: 'platform',
+                        });
+                    }
+                }
+                return res;
+            });
+        },
+    },
+    filters: [],
+};
+const doubanGameEditTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const href = window.location.href;
+                return /\/game\/\d+\/edit/.test(href);
+            });
+        },
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    const arr = Object.assign({}, info);
+                    if (['平台', '别名'].includes(info.name)) {
+                        const plateformDict = {
+                            ARC: 'Arcade',
+                            NES: 'FC',
+                            红白机: 'FC',
+                            街机: 'Arcade',
+                        };
+                        const pArr = info.value.split(',').map((i) => {
+                            let v = i.trim();
+                            if (plateformDict[v]) {
+                                v = plateformDict[v];
+                            }
+                            return Object.assign(Object.assign({}, info), { value: v });
+                        });
+                        res.push(...pArr);
+                    }
+                    else if (arr.category === 'cover' && arr.value && arr.value.url) {
+                        try {
+                            const url = arr.value.url.replace('/spic/', '/lpic/');
+                            const dataUrl = yield getImageDataByURL(url);
+                            const coverItem = Object.assign(Object.assign({}, arr), { value: {
+                                    dataUrl,
+                                    url,
+                                } });
+                            res.push(coverItem);
+                        }
+                        catch (error) {
+                            console.error(error);
+                        }
+                    }
+                    else if (arr.name === '游戏类型') {
+                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
+                        res.push(arr);
+                    }
+                    else if (arr.name === '开发') {
+                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
+                        res.push(arr);
+                    }
+                    else {
+                        res.push(arr);
+                    }
+                }
+                // 描述
+                const inputList = document.querySelectorAll('input[name="target"][type="hidden"]');
+                inputList.forEach(($input) => {
+                    const val = $input.value;
+                    if (val === 'description') {
+                        const $target = $input
+                            .closest('form')
+                            .querySelector('.desc-form-item #thing_desc_options_0');
+                        if ($target) {
+                            res.push({
+                                name: '游戏简介',
+                                value: $target.value,
+                                category: 'subject_summary',
+                            });
+                        }
                     }
                 });
                 return res;
@@ -698,6 +586,83 @@ const doubanTools = {
         },
     },
     filters: [],
+};
+
+function getSteamdbURL(href) {
+    var _a;
+    href = href || (location === null || location === void 0 ? void 0 : location.href);
+    const id = (_a = href.match(/store\.steampowered\.com\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
+    if (id) {
+        return `https://steamdb.info/app/${id}/info/`;
+    }
+    return '';
+}
+function getSteamURL(href) {
+    var _a;
+    href = href || (location === null || location === void 0 ? void 0 : location.href);
+    const id = (_a = href.match(/steamdb\.info\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
+    if (id) {
+        return `https://store.steampowered.com/app/${id}/_/`;
+    }
+    return '';
+}
+const steamTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return {
+                    payload: {
+                        disableDate: true,
+                        auxSite: getSteamdbURL(window.location.href),
+                    },
+                };
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'website',
+            dealFunc(str) {
+                // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
+                const arr = str.split('?url=');
+                return arr[1] || '';
+            },
+        },
+        {
+            category: 'date',
+            dealFunc(str) {
+                if (/年/.test(str)) {
+                    return dealDate(str);
+                }
+                return formatDate(str);
+            },
+        },
+    ],
+};
+const steamdbTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return {
+                    payload: {
+                        disableDate: true,
+                        auxSite: getSteamURL(window.location.href),
+                    },
+                };
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'date',
+            dealFunc(str) {
+                const arr = str.split('–');
+                if (!arr[0])
+                    return '';
+                return formatDate(arr[0].trim());
+            },
+        },
+    ],
 };
 
 function trimParenthesis(str) {
@@ -731,12 +696,14 @@ function getCover($d, site) {
             dataUrl = yield getImageDataByURL(url);
             if (dataUrl) {
                 return {
+                    url,
                     dataUrl,
                 };
             }
         }
         catch (error) {
             return {
+                url,
                 dataUrl: url,
             };
         }
@@ -757,21 +724,7 @@ function dealFuncByCategory(key, category) {
     }
 }
 const sitesFuncDict = {
-    amazon_jp_book: {
-        hooks: {
-            beforeCreate() {
-                return __awaiter(this, void 0, void 0, function* () {
-                    return true;
-                });
-            },
-        },
-        filters: [
-            {
-                category: 'subject_title',
-                dealFunc: amazonTools.dealTitle,
-            },
-        ],
-    },
+    amazon_jp_book: amazonJpBookTools,
     dangdang_book: {
         filters: [
             {
@@ -806,42 +759,242 @@ const sitesFuncDict = {
             },
         ],
     },
-    steam_game: {
-        filters: [
-            {
-                category: 'website',
-                dealFunc(str) {
-                    // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
-                    const arr = str.split('?url=');
-                    return arr[1] || '';
-                },
-            },
-            {
-                category: 'date',
-                dealFunc(str) {
-                    if (/年/.test(str)) {
-                        return dealDate(str);
-                    }
-                    return formatDate(str);
-                },
-            },
-        ],
-    },
-    steamdb_game: {
-        filters: [
-            {
-                category: 'date',
-                dealFunc(str) {
-                    const arr = str.split('–');
-                    if (!arr[0])
-                        return '';
-                    return formatDate(arr[0].trim());
-                },
-            },
-        ],
-    },
+    steam_game: steamTools,
+    steamdb_game: steamdbTools,
     douban_game: doubanTools,
+    douban_game_edit: doubanGameEditTools,
 };
+
+var SubjectTypeId;
+(function (SubjectTypeId) {
+    SubjectTypeId[SubjectTypeId["book"] = 1] = "book";
+    SubjectTypeId[SubjectTypeId["anime"] = 2] = "anime";
+    SubjectTypeId[SubjectTypeId["music"] = 3] = "music";
+    SubjectTypeId[SubjectTypeId["game"] = 4] = "game";
+    SubjectTypeId[SubjectTypeId["real"] = 6] = "real";
+    SubjectTypeId["all"] = "all";
+})(SubjectTypeId || (SubjectTypeId = {}));
+
+const getchuGameModel = {
+    key: 'getchu_game',
+    description: 'Getchu游戏',
+    host: ['getchu.com', 'www.getchu.com'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.genretab.current',
+            subSelector: 'a',
+            keyWord: 'ゲーム',
+        },
+    ],
+    controlSelector: [
+        {
+            selector: '#soft-title',
+        },
+    ],
+    itemList: [],
+};
+const commonSelector = {
+    selector: '#soft_table table',
+    subSelector: 'td',
+    sibling: true,
+};
+const dict = {
+    定価: '售价',
+    発売日: '发行日期',
+    ジャンル: '游戏类型',
+    ブランド: '开发',
+    原画: '原画',
+    音楽: '音乐',
+    シナリオ: '剧本',
+    アーティスト: '主题歌演出',
+    作詞: '主题歌作词',
+    作曲: '主题歌作曲',
+};
+const configArr = Object.keys(dict).map((key) => {
+    const r = {
+        name: dict[key],
+        selector: Object.assign({ 
+            // 匹配关键字开头 2020/03/18
+            keyWord: '^' + key }, commonSelector),
+    };
+    if (key === '発売日') {
+        r.category = 'date';
+    }
+    return r;
+});
+getchuGameModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#soft-title',
+    },
+    category: 'subject_title',
+}, {
+    name: 'cover',
+    selector: [
+        {
+            selector: '#soft_table .highslide',
+        },
+        {
+            selector: '#soft_table .highslide img',
+        },
+    ],
+    category: 'cover',
+}, ...configArr, {
+    name: '游戏简介',
+    selector: [
+        {
+            selector: '#wrapper',
+            subSelector: '.tabletitle',
+            sibling: true,
+            keyWord: 'ストーリー',
+        },
+        {
+            selector: '#wrapper',
+            subSelector: '.tabletitle',
+            sibling: true,
+            keyWord: '商品紹介',
+        },
+    ],
+    category: 'subject_summary',
+});
+getchuGameModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+    {
+        name: 'subject_nsfw',
+        value: '1',
+        category: 'checkbox',
+    },
+];
+
+// TODO: 区分 kindle 页面和 纸质书页面
+const amazonSubjectModel = {
+    key: 'amazon_jp_book',
+    host: ['amazon.co.jp', 'www.amazon.co.jp'],
+    description: '日亚图书',
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#nav-subnav .nav-a:first-child',
+            subSelector: '.nav-a-content',
+            keyWord: '(?<!Kindle)本',
+        },
+        {
+            selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
+            subSelector: '.a-link-normal',
+            keyWord: '(?<!Kindle)本',
+        },
+    ],
+    controlSelector: {
+        selector: '#title',
+    },
+    itemList: [],
+};
+amazonSubjectModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '#productTitle',
+    },
+    category: 'subject_title',
+}, {
+    name: 'cover',
+    selector: [
+        {
+            selector: 'img#igImage',
+        },
+        {
+            selector: 'img#imgBlkFront',
+        },
+    ],
+    category: 'cover',
+}, {
+    name: 'ASIN',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        keyWord: 'ISBN-10',
+        separator: ':',
+    },
+    category: 'ASIN',
+}, {
+    name: 'ISBN',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        keyWord: 'ISBN-13',
+        separator: ':',
+    },
+    category: 'ISBN',
+}, {
+    name: '发售日',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        keyWord: '発売日',
+        separator: ':',
+    },
+    category: 'date',
+}, {
+    name: '作者',
+    selector: [
+        {
+            selector: '#byline .author span.a-size-medium',
+        },
+        {
+            selector: '#bylineInfo .author > a',
+        },
+        {
+            selector: '#bylineInfo .contributorNameID',
+        },
+    ],
+    category: 'creator',
+}, {
+    name: '出版社',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        separator: ':',
+        keyWord: '出版社',
+    },
+}, {
+    name: '页数',
+    selector: {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        separator: ':',
+        keyWord: 'ページ',
+    },
+}, {
+    name: '价格',
+    selector: [
+        {
+            selector: '.swatchElement.selected .a-color-base .a-size-base',
+        },
+        {
+            selector: '.swatchElement.selected .a-color-base',
+        },
+    ],
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '#productDescription',
+            subSelector: 'h3',
+            sibling: true,
+            keyWord: ['内容紹介', '内容'],
+        },
+        {
+            selector: '#bookDesc_iframe',
+            subSelector: '#iframeContent',
+            isIframe: true,
+        },
+    ],
+    category: 'subject_summary',
+});
 
 const erogamescapeModel = {
     key: 'erogamescape',
@@ -1254,7 +1407,7 @@ jdBookModel.itemList.push({
 const doubanGameModel = {
     key: 'douban_game',
     description: 'douban game',
-    host: ['douban.com'],
+    host: ['douban.com', 'www.douban.com'],
     type: SubjectTypeId.game,
     pageSelectors: [
         {
@@ -1284,11 +1437,17 @@ doubanGameModel.itemList.push({
         Object.assign(Object.assign({}, gameAttr), { keyWord: '预计上市时间' }),
     ],
     category: 'date',
-}, {
-    name: '平台',
-    selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '平台' }),
-    category: 'platform',
-}, {
+}, 
+// 平台特殊处理
+// {
+//   name: '平台',
+//   selector: {
+//     ...gameAttr,
+//     keyWord: '平台',
+//   },
+//   category: 'platform',
+// },
+{
     name: '别名',
     selector: Object.assign(Object.assign({}, gameAttr), { keyWord: '别名' }),
     category: 'alias',
@@ -1328,6 +1487,79 @@ doubanGameModel.itemList.push({
     category: 'cover',
 });
 
+const doubanGameEditModel = {
+    key: 'douban_game_edit',
+    description: 'douban game edit',
+    host: ['douban.com', 'www.douban.com'],
+    urlRules: [/\/game\/\d+\/edit/],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '#content h1',
+        },
+    ],
+    controlSelector: {
+        selector: '#content h1',
+    },
+    itemList: [],
+};
+const gameAttr$1 = {
+    selector: '#thing-modify',
+    subSelector: '.thing-item .desc-item .label',
+    sibling: true,
+};
+doubanGameEditModel.itemList.push({
+    name: '游戏名',
+    selector: [
+        Object.assign(Object.assign({}, gameAttr$1), { keyWord: '原名' }),
+        Object.assign(Object.assign({}, gameAttr$1), { keyWord: '中文名' }),
+    ],
+    category: 'subject_title',
+}, {
+    name: '发行日期',
+    selector: [
+        Object.assign(Object.assign({}, gameAttr$1), { keyWord: '发行日期' }),
+        Object.assign(Object.assign({}, gameAttr$1), { keyWord: '预计上市时间' }),
+    ],
+    category: 'date',
+}, {
+    name: '平台',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '平台' }),
+    category: 'platform',
+}, {
+    name: '中文名',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '中文名' }),
+}, {
+    name: '别名',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '别名' }),
+    category: 'alias',
+}, {
+    name: '游戏类型',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '类型' }),
+}, {
+    name: '开发',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '开发商' }),
+}, {
+    name: '发行',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '发行商' }),
+}, 
+// {
+//   name: '游戏简介',
+//   selector: [
+//     {
+//       selector: '#thing_desc_options_0',
+//     },
+//   ],
+//   category: 'subject_summary',
+// },
+{
+    name: 'cover',
+    selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '图标', nextSelector: {
+            selector: 'img',
+        } }),
+    category: 'cover',
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1338,15 +1570,19 @@ const configs = {
     [dangdangBookModel.key]: dangdangBookModel,
     [jdBookModel.key]: jdBookModel,
     [doubanGameModel.key]: doubanGameModel,
+    [doubanGameEditModel.key]: doubanGameEditModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
+    const models = [];
     for (let i = 0; i < keys.length; i++) {
         const hosts = configs[keys[i]].host;
         if (hosts.includes(host)) {
-            return configs[keys[i]];
+            models.push(configs[keys[i]]);
+            // return configs[keys[i]];
         }
     }
+    return models;
 }
 
 /**
@@ -1439,7 +1675,7 @@ function getWikiData(siteConfig, el) {
         const defaultInfos = siteConfig.defaultInfos || [];
         let rawInfo = r.filter((i) => i);
         const hookRes = yield getHooks(siteConfig, 'afterGetWikiData')(rawInfo);
-        if (Array.isArray(hookRes)) {
+        if (Array.isArray(hookRes) && hookRes.length) {
             rawInfo = hookRes;
         }
         return [...rawInfo, ...defaultInfos];
@@ -1540,25 +1776,6 @@ function insertControlBtn($t, cb) {
         }
     }));
 }
-/**
- * 插入新建角色控制的按钮
- * @param $t 父节点
- * @param cb 返回 Promise 的回调
- */
-function insertControlBtnChara($t, cb) {
-    if (!$t)
-        return;
-    const $div = document.createElement('div');
-    const $s = document.createElement('a');
-    $s.classList.add('e-wiki-new-character');
-    // $s.setAttribute('target', '_blank')
-    $s.innerHTML = '添加新虚拟角色';
-    $div.appendChild($s);
-    $t.insertAdjacentElement('afterend', $div);
-    $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
-        yield cb(e);
-    }));
-}
 function isChineseStr(str) {
     return /^[\u4e00-\u9fa5]+/i.test(str) && !hasJpStr(str);
 }
@@ -1575,7 +1792,15 @@ function getTargetStr(str1, str2, checkFunc) {
     return '';
 }
 // 综合两个单项信息
-function combineObj(current, target) {
+function combineObj(current, target, auxPrefs = {}) {
+    if (auxPrefs.originNames === 'all' ||
+        (auxPrefs.originNames && auxPrefs.originNames.includes(current.name))) {
+        return [Object.assign({}, current)];
+    }
+    else if (auxPrefs.targetNames === 'all' ||
+        (auxPrefs.targetNames && auxPrefs.targetNames.includes(target.name))) {
+        return [Object.assign({}, target)];
+    }
     const obj = Object.assign(Object.assign({}, current), target);
     if (current.category === 'subject_title') {
         // 中日  日英  中英
@@ -1623,7 +1848,7 @@ function combineObj(current, target) {
  * @param infoList 当前的条目信息
  * @param otherInfoList 参考的条目信息
  */
-function combineInfoList(infoList, otherInfoList) {
+function combineInfoList(infoList, otherInfoList, auxPrefs = {}) {
     const multipleNames = ['平台', '别名'];
     const res = [];
     const idxSetOther = new Set();
@@ -1638,7 +1863,7 @@ function combineInfoList(infoList, otherInfoList) {
             res.push(current);
         }
         else {
-            const objArr = combineObj(current, otherInfoList[idxOther]);
+            const objArr = combineObj(current, otherInfoList[idxOther], auxPrefs);
             res.push(...objArr);
             idxSetOther.add(idxOther);
         }
@@ -1669,12 +1894,28 @@ function combineInfoList(infoList, otherInfoList) {
 function getWikiDataByURL(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const urlObj = new URL(url);
-        const model = findModelByHost(urlObj.hostname);
-        if (model) {
+        const models = findModelByHost(urlObj.hostname);
+        if (models && models.length) {
             const rawText = yield fetchText(url, 4 * 1000);
             let $doc = new DOMParser().parseFromString(rawText, 'text/html');
+            let model = models[0];
+            if (models.length > 1) {
+                for (const m of models) {
+                    if (m.urlRules && m.urlRules.some((r) => r.test(url))) {
+                        model = m;
+                    }
+                }
+            }
+            // 查找标志性的元素
+            const $page = findElement(model.pageSelectors, $doc);
+            if (!$page)
+                return [];
+            const $title = findElement(model.controlSelector, $doc);
+            if (!$title)
+                return [];
             return yield getWikiData(model, $doc);
         }
+        return [];
     });
 }
 
@@ -2092,13 +2333,14 @@ function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
     });
 }
 
-function updateAuxData(auxSite) {
+function updateAuxData(auxSite, auxPrefs = {}) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             console.info('the start of updating aux data');
             const auxData = yield getWikiDataByURL(auxSite);
+            console.info('auxiliary data: ', auxData);
             const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
-            let infos = combineInfoList(wikiData.infos, auxData);
+            let infos = combineInfoList(wikiData.infos, auxData, auxPrefs);
             if (auxSite.match(/store\.steampowered\.com/)) {
                 infos = combineInfoList(auxData, wikiData.infos);
             }
@@ -2114,7 +2356,7 @@ function updateAuxData(auxSite) {
         }
     });
 }
-function initCommon(siteConfig, config = {}) {
+function initCommon(siteConfig) {
     return __awaiter(this, void 0, void 0, function* () {
         const $page = findElement(siteConfig.pageSelectors);
         if (!$page)
@@ -2122,12 +2364,15 @@ function initCommon(siteConfig, config = {}) {
         const $title = findElement(siteConfig.controlSelector);
         if (!$title)
             return;
-        const bcRes = yield getHooks(siteConfig, 'beforeCreate')();
+        let bcRes = yield getHooks(siteConfig, 'beforeCreate')();
         if (!bcRes)
             return;
-        const { payload = {} } = config;
+        if (bcRes === true) {
+            bcRes = {};
+        }
+        const { payload = {} } = bcRes;
+        console.info(siteConfig.description, ' content script init');
         insertControlBtn($title, (e, flag) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
             const protocol = GM_getValue(PROTOCOL) || 'https';
             const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
             const bgmHost = `${protocol}://${bgm_domain}`;
@@ -2141,7 +2386,7 @@ function initCommon(siteConfig, config = {}) {
             };
             GM_setValue(WIKI_DATA, JSON.stringify(wikiData));
             if (flag) {
-                let result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, (_a = config === null || config === void 0 ? void 0 : config.payload) === null || _a === void 0 ? void 0 : _a.disableDate);
+                let result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, payload === null || payload === void 0 ? void 0 : payload.disableDate);
                 console.info('search results: ', result);
                 if (result && result.url) {
                     GM_setValue(SUBJECT_ID, getSubjectId(result.url));
@@ -2149,7 +2394,8 @@ function initCommon(siteConfig, config = {}) {
                     GM_openInTab(bgmHost + result.url);
                 }
                 else {
-                    payload.auxSite && (yield updateAuxData(payload.auxSite));
+                    payload.auxSite &&
+                        (yield updateAuxData(payload.auxSite, payload.auxPrefs || {}));
                     // 重置自动填表
                     GM_setValue(AUTO_FILL_FORM, 1);
                     setTimeout(() => {
@@ -2160,7 +2406,8 @@ function initCommon(siteConfig, config = {}) {
             else {
                 // 重置自动填表
                 GM_setValue(AUTO_FILL_FORM, 1);
-                payload.auxSite && (yield updateAuxData(payload.auxSite));
+                payload.auxSite &&
+                    (yield updateAuxData(payload.auxSite, payload.auxPrefs || {}));
                 setTimeout(() => {
                     GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
                 }, 200);
@@ -3129,54 +3376,6 @@ const bangumi = {
     },
 };
 
-const getchu = {
-    init(siteConfig) {
-        // 查找标志性的元素
-        const $page = findElement(siteConfig.pageSelectors);
-        if (!$page)
-            return;
-        const protocol = GM_getValue(PROTOCOL) || 'https';
-        const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
-        const bgmHost = `${protocol}://${bgm_domain}`;
-        Array.prototype.forEach.call($qa('h2.chara-name'), (node) => {
-            insertControlBtnChara(node, (e) => __awaiter(this, void 0, void 0, function* () {
-                const charaInfo = getchuTools.getCharacterInfo(e.target);
-                console.info('character info list: ', charaInfo);
-                const charaData = {
-                    type: siteConfig.type,
-                    infos: charaInfo,
-                };
-                // 重置自动填表
-                GM_setValue(AUTO_FILL_FORM, 1);
-                GM_setValue(CHARA_DATA, JSON.stringify(charaData));
-                // @TODO 不使用定时器
-                setTimeout(() => {
-                    GM_openInTab(`${bgmHost}/character/new`);
-                }, 200);
-            }));
-        });
-    },
-};
-
-function getSteamdbURL(href) {
-    var _a;
-    href = href || (location === null || location === void 0 ? void 0 : location.href);
-    const id = (_a = href.match(/store\.steampowered\.com\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
-    if (id) {
-        return `https://steamdb.info/app/${id}/info/`;
-    }
-    return '';
-}
-function getSteamURL(href) {
-    var _a;
-    href = href || (location === null || location === void 0 ? void 0 : location.href);
-    const id = (_a = href.match(/steamdb\.info\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
-    if (id) {
-        return `https://store.steampowered.com/app/${id}/_/`;
-    }
-    return '';
-}
-
 function setDomain() {
     bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
     GM_setValue('bgm', bgm_domain);
@@ -3195,55 +3394,18 @@ if (GM_registerMenuCommand) {
     GM_registerMenuCommand('\u8bbe\u7f6e\u57df\u540d', setDomain, 'b');
     GM_registerMenuCommand('新建条目页面(http 或者 https)', setProtocol, 'h');
 }
-// common
-const hostArr = [];
-Object.keys(configs).forEach((key) => hostArr.push(...configs[key].host));
-const siteRe = new RegExp([...hostArr, 'bangumi.tv', 'bgm.tv', 'chii.tv']
-    .map((h) => h.replace('.', '\\.'))
-    .join('|'));
 const init = () => __awaiter(void 0, void 0, void 0, function* () {
-    const page = document.location.host.match(siteRe);
-    if (page) {
+    const host = window.location.hostname;
+    const modelArr = findModelByHost(host);
+    if (modelArr && modelArr.length) {
         addStyle();
-        switch (page[0]) {
-            case 'amazon.co.jp':
-                initCommon(amazonSubjectModel);
-                break;
-            case 'getchu.com':
-                initCommon(getchuGameModel);
-                getchu.init(getchuGameModel);
-                break;
-            case 'erogamescape.org':
-            case 'erogamescape.dyndns.org':
-                initCommon(erogamescapeModel);
-                break;
-            case 'steamdb.info':
-                initCommon(steamdbModel, {
-                    payload: {
-                        disableDate: true,
-                        auxSite: getSteamURL(window.location.href),
-                    },
-                });
-                break;
-            case 'store.steampowered.com':
-                initCommon(steamModel, {
-                    payload: {
-                        disableDate: true,
-                        auxSite: getSteamdbURL(window.location.href),
-                    },
-                });
-                break;
-            case 'bangumi.tv':
-            case 'chii.tv':
-            case 'bgm.tv':
-                bangumi.init();
-                break;
-            default:
-                const model = findModelByHost(page[0]);
-                if (model) {
-                    initCommon(model);
-                }
-        }
+        modelArr.forEach((m) => {
+            initCommon(m);
+        });
+    }
+    if (['bangumi.tv', 'chii.tv', 'bgm.tv'].includes(host)) {
+        addStyle();
+        bangumi.init();
     }
 });
 init();
