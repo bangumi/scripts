@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.6.2
+// @version     0.3.6.3
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -452,6 +452,7 @@ const doubanTools = {
                         payload: {
                             auxSite: document.querySelector('.th-modify > a').href,
                             auxPrefs: {
+                                originNames: ['平台'],
                                 targetNames: 'all',
                             },
                         },
@@ -1529,6 +1530,7 @@ doubanGameEditModel.itemList.push({
 }, {
     name: '中文名',
     selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '中文名' }),
+    category: 'alias',
 }, {
     name: '别名',
     selector: Object.assign(Object.assign({}, gameAttr$1), { keyWord: '别名' }),
@@ -1849,12 +1851,24 @@ function combineObj(current, target, auxPrefs = {}) {
  * @param otherInfoList 参考的条目信息
  */
 function combineInfoList(infoList, otherInfoList, auxPrefs = {}) {
+    // 合并数组为空时
+    if (!otherInfoList || !otherInfoList.length) {
+        return infoList;
+    }
+    if (!infoList || !infoList.length) {
+        return otherInfoList;
+    }
     const multipleNames = ['平台', '别名'];
+    const { targetNames = [], originNames = [] } = auxPrefs;
     const res = [];
     const idxSetOther = new Set();
     for (let i = 0; i < infoList.length; i++) {
         const current = infoList[i];
-        if (multipleNames.includes(current.name)) {
+        const targetFirst = targetNames.includes(current.name);
+        if (targetFirst) {
+            continue;
+        }
+        else if (!targetFirst && multipleNames.includes(current.name)) {
             res.push(current);
             continue;
         }
@@ -1870,7 +1884,11 @@ function combineInfoList(infoList, otherInfoList, auxPrefs = {}) {
     }
     for (let j = 0; j < otherInfoList.length; j++) {
         const other = otherInfoList[j];
-        if (multipleNames.includes(other.name)) {
+        const originFirst = originNames.includes(other.name);
+        if (originFirst) {
+            continue;
+        }
+        else if (!originFirst && multipleNames.includes(other.name)) {
             res.push(other);
             continue;
         }
@@ -1906,14 +1924,19 @@ function getWikiDataByURL(url) {
                     }
                 }
             }
-            // 查找标志性的元素
-            const $page = findElement(model.pageSelectors, $doc);
-            if (!$page)
+            try {
+                // 查找标志性的元素
+                const $page = findElement(model.pageSelectors, $doc);
+                if (!$page)
+                    return [];
+                const $title = findElement(model.controlSelector, $doc);
+                if (!$title)
+                    return [];
+                return yield getWikiData(model, $doc);
+            }
+            catch (error) {
                 return [];
-            const $title = findElement(model.controlSelector, $doc);
-            if (!$title)
-                return [];
-            return yield getWikiData(model, $doc);
+            }
         }
         return [];
     });
