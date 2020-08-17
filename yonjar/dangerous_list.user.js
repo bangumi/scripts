@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi危险名单
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.2.1
+// @version      0.2.2
 // @description  bangumi危险名单&简易屏蔽
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(user|blog|ep|character|person|(group|subject)\/topic|rakuen\/topic\/(ep|crt|group|subject|prsn))\/\S+(\?.*)?(#.*)?$/
@@ -94,11 +94,15 @@ class User {
     block_btn.classList.add("chiiBtn");
     block_btn.classList.add("yonjar_bgm_dangerous_list_btn");
     block_btn.innerHTML = "<span>在下面生成ublock规则</span>";
+
     block_btn.addEventListener("click", (e) => {
       e.preventDefault();
-      document.querySelector(
-        ".bio"
-      ).textContent = `! ${location.host} 屏蔽首页侧边栏&超展开&小组页面的帖子
+
+      let block_text = document.createElement("p");
+      block_text.style.whiteSpace = "pre-line";
+      block_text.style.padding = "10px";
+
+      block_text.textContent = `! ${location.host} 屏蔽首页侧边栏&超展开&小组页面的帖子
       ${location.host}##li:has(> a[title="${this.name}"])
       ${location.host}##li:has(img[title="${this.name}"])
       ${location.host}##tr:has(a[href="/user/${this.id}"])
@@ -107,7 +111,8 @@ class User {
       ${location.host}##.topic_sub_reply > div:has(> a[href="/user/${this.id}"])
       ${location.host}##.row_reply:has(> a[href="/user/${this.id}"])
       `;
-      document.querySelector(".bio").style.whiteSpace = "pre-line";
+
+      document.querySelector(".user_box").appendChild(block_text);
     });
 
     let titleElem = document.querySelector("div.headerContainer > h1 > div.rr");
