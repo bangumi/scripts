@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.6.4
+// @version     0.3.7
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -327,7 +327,7 @@ const getchuTools = {
             .split('＋')[0]
             .replace(/（このタイトルの関連商品）/, '')
             .trim();
-        return str.replace(/\s[^ ]*?(限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
+        return str.replace(/\s[^ ]*?(スペシャルプライス版|限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
     },
     getExtraCharaInfo(txt) {
         const re = /[^\s]+?[:：]/g;
@@ -1778,6 +1778,25 @@ function insertControlBtn($t, cb) {
         }
     }));
 }
+/**
+ * 插入新建角色控制的按钮
+ * @param $t 父节点
+ * @param cb 返回 Promise 的回调
+ */
+function insertControlBtnChara($t, cb) {
+    if (!$t)
+        return;
+    const $div = document.createElement('div');
+    const $s = document.createElement('a');
+    $s.classList.add('e-wiki-new-character');
+    // $s.setAttribute('target', '_blank')
+    $s.innerHTML = '添加新虚拟角色';
+    $div.appendChild($s);
+    $t.insertAdjacentElement('afterend', $div);
+    $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+        yield cb(e);
+    }));
+}
 function isChineseStr(str) {
     return /^[\u4e00-\u9fa5]+/i.test(str) && !hasJpStr(str);
 }
@@ -2180,65 +2199,14 @@ const PROTOCOL = SCRIPT_PREFIX + 'protocol';
 const BGM_DOMAIN = SCRIPT_PREFIX + 'bgm_domain';
 const SUBJECT_ID = SCRIPT_PREFIX + 'subject_id';
 
-/**
- * send form data with image
- * @param $form
- * @param dataURL
- */
-function sendFormImg($form, dataURL) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const info = [];
-        const $file = $form.querySelector('input[type=file]');
-        const inputFileName = $file.name ? $file.name : 'picfile';
-        info.push({
-            name: inputFileName,
-            value: dataURItoBlob(dataURL),
-            filename: genRandomStr(5) + '.png'
-        });
-        return yield sendForm($form, info);
-    });
-}
-/**
- * send form as xhr promise
- * TODO: return type
- * @param $form
- * @param extraInfo
- */
-function sendForm($form, extraInfo = []) {
-    return new Promise((resolve, reject) => {
-        const fd = new FormData($form);
-        extraInfo.forEach(item => {
-            if (item.filename) {
-                fd.set(item.name, item.value, item.filename);
-            }
-            else {
-                fd.set(item.name, item.value);
-            }
-        });
-        const $submit = $form.querySelector('[name=submit]');
-        if ($submit && $submit.name && $submit.value) {
-            fd.set($submit.name, $submit.value);
-        }
-        const xhr = new XMLHttpRequest();
-        xhr.open($form.method.toLowerCase(), $form.action, true);
-        xhr.onload = function () {
-            let _location;
-            if (xhr.status === 200) {
-                _location = xhr.responseURL;
-                if (_location) {
-                    resolve(_location);
-                }
-                else {
-                    reject('no location');
-                }
-            }
-        };
-        xhr.send(fd);
-    });
-}
-
 function getBgmHost() {
     return `${location.protocol}//${location.host}`;
+}
+function getSubjectId(url) {
+    const m = url.match(/(?:subject|character)\/(\d+)/);
+    if (!m)
+        return '';
+    return m[1];
 }
 function genLinkText(url, text = '地址') {
     const $div = document.createElement('div');
@@ -2256,104 +2224,6 @@ function insertLogInfo($sibling, txt) {
     $sibling.parentElement.insertBefore($log, $sibling);
     $sibling.insertAdjacentElement('afterend', $log);
     return $log;
-}
-function getSubjectId(url) {
-    const m = url.match(/(?:subject|character)\/(\d+)/);
-    if (!m)
-        return '';
-    return m[1];
-}
-function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!bgmHost) {
-            bgmHost = `${location.protocol}//${location.host}`;
-        }
-        const url = `${bgmHost}/subject/${subjectId}/upload_img`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('form[name=img_upload');
-        yield sendFormImg($form, dataUrl);
-    });
-}
-function searchCVByName(name, charaId = '') {
-    return __awaiter(this, void 0, void 0, function* () {
-        const bgmHost = getBgmHost();
-        let url = `${bgmHost}/json/search-cv_person/${name.replace(/\s/g, '')}`;
-        if (charaId) {
-            url = `${url}?character_id=${charaId}`;
-        }
-        const res = yield fetchJson(url, 'json');
-        return Object.keys(res)[0];
-    });
-}
-// 添加角色的关联条目
-function addPersonRelatedSubject(subjectIds, charaId, typeId, charaType = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const typeDict = {
-            [SubjectTypeId.game]: 'game',
-            [SubjectTypeId.anime]: 'anime',
-            [SubjectTypeId.music]: 'music',
-            [SubjectTypeId.book]: 'book',
-            [SubjectTypeId.real]: 'real',
-            [SubjectTypeId.all]: 'all',
-        };
-        const bgmHost = `${location.protocol}//${location.host}`;
-        const type = typeDict[typeId];
-        const url = `${bgmHost}/character/${charaId}/add_related/${type}`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('.mainWrapper form');
-        const extroInfo = [];
-        // 1 主角 2 配角 3 客串
-        subjectIds.forEach((v, i) => {
-            extroInfo.push({
-                name: `infoArr[n${i}][crt_type]`,
-                value: charaType,
-            });
-            extroInfo.push({
-                name: `infoArr[n${i}][subject_id]`,
-                value: v,
-            });
-        });
-        // {name: 'submit', value: '保存关联数据'}
-        yield sendForm($form, [...extroInfo]);
-    });
-}
-// 未设置域名的兼容，只能在 Bangumi 本身上面使用
-// 添加角色的关联 CV
-function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const typeDict = {
-            [SubjectTypeId.game]: 'game',
-            [SubjectTypeId.anime]: 'anime',
-            [SubjectTypeId.music]: 'music',
-            [SubjectTypeId.book]: 'book',
-            [SubjectTypeId.real]: 'real',
-            [SubjectTypeId.all]: 'all',
-        };
-        const bgmHost = `${location.protocol}//${location.host}`;
-        const type = typeDict[typeId];
-        const url = `${bgmHost}/character/${charaId}/add_related/person/${type}`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('.mainWrapper form');
-        const personInfo = personIds.map((v, i) => ({
-            name: `infoArr[n${i}][prsn_id]`,
-            value: v,
-        }));
-        // {name: 'submit', value: '保存关联数据'}
-        yield sendForm($form, [
-            {
-                name: 'infoArr[n0][subject_id]',
-                value: subjectId,
-            },
-            {
-                name: 'infoArr[n0][subject_type_id]',
-                value: typeId,
-            },
-            ...personInfo,
-        ]);
-    });
 }
 
 function updateAuxData(auxSite, auxPrefs = {}) {
@@ -2853,6 +2723,63 @@ var BlurStack = function BlurStack() {
   this.next = null;
 };
 
+/**
+ * send form data with image
+ * @param $form
+ * @param dataURL
+ */
+function sendFormImg($form, dataURL) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const info = [];
+        const $file = $form.querySelector('input[type=file]');
+        const inputFileName = $file.name ? $file.name : 'picfile';
+        info.push({
+            name: inputFileName,
+            value: dataURItoBlob(dataURL),
+            filename: genRandomStr(5) + '.png'
+        });
+        return yield sendForm($form, info);
+    });
+}
+/**
+ * send form as xhr promise
+ * TODO: return type
+ * @param $form
+ * @param extraInfo
+ */
+function sendForm($form, extraInfo = []) {
+    return new Promise((resolve, reject) => {
+        const fd = new FormData($form);
+        extraInfo.forEach(item => {
+            if (item.filename) {
+                fd.set(item.name, item.value, item.filename);
+            }
+            else {
+                fd.set(item.name, item.value);
+            }
+        });
+        const $submit = $form.querySelector('[name=submit]');
+        if ($submit && $submit.name && $submit.value) {
+            fd.set($submit.name, $submit.value);
+        }
+        const xhr = new XMLHttpRequest();
+        xhr.open($form.method.toLowerCase(), $form.action, true);
+        xhr.onload = function () {
+            let _location;
+            if (xhr.status === 200) {
+                _location = xhr.responseURL;
+                if (_location) {
+                    resolve(_location);
+                }
+                else {
+                    reject('no location');
+                }
+            }
+        };
+        xhr.send(fd);
+    });
+}
+
 function getMousePos(canvas, evt) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -3040,6 +2967,99 @@ function insertLoading($sibling) {
     $loading.setAttribute('style', 'width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif");');
     $sibling.parentElement.insertBefore($loading, $sibling);
     return $loading;
+}
+
+function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!bgmHost) {
+            bgmHost = `${location.protocol}//${location.host}`;
+        }
+        const url = `${bgmHost}/subject/${subjectId}/upload_img`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('form[name=img_upload');
+        yield sendFormImg($form, dataUrl);
+    });
+}
+function searchCVByName(name, charaId = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        const bgmHost = getBgmHost();
+        let url = `${bgmHost}/json/search-cv_person/${name.replace(/\s/g, '')}`;
+        if (charaId) {
+            url = `${url}?character_id=${charaId}`;
+        }
+        const res = yield fetchJson(url, 'json');
+        return Object.keys(res)[0];
+    });
+}
+// 添加角色的关联条目
+function addPersonRelatedSubject(subjectIds, charaId, typeId, charaType = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const typeDict = {
+            [SubjectTypeId.game]: 'game',
+            [SubjectTypeId.anime]: 'anime',
+            [SubjectTypeId.music]: 'music',
+            [SubjectTypeId.book]: 'book',
+            [SubjectTypeId.real]: 'real',
+            [SubjectTypeId.all]: 'all',
+        };
+        const bgmHost = `${location.protocol}//${location.host}`;
+        const type = typeDict[typeId];
+        const url = `${bgmHost}/character/${charaId}/add_related/${type}`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('.mainWrapper form');
+        const extroInfo = [];
+        // 1 主角 2 配角 3 客串
+        subjectIds.forEach((v, i) => {
+            extroInfo.push({
+                name: `infoArr[n${i}][crt_type]`,
+                value: charaType,
+            });
+            extroInfo.push({
+                name: `infoArr[n${i}][subject_id]`,
+                value: v,
+            });
+        });
+        // {name: 'submit', value: '保存关联数据'}
+        yield sendForm($form, [...extroInfo]);
+    });
+}
+// 未设置域名的兼容，只能在 Bangumi 本身上面使用
+// 添加角色的关联 CV
+function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const typeDict = {
+            [SubjectTypeId.game]: 'game',
+            [SubjectTypeId.anime]: 'anime',
+            [SubjectTypeId.music]: 'music',
+            [SubjectTypeId.book]: 'book',
+            [SubjectTypeId.real]: 'real',
+            [SubjectTypeId.all]: 'all',
+        };
+        const bgmHost = `${location.protocol}//${location.host}`;
+        const type = typeDict[typeId];
+        const url = `${bgmHost}/character/${charaId}/add_related/person/${type}`;
+        const rawText = yield fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('.mainWrapper form');
+        const personInfo = personIds.map((v, i) => ({
+            name: `infoArr[n${i}][prsn_id]`,
+            value: v,
+        }));
+        // {name: 'submit', value: '保存关联数据'}
+        yield sendForm($form, [
+            {
+                name: 'infoArr[n0][subject_id]',
+                value: subjectId,
+            },
+            {
+                name: 'infoArr[n0][subject_type_id]',
+                value: typeId,
+            },
+            ...personInfo,
+        ]);
+    });
 }
 
 /**
@@ -3399,6 +3419,35 @@ const bangumi = {
     },
 };
 
+const getchu = {
+    init(siteConfig) {
+        // 查找标志性的元素
+        const $page = findElement(siteConfig.pageSelectors);
+        if (!$page)
+            return;
+        const protocol = GM_getValue(PROTOCOL) || 'https';
+        const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+        const bgmHost = `${protocol}://${bgm_domain}`;
+        Array.prototype.forEach.call($qa('h2.chara-name'), (node) => {
+            insertControlBtnChara(node, (e) => __awaiter(this, void 0, void 0, function* () {
+                const charaInfo = getchuTools.getCharacterInfo(e.target);
+                console.info('character info list: ', charaInfo);
+                const charaData = {
+                    type: siteConfig.type,
+                    infos: charaInfo,
+                };
+                // 重置自动填表
+                GM_setValue(AUTO_FILL_FORM, 1);
+                GM_setValue(CHARA_DATA, JSON.stringify(charaData));
+                // @TODO 不使用定时器
+                setTimeout(() => {
+                    GM_openInTab(`${bgmHost}/character/new`);
+                }, 200);
+            }));
+        });
+    },
+};
+
 function setDomain() {
     bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
     GM_setValue('bgm', bgm_domain);
@@ -3429,6 +3478,10 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
     if (['bangumi.tv', 'chii.tv', 'bgm.tv'].includes(host)) {
         addStyle();
         bangumi.init();
+        // @TODO remove check
+    }
+    else if (host === 'www.getchu.com') {
+        getchu.init(getchuGameModel);
     }
 });
 init();
