@@ -1,9 +1,11 @@
 const fs = require('fs');
+const path = require('path');
 const glob = require('glob');
 const through2 = require('through2');
 
 let cache = {};
 function getConcatFileContent(filepaths) {
+    console.debug(filepaths);
     if(!filepaths) return '';
     if(!Array.isArray(filepaths)) filepaths = [filepaths];
     return filepaths
@@ -12,6 +14,7 @@ function getConcatFileContent(filepaths) {
 }
 
 function getRenderContent(renderKey, options) {
+    console.debug(renderKey);
     renderKey = (renderKey||"").replace(/\{\{\s*(.*?)\s*\}\}/,"$1");
     if(cache[renderKey]) return cache[renderKey];
     const [key, ...subs] = renderKey.split('.');
@@ -23,7 +26,9 @@ function getRenderContent(renderKey, options) {
         content = getConcatFileContent(files);
     } else if(Array.isArray(files)) {
         content = getConcatFileContent(
-            files.filter(file=>file.match(sub))
+            files.filter(
+                file=>path.basename(file).match(sub)
+            )
         );
     }
     return (cache[renderKey] = content);

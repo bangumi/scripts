@@ -10,9 +10,9 @@ function buildWithTemplate(template, destPath, appName, basename, extname) {
         .pipe(render({
             author: 'AUTHORS',
             namespace: 'src/namespace.txt',
-            common: 'src/common.js',
-            appbase: 'src/appbase.js',
-            app: `src/${appName}/*`,
+            common: 'src/common/common.js',
+            appbase: 'src/app/appbase.js',
+            app: `src/app/${appName}/*`,
         }))
         .pipe(rename({
             basename: basename,
@@ -23,7 +23,7 @@ function buildWithTemplate(template, destPath, appName, basename, extname) {
 
 function buildApp4UserJS(appName) {
     return buildWithTemplate(
-        'src/template.js',
+        'src/template/user.js',
         'dist',
         appName,
         `kotorichan-${appName}`,
@@ -35,14 +35,14 @@ function buildApp4BGM(appName, cb) {
     const dest = `build/${appName}`;
     return parallel(
         buildWithTemplate(
-            'src/template4bgm.js',
+            'src/template/bgm.js',
             dest,
             appName,
             'app',
             '.js'
         ),
         buildWithTemplate(
-            'src/template4bgm.css',
+            'src/template/bgm.css',
             dest,
             appName,
             'app',
