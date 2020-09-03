@@ -1,31 +1,18 @@
-// ==UserScript==
-// @name         加密通信翻译
-// @namespace    kotorichan_app
-// @version      0.0.1
-// @description  Bangumi 加密通信翻译
-// @author       Vick Scarlet ([BGM] 神戸小鳥＠vickscarlet)
-// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
-// @grant        none
-// ==/UserScript==
-// jshint esversion: 6
+const common = namespace.common;
 
-class DC {
+/**
+ * 加密通信翻译
+ * @class EncodeTranslate
+ * @module EncodeTranslate
+ * @extends app.AppBase
+ * @version {{app.version}}
+ * @namespace {{namespace}}
+ */
+class EncodeTranslate extends app.AppBase {
     constructor() {
-        const dcv = (arr,dict,s)=>arr.forEach((v,i)=>dict[v]=s?""+i:i);
-
-        // 歪比吧卜
-        dcv(
-            (this.wbc1=["歪", "比", "吧"]),
-            (this.wbc2={}),
-            true
-        );
-
-        // 篝语
-        dcv(
-            (this.kc1=["██","█▉","█▊","█▋","█▌","█▍","█▎","█▏","▉█","▉▉","▉▊","▉▋","▉▌","▉▍","▉▎","▉▏","▊█","▊▉","▊▊","▊▋","▊▌","▊▍","▊▎","▊▏","▋█","▋▉","▋▊","▋▋","▋▌","▋▍","▋▎","▋▏","▌█","▌▉","▌▊","▌▋","▌▌","▌▍","▌▎","▌▏","▍█","▍▉","▍▊","▍▋","▍▌","▍▍","▍▎","▍▏","▎█","▎▉","▎▊","▎▋","▎▌","▎▍","▎▎","▎▏","▏█","▏▉","▏▊","▏▋","▏▌","▏▍","▏▎","▏▏","▓▓"]),
-            (this.kc2={})
-        );
+        super();
     }
+    static get version() {return "{{app.version}}";}
 
     get raw() { return ''+this._raw; }
     set raw(v='') { this._raw = v; }
@@ -158,31 +145,49 @@ class DC {
         })(t);
     }
 
+    init() {
+        const dcv = (arr,dict,s)=>arr.forEach((v,i)=>dict[v]=s?""+i:i);
+
+        // 歪比吧卜
+        dcv(
+            (this.wbc1=["歪", "比", "吧"]),
+            (this.wbc2={}),
+            true
+        );
+
+        // 篝语
+        dcv(
+            (this.kc1=["██","█▉","█▊","█▋","█▌","█▍","█▎","█▏","▉█","▉▉","▉▊","▉▋","▉▌","▉▍","▉▎","▉▏","▊█","▊▉","▊▊","▊▋","▊▌","▊▍","▊▎","▊▏","▋█","▋▉","▋▊","▋▋","▋▌","▋▍","▋▎","▋▏","▌█","▌▉","▌▊","▌▋","▌▌","▌▍","▌▎","▌▏","▍█","▍▉","▍▊","▍▋","▍▌","▍▍","▍▎","▍▏","▎█","▎▉","▎▊","▎▋","▎▌","▎▍","▎▎","▎▏","▏█","▏▉","▏▊","▏▋","▏▌","▏▍","▏▎","▏▏","▓▓"]),
+            (this.kc2={})
+        );
+    }
+
+    enter() {
+        const handler = element => {
+            let html = $(element).html();
+            const decode = (html,regex,type) =>{
+                let match = null;
+                while((match=regex.exec(html))) {
+                    const matchStr = match[0];
+                    dc[type] = matchStr;
+                    html = html.replace(matchStr,`<span class="kotoridecode" kotoridecode="${type}">${dc.raw}</span>`);
+                }
+                return html;
+            };
+
+            html = decode(html,/[歪比吧卜]+/g,'waibi');
+            html = decode(html,/([█▉▊▋▌▍▎▏]{2})+(▓▓)*/g,'kagari');
+            $(element).html(html);
+        };
+
+        const selectHandler = selecter => $(selecter).each((idx,element)=>handler(element));
+
+        selectHandler(".topic_content");
+        selectHandler(".message");
+        selectHandler(".cmt_sub_content");
+    }
+
 }
 
-const dc = new DC();
-
-const handler = element => {
-    let html = $(element).html();
-    const decode = (html,regex,type) =>{
-        let match = null;
-        while((match=regex.exec(html))) {
-            const matchStr = match[0];
-            dc[type] = matchStr;
-            html = html.replace(matchStr,`<span class="kotoridecode" kotoridecode="${type}">${dc.raw}</span>`);
-        }
-        return html;
-    };
-
-    html = decode(html,/[歪比吧卜]+/g,'waibi');
-    html = decode(html,/([█▉▊▋▌▍▎▏]{2})+(▓▓)*/g,'kagari');
-    $(element).html(html);
-};
-
-const selectHandler = selecter => $(selecter).each((idx,element)=>handler(element));
-
-$(document).ready(function(){
-    selectHandler(".topic_content");
-    selectHandler(".message");
-    selectHandler(".cmt_sub_content");
-});
+app.EncodeTranslate = EncodeTranslate;
+common.ready(()=>new EncodeTranslate);

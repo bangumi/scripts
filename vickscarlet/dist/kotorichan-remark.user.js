@@ -1,50 +1,503 @@
 // ==UserScript==
 // @name         Bangumi 用户备注与屏蔽
 // @icon         https://kotorichan.me/favicon.ico
-// @namespace    bgm_app.kotorichan.me
+// @namespace    kotorichan_app.remark
 // @version      0.1.0
 // @description  给用户添加备注，防止改名不认识
-// @author       Vick Scarlet ([BGM] 神戸小鳥＠vickscarlet)
+// @author       Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>
 // @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
-// @require      https://code.jquery.com/jquery-3.4.1.min.js
-// @grant        GM_addStyle
+// @grant        none
 // ==/UserScript==
 
-var kotorichan_app;
+const target = (function(){
+    return this || (0, eval)('this');
+})();
+const namespace = `kotorichan_app`;
+(function(namespace) {
+"use struct"
 
-(function(app){
-'use strict';
+namespace.author = `Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>`;
 
-const $ = window.$;
-const VERSION = "0.1.0";
+!function(){
+function $(fn, ...args) {
+    return fn instanceof Function? fn(...args): void 0;
+};
+
+$.keys = function(o) {
+    if(o==null) return;
+    if(!o) return [];
+    if(o.keys instanceof Function) {
+        const keysI = o.keys();
+        if(keysI) {
+            if(keysI.next) {
+                const ks = [];
+                let key;
+                while(!(key=keysI.next()).done) ks.push(key.value);
+                return ks;
+            }
+            return keysI;
+        }
+    }
+    if(Object.values) return Object.values(o);
+    const keys = [];
+    for(const key in o) keys.push(key);
+    return keys;
+};
+
+$.values = function(o) {
+    if(o==null) return;
+    if(!o) return [];
+    if(o.values instanceof Function) {
+        const valuesI = o.values();
+        if(valuesI) {
+            if(valuesI.next) {
+                const vs = [];
+                let value;
+                while(!(value=valuesI.next()).done) vs.push(value.value);
+                return vs;
+            }
+            return valuesI;
+        }
+    }
+    if(Object.values) return Object.values(o);
+    const values = [];
+    for(const key in o) values.push(o[key]);
+    return values;
+};
+
+$.random = function(n) {
+    return Number.isFinite(n)
+        ? Math.random() * n
+        : Math.random()
+        ;
+};
+
+$.pick = function(o) {
+    const values = $.values(o);
+    if(!values) return;
+    return values[Math.floor($.random(values.length))%values.length];
+};
+
+$.call = function(fn, thisArgs, ...argsArray) {
+    return fn instanceof Function? fn.call(thisArgs, argsArray): void 0;
+}
+
+$.ready = (()=>{
+    let funcs = document.readyState === 'complete'? null: [];
+    if(!!funcs) {
+        const handler = e=>{
+            if(!funcs) return;
+            if(e.type === 'onreadystatechange' && document.readyState !== 'complete') return;
+            const fns = funcs;
+            funcs = null;
+            fns.forEach(fn=>$.call(fn, document));
+        }
+
+        if(document.addEventListener) {
+            document.addEventListener('DOMContentLoaded', handler, false);
+            document.addEventListener('readystatechange', handler, false);
+            window.addEventListener('load', handler, false);
+        } else if(document.attachEvent) {
+            document.attachEvent('onreadystatechange', handler);
+            window.attachEvent('onload', handler);
+        }
+    }
+    return fn => { !funcs? $.call(fn, document): funcs.push(fn) };
+})();
+
+$.addStyle = function(style) {
+    const styleElement = document.createElement("style");
+    styleElement.innerHTML = style||"";
+    document.head.append(styleElement);
+};
+
+$.global = function() {
+    return (function(){
+        return this || (0, eval)('this');
+    })();
+}
+
+namespace.$ = namespace.common = $;
+}();
+
+namespace.$.addStyle(`
+/* 最外层 */
+#kotorichan_app_remark_main_window {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+}
+
+/* 中部窗口 */
+#kotorichan_app_remark_center {
+  display: block;
+  position: absolute;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(5px);
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  max-width: calc(100% - 20px);
+  height: 300px;
+  transform: translate(-50%,-50%);
+  border-radius: 4px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+}
+
+/* dark mode */
+html[data-theme='dark'] #kotorichan_app_remark_center {
+  background: rgba(59,59,59,0.7);
+}
+
+/* 窗口中的标签组 */
+#kotorichan_app_remark_tabs {
+  display: block;
+  position: absolute;
+  left: 10px;
+  top: 0;
+  width: 480px;
+  width: calc(100% - 20px);
+  height: 30px;
+  border: 0 #F09199 solid;
+  border-bottom-width: 3px;
+}
+
+/* 窗口中的内容区 */
+#kotorichan_app_remark_content {
+  display: block;
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 478px;
+  width: calc(100% - 22px);
+  height: 256px;
+  height: calc(100% - 44px);
+  border: 1px #369CF8 solid;
+  border-top-width: 0;
+}
+
+/* 底部菜单边框 */
+#kotorichan_app_remark_dock_menu {
+  position: absolute;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(5px);
+  top: 100%;
+  transform: translateY(0%);
+  border-radius: 4px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+  z-index: -1;
+  transition: all 0.5s;
+  opacity: 0;
+}
+
+/* dark mode */
+html[data-theme='dark'] #kotorichan_app_remark_dock_menu {
+  background: rgba(59,59,59,0.7);
+}
+
+/* 底部菜单栏在鼠标经过时弹出 */
+#kotorichan_app_remark_dock:hover #kotorichan_app_remark_dock_menu {
+  top: -4px;
+  opacity: 1;
+  transform: translateY(-100%);
+}
+
+/* 底部菜单标签 */
+.kotorichan_app_remark_dock_menu_tab {
+  display: block !important;
+  float: none !important;
+  border: 0 !important;
+  border-bottom-width: 1px !important;
+  padding: 5px !important;
+}
+
+/* 底部菜单标签鼠标经过 */
+.kotorichan_app_remark_dock_menu_tab:hover {
+  color: #369CF8;
+}
+
+/* 窗口中标签 */
+.kotorichan_app_remark_tab {
+  display: list-item;
+  height: 100%;
+  float: left;
+  line-height: 30px;
+  padding: 0 10px;
+  margin: 0 10px;
+  color: #444;
+}
+
+/* dark mode */
+html[data-theme='dark'] .kotorichan_app_remark_tab {
+  color: #e9e9e9;
+}
+
+/* 窗口中标签鼠标经过 */
+.kotorichan_app_remark_tab:hover {
+  color: #369CF8;
+  border-bottom: 3px #369CF8 solid;
+}
+
+/* 窗口中被选中的标签 */
+.kotorichan_app_remark_tab_selected {
+  border-bottom: 3px #369CF8;
+  color: #ffffff;
+  background: #369CF8;
+  border-bottom: 3px #369CF8 solid;
+}
+
+/* 窗口中被选中的标签鼠标经过 */
+.kotorichan_app_remark_tab_selected:hover {
+  color: #ffffff !important;
+  border-bottom: 3px #369CF8 solid;
+}
+
+.kotorichan_app_remark_data_textarea {
+  width: 100%;
+  height: 100%;
+  outline:none;
+  resize: none;
+}
+
+.kotorichan_app_remark_data_submit {
+  position: absolute;
+  right: 15px;
+  bottom: 1px;
+}
+
+.kotorichan_app_remark_friend_list {
+  height: 100%;
+  width: 100%;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+
+.kotorichan_app_remark_friend_item {
+  position: relative;
+  display: block;
+  height: 40px;
+  width: 100%;
+  padding: 0 10px;
+  margin: 15px 0;
+  transition: all 0.5s;
+}
+
+.kotorichan_app_remark_friend_item:hover {
+  background: rgba(54, 158, 248, 0.2);
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+}
+
+.kotorichan_app_remark_friend_item img {
+  height: 30px;
+  width: 30px;
+  margin: 5px 10px 5px 30px;
+  border-radius: 30px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+}
+
+
+.kotorichan_app_remark_friend_item small,
+.kotorichan_app_remark_friend_item strong {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.kotorichan_app_remark_friend_item small {
+  color: #A8A8A8;
+}
+
+/* dark mode */
+html[data-theme='dark'] .kotorichan_app_remark_friend_item small {
+  color: #F7F7F7;
+}
+
+.kotorichan_app_remark_friend_ext {
+  display: block;
+  position: fixed;
+  text-align: center;
+  max-width: 220px;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(5px);
+  border-radius: 4px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+  z-index: 999999;
+  transition: all 0.5s;
+}
+
+/* dark mode */
+html[data-theme='dark'] .kotorichan_app_remark_friend_ext {
+  background: rgba(59,59,59,0.7);
+}
+
+#kotorichan_app_remark_block_mask ul li,
+.kotorichan_app_remark_friend_ext li {
+  display: block;
+  padding: 5px 10px;
+}
+
+.kotorichan_app_remark_friend_ext li img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: 5px auto;
+  border-radius: 40px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+}
+
+#kotorichan_app_remark_block_mask ul li a,
+.kotorichan_app_remark_friend_ext li a {
+  margin: 5px 10px;
+}
+
+#kotorichan_app_remark_block_mask ul li strong,
+.kotorichan_app_remark_friend_ext li strong {
+  color: #369CF8;
+  padding: 2px;
+  margin: 0 auto;
+}
+
+a.kotorichan_app_remark_a_friend,
+a.kotorichan_app_remark_a_friend:link,
+a.kotorichan_app_remark_a_friend:visited,
+a.kotorichan_app_remark_a_friend:active,
+html[data-theme='dark'] a.kotorichan_app_remark_a_friend,
+html[data-theme='dark'] a.kotorichan_app_remark_a_friend:link,
+html[data-theme='dark'] a.kotorichan_app_remark_a_friend:visited,
+html[data-theme='dark'] a.kotorichan_app_remark_a_friend:active {
+  color: orange;
+}
+
+#kotorichan_app_remark_block_mask {
+  display: block;
+  position: fixed;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(5px);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99998;
+}
+
+html[data-theme='dark'] .kotorichan_app_remark_bio .bio,
+html[data-theme='dark'] #kotorichan_app_remark_block_mask {
+  background: rgba(59,59,59,0.85);
+}
+
+#kotorichan_app_remark_block_mask ul {
+  display: block;
+  position: fixed;
+  text-align: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+}
+
+#kotorichan_app_remark_block_mask ul li img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  margin: 5px auto;
+  border-radius: 80px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+}
+
+.kotorichan_app_remark_bio {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100000;
+}
+
+.kotorichan_app_remark_bio .bio {
+  display: block;
+  position: fixed;
+  padding: 20px;
+  width: 500px;
+  max-width: 90%;
+  max-width: calc(100% - 60px);
+  height: 800px;
+  max-height: 80%;
+  max-height: calc(100% - 160px);
+  top: 50%;
+  left: 50%;
+  overflow-x:hidden;
+  overflow-y:auto;
+  transform: translate(-50%,-50%);
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(5px);
+  border-radius: 4px;
+  box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
+}
+
+.kotorichan_app_remark_bio .bio .avatarNeue {
+  display: block;
+  margin: 30px auto;
+  text-align: center;
+  border-radius: 100px;
+}
+
+.kotorichan_app_remark_bio .bio .kotorichan_username {
+  display: block;
+  margin: 30px auto;
+  text-align: center;
+  font-size: 40px;
+  line-height: 50px;
+}
+`);
+
+!function(app){
+
+!function(){
+class AppBase {
+    constructor() {
+        const initRet = this.init();
+        if(initRet instanceof Promise) {
+            initRet.then(async()=>await this.enter())
+        } else {
+            this.enter();
+        }
+    }
+    static get version() {return "1.0.0";}
+    static get ver() {return this.version;}
+    static get v() {return this.version;}
+    get version() {return this.constructor.version;}
+    get ver() {return this.constructor.version;}
+    get v() {return this.constructor.version;}
+    async init() {}
+    async enter() {}
+}
+
+app.AppBase = AppBase;
+}();
+
+!function(){
+const common = namespace.common;
+
 /**
  * 备注插件
  * @class Remark
- * @data m_remarks {
- *      relationship_emui:{
- *          FRIEND:0,
- *          UNFAMILIAR:1,
- *      },
- *      people:{
- *          $id$: {
- *              m: remark
- *              u: usedName
- *          }
- *      },
- *      blocks:{}
- * }
+ * @module Remark
+ * @extends app.AppBase
+ * @version 0.1.0
+ * @namespace kotorichan_app
  */
-class Remark {
+class Remark extends app.AppBase {
     constructor() {
-        this.m_remarks = null;
-        this.m_changes = null;
+        super();
     }
-
+    static get version() {return "0.1.0";}
     /**
      * 初始化
      */
-    init() {
-        // console.log($,$$);
+    enter() {
         if(typeof $ == "undefined"){
             // console.log('kotorichan remark init error');
             return false;
@@ -53,7 +506,6 @@ class Remark {
         this.m_remarks = this.__getRemarks()||{};
         this.m_changes = {};
         this.checkLoop();
-        this.__addStyle();
         this.__initUI();
         this.__startParsePage();
         return true;
@@ -257,6 +709,7 @@ class Remark {
                     return;
                 }
                 case 'group': {
+                    if(url.search(/group\/(my_reply|my_topic)+$/)!=-1) return;
                     this.__parseGroupLikePage();
                     return;
                 }
@@ -1267,10 +1720,10 @@ class Remark {
             people:{},  // 用户信息
             friends:[], // 好友列表
             blocks:[],  // 屏蔽列表
-            v:VERSION
+            v: this.v
         });
         let obj = JSON.parse(localStorage.kotorichan_remarks);
-        if(!obj.v || obj.v != VERSION){
+        if(!obj.v || obj.v != this.v){
             obj = this.__convertOldData(obj);
             localStorage.kotorichan_remarks = JSON.stringify(obj);
         }
@@ -1298,7 +1751,7 @@ class Remark {
             people:{},  // 用户信息
             friends:[], // 好友列表
             blocks:[],  // 屏蔽列表
-            v:VERSION
+            v:this.v
         };
 
         if(obj.people) {
@@ -1318,350 +1771,12 @@ class Remark {
 
         return newData;
     }
-
-    __addStyle() {
-        GM_addStyle(`
-/* 最外层 */
-#kotorichan_app_remark_main_window {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 99999;
 }
 
-/* 中部窗口 */
-#kotorichan_app_remark_center {
-    display: block;
-    position: absolute;
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(5px);
-    top: 50%;
-    left: 50%;
-    width: 500px;
-    max-width: calc(100% - 20px);
-    height: 300px;
-    transform: translate(-50%,-50%);
-    border-radius: 4px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-}
+app.Remark = Remark;
+common.ready(()=>new Remark());
+}();
 
-/* dark mode */
-html[data-theme='dark'] #kotorichan_app_remark_center {
-    background: rgba(59,59,59,0.7);
-}
+}(namespace.app||(namespace.app={}));
 
-/* 窗口中的标签组 */
-#kotorichan_app_remark_tabs {
-    display: block;
-    position: absolute;
-    left: 10px;
-    top: 0;
-    width: 480px;
-    width: calc(100% - 20px);
-    height: 30px;
-    border: 0 #F09199 solid;
-    border-bottom-width: 3px;
-}
-
-/* 窗口中的内容区 */
-#kotorichan_app_remark_content {
-    display: block;
-    position: absolute;
-    left: 10px;
-    bottom: 10px;
-    width: 478px;
-    width: calc(100% - 22px);
-    height: 256px;
-    height: calc(100% - 44px);
-    border: 1px #369CF8 solid;
-    border-top-width: 0;
-}
-
-/* 底部菜单边框 */
-#kotorichan_app_remark_dock_menu {
-    position: absolute;
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(5px);
-    top: 100%;
-    transform: translateY(0%);
-    border-radius: 4px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-    z-index: -1;
-    transition: all 0.5s;
-    opacity: 0;
-}
-
-/* dark mode */
-html[data-theme='dark'] #kotorichan_app_remark_dock_menu {
-    background: rgba(59,59,59,0.7);
-}
-
-/* 底部菜单栏在鼠标经过时弹出 */
-#kotorichan_app_remark_dock:hover #kotorichan_app_remark_dock_menu {
-    top: -4px;
-    opacity: 1;
-    transform: translateY(-100%);
-}
-
-/* 底部菜单标签 */
-.kotorichan_app_remark_dock_menu_tab {
-    display: block !important;
-    float: none !important;
-    border: 0 !important;
-    border-bottom-width: 1px !important;
-    padding: 5px !important;
-}
-
-/* 底部菜单标签鼠标经过 */
-.kotorichan_app_remark_dock_menu_tab:hover {
-    color: #369CF8;
-}
-
-/* 窗口中标签 */
-.kotorichan_app_remark_tab {
-    display: list-item;
-    height: 100%;
-    float: left;
-    line-height: 30px;
-    padding: 0 10px;
-    margin: 0 10px;
-    color: #444;
-}
-
-/* dark mode */
-html[data-theme='dark'] .kotorichan_app_remark_tab {
-    color: #e9e9e9;
-}
-
-/* 窗口中标签鼠标经过 */
-.kotorichan_app_remark_tab:hover {
-    color: #369CF8;
-    border-bottom: 3px #369CF8 solid;
-}
-
-/* 窗口中被选中的标签 */
-.kotorichan_app_remark_tab_selected {
-    border-bottom: 3px #369CF8;
-    color: #ffffff;
-    background: #369CF8;
-    border-bottom: 3px #369CF8 solid;
-}
-
-/* 窗口中被选中的标签鼠标经过 */
-.kotorichan_app_remark_tab_selected:hover {
-    color: #ffffff !important;
-    border-bottom: 3px #369CF8 solid;
-}
-
-.kotorichan_app_remark_data_textarea {
-    width: 100%;
-    height: 100%;
-    outline:none;
-    resize: none;
-}
-
-.kotorichan_app_remark_data_submit {
-    position: absolute;
-    right: 15px;
-    bottom: 1px;
-}
-
-.kotorichan_app_remark_friend_list {
-    height: 100%;
-    width: 100%;
-    overflow-x:hidden;
-    overflow-y:auto;
-}
-
-.kotorichan_app_remark_friend_item {
-    position: relative;
-    display: block;
-    height: 40px;
-    width: 100%;
-    padding: 0 10px;
-    margin: 15px 0;
-    transition: all 0.5s;
-}
-
-.kotorichan_app_remark_friend_item:hover {
-    background: rgba(54, 158, 248, 0.2);
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-}
-
-.kotorichan_app_remark_friend_item img {
-    height: 30px;
-    width: 30px;
-    margin: 5px 10px 5px 30px;
-    border-radius: 30px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-}
-
-
-.kotorichan_app_remark_friend_item small,
-.kotorichan_app_remark_friend_item strong {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-}
-.kotorichan_app_remark_friend_item small {
-    color: #A8A8A8;
-}
-
-/* dark mode */
-html[data-theme='dark'] .kotorichan_app_remark_friend_item small {
-    color: #F7F7F7;
-}
-
-.kotorichan_app_remark_friend_ext {
-    display: block;
-    position: fixed;
-    text-align: center;
-    max-width: 220px;
-    background: rgba(255,255,255,0.8);
-    backdrop-filter: blur(5px);
-    border-radius: 4px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-    z-index: 999999;
-    transition: all 0.5s;
-}
-
-/* dark mode */
-html[data-theme='dark'] .kotorichan_app_remark_friend_ext {
-    background: rgba(59,59,59,0.7);
-}
-
-#kotorichan_app_remark_block_mask ul li,
-.kotorichan_app_remark_friend_ext li {
-    display: block;
-    padding: 5px 10px;
-}
-
-.kotorichan_app_remark_friend_ext li img {
-    display: block;
-    width: 40px;
-    height: 40px;
-    margin: 5px auto;
-    border-radius: 40px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-}
-
-#kotorichan_app_remark_block_mask ul li a,
-.kotorichan_app_remark_friend_ext li a {
-    margin: 5px 10px;
-}
-
-#kotorichan_app_remark_block_mask ul li strong,
-.kotorichan_app_remark_friend_ext li strong {
-    color: #369CF8;
-    padding: 2px;
-    margin: 0 auto;
-}
-
-a.kotorichan_app_remark_a_friend,
-a.kotorichan_app_remark_a_friend:link,
-a.kotorichan_app_remark_a_friend:visited,
-a.kotorichan_app_remark_a_friend:active,
-html[data-theme='dark'] a.kotorichan_app_remark_a_friend,
-html[data-theme='dark'] a.kotorichan_app_remark_a_friend:link,
-html[data-theme='dark'] a.kotorichan_app_remark_a_friend:visited,
-html[data-theme='dark'] a.kotorichan_app_remark_a_friend:active {
-    color: orange;
-}
-
-#kotorichan_app_remark_block_mask {
-    display: block;
-    position: fixed;
-    background: rgba(255,255,255,0.9);
-    backdrop-filter: blur(5px);
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 99998;
-}
-
-html[data-theme='dark'] .kotorichan_app_remark_bio .bio,
-html[data-theme='dark'] #kotorichan_app_remark_block_mask {
-    background: rgba(59,59,59,0.85);
-}
-
-#kotorichan_app_remark_block_mask ul {
-    display: block;
-    position: fixed;
-    text-align: center;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-}
-
-#kotorichan_app_remark_block_mask ul li img {
-    display: block;
-    width: 80px;
-    height: 80px;
-    margin: 5px auto;
-    border-radius: 80px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-}
-
-.kotorichan_app_remark_bio {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 100000;
-}
-
-.kotorichan_app_remark_bio .bio {
-    display: block;
-    position: fixed;
-    padding: 20px;
-    width: 500px;
-    max-width: 90%;
-    max-width: calc(100% - 60px);
-    height: 800px;
-    max-height: 80%;
-    max-height: calc(100% - 160px);
-    top: 50%;
-    left: 50%;
-    overflow-x:hidden;
-    overflow-y:auto;
-    transform: translate(-50%,-50%);
-    background: rgba(255,255,255,0.9);
-    backdrop-filter: blur(5px);
-    border-radius: 4px;
-    box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3), inset 0 0 0px 1px rgba(255, 255, 255, 0.2);
-}
-
-.kotorichan_app_remark_bio .bio .avatarNeue {
-    display: block;
-    margin: 30px auto;
-    text-align: center;
-    border-radius: 100px;
-}
-
-.kotorichan_app_remark_bio .bio .kotorichan_username {
-    display: block;
-    margin: 30px auto;
-    text-align: center;
-    font-size: 40px;
-    line-height: 50px;
-}
-        `);
-    }
-}
-
-
-    // 导出一个实例
-    let instance;
-    instance = new Remark();
-    instance.init();
-    app.Remark = instance;
-
-})(kotorichan_app||(kotorichan_app = {}));
-
-console.log(kotorichan_app);
+})(target[namespace]||(target[namespace]={}));

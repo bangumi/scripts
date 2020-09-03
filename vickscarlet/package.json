@@ -1,0 +1,25 @@
+{
+  "name": "scripts-with-bangumi",
+  "version": "1.0.0",
+  "description": "Scripts with bangumi",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx gulp build",
+    "clean": "npx gulp clean",
+    "test": "npx gulp test"
+  },
+  "keywords": [
+    "javascript",
+    "bangumi"
+  ],
+  "author": "VickScarlet",
+  "license": "MIT",
+  "dependencies": {
+    "glob": "^7.1.6"
+  },
+  "devDependencies": {
+    "delete": "^1.1.0",
+    "gulp": "^4.0.2",
+    "gulp-rename": "^2.0.0"
+  }
+}

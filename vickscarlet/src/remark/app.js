@@ -1,50 +1,22 @@
-// ==UserScript==
-// @name         Bangumi 用户备注与屏蔽
-// @icon         https://kotorichan.me/favicon.ico
-// @namespace    bgm_app.kotorichan.me
-// @version      0.1.0
-// @description  给用户添加备注，防止改名不认识
-// @author       Vick Scarlet ([BGM] 神戸小鳥＠vickscarlet)
-// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
-// @require      https://code.jquery.com/jquery-3.4.1.min.js
-// @grant        GM_addStyle
-// ==/UserScript==
+const common = namespace.common;
 
-var kotorichan_app;
-
-(function(app){
-'use strict';
-
-const $ = window.$;
-const VERSION = "0.1.0";
 /**
  * 备注插件
  * @class Remark
- * @data m_remarks {
- *      relationship_emui:{
- *          FRIEND:0,
- *          UNFAMILIAR:1,
- *      },
- *      people:{
- *          $id$: {
- *              m: remark
- *              u: usedName
- *          }
- *      },
- *      blocks:{}
- * }
+ * @module Remark
+ * @extends app.AppBase
+ * @version {{app.version}}
+ * @namespace {{namespace}}
  */
-class Remark {
+class Remark extends app.AppBase {
     constructor() {
-        this.m_remarks = null;
-        this.m_changes = null;
+        super();
     }
-
+    static get version() {return "{{app.version}}";}
     /**
      * 初始化
      */
-    init() {
-        // console.log($,$$);
+    enter() {
         if(typeof $ == "undefined"){
             // console.log('kotorichan remark init error');
             return false;
@@ -1267,10 +1239,10 @@ class Remark {
             people:{},  // 用户信息
             friends:[], // 好友列表
             blocks:[],  // 屏蔽列表
-            v:VERSION
+            v: this.v
         });
         let obj = JSON.parse(localStorage.kotorichan_remarks);
-        if(!obj.v || obj.v != VERSION){
+        if(!obj.v || obj.v != this.v){
             obj = this.__convertOldData(obj);
             localStorage.kotorichan_remarks = JSON.stringify(obj);
         }
@@ -1298,7 +1270,7 @@ class Remark {
             people:{},  // 用户信息
             friends:[], // 好友列表
             blocks:[],  // 屏蔽列表
-            v:VERSION
+            v:this.v
         };
 
         if(obj.people) {
@@ -1318,15 +1290,7 @@ class Remark {
 
         return newData;
     }
-
 }
 
-// 导出一个实例
-let instance;
-instance = new Remark();
-instance.init();
-app.Remark = instance;
-
-})(kotorichan_app||(kotorichan_app = {}));
-
-console.log(kotorichan_app);
+app.Remark = Remark;
+common.ready(()=>new Remark());

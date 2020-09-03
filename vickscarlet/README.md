@@ -21,3 +21,5 @@
 
 ![被屏蔽用户](images/remark/05.png)
 ![被屏蔽用户](images/remark/06.png)
+
+## [Bangumi 加密通信翻译](dist/kotorichan-encode_translate.user.js?raw=true)
