@@ -321,8 +321,8 @@ class EncodeTranslate extends app.AppBase {
                 let match = null;
                 while((match=regex.exec(html))) {
                     const matchStr = match[0];
-                    dc[type] = matchStr;
-                    html = html.replace(matchStr,`<span class="kotoridecode" kotoridecode="${type}">${dc.raw}</span>`);
+                    this[type] = matchStr;
+                    html = html.replace(matchStr,`<span class="kotoridecode" kotoridecode="${type}">${this.raw}</span>`);
                 }
                 return html;
             };
@@ -342,7 +342,7 @@ class EncodeTranslate extends app.AppBase {
 }
 
 app.EncodeTranslate = EncodeTranslate;
-common.ready(()=>new EncodeTranslate);
+common.ready(()=>new EncodeTranslate());
 }();
 
 }(namespace.app||(namespace.app={}));
