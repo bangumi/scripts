@@ -1,6 +1,8 @@
 {{app.head}}
 
-const target = top.document;
+const target = (function(){
+    return this || (0, eval)('this');
+})();
 const namespace = `{{namespace}}`;
 (function(namespace) {
 "use struct"
