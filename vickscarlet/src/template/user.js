@@ -1,32 +1,33 @@
 {{app.head}}
 
 const target = (function(){
+    // jshint -W067
     return this || (0, eval)('this');
 })();
 const namespace = `{{namespace}}`;
 (function(namespace) {
-"use struct"
+"use struct";
 
 namespace.author = `{{author}}`;
 
-!function(){
+(function(){
 {{common}}
-}();
+})();
 
 namespace.$.addStyle(`
 {{app.style}}
 `);
 
-!function(app){
+(function(app){
 
-!function(){
+(function(){
 {{appbase}}
-}();
+})();
 
-!function(){
+(function(){
 {{app.app}}
-}();
+})();
 
-}(namespace.app||(namespace.app={}));
+})(namespace.app||(namespace.app={}));
 
 })(target[namespace]||(target[namespace]={}));

@@ -10,18 +10,19 @@
 // ==/UserScript==
 
 const target = (function(){
+    // jshint -W067
     return this || (0, eval)('this');
 })();
 const namespace = `kotorichan_app`;
 (function(namespace) {
-"use struct"
+"use struct";
 
 namespace.author = `Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>`;
 
-!function(){
+(function(){
 function $(fn, ...args) {
     return fn instanceof Function? fn(...args): void 0;
-};
+}
 
 $.keys = function(o) {
     if(o==null) return;
@@ -66,6 +67,7 @@ $.values = function(o) {
 };
 
 $.random = function(n) {
+    // jshint -W014
     return Number.isFinite(n)
         ? Math.random() * n
         : Math.random()
@@ -80,7 +82,7 @@ $.pick = function(o) {
 
 $.call = function(fn, thisArgs, ...argsArray) {
     return fn instanceof Function? fn.call(thisArgs, argsArray): void 0;
-}
+};
 
 $.ready = (()=>{
     let funcs = document.readyState === 'complete'? null: [];
@@ -91,7 +93,7 @@ $.ready = (()=>{
             const fns = funcs;
             funcs = null;
             fns.forEach(fn=>$.call(fn, document));
-        }
+        };
 
         if(document.addEventListener) {
             document.addEventListener('DOMContentLoaded', handler, false);
@@ -102,7 +104,8 @@ $.ready = (()=>{
             window.attachEvent('onload', handler);
         }
     }
-    return fn => { !funcs? $.call(fn, document): funcs.push(fn) };
+    // jshint -W030
+    return fn => { !funcs? $.call(fn, document): funcs.push(fn); };
 })();
 
 $.addStyle = function(style) {
@@ -113,25 +116,26 @@ $.addStyle = function(style) {
 
 $.global = function() {
     return (function(){
+        // jshint -W067
         return this || (0, eval)('this');
     })();
-}
+};
 
 namespace.$ = namespace.common = $;
-}();
+})();
 
 namespace.$.addStyle(`
 
 `);
 
-!function(app){
+(function(app){
 
-!function(){
+(function(){
 class AppBase {
     constructor() {
         const initRet = this.init();
         if(initRet instanceof Promise) {
-            initRet.then(async()=>await this.enter())
+            initRet.then(async()=>await this.enter());
         } else {
             this.enter();
         }
@@ -147,9 +151,9 @@ class AppBase {
 }
 
 app.AppBase = AppBase;
-}();
+})();
 
-!function(){
+(function(){
 const common = namespace.common;
 
 /**
@@ -343,8 +347,8 @@ class EncodeTranslate extends app.AppBase {
 
 app.EncodeTranslate = EncodeTranslate;
 common.ready(()=>new EncodeTranslate());
-}();
+})();
 
-}(namespace.app||(namespace.app={}));
+})(namespace.app||(namespace.app={}));
 
 })(target[namespace]||(target[namespace]={}));

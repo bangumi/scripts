@@ -8,6 +8,7 @@ const common = namespace.common;
  * @version {{app.version}}
  * @namespace {{namespace}}
  */
+// jshint -W107
 class Remark extends app.AppBase {
     constructor() {
         super();

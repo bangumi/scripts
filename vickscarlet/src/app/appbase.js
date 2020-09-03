@@ -2,7 +2,7 @@ class AppBase {
     constructor() {
         const initRet = this.init();
         if(initRet instanceof Promise) {
-            initRet.then(async()=>await this.enter())
+            initRet.then(async()=>await this.enter());
         } else {
             this.enter();
         }

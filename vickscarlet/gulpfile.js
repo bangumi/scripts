@@ -4,6 +4,9 @@ const {
 const rename = require('gulp-rename');
 const render = require('./plugin/template-render');
 const del = require('delete');
+const jshint = require('gulp-jshint');
+const stylish = require('jshint-stylish');
+const csslint = require('gulp-csslint');
 
 function buildWithTemplate(template, destPath, appName, basename, extname) {
     return ()=>src(template)
@@ -18,7 +21,8 @@ function buildWithTemplate(template, destPath, appName, basename, extname) {
             basename: basename,
             extname: extname,
         }))
-        .pipe(dest(destPath));
+        .pipe(dest(destPath))
+        ;
 }
 
 function buildApp4UserJS(appName) {
@@ -66,16 +70,65 @@ function build(cb) {
 }
 
 function clean(cb) {
-    del(['dist/*.user.js'], cb);
+    del(['build/*','dist/*.user.js'], cb);
+}
+
+
+
+function testBuildedCSS() {
+    return src('{build,dist}/**/*.css')
+        .pipe(csslint())
+        .pipe(csslint.formatter())
+        ;
+}
+
+function testBuildedJS() {
+    return src('{build,dist}/**/*.js')
+        .pipe(jshint())
+        .pipe(jshint.reporter(stylish))
+        ;
+}
+
+function testBuilded(cb) {
+    return parallel(
+        testBuildedJS,
+        testBuildedCSS,
+    )(cb);
+}
+
+function testSrcCSS() {
+    return src('src/!(template)/**/*.css')
+        .pipe(csslint())
+        .pipe(csslint.formatter())
+        ;
+}
+
+function testSrcJS() {
+    return src('src/!(template)/**/*.js')
+        .pipe(jshint())
+        .pipe(jshint.reporter(stylish))
+        ;
+}
+
+function testSrc(cb) {
+    return parallel(
+        testSrcJS,
+        testSrcCSS,
+    )(cb);
 }
 
 function test(cb) {
-    cb();
+    return parallel(
+        testSrc,
+        testBuilded,
+    )(cb);
 }
 
 module.exports = {
     build,
     clean,
     test,
-    default: series(test, clean, build)
+    testBuilded,
+    testSrc,
+    default: series(testSrc, clean, build, testBuilded)
 };
