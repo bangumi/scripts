@@ -5,8 +5,7 @@ const rename = require('gulp-rename');
 const render = require('./plugin/template-render');
 const del = require('delete');
 const jshint = require('gulp-jshint');
-const stylish = require('jshint-stylish');
-const csslint = require('gulp-csslint');
+const sassLint = require('gulp-sass-lint');
 
 function buildWithTemplate(template, destPath, appName, basename, extname) {
     return ()=>src(template)
@@ -77,15 +76,17 @@ function clean(cb) {
 
 function testBuildedCSS() {
     return src('{build,dist}/**/*.css')
-        .pipe(csslint())
-        .pipe(csslint.formatter())
+        .pipe(sassLint())
+        // .pipe(sassLint.format())
+        .pipe(sassLint.failOnError())
         ;
 }
 
 function testBuildedJS() {
     return src('{build,dist}/**/*.js')
         .pipe(jshint())
-        .pipe(jshint.reporter(stylish))
+        // .pipe(jshint.reporter('jshint-stylish'))
+        .pipe(jshint.reporter('fail'))
         ;
 }
 
@@ -98,15 +99,17 @@ function testBuilded(cb) {
 
 function testSrcCSS() {
     return src('src/!(template)/**/*.css')
-        .pipe(csslint())
-        .pipe(csslint.formatter())
+        .pipe(sassLint())
+        // .pipe(sassLint.format())
+        .pipe(sassLint.failOnError())
         ;
 }
 
 function testSrcJS() {
     return src('src/!(template)/**/*.js')
         .pipe(jshint())
-        .pipe(jshint.reporter(stylish))
+        // .pipe(jshint.reporter('jshint-stylish'))
+        .pipe(jshint.reporter('fail'))
         ;
 }
 
