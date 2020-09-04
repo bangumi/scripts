@@ -5,7 +5,9 @@
 // @version      0.1.0
 // @description  给用户添加备注，防止改名不认识
 // @author       Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>
-// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
+// @include      *://bgm.tv/*
+// @include      *://bangumi.tv/*
+// @include      *://chii.in/*
 // @grant        none
 // ==/UserScript==
 

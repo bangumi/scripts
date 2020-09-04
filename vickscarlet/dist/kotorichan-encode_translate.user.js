@@ -5,7 +5,9 @@
 // @version      0.0.1
 // @description  Bangumi 加密通信翻译
 // @author       Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>
-// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
+// @include      *://bgm.tv/*
+// @include      *://bangumi.tv/*
+// @include      *://chii.in/*
 // @grant        none
 // ==/UserScript==
 

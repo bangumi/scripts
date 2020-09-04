@@ -5,6 +5,8 @@
 // @version      {{app.version}}
 // @description  给用户添加备注，防止改名不认识
 // @author       {{author}}
-// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
+// @include      *://bgm.tv/*
+// @include      *://bangumi.tv/*
+// @include      *://chii.in/*
 // @grant        none
 // ==/UserScript==
