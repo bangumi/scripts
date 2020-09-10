@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.7
+// @version     0.3.8
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -943,6 +943,19 @@ amazonSubjectModel.itemList.push({
     name: '作者',
     selector: [
         {
+            selector: '#bylineInfo',
+            subSelector: '.author',
+            keyWord: '著',
+            nextSelector: [
+                {
+                    selector: '.contributorNameID',
+                },
+                {
+                    selector: 'a',
+                },
+            ],
+        },
+        {
             selector: '#byline .author span.a-size-medium',
         },
         {
@@ -950,6 +963,24 @@ amazonSubjectModel.itemList.push({
         },
         {
             selector: '#bylineInfo .contributorNameID',
+        },
+    ],
+    category: 'creator',
+}, {
+    name: '插图',
+    selector: [
+        {
+            selector: '#bylineInfo',
+            subSelector: '.author',
+            keyWord: 'イラスト',
+            nextSelector: [
+                {
+                    selector: '.contributorNameID',
+                },
+                {
+                    selector: 'a',
+                },
+            ],
         },
     ],
     category: 'creator',
