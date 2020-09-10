@@ -505,13 +505,12 @@ class Remark extends app.AppBase {
      * 初始化
      */
     enter() {
+        this.m_remarks = this.__getRemarks()||{};
         if(typeof $ == "undefined"){
             // console.log('kotorichan remark init error');
             return false;
         }
         // delete localStorage.kotorichan_remarks;
-        this.m_remarks = this.__getRemarks()||{};
-        this.m_changes = {};
         this.checkLoop();
         this.__initUI();
         this.__startParsePage();
@@ -1719,22 +1718,18 @@ class Remark extends app.AppBase {
      */
     __getRemarks() {
         // console.log("kotorichan_app.Remark.__getRemarks");
-        if(localStorage.kotorichan_remarks == undefined) localStorage.kotorichan_remarks = JSON.stringify({
-            relationship_emui:{
-                FRIEND:0,
-                UNFAMILIAR:1,
-            },
-            people:{},  // 用户信息
-            friends:[], // 好友列表
-            blocks:[],  // 屏蔽列表
-            v: this.v
-        });
-        let obj = JSON.parse(localStorage.kotorichan_remarks);
-        if(!obj.v || obj.v != this.v){
-            obj = this.__convertOldData(obj);
-            localStorage.kotorichan_remarks = JSON.stringify(obj);
-        }
-        return obj;
+        return localStorage.kotorichan_remarks
+            ? JSON.parse(localStorage.kotorichan_remarks)
+            : {
+                relationship_emui:{
+                    FRIEND:0,
+                    UNFAMILIAR:1,
+                },
+                people:{},  // 用户信息
+                friends:[], // 好友列表
+                blocks:[],  // 屏蔽列表
+                v: this.v
+            };
     }
 
     /**
@@ -1743,40 +1738,6 @@ class Remark extends app.AppBase {
     __saveRemarks() {
         // console.log("kotorichan_app.Remark.__saveRemarks");
         localStorage.kotorichan_remarks=JSON.stringify(this.m_remarks);
-    }
-
-    /**
-     * 转换旧版本数据
-     * @param {object} obj 旧版本数据
-     */
-    __convertOldData(obj) {
-        let newData = {
-            relationship_emui:{
-                FRIEND:0,
-                UNFAMILIAR:1,
-            },
-            people:{},  // 用户信息
-            friends:[], // 好友列表
-            blocks:[],  // 屏蔽列表
-            v:this.v
-        };
-
-        if(obj.people) {
-            for(const id in obj.people){
-                const oldPeople = obj.people[id];
-                const newPeople = {
-                    u: [oldPeople.n],  // 曾用名列表
-                };
-                if(oldPeople.n != oldPeople.m) newPeople.m = oldPeople.m;
-                newData.people[id] = newPeople;
-            }
-        }
-
-        if(obj.blocks) {
-            newData.blocks = Object.keys(obj.blocks);
-        }
-
-        return newData;
     }
 }
 
