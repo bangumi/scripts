@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.8
+// @version     0.3.8.1
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -3481,7 +3481,7 @@ const getchu = {
 
 function setDomain() {
     bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
-    GM_setValue('bgm', bgm_domain);
+    GM_setValue(BGM_DOMAIN, bgm_domain);
     return bgm_domain;
 }
 function setProtocol() {
@@ -3494,7 +3494,7 @@ var bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
 //   bgm_domain = GM_getValue(BGM_DOMAIN);
 // }
 if (GM_registerMenuCommand) {
-    GM_registerMenuCommand('\u8bbe\u7f6e\u57df\u540d', setDomain, 'b');
+    GM_registerMenuCommand('设置 Bangumi 域名', setDomain, 'b');
     GM_registerMenuCommand('新建条目页面(http 或者 https)', setProtocol, 'h');
 }
 const init = () => __awaiter(void 0, void 0, void 0, function* () {
