@@ -8,7 +8,7 @@
 // @include     /^https?://(bangumi|bgm|chii).(tv|in)/$/
 // @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bt_search_for_bgm.user.js
 // @author      22earth
-// @version     1.0.1
+// @version     1.1.0
 // @note        1.0.0 使用定期更新搜索引擎列表的方式
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
