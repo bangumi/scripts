@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.10
+// @version     0.3.11
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -241,6 +241,29 @@ const amazonJpBookTools = {
             dealFunc: amazonUtils.dealTitle,
         },
     ],
+    hooks: {
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    let newInfo = Object.assign({}, info);
+                    if (info.name === '页数') {
+                        let val = (info.value || '').trim().replace('ページ', '');
+                        if (val && val.length < 8 && val.indexOf('予約商品') === -1) {
+                            newInfo.value = val;
+                        }
+                        else {
+                            newInfo = null;
+                        }
+                    }
+                    if (newInfo) {
+                        res.push(Object.assign({}, newInfo));
+                    }
+                }
+                return res;
+            });
+        },
+    },
 };
 
 // support GM_XMLHttpRequest
