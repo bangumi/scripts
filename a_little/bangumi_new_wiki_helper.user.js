@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.8.1
+// @version     0.3.10
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -22,9 +22,6 @@
 // @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
 // ==/UserScript==
 
-// @TODO 更新版本时 不需要修改 header manifest package 的版本
-var __enable_header = ''; // 避免 header 被清除的 hack
-console.info(__enable_header);
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -895,6 +892,17 @@ const amazonSubjectModel = {
     },
     itemList: [],
 };
+const commonSelectors = [
+    {
+        selector: '#detailBullets_feature_div .detail-bullet-list',
+        subSelector: 'li .a-list-item',
+    },
+    {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+        separator: ':',
+    },
+];
 amazonSubjectModel.itemList.push({
     name: '名称',
     selector: {
@@ -914,31 +922,32 @@ amazonSubjectModel.itemList.push({
     category: 'cover',
 }, {
     name: 'ASIN',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        keyWord: 'ISBN-10',
-        separator: ':',
-    },
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: 'ISBN-10' });
+    }),
     category: 'ASIN',
 }, {
     name: 'ISBN',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        keyWord: 'ISBN-13',
-        separator: ':',
-    },
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: 'ISBN-13' });
+    }),
     category: 'ISBN',
 }, {
     name: '发售日',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        keyWord: '発売日',
-        separator: ':',
-    },
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: '発売日' });
+    }),
     category: 'date',
+}, {
+    name: '出版社',
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: '出版社' });
+    }),
+}, {
+    name: '页数',
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: 'ページ' });
+    }),
 }, {
     name: '作者',
     selector: [
@@ -984,22 +993,6 @@ amazonSubjectModel.itemList.push({
         },
     ],
     category: 'creator',
-}, {
-    name: '出版社',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        separator: ':',
-        keyWord: '出版社',
-    },
-}, {
-    name: '页数',
-    selector: {
-        selector: '#detail_bullets_id .bucket .content',
-        subSelector: 'li',
-        separator: ':',
-        keyWord: 'ページ',
-    },
 }, {
     name: '价格',
     selector: [
@@ -1993,7 +1986,7 @@ function getWikiDataByURL(url) {
 }
 
 function sleep(num) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         setTimeout(resolve, num);
     });
 }
@@ -2249,8 +2242,8 @@ function genLinkText(url, text = '地址') {
 }
 function insertLogInfo($sibling, txt) {
     const $log = document.createElement('div');
-    $log.classList.add('.e-wiki-log-info');
-    $log.setAttribute('style', 'color: tomato;');
+    $log.classList.add('e-wiki-log-info');
+    // $log.setAttribute('style', 'color: tomato;');
     $log.innerHTML = txt;
     $sibling.parentElement.insertBefore($log, $sibling);
     $sibling.insertAdjacentElement('afterend', $log);
