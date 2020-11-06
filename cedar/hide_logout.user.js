@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        登出按钮隐藏
 // @namespace   tv.bgm.cedar.hidelogout
-// @version     1.2.2
+// @version     1.2.2.1
 // @description 隐藏登出按钮. 可从设置页登出.
 // @author      Cedar
 // @include     *
@@ -22,6 +22,6 @@ logout.previousSibling.replaceWith('\n'); //保持元素个数一致
 if(!location.pathname.startsWith('/rakuen')) {
   let badgeUserPanel = document.getElementById("badgeUserPanel");
   logout = badgeUserPanel.querySelector('a[href*="/logout"]');
-  logout.href = "https://bgm.tv/notify/all";
+  logout.href = `${location.protocol}//${location.host}/notify/all`;
   logout.innerHTML = "提醒";
 }
