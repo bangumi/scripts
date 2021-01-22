@@ -1,5 +1,9 @@
 # [yonjar](https://bgm.tv/user/yonjar)
 
+## [bangumi 上传图片](https://github.com/bangumi/scripts/blob/master/yonjar/image_uploader.user.js?raw=true)
+
+在各种地方的回复框下加个"上传图片"
+
 ## [bangumi 浏览足迹](https://github.com/bangumi/scripts/blob/master/yonjar/topic_history.user.js?raw=true)
 
 记录 bangumi 的话题浏览历史
