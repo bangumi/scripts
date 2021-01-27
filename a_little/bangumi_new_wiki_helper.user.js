@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.12
+// @version     0.3.13
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -242,13 +242,34 @@ const amazonJpBookTools = {
         },
     ],
     hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const $t = document.querySelector('#title');
+                const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
+                if ($t && bookTypeList && bookTypeList.length > 1) {
+                    const $div = document.createElement('div');
+                    const $s = document.createElement('span');
+                    $s.style.color = 'red';
+                    $s.style.fontWeight = '600';
+                    $s.innerHTML = '注意: ';
+                    const $txt = document.createElement('span');
+                    $txt.innerHTML =
+                        '书籍存在多种版本，请优先选择实体书创建。(辅助创建脚本)';
+                    $div.appendChild($s);
+                    $div.appendChild($txt);
+                    $div.style.padding = '6px 0';
+                    $t.insertAdjacentElement('afterend', $div);
+                }
+                return true;
+            });
+        },
         afterGetWikiData(infos) {
             return __awaiter(this, void 0, void 0, function* () {
                 const res = [];
                 for (const info of infos) {
                     let newInfo = Object.assign({}, info);
                     if (info.name === '页数') {
-                        let val = (info.value || '').trim().replace('ページ', '');
+                        let val = (info.value || '').trim().replace(/ページ|页/, '');
                         if (val && val.length < 8 && val.indexOf('予約商品') === -1) {
                             newInfo.value = val;
                         }
@@ -902,12 +923,12 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: '(?<!Kindle)本',
+            keyWord: ['本', '书'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: '(?<!Kindle)本',
+            keyWord: ['本', '书'],
         },
     ],
     controlSelector: {
@@ -969,7 +990,7 @@ amazonSubjectModel.itemList.push({
 }, {
     name: '页数',
     selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: 'ページ' });
+        return Object.assign(Object.assign({}, s), { keyWord: ['ページ', '页'] });
     }),
 }, {
     name: '作者',
