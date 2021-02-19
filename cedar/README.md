@@ -123,11 +123,21 @@
 
 对应组件https://bgm.tv/dev/app/1324
 
-站内讨论 暂无
+站内讨论 暂无讨论
 
-## [小圣杯助手CedarVer](TinyGrail_Helper_CedarVer.user.js?raw=true)
+## [Bangumi备注](bgmnote.user.js?raw=true)
 
-fork自君寻组件, 详见站内讨论
+给bangumi用户添加备注, 修改自其它插件, 详见站内讨论
+
+对应组件 无
+
+站内讨论 https://bgm.tv/group/topic/361502
+
+## [小圣杯助手CedarVer](TinyGrail_Helper_CedarVer.user.js?raw=true) (停止维护)
+
+fork自君寻组件, 详见站内讨论.
+
+现在已经不再维护. 请使用其他人的版本.
 
 主要区别:
 * 不会把自己的圣殿挪到第一
@@ -144,11 +154,11 @@ fork自君寻组件, 详见站内讨论
 
 站内讨论https://bgm.tv/group/topic/353368#post_1520373
 
-## [小圣杯股息分析](TinyGrail_Income_Predictor_CedarVer.user.js?raw=true)
+## [小圣杯股息分析](TinyGrail_Income_Predictor_CedarVer.user.js?raw=true) (已停止维护)
 
-fork自chitanda的组件, 区别与功能详见站内讨论.
+fork自chitanda的组件, 区别与功能详见站内讨论. 现在已经不再维护.
 
-对应组件https://bgm.tv/dev/app/1272 (对应组件一直无法过审)
+对应组件https://bgm.tv/dev/app/1272
 
 站内讨论https://bgm.tv/group/topic/353544
 
