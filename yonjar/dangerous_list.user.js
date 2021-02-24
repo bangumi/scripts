@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi危险名单
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.2.2
+// @version      0.2.3
 // @description  bangumi危险名单&简易屏蔽
 // @author       Yonjar
 // @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/(user|blog|ep|character|person|(group|subject)\/topic|rakuen\/topic\/(ep|crt|group|subject|prsn))\/\S+(\?.*)?(#.*)?$/
@@ -134,9 +134,7 @@ class User {
   let localData = localStorage.getItem("dangerous_list_by_yonjar");
   let dangerousList = JSON.parse(localData);
 
-  let commentUsers = document.querySelectorAll(
-    "#comment_list div.inner strong a"
-  );
+  let commentUsers = document.querySelectorAll("strong a.l");
 
   commentUsers.forEach((e) => {
     let userId = e.href.split("user/")[1];

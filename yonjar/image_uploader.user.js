@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         bangumi上传图片
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.0
+// @version      0.1.1
 // @description  在各种地方的回复框下加个"上传图片"
 // @author       Yonjar
-// @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((blog|(group|subject)\/topic|rakuen\/topic\/(group|subject))\/\d+(\?.*)?(#.*)?)?$/
+// @include      /^https?:\/\/(bgm\.tv|chii\.in|bangumi\.tv)\/((ep|blog|(group|subject)\/topic|rakuen\/topic\/(ep|group|subject))\/\d+(\?.*)?(#.*)?)?$/
 // @grant        GM_addStyle
 // ==/UserScript==
 
