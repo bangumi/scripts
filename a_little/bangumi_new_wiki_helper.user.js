@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.13
+// @version     0.3.14
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -961,6 +961,9 @@ amazonSubjectModel.itemList.push({
         },
         {
             selector: 'img#imgBlkFront',
+        },
+        {
+            selector: 'img#ebooksImgBlkFront',
         },
     ],
     category: 'cover',
