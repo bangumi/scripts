@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.14
+// @version     0.3.15
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -482,6 +482,27 @@ const getchuTools = {
         return charaData;
     },
 };
+const getchuSiteTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const $t = document.querySelector('#soft-title');
+                if (!$t)
+                    return false;
+                const rawTitle = $t.textContent.trim();
+                if (/［同人グッズ|同人誌|同人音楽］/.test(rawTitle))
+                    return false;
+                return true;
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'subject_title',
+            dealFunc: getchuTools.dealTitle,
+        },
+    ],
+};
 
 const doubanTools = {
     hooks: {
@@ -793,14 +814,7 @@ const sitesFuncDict = {
             },
         ],
     },
-    getchu_game: {
-        filters: [
-            {
-                category: 'subject_title',
-                dealFunc: getchuTools.dealTitle,
-            },
-        ],
-    },
+    getchu_game: getchuSiteTools,
     steam_game: steamTools,
     steamdb_game: steamdbTools,
     douban_game: doubanTools,
@@ -826,7 +840,7 @@ const getchuGameModel = {
         {
             selector: '.genretab.current',
             subSelector: 'a',
-            keyWord: 'ゲーム',
+            keyWord: ['ゲーム', '同人'],
         },
     ],
     controlSelector: [
