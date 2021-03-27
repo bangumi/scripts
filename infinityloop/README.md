@@ -1,6 +1,6 @@
 # [infinityloop](http://bangumi.tv/user/infinityloop)
 
-## [声优出演角色按 ID 降序显示](https://github.com/bangumi/scripts/blob/master/infinityloop/sort_character_by_id.user.js)
+## [声优出演角色按 ID 降序显示](https://github.com/bangumi/scripts/raw/master/infinityloop/sort_character_by_id.user.js)
 
 [![enable in dev](https://img.shields.io/badge/Enable-超合金组件-F09199.svg)](https://bangumi.tv/dev/app/1803)
 ![release: 0.1.0](https://img.shields.io/badge/release-0.1.0-gre.svg)
