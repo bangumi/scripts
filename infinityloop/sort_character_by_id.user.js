@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Bangumi 声优角色按 ID 降序显示
+// @name         Bangumi 声优出演角色按 ID 降序显示
 // @namespace    https://github.com/bangumi/scripts/tree/master/infinityloop
 // @version      0.1.0
 // @icon         http://bangumi.tv/img/favicon.ico
@@ -10,20 +10,27 @@
 // @compatible   chrome
 // @compatible   firefox
 // @compatible   edge
-// @license      MIT
+// @license      CC BY-NC 4.0
 // ==/UserScript==
 /* globals $ */
 
 (function() {
     'use strict';
+    
+    // get character id from image href
     const getId = (node) => {
         return (Number(node.querySelector("div>a").href.split("/").pop()));
     }
 
+    // function for passing to sort()
     const sort_li = (prev, cur) => {
         return (getId(cur) > getId(prev) ? 1 : -1);
-      }
+    }
+
+    // sort character element
     $("li.item.clearit").sort(sort_li).appendTo("ul.browserList");
+
+    // reset style
     $("li.item.clearit").each((index, element) => {
         $(element).attr("class", index % 2 == 0 ? 'item even clearit' : 'item odd clearit');
     })
