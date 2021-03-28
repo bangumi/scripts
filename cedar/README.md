@@ -133,6 +133,12 @@
 
 站内讨论 https://bgm.tv/group/topic/361502
 
+## [bangumi评论(日志)本页展开](blog_toggler.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/1807
+
+站内讨论https://bgm.tv/group/topic/362176
+
 ## [小圣杯助手CedarVer](TinyGrail_Helper_CedarVer.user.js?raw=true) (停止维护)
 
 fork自君寻组件, 详见站内讨论.
