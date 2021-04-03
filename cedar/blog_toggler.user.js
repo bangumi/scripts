@@ -13,19 +13,30 @@
 'use strict';
 
 async function getBlogElement(url) {
-  let response = await fetch(url);
+  let response = await fetch(url, { credentials: 'include' });
   let text = await response.text();
   let html = new DOMParser().parseFromString(text, "text/html");
   let blogEl = html.querySelector('#entry_content');
 
   let wrapper = document.createElement('span');
   wrapper.classList.add('detail');
-  Array.from(blogEl.childNodes).forEach(x => { wrapper.appendChild(x) });
+  for (let x of Array.from(blogEl.childNodes)) {
+    // cloudflare移动版返回数据时会自动隐藏图片..这什么原理谁愿意解释一下..
+    if (x.nodeName === 'IMG') {
+      if (x.style.display) x.style.display = '';
+      if (x.style.visibility) x.style.visibility = '';
+      if (x.dataset.cfsrc) {
+        x.src = x.dataset.cfsrc;
+        delete x.dataset.cfsrc;
+      }
+    }
+    wrapper.appendChild(x);
+  }
   return wrapper;
 }
 
 
-class ShowMoreUI {
+class BlogTogglerUI {
   static addListener(root) {
     root.addEventListener('click', this.onClick.bind(this));
   }
@@ -54,12 +65,12 @@ class ShowMoreUI {
     // 尝试获取全文
     let blogEl = root.querySelector('span.detail');
     try {
-        if (!blogEl) {
-          blogEl = await getBlogElement(button.href);
-          summaryEl.insertAdjacentElement('afterend', blogEl);
-        }
+      if (!blogEl) {
+        blogEl = await getBlogElement(button.href);
+        summaryEl.insertAdjacentElement('afterend', blogEl);
+      }
     }
-    catch(e) {
+    catch (e) {
       button.innerHTML = '(retry)';
       button.dataset.action = 'retry';
       return;
@@ -72,15 +83,14 @@ class ShowMoreUI {
     // 如果全文内容与展示内容相同, 是否应该直接删掉按钮? 暂时决定删掉
     if (blogEl.innerHTML.replace(/<br>/g, '').trim() === summaryEl.innerHTML.trim()) {
       button.parentElement.removeChild(button);
-      return;
     }
   }
 
   static less(button) {
     let root = button.closest('.content');
-    // 调整元素的可见性
     let summaryEl = root.querySelector('span.summary');
     let blogEl = root.querySelector('span.detail');
+    // 调整元素的可见性
     blogEl.style.display = 'none';
     summaryEl.style.display = '';
     button.innerHTML = '(more)';
@@ -88,8 +98,8 @@ class ShowMoreUI {
     // 收起后, 如果条目不在页面下方, 则滚动页面
     // 参考 https://docs.microsoft.com/en-us/previous-versions/hh781509(v=vs.85)
     let item = root.closest('.item');
-    let Y_Pos = item.getBoundingClientRect().bottom - item.scrollHeight;
-    if (Y_Pos < 0) window.scrollBy(0, Y_Pos);
+    let y = item.getBoundingClientRect().bottom - item.scrollHeight;
+    if (y < 0) window.scrollBy(0, y);
   }
 
   static loading(button) {
@@ -104,7 +114,7 @@ class ShowMoreUI {
 
 function main() {
   let entry_list = document.getElementById('entry_list');
-  if (entry_list) ShowMoreUI.addListener(entry_list);
+  if (entry_list) BlogTogglerUI.addListener(entry_list);
 }
 
 main();
