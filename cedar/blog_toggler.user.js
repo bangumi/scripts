@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi日志展开与折叠
 // @namespace    xd.cedar.blogToggler
-// @version      1.0
+// @version      1.1
 // @description  点击 (more) 在本页显示完整的日志/评论内容
 // @author       Cedar
 // @include      /^https?://(bgm\.tv|bangumi\.tv|chii\.in)/subject/\d+$/
