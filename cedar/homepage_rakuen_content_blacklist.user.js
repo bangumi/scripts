@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.0
-// @description 根据指定关键词或ID屏蔽首页热门条目,小组讨论以及时间线动态
+// @version     2.1
+// @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论以及时间线动态
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen(/topiclist)?(\?.*)?$/
@@ -32,12 +32,12 @@ GM_addStyle(`
 li:hover .content-blacklist-rakuen-button {
   display: inline-block;
 }
-
 /* === config页面 === */
 /* 列表的wrapper */
 .content-blacklist-wrapper {
   padding: 0 20px;
   font-size: 13px;
+  white-space: nowrap;
 }
 /* 标题 */
 .content-blacklist-wrapper h2.subtitle {
@@ -75,7 +75,6 @@ li:hover .content-blacklist-rakuen-button {
   overflow: hidden;
   display: flex;
   margin: 1px 5px;
-
 }
 .content-blacklist-config button {
   cursor: pointer;
@@ -105,8 +104,11 @@ li:hover .content-blacklist-rakuen-button {
 /* 添加新项的编辑栏的样式, 因为HTML嵌套太多了导致CSS不好理解
    实际HTML标签的嵌套关系大概为 .item > .edit-wrapper > form > label > [span+select, span+input]
    做法是让 .edit-wrapper 填满多余空间 (.item 已经是 flex 布局)
-   把 form 设为 flex 布局, 把包含 input 的后一项 label 填满多余空间
-   再把 label 设为 flex 布局, 让其中的 input 尽量长, 填满多余空间
+   把 form 设为 flex 布局, 让后一项 label (即包含 input 的那一项) 填满剩余空间
+   再把 label 设为 flex 布局, 让其中的 input 尽量长, 填满剩余空间
+
+   另外, input 有个默认的 size 属性, 导致其在移动端的宽度太长, 把 button 的位置挤没了.
+   所以为了适配移动端, 要给 input 个比较短的 width 覆盖掉默认的 size
 */
 .content-blacklist-config .item .edit-wrapper {
   flex-grow: 1;
@@ -123,11 +125,11 @@ li:hover .content-blacklist-rakuen-button {
 }
 .content-blacklist-config .item .edit-wrapper input {
   flex-grow: 1;
+  width: 80px;
 }
 .content-blacklist-config .action button[data-action="cancelAdd"]:hover {
   background-color: #F09199;
 }
-
 /* === 夜间模式 === */
 /* 按钮背景改为深色 边框颜色变深 */
 html[data-theme='dark'] .content-blacklist-config .action,
@@ -146,9 +148,8 @@ html[data-theme='dark'] .content-blacklist-config .item {
 }
 `);
 
+
 'use strict';
-
-
 
 const DB_NAME = "xdcedar.contentBlacklist";
 const DB_VERSION = 1;
@@ -432,7 +433,6 @@ class Database {
       "subjectIDs": [...],
       "subjectTitleKeywords": [...],
     }
-
     存储结构v1 (indexedDB)
     DB_NAME = "xdcedar.bgmContentBlacklist"
     {
@@ -574,7 +574,6 @@ class Database {
       onsuccess: entry => entry.value,
     });
   }
-
   setConfig(key, value) {
     let config = this._getActiveStore("config", "readwrite");
     config.put({key, value});
@@ -1080,8 +1079,8 @@ class IDConfigUI extends ConfigUI {
     let buttons = li.querySelectorAll('button');
     buttons.forEach(btn => {btn.disabled = true;});
     let url = new FormData(li.querySelector('.edit-wrapper form')).get('url');
-    let item = url.includes('rakuen')? ID_TYPE.fromRakuenURL(url): ID_TYPE.fromURL(url);
     try {
+      let item = url.includes('rakuen')? ID_TYPE.fromRakuenURL(url): ID_TYPE.fromURL(url); // 这条语句要摆在里面, 因为用户可能输入错误的URL
       if (!item) throw new Error("Invalid bangumi url");
       await this._model.addID(item);
     } catch(e) {
@@ -1246,13 +1245,14 @@ class KeywordConfigUI extends ConfigUI {
     let match = fd.get('match');
     let item = {type, match};
     try {
+      if (!item.match) throw new Error('empty keywords');
       await this._model.addKeyword(item);
     } catch(e) {
       console.error(e);
       if (e.name === "ConstraintError") {
         alert("已存在，添加失败！");
       } else {
-        alert("添加失败！请检查输入是否错误！");
+        alert("添加失败！输入为空或无效输入！");
       }
       buttons.forEach(btn => {btn.disabled = false;});
       return;
