@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.1
+// @version     2.1.1
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论以及时间线动态
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -49,10 +49,15 @@ li:hover .content-blacklist-rakuen-button {
   flex-direction: column;
   justify-content: stretch;
 }
-/* 每个列表项也采用flex布局, 给列表项添加下边框, 还要给第一项增加上边框 */
+/* 每个列表项也采用flex布局, 给列表项添加下边框, 还要给第一项增加上边框
+   针对移动端屏幕窄的情况, 要允许 .action 换行并自动靠右,
+   所以添加 flex-wrap: wrap; justify-content: flex-end; */
 .content-blacklist-config .item {
   display: flex;
-  padding: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 5px 0;
   border-bottom: 1px solid #EEEEEE;
   line-height: 30px;
 }
@@ -74,7 +79,7 @@ li:hover .content-blacklist-rakuen-button {
   background-color: rgba(254, 254, 254, 0.9);
   overflow: hidden;
   display: flex;
-  margin: 1px 5px;
+  margin: 5px;
 }
 .content-blacklist-config button {
   cursor: pointer;
@@ -112,6 +117,7 @@ li:hover .content-blacklist-rakuen-button {
 */
 .content-blacklist-config .item .edit-wrapper {
   flex-grow: 1;
+  margin: 0 5px;
 }
 .content-blacklist-config .item .edit-wrapper form {
   display: flex;
