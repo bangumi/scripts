@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.1.1
+// @version     2.1.2
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论以及时间线动态
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -984,7 +984,7 @@ class IDConfigUI extends ConfigUI {
        <div class='edit-wrapper'>
          <form>
            <label>
-             <span>输入链接：</span>
+             <span>链接：</span>
              <input name='url' class='edit-input'>
            </label>
          </form>
@@ -1010,7 +1010,7 @@ class IDConfigUI extends ConfigUI {
          [
            createElement('form', null, [
              createElement('label', null, [
-               createElement('span', null, ['输入链接：']),
+               createElement('span', null, ['链接：']),
                createElement('input', {name: 'url', className: 'edit-input', val: url})
              ], null)
            ], null)
@@ -1045,7 +1045,7 @@ class IDConfigUI extends ConfigUI {
        <div class='edit-wrapper'>
          <form>
            <label>
-             <span>输入链接：</span>
+             <span>链接：</span>
              <input name='url' type='url' class='edit-input'>
            </label>
          </form>
@@ -1060,7 +1060,7 @@ class IDConfigUI extends ConfigUI {
     let editWrapper = createElement('div', {className: 'edit-wrapper'}, [
       createElement('form', null, [
         createElement('label', null, [
-          createElement('span', null, ['输入链接：']),
+          createElement('span', null, ['链接：']),
           createElement('input', {name: 'url', type: 'url', className: 'edit-input'})
         ])
       ])
@@ -1085,8 +1085,9 @@ class IDConfigUI extends ConfigUI {
     let buttons = li.querySelectorAll('button');
     buttons.forEach(btn => {btn.disabled = true;});
     let url = new FormData(li.querySelector('.edit-wrapper form')).get('url');
+    let item;
     try {
-      let item = url.includes('rakuen')? ID_TYPE.fromRakuenURL(url): ID_TYPE.fromURL(url); // 这条语句要摆在里面, 因为用户可能输入错误的URL
+      item = url.includes('rakuen')? ID_TYPE.fromRakuenURL(url): ID_TYPE.fromURL(url); // 这条语句要摆在里面, 因为用户可能输入错误的URL
       if (!item) throw new Error("Invalid bangumi url");
       await this._model.addID(item);
     } catch(e) {
@@ -1143,7 +1144,7 @@ class KeywordConfigUI extends ConfigUI {
      <li>
        <div class='edit-wrapper'>
          <label>
-           <span>输入关键词：</span>
+           <span>关键词：</span>
            <input name='match' class='edit-input'>
          </label>
        </div>
@@ -1161,7 +1162,7 @@ class KeywordConfigUI extends ConfigUI {
     // 暂时不需要
     // let editWrapper = createElement('div', {className: 'edit-wrapper'}, [
     //   createElement( 'label', null, [
-    //     createElement('span', null, ['输入链接：']),
+    //     createElement('span', null, ['链接：']),
     //     createElement('input', {name: 'url', className: 'edit-input', val: url})
     //   ])
     // ]);
@@ -1201,7 +1202,7 @@ class KeywordConfigUI extends ConfigUI {
              </select>
            </label>
            <label>
-             <span>输入关键词：</span>
+             <span>关键词：</span>
              <input name='match' class='edit-input'>
            </label>
          </form>
@@ -1222,7 +1223,7 @@ class KeywordConfigUI extends ConfigUI {
       createElement('form', null, [
         createElement('label', null, [createElement('span', null, ['类型：']), optionEl]),
         createElement('label', null, [
-          createElement('span', null, ['输入关键词：']),
+          createElement('span', null, ['关键词：']),
           createElement('input', {name: 'match', className: 'edit-input'})
         ])
       ])
