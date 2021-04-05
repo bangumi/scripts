@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.1.2
+// @version     2.1.3
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论以及时间线动态
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -469,13 +469,13 @@ class Database {
       if (oldDB) {
         IDsStore.transaction.oncomplete = _ => {
           let store = db.transaction(["IDs"], "readwrite").objectStore("IDs");
-          for (let id of oldDB.groupIDs) { store.add({type: "group", id}); }
-          for (let id of oldDB.subjectIDs) { store.add({type: "subject", id}); }
+          for (let id of oldDB.groupIDs) { store.add({type: ID_TYPE.GROUP, id}); }
+          for (let id of oldDB.subjectIDs) { store.add({type: ID_TYPE.SUBJECT, id}); }
         }
         keywordsStore.transaction.oncomplete = _ => {
           let store = db.transaction(["keywords"], "readwrite").objectStore("keywords");
-          for (let kw of oldDB.groupTitleKeywords) { store.add({type: "group_topic", match: kw}); }
-          for (let kw of oldDB.subjectTitleKeywords) { store.add({type: "subject_topic", match: kw}); }
+          for (let kw of oldDB.groupTitleKeywords) { store.add({type: KW_TYPE.GROUP_TOPIC, match: kw}); }
+          for (let kw of oldDB.subjectTitleKeywords) { store.add({type: KW_TYPE.SUBJECT_TOPIC, match: kw}); }
         }
         localStorage.removeItem("bangumi_homepage_rakuen_blacklist");
       }
