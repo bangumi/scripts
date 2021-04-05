@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.1.3
+// @version     2.1.4
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论以及时间线动态
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -16,12 +16,13 @@ GM_addStyle(`
 .content-blacklist-rakuen-button {
   display: none;
   cursor: pointer;
-  margin: 0 8px 0 0;
+  margin: 0 10px 0 0;
   padding: 0;
   color: #0084B4;
   border: none;
   font-size: 12px;
   background: none;
+  float: right;
 }
 .content-blacklist-rakuen-button::before {
   content: '[';
