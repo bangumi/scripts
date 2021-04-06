@@ -466,20 +466,19 @@ class Database {
       keywordsStore.createIndex("type", "type", {unique: false});
 
       // import data from old script
-      let oldDB = JSON.parse(localStorage.getItem('bangumi_homepage_rakuen_blacklist'));
-      if (oldDB) {
-        IDsStore.transaction.oncomplete = _ => {
-          let store = db.transaction(["IDs"], "readwrite").objectStore("IDs");
-          for (let id of oldDB.groupIDs) { store.add({type: ID_TYPE.GROUP, id}); }
-          for (let id of oldDB.subjectIDs) { store.add({type: ID_TYPE.SUBJECT, id}); }
-        }
-        keywordsStore.transaction.oncomplete = _ => {
-          let store = db.transaction(["keywords"], "readwrite").objectStore("keywords");
-          for (let kw of oldDB.groupTitleKeywords) { store.add({type: KW_TYPE.GROUP_TOPIC, match: kw}); }
-          for (let kw of oldDB.subjectTitleKeywords) { store.add({type: KW_TYPE.SUBJECT_TOPIC, match: kw}); }
-        }
-        localStorage.removeItem("bangumi_homepage_rakuen_blacklist");
+      let oldDB = JSON.parse(localStorage.getItem('bangumi_homepage_rakuen_blacklist') || "{}");
+      //IDsStore.transaction.oncomplete = _ => { /* ... */ } // 不能这么写..一定要写在同一个transaction.oncomplete里, 而且无论是IDsStore还是keywordsStore都可以..为啥??
+      keywordsStore.transaction.oncomplete = _ => {
+        let request = db.transaction(["IDs", "keywords"], "readwrite");
+        let idStore = request.objectStore("IDs");
+        if (oldDB.groupIDs) for (let id of oldDB.groupIDs) { idStore.add({type: ID_TYPE.GROUP, id}); }
+        if (oldDB.subjectIDs) for (let id of oldDB.subjectIDs) { idStore.add({type: ID_TYPE.SUBJECT, id}); }
+
+        let kwStore = request.objectStore("keywords");
+        if (oldDB.groupTitleKeywords) for (let kw of oldDB.groupTitleKeywords) { kwStore.add({type: KW_TYPE.GROUP_TOPIC, match: kw}); }
+        if (oldDB.subjectTitleKeywords) for (let kw of oldDB.subjectTitleKeywords) { kwStore.add({type: KW_TYPE.SUBJECT_TOPIC, match: kw}); }
       }
+      localStorage.removeItem("bangumi_homepage_rakuen_blacklist");
     } else {
       throw "Unexpected old version";
     }
