@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.0
+// @version     2.1
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -10,15 +10,22 @@
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/board.*/
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/(wishes|collections|doings|on_hold|dropped).*/
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/rakuen/topiclist.*/
-// @grant        GM_addStyle
+// @grant       GM_addStyle
 // ==/UserScript==
 
 GM_addStyle(`
+/*sorter buttons*/
 .main-wrapper a.chiiBtn {
   min-width: max-content;
 }
 .main-wrapper a.chiiBtn:hover {
   cursor: pointer;
+}
+.main-wrapper a.chiiBtn[data-order="descend"]::after {
+  content: '↓';
+}
+.main-wrapper a.chiiBtn[data-order="ascend"]::after {
+  content: '↑';
 }
 
 .button-wrapper {
@@ -48,17 +55,14 @@ GM_addStyle(`
   margin-left: 2px;
   margin-right: 1em;
 }
-.unknown-registration-time {
-  background-color: bisque;
+.unknown-registration-time, html[data-theme='dark'] .unknown-registration-time {
+  background-color: rgba(255,46,61,0.2);
 }
 `);
 
 'use strict';
 
-/** 基本思路
- * SortWorker 实现功能
- * Sorter 添加按钮等过页面元素
- * SortController 统领全部Sorter, 添加重置功能与按钮
+/** Filterer的基本思路
  * Filterer 构建与页面元素关联的筛选模块
  * FilterController 统领全部Filterer, 添加重置功能与按钮
  */
@@ -69,13 +73,13 @@ GM_addStyle(`
  o 超展开 /rakuen/topiclist
  * 小组讨论 /group/{name}/forum
  * 全部目录 /index/browser
- * //全部日志(没什么信息, 不做) /blog, (anime|book|music|game|real)/blog
- * //分类浏览(信息填写不规范 难以提取, 不做) (anime|book|music|game)/browser, real/browser/platform/(jp|en)
- * //目录(没什么信息, 不做) index/{id}
+ x 全部日志(没什么信息, 不做) /blog, (anime|book|music|game|real)/blog
+ x 分类浏览(信息填写不规范 难以提取, 不做) (anime|book|music|game)/browser, real/browser/platform/(jp|en)
+ x 目录(没什么信息, 不做) index/{id}
 
  * --- 条目页 ---
- * 角色页(不做) /subject/{id}/characters
- * 制作人员(不做) /subject/{id}/persons
+ x 角色页(不做) /subject/{id}/characters
+ x 制作人员(不做) /subject/{id}/persons
  o 吐槽页 /subject/{id}/comments
  o 评论页 /subject/{id}/reviews
  o 讨论版 /subject/{id}/board
@@ -87,24 +91,26 @@ GM_addStyle(`
  * 回复的话题 /group/my_reply
  * 创建的目录 /user/{uid}/index
  * 收藏的目录 /user/{uid}/index/collect
- * //个人日志(不做) /user/{uid}/blog
- * //各类收藏页(信息填写不规范 难以提取, 不做) /(anime|book|music|game|real)/list/313469/(do|collect|wish|on_hold|dropped)
+ x 个人日志(不做) /user/{uid}/blog
+ x 各类收藏页(信息填写不规范 难以提取, 不做) /(anime|book|music|game|real)/list/313469/(do|collect|wish|on_hold|dropped)
  */
 
+// ===== utils =====
 const createButton = text => $(document.createElement('a')).addClass('chiiBtn').text(text);
 const pz = (p, s) => (p+s).slice(-p.length); // a function to patch zeros before positive integer
 
+/**
+ * input date string ('10m ago' or '2019-01-01') -> output milliseconds in numeric value
+ * @param {string} date
+ * @returns {int} timestamp
+ */
 function parseDatetimeString(date) {
-  // input date string ('10m ago' or '2019-01-01') -> output milliseconds in numeric value
   if (date.includes('ago')) {
     const convert = t => t? parseInt(t.toString().slice(0,-1)): 0;
     let s = convert(date.match(/\d+s/));
     let m = convert(date.match(/\d+m/));
     let h = convert(date.match(/\d+h/));
     let d = convert(date.match(/\d+d/));
-
-    //console.log(date, `${d}d${h}h${m}m${s}s`, ((((d*24+h)*60+m)*60+s)*1000));
-
     return Date.now() - ((((d*24+h)*60+m)*60+s)*1000);
   }
 
@@ -124,89 +130,191 @@ function parseDatetimeString(date) {
   return new Date(date).getTime();
 }
 
-class SortWorker {
-  constructor({
-    descendOrderFirst, //sort by descend order first if true
-    parentNode, //all Nodes under parentNode will get sorted
-    itemParser,  //should return something that parse items to feed 'compareFunction' in this.sort
-  }) {
-    this._descendOrderFirst = descendOrderFirst;
+/**
+ * 创建一个元素.
+ *
+ * @example
+ * 用法举例(紧凑写法):
+ * createElement(
+ *   'button', {
+ *     id: 'confirm-button',
+ *     className: 'my-button active',
+ *     style: {borderRadius: '5px'}, // 或者 {'border-radius': '5px'}
+ *     dataset: {clicked: 'false'}
+ *   },
+ *   ['确定'], {
+ *     click: function(e) { ... }
+ *   }
+ * )
+ */
+function createElement(tagName, options, subElements, eventHandlers=null) {
+  let el = document.createElement(tagName);
+  if (options) {
+    for (let opt in options) {
+      if (opt === 'dataset' || opt === 'style') {
+        for (let k in options[opt]) {
+          el[opt][k] = options[opt][k];
+        }
+      } else {
+        el[opt] = options[opt];
+      }
+    }
+  }
+  if (subElements) {
+    updateSubElements(el, subElements, false);
+  }
+  if (eventHandlers) {
+    for (let e in eventHandlers) {
+      el.addEventListener(e, eventHandlers[e]);
+    }
+  }
+  return el;
+}
+
+/* 更新 parent 元素的内容 */
+function updateSubElements(parent, subElements, isReplace) {
+  if (isReplace) parent.innerHTML = '';
+  if (!subElements) return parent;
+  if (typeof subElements === 'string') subElements = [subElements];
+  for (let e of subElements) {
+    parent.appendChild(typeof e === 'string'? document.createTextNode(e): e);
+  }
+  return parent;
+}
+
+/**
+ * input date string ('10m ago' or '2019-01-01') -> output milliseconds in numeric value
+ * @param {HTMLElement} parentNode
+ * @param {object} parserCollection - contains some parser like datetimeParser or scoreParser,
+ * and they will be called later like parserCollection['scoreParser'](element)
+ *
+ * @example
+ * let s = new SortController(document.querySelector('ul.my-list'));
+ * s.addResetButton(...); // see those functions for detail
+ * s.addSortButton(...);
+ * let ui = s.getSorterUI();
+ */
+class SortController {
+  constructor(parentNode, parserCollection) {
     this._parentNode = parentNode;
-    this._itemParser = itemParser;
-
-    this._inDescendOrder = null;
-    this.resetOrder();
+    this._parsers = parserCollection;
+    this._sorterUI = this._createSorterUI();
   }
 
-  setDescendOrder(order) {
-    this._inDescendOrder = order;
+  _createSorterUI() {
+    let wrapper = createElement('div', null, null, {click: this.onClick.bind(this)});
+    return wrapper;
   }
 
-  resetOrder() {
-    this._inDescendOrder = this._descendOrderFirst;
+  /**
+   * UI很简单 结构类似这样:
+   * <div>
+   *   <a class="chiiBtn" data-parser="datetimeParser" data-default-order="descend" data-action="reset">默认顺序</a>
+   *   <a class="chiiBtn" data-parser="scoreParser"    data-default-order="descend" data-action="sort" >评分顺序</a>
+   *   <a class="chiiBtn" data-parser="datetimeParser" data-default-order="ascend"  data-action="sort" >时间顺序</a>
+   *   <a class="chiiBtn" data-parser="lenParser"      data-default-order="descend" data-action="sort" >字数顺序</a>
+   *   ......
+   * </div>
+   */
+  getSorterUI() {
+    return this._sorterUI;
   }
 
-  sort() {
+  onClick(e) {
+    let action = e.target.dataset.action;
+    if (action) this[action](e.target);
+  }
+
+  addResetButton(name, parserName, defaultOrder) {
+    let button = this._createButton(name, parserName, defaultOrder, 'reset');
+    this._sorterUI.insertAdjacentElement('afterbegin', button);
+  }
+
+  addSortButton(name, parserName, defaultOrder) {
+    let button = this._createButton(name, parserName, defaultOrder, 'sort');
+    this._sorterUI.appendChild(button);
+  }
+
+  /**
+   * create a button that will do some actions
+   * @param {string} name
+   * @param {string} parserName - 要在 this._parsers 中有对应项
+   * @param {string} defaultOrder - "descend"/"ascend"
+   * @param {string} action - "reset"/"sort"
+   * @returns {Object} a button
+   *
+   * @example
+   * let dateSortBtn = this._createButton('日期顺序', 'dateParser', 'descend', 'sort');
+   */
+  _createButton(name, parserName, defaultOrder, action) {
+    let button = createElement('a', {
+      className: 'chiiBtn',
+      dataset: {parser: parserName, defaultOrder, action},
+    }, name);
+    return button;
+  }
+
+  sort(button) {
+    const parser = this._parsers[button.dataset.parser];
+    // 排序前先确定顺序. 这里的dataset.order指当前排序的order
+    let sortInDescendOrder = button.dataset.order
+      ? button.dataset.order === 'ascend'
+      : button.dataset.defaultOrder === 'descend';
+    // 如果classList里有'focused', 说明上次排序就是照着这个顺序排的,
+    // 那么为性能考虑, 这次只需要reverse(), 不需要sort()
+    // 不过这要求两次排序之间没有新元素添加进来, 否则新元素不会被正确排序
+    let justReverseIt = button.classList.contains('focused');
+    this._doSort(parser, sortInDescendOrder, justReverseIt);
+    // 调整元素
+    button.dataset.order = sortInDescendOrder ? 'descend' : 'ascend';
+    this._focusThis(button);
+  }
+
+  reset(button) {
+    if (button.classList.contains('focused')) return;
+    const parser = this._parsers[button.dataset.parser];
+    let sortInDescendOrder = button.dataset.defaultOrder === 'descend';
+    this._doSort(parser, sortInDescendOrder);
+    this._sorterUI.querySelectorAll('a.chiiBtn').forEach(x => delete x.dataset.order);
+    this._focusThis(button);
+  }
+
+  _doSort(parser, sortInDescendOrder, justReverseIt) {
+    if (justReverseIt) {
+    Array.from(this._parentNode.children)
+      .map(x => this._parentNode.removeChild(x))
+      .reverse()
+      .forEach(x => {this._parentNode.appendChild(x)});
+      return;
+    }
     // compareFn 不直接相减是为了适配字符串比较
-    const compareFn = this._inDescendOrder
-    ? (lft, ryt) => this._itemParser(ryt) > this._itemParser(lft)? 1: (this._itemParser(ryt) == this._itemParser(lft)? 0: -1)
-    : (lft, ryt) => this._itemParser(lft) > this._itemParser(ryt)? 1: (this._itemParser(lft) == this._itemParser(ryt)? 0: -1);
+    const compareFn = sortInDescendOrder
+      ? (lft, ryt) => {
+        let lftData = parser(lft);
+        let rytData = parser(ryt);
+        if (rytData > lftData) return 1;
+        else if (rytData == lftData) return 0;
+        else return -1;
+      }
+      : (lft, ryt) => {
+        let lftData = parser(lft);
+        let rytData = parser(ryt);
+        if (lftData > rytData) return 1;
+        else if (lftData == rytData) return 0;
+        else return -1;
+      };
+    // 排序
     Array.from(this._parentNode.children)
       .map(x => this._parentNode.removeChild(x))
       .sort(compareFn)
-      .forEach(x => this._parentNode.appendChild(x));
-    this._inDescendOrder = !this._inDescendOrder;
-    return !this._inDescendOrder; //return true if sorted in descend order
+      .forEach(x => {this._parentNode.appendChild(x)});
+  }
+
+  _focusThis(button) {
+    this._sorterUI.querySelectorAll('a.chiiBtn.focused').forEach(x => x.classList.remove('focused'));
+    button.classList.add('focused');
   }
 }
-
-class Sorter {
-  $sortButton;
-
-  constructor(text, sortWorker) {
-    this._text = text;
-    this._sortWorker = sortWorker;
-    this.$sortButton = createButton(this._text).on('click', () => this.doSort());
-  }
-
-  doSort() {
-    let inDescendOrder = this._sortWorker.sort();
-    this.$sortButton.text(this._text + (inDescendOrder? '↓': '↑'));
-  }
-
-  resetOrder() {
-    this._sortWorker.resetOrder();
-    this.$sortButton.text(this._text);
-  }
-}
-
-class SortController {
-  $sortBtnWrapper;
-
-  constructor(sorters, resetWorker=null) {
-    // sorters: 是由 Sorter 类构成的数组.
-    // resetWorker: 一个 SortWorker 类. 当需要重置顺序时被调用. 让元素以指定的顺序排序 作为默认顺序. 不添加的话则没法恢复初始顺序.
-    //              (因为重置排序时还要对其他按钮进行操作, 所以选择了只会进行排序的SortWorker, 而没有选择 Sorter类)
-    this._sorters = sorters;
-
-    this.$sortBtnWrapper = $(document.createElement('span'));
-    if(resetWorker) {
-      this._resetWorker = resetWorker;
-      this.$sortBtnWrapper.append(
-        createButton('初始顺序').on('click', () => this.resetAll()),
-        this._sorters.map(x => x.$sortButton));
-    } else {
-      this.$sortBtnWrapper.append(this._sorters.map(x => x.$sortButton));
-    }
-  }
-
-  resetAll() {
-    this._resetWorker.resetOrder();
-    this._resetWorker.sort();
-    this._sorters.forEach(x => x.resetOrder());
-  }
-}
-
 
 class Filterer {
   $filterEl;
@@ -381,8 +489,8 @@ class MainController {
 
     this.$mainWrapper = $(document.createElement('div')).addClass('main-wrapper');
     let buttonWrapper = $(document.createElement('div')).addClass('button-wrapper').appendTo(this.$mainWrapper);
-    if(this._sortController) {
-      buttonWrapper.append(this._sortController.$sortBtnWrapper);
+    if (this._sortController) {
+      buttonWrapper.append(this._sortController.getSorterUI());
     }
     if(this._filterController) {
       buttonWrapper.append($(document.createElement('span')).append(this._filterController.$showBtn));
@@ -417,42 +525,12 @@ class CommentsParser {
 function subjectComments() {
   let parentNode = document.getElementById('comment_box');
 
-  let commentSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: CommentsParser.parseLen,
-  });
-  let commentSorter = new Sorter('字数顺序', commentSortWorker);
-
-  let scoreSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: CommentsParser.parseScore,
-  });
-  let scoreSorter = new Sorter('评分顺序', scoreSortWorker);
-
-  let datetimeSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: CommentsParser.parseDatetime,
-  });
-  let datetimeSorter = new Sorter('时间顺序', datetimeSortWorker);
-
-  let userIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: CommentsParser.parseUserId,
-  });
-  let userIdSorter = new Sorter('注册顺序', userIdSortWorker);
-
-  let datetimeResetWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: CommentsParser.parseDatetime,
-  });
-
-  let sortController = new SortController([commentSorter, scoreSorter, datetimeSorter, userIdSorter], datetimeResetWorker);
-
+  let sortController = new SortController(parentNode, CommentsParser);
+  sortController.addResetButton('初始顺序', 'parseDatetime', 'descend');
+  sortController.addSortButton('字数顺序', 'parseLen', 'descend');
+  sortController.addSortButton('评分顺序', 'parseScore', 'descend');
+  sortController.addSortButton('时间顺序', 'parseDatetime', 'ascend');
+  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
 
   let commentFilter = new NumberFilterer({
     elParser: CommentsParser.parseLen,
@@ -514,35 +592,11 @@ class ReviewsParser {
 function subjectReviews() {
   let parentNode = document.getElementById('entry_list');
 
-  let replySortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: ReviewsParser.parseReplyNum,
-  });
-  let replySorter = new Sorter('回复数量', replySortWorker);
-
-  let blogIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: ReviewsParser.parseBlogId,
-  });
-  let blogIdSorter = new Sorter('发布顺序', blogIdSortWorker);
-
-  let userIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: ReviewsParser.parseUserId,
-  });
-  let userIdSorter = new Sorter('注册顺序', userIdSortWorker);
-
-  let blogIdResetWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: ReviewsParser.parseBlogId,
-  });
-
-  let sortController = new SortController([replySorter, blogIdSorter, userIdSorter], blogIdResetWorker);
-
+  let sortController = new SortController(parentNode, ReviewsParser);
+  sortController.addResetButton('初始顺序', 'parseBlogId', 'descend');
+  sortController.addSortButton('回复数量', 'parseReplyNum', 'descend');
+  sortController.addSortButton('发布顺序', 'parseBlogId', 'ascend');
+  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
 
   let replyNumFilter = new NumberFilterer({
     elParser: ReviewsParser.parseReplyNum,
@@ -597,29 +651,11 @@ class IndexParser {
 function subjectIndex() {
   let parentNode = document.querySelector('#timeline>ul');
 
-  let indexIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: IndexParser.parseIndexId,
-  });
-  let indexIdSorter = new Sorter('目录ID', indexIdSortWorker);
-
-  let updateDateSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: IndexParser.parseUpdateDate,
-  });
-  let updateDateSorter = new Sorter('更新时间', updateDateSortWorker);
-
-  let userIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: IndexParser.parseUserId,
-  });
-  let userIdSorter = new Sorter('注册顺序', userIdSortWorker);
-
-  let sortController = new SortController([indexIdSorter, updateDateSorter, userIdSorter]);
-
+  let sortController = new SortController(parentNode, IndexParser);
+  // 没有初始顺序 因为初始顺序是该目录加入该条目的时间 页面中没显示
+  sortController.addSortButton('目录ID', 'parseIndexId', 'ascend');
+  sortController.addSortButton('最后更新', 'parseUpdateDate', 'descend');
+  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
 
   let indexIdFilter = new NumberFilterer({
     elParser: IndexParser.parseIndexId,
@@ -664,36 +700,13 @@ class SubjectBoardParser {
 function subjectBoard() {
   let parentNode = document.querySelector('.topic_list>tbody');
 
-  let topicIdSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: SubjectBoardParser.parseTopicId,
-  });
-  let topicIdSorter = new Sorter('发布顺序', topicIdSortWorker);
-
-  let nameSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: SubjectBoardParser.parseName,
-  });
-  let nameSorter = new Sorter('用户名', nameSortWorker);
-
-  let replyNumSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: SubjectBoardParser.parseReplyNum,
-  });
-  let replyNumSorter = new Sorter('回复数量', replyNumSortWorker);
-
-  let dateSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: SubjectBoardParser.parseDate,
-  });
-  let dateSorter = new Sorter('最后回复', dateSortWorker);
-
-  let sortController = new SortController([topicIdSorter, nameSorter, replyNumSorter, dateSorter]);
-
+  let sortController = new SortController(parentNode, SubjectBoardParser);
+  // 没有初始顺序 因为初始顺序是最后回复日期 但最后回复日期有可能是同一天 导致排序结果与原始顺序不同
+  sortController.addSortButton('目录ID', 'parseIndexId', 'ascend');
+  sortController.addSortButton('发布顺序', 'parseTopicId', 'descend');
+  sortController.addSortButton('用户名', 'parseName', 'ascend');
+  sortController.addSortButton('回复数量', 'parseReplyNum', 'descend');
+  sortController.addSortButton('最后回复', 'parseDate', 'descend');
 
   let replyNumFilter = new NumberFilterer({
     elParser: SubjectBoardParser.parseReplyNum,
@@ -748,42 +761,12 @@ class CollectParser {
 function subjectCollect() {
   let parentNode = document.getElementById('memberUserList');
 
-  let commentSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: CollectParser.parseLen,
-  });
-  let commentSorter = new Sorter('字数顺序', commentSortWorker);
-
-  let scoreSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: CollectParser.parseScore,
-  });
-  let scoreSorter = new Sorter('评分顺序', scoreSortWorker);
-
-  let datetimeSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: CollectParser.parseDatetime,
-  });
-  let datetimeSorter = new Sorter('时间顺序', datetimeSortWorker);
-
-  let userIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: CollectParser.parseUserId,
-  });
-  let userIdSorter = new Sorter('注册顺序', userIdSortWorker);
-
-  let datetimeResetWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: CollectParser.parseDatetime,
-  });
-
-  let sortController = new SortController([commentSorter, scoreSorter, datetimeSorter, userIdSorter], datetimeResetWorker);
-
+  let sortController = new SortController(parentNode, CollectParser);
+  sortController.addResetButton('初始顺序', 'parseDatetime', 'descend');
+  sortController.addSortButton('字数顺序', 'parseLen', 'descend');
+  sortController.addSortButton('评分顺序', 'parseScore', 'descend');
+  sortController.addSortButton('时间顺序', 'parseDatetime', 'ascend');
+  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
 
   let commentFilter = new NumberFilterer({
     elParser: CollectParser.parseLen,
@@ -856,55 +839,21 @@ class RakuenParser {
 function rakuen() {
   let parentNode = document.querySelector('#eden_tpc_list>ul');
 
-  let replyNumSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: RakuenParser.parseReplyNum,
-  });
-  let replyNumSorter = new Sorter('回复', replyNumSortWorker);
-
-  let datetimeSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: RakuenParser.parseDatetime,
-  });
-  let datetimeSorter = new Sorter('活跃', datetimeSortWorker);
-
-  let itemIdSortWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: RakuenParser.parseItemId,
-  });
-  let itemIdSorter = new Sorter('发布', itemIdSortWorker);
-
-  let userIdSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: RakuenParser.parseUserId,
-  });
-  let userIdSorter = new Sorter('UID', userIdSortWorker);
-
-  let typeSortWorker = new SortWorker({
-    descendOrderFirst: false,
-    parentNode: parentNode,
-    itemParser: RakuenParser.parseType,
-  });
-  let typeSorter = new Sorter('类型', typeSortWorker);
-
-  let datetimeResetWorker = new SortWorker({
-    descendOrderFirst: true,
-    parentNode: parentNode,
-    itemParser: RakuenParser.parseDatetime,
-  });
-
-  let sortController;
-  if(!location.search) { //超展开的"全部"栏
-    sortController = new SortController([replyNumSorter, datetimeSorter, userIdSorter, typeSorter], datetimeResetWorker);
+  let sortController = new SortController(parentNode, RakuenParser);
+  sortController.addResetButton('初始顺序', 'parseDatetime', 'descend');
+  sortController.addSortButton('回复', 'parseReplyNum', 'descend');
+  sortController.addSortButton('活跃', 'parseDatetime', 'ascend');
+  if(!location.search) { //超展开的"全部"栏无法根据item编号排序
+    //sortController.addSortButton('发布', 'parseItemId', 'descend');
+    sortController.addSortButton('UID', 'parseUserId', 'ascend');
   } else if(/group|subject/.test(location.search)) { //超展开的小组帖子与条目讨论可以根据item编号排序
-    sortController = new SortController([replyNumSorter, datetimeSorter, itemIdSorter, userIdSorter, typeSorter], datetimeResetWorker);
+    sortController.addSortButton('发布', 'parseItemId', 'descend');
+    sortController.addSortButton('UID', 'parseUserId', 'ascend');
   } else { // 章节(ep) 角色(crt) 人物(prsn) 没有 UserId
-    sortController = new SortController([replyNumSorter, datetimeSorter, itemIdSorter, typeSorter], datetimeResetWorker);
+    sortController.addSortButton('发布', 'parseItemId', 'descend');
+    //sortController.addSortButton('UID', 'parseUserId', 'ascend');
   }
+  sortController.addSortButton('类型', 'parseType', 'ascend');
 
   let replyNumFilter = new NumberFilterer({
     elParser: RakuenParser.parseReplyNum,
@@ -939,7 +888,6 @@ function rakuen() {
 }
 
 function main() {
-  console.log('start');
   if(/subject\/\d+\/comments/.test(location.pathname)) subjectComments();
   else if(/subject\/\d+\/reviews/.test(location.pathname)) subjectReviews();
   else if(/subject\/\d+\/index/.test(location.pathname)) subjectIndex();
