@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        BBCode效果补丁
 // @namespace   tv.bgm.cedar.BBcodePatch
-// @version     1.1
+// @version     1.1.1
 // @description 支持列表BBCode效果, 增加indent关键字效果
 // @author      Cedar
 // @include     /^https?://(bgm\.tv|bangumi\.tv|chii\.in).*$/
@@ -9,12 +9,13 @@
 // ==/UserScript==
 
 GM_addStyle(`
-/*调整让ul和ol的padding*/
-#main ul, #main ol {
+/*调整让ul和ol的padding. 必须加上父节点, 否则会修改bangumi页面的菜单本身的样式*/
+.message ul, .reply_content ul, .cmt_sub_content ul, .blog_entry ul, .topic_content ul,
+.message ol, .reply_content ol, .cmt_sub_content ol, .blog_entry ol, .topic_content ol {
   padding-left: 2em;
 }
 /*让ul的list样式恢复原始状态*/
-#main ul {
+.message ul, .reply_content ul, .cmt_sub_content ul, .blog_entry ul, .topic_content ul {
   list-style: revert;
 }
 /*添加indent样式*/
