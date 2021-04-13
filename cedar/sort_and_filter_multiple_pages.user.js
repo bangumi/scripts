@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.1
+// @version     2.1.1
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -183,10 +183,9 @@ function updateSubElements(parent, subElements, isReplace) {
 }
 
 /**
- * input date string ('10m ago' or '2019-01-01') -> output milliseconds in numeric value
  * @param {HTMLElement} parentNode
  * @param {object} parserCollection - contains some parser like datetimeParser or scoreParser,
- * and they will be called later like parserCollection['scoreParser'](element)
+ * and they will be called internally later like parserCollection['scoreParser'](element)
  *
  * @example
  * let s = new SortController(document.querySelector('ul.my-list'));
@@ -201,28 +200,34 @@ class SortController {
     this._sorterUI = this._createSorterUI();
   }
 
-  _createSorterUI() {
-    let wrapper = createElement('div', null, null, {click: this.onClick.bind(this)});
-    return wrapper;
-  }
-
   /**
    * UI很简单 结构类似这样:
    * <div>
    *   <a class="chiiBtn" data-parser="datetimeParser" data-default-order="descend" data-action="reset">默认顺序</a>
    *   <a class="chiiBtn" data-parser="scoreParser"    data-default-order="descend" data-action="sort" >评分顺序</a>
    *   <a class="chiiBtn" data-parser="datetimeParser" data-default-order="ascend"  data-action="sort" >时间顺序</a>
-   *   <a class="chiiBtn" data-parser="lenParser"      data-default-order="descend" data-action="sort" >字数顺序</a>
+   *   <a class="chiiBtn" data-parser="lengthParser"      data-default-order="descend" data-action="sort" >字数顺序</a>
    *   ......
    * </div>
    */
+  _createSorterUI() {
+    let wrapper = createElement('div', null, null, {click: this});
+    return wrapper;
+  }
+
   getSorterUI() {
     return this._sorterUI;
   }
 
-  onClick(e) {
+  // 直接把 object 作为参数传给 addEventListener 的话,
+  // 事件触发时, 该 object 的 handleEvent() 函数就会被自动调用,
+  // 所以只需要写 addEventListener('click', this) 不再需要 addEventListener('click', this.onClick.bind(this)) 了
+  handleEvent(e) {
     let action = e.target.dataset.action;
-    if (action) this[action](e.target);
+    if (action) {
+      this[action](e.target);
+      e.stopPropagation();
+    }
   }
 
   addResetButton(name, parserName, defaultOrder) {
@@ -264,6 +269,7 @@ class SortController {
     // 那么为性能考虑, 这次只需要reverse(), 不需要sort()
     // 不过这要求两次排序之间没有新元素添加进来, 否则新元素不会被正确排序
     let justReverseIt = button.classList.contains('focused');
+    // 排序
     this._doSort(parser, sortInDescendOrder, justReverseIt);
     // 调整元素
     button.dataset.order = sortInDescendOrder ? 'descend' : 'ascend';
@@ -275,7 +281,7 @@ class SortController {
     const parser = this._parsers[button.dataset.parser];
     let sortInDescendOrder = button.dataset.defaultOrder === 'descend';
     this._doSort(parser, sortInDescendOrder);
-    this._sorterUI.querySelectorAll('a.chiiBtn').forEach(x => delete x.dataset.order);
+    this._sorterUI.querySelectorAll('.chiiBtn').forEach(x => delete x.dataset.order);
     this._focusThis(button);
   }
 
@@ -311,7 +317,7 @@ class SortController {
   }
 
   _focusThis(button) {
-    this._sorterUI.querySelectorAll('a.chiiBtn.focused').forEach(x => x.classList.remove('focused'));
+    this._sorterUI.querySelectorAll('.chiiBtn.focused').forEach(x => x.classList.remove('focused'));
     button.classList.add('focused');
   }
 }
@@ -501,15 +507,15 @@ class MainController {
 
 // 吐槽页 /subject/{id}/comments
 class CommentsParser {
-  static parseLen = el => el.querySelector('p').innerText.length;
-  static parseDatetime = el => parseDatetimeString(el.querySelector('small').innerText.slice(2));
+  static lengthParser = el => el.querySelector('p').innerText.length;
+  static datetimeParser = el => parseDatetimeString(el.querySelector('small').innerText.slice(2));
 
-  static parseScore(el) {
+  static scoreParser(el) {
     let e = el.querySelector('.starlight');
     return e? parseInt(e.classList[1].slice(5)): 0;
   }
 
-  static parseUserId(el) {
+  static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
     let uid = el.querySelector('.avatarNeue').style.backgroundImage.match(/\d+\.jpg/);
     if (uid) return parseInt(uid.toString().slice(0,-4));
@@ -526,28 +532,28 @@ function subjectComments() {
   let parentNode = document.getElementById('comment_box');
 
   let sortController = new SortController(parentNode, CommentsParser);
-  sortController.addResetButton('初始顺序', 'parseDatetime', 'descend');
-  sortController.addSortButton('字数顺序', 'parseLen', 'descend');
-  sortController.addSortButton('评分顺序', 'parseScore', 'descend');
-  sortController.addSortButton('时间顺序', 'parseDatetime', 'ascend');
-  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
+  sortController.addResetButton('初始顺序', 'datetimeParser', 'descend');
+  sortController.addSortButton('字数顺序', 'lengthParser', 'descend');
+  sortController.addSortButton('评分顺序', 'scoreParser', 'descend');
+  sortController.addSortButton('时间顺序', 'datetimeParser', 'ascend');
+  sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
   let commentFilter = new NumberFilterer({
-    elParser: CommentsParser.parseLen,
+    elParser: CommentsParser.lengthParser,
     titleStr: '字数',
     min: 0, max: 200,
     width: '40px',
     setPlaceholder: true
   });
   let scoreFilter = new NumberFilterer({
-    elParser: CommentsParser.parseScore,
+    elParser: CommentsParser.scoreParser,
     titleStr: '评分',
     min: 0, max: 10,
     width: '35px',
     setPlaceholder: true
   });
   let datetimeFilter = new DatetimeFilterer({
-    elParser: CommentsParser.parseDatetime,
+    elParser: CommentsParser.datetimeParser,
     titleStr: '时间',
     min: '1970-01-01T00:00',
     max: '2999-01-01T00:00',
@@ -557,7 +563,7 @@ function subjectComments() {
     setPlaceholder: false
   });
   let userIdFilter = new NumberFilterer({
-    elParser: CommentsParser.parseUserId,
+    elParser: CommentsParser.userIdParser,
     titleStr: 'UID',
     min: 0, max: null,
     rytDft: Infinity,
@@ -572,11 +578,11 @@ function subjectComments() {
 
 // 评论页 /subject/{id}/reviews
 class ReviewsParser {
-  static parseBlogId = el => parseInt(el.querySelector('.title a').href.match(/\d+/).toString());
-  static parseDatetime = el => parseDatetimeString(el.querySelector('small.time').innerText);
-  static parseReplyNum = el => parseInt(el.querySelector('div.time .orange').innerText.match(/\d+/).toString());
+  static blogIdParser = el => parseInt(el.querySelector('.title a').href.match(/\d+/).toString());
+  static datetimeParser = el => parseDatetimeString(el.querySelector('small.time').innerText);
+  static replyNumParser = el => parseInt(el.querySelector('div.time .orange').innerText.match(/\d+/).toString());
 
-  static parseUserId(el) {
+  static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
     let uid = el.querySelector('img').src.match(/\d+\.jpg/);
     if (uid) return parseInt(uid.toString().slice(0,-4));
@@ -593,13 +599,13 @@ function subjectReviews() {
   let parentNode = document.getElementById('entry_list');
 
   let sortController = new SortController(parentNode, ReviewsParser);
-  sortController.addResetButton('初始顺序', 'parseBlogId', 'descend');
-  sortController.addSortButton('回复数量', 'parseReplyNum', 'descend');
-  sortController.addSortButton('发布顺序', 'parseBlogId', 'ascend');
-  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
+  sortController.addResetButton('初始顺序', 'blogIdParser', 'descend');
+  sortController.addSortButton('回复数量', 'replyNumParser', 'descend');
+  sortController.addSortButton('发布顺序', 'blogIdParser', 'ascend');
+  sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
   let replyNumFilter = new NumberFilterer({
-    elParser: ReviewsParser.parseReplyNum,
+    elParser: ReviewsParser.replyNumParser,
     titleStr: '回复',
     min: 0, max: null,
     rytDft: Infinity,
@@ -607,7 +613,7 @@ function subjectReviews() {
     setPlaceholder: true
   });
   let datetimeFilter = new DatetimeFilterer({
-    elParser: ReviewsParser.parseDatetime,
+    elParser: ReviewsParser.datetimeParser,
     titleStr: '时间',
     min: '1970-01-01T00:00',
     max: '2999-01-01T00:00',
@@ -617,7 +623,7 @@ function subjectReviews() {
     setPlaceholder: false
   });
   let userIdFilter = new NumberFilterer({
-    elParser: ReviewsParser.parseUserId,
+    elParser: ReviewsParser.userIdParser,
     titleStr: 'UID',
     min: 0, max: null,
     rytDft: Infinity,
@@ -632,10 +638,10 @@ function subjectReviews() {
 
 // 目录页 /subject/{id}/index
 class IndexParser {
-  static parseIndexId = el => parseInt(el.id.slice(5));
-  static parseUpdateDate = el => parseDatetimeString(el.querySelector('.tip_j .tip').innerText);
+  static indexIdParser = el => parseInt(el.id.slice(5));
+  static updateDateParser = el => parseDatetimeString(el.querySelector('.tip_j .tip').innerText);
 
-  static parseUserId(el) {
+  static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
     let uid = el.querySelector('.avatarNeue').style.backgroundImage.match(/\d+\.jpg/);
     if (uid) return parseInt(uid.toString().slice(0,-4));
@@ -653,12 +659,12 @@ function subjectIndex() {
 
   let sortController = new SortController(parentNode, IndexParser);
   // 没有初始顺序 因为初始顺序是该目录加入该条目的时间 页面中没显示
-  sortController.addSortButton('目录ID', 'parseIndexId', 'ascend');
-  sortController.addSortButton('最后更新', 'parseUpdateDate', 'descend');
-  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
+  sortController.addSortButton('目录ID', 'indexIdParser', 'ascend');
+  sortController.addSortButton('最后更新', 'updateDateParser', 'descend');
+  sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
   let indexIdFilter = new NumberFilterer({
-    elParser: IndexParser.parseIndexId,
+    elParser: IndexParser.indexIdParser,
     titleStr: '目录ID',
     min: 0, max: null,
     rytDft: Infinity,
@@ -666,7 +672,7 @@ function subjectIndex() {
     setPlaceholder: true
   });
   let updateDatetimeFilter = new DatetimeFilterer({
-    elParser: IndexParser.parseUpdateDatetime,
+    elParser: IndexParser.updateDatetimeParser,
     titleStr: '更新时间',
     min: '1970-01-01T00:00',
     max: '2999-01-01T00:00',
@@ -676,7 +682,7 @@ function subjectIndex() {
     setPlaceholder: false
   });
   let userIdFilter = new NumberFilterer({
-    elParser: IndexParser.parseUserId,
+    elParser: IndexParser.userIdParser,
     titleStr: 'UID',
     min: 0, max: null,
     rytDft: Infinity,
@@ -691,10 +697,10 @@ function subjectIndex() {
 
 // 讨论版 /subject/{id}/board
 class SubjectBoardParser {
-  static parseTopicId = el => parseInt(el.querySelector('.subject a.l').href.match(/\d+/).toString());
-  static parseName = el => el.children[1].innerText;
-  static parseReplyNum = el => parseInt(el.children[2].innerText.split(' ', 1)[0]);
-  static parseDate = el => parseDatetimeString(el.children[3].innerText);
+  static topicIdParser = el => parseInt(el.querySelector('.subject a.l').href.match(/\d+/).toString());
+  static nameParser = el => el.children[1].innerText;
+  static replyNumParser = el => parseInt(el.children[2].innerText.split(' ', 1)[0]);
+  static dateParser = el => parseDatetimeString(el.children[3].innerText);
 }
 
 function subjectBoard() {
@@ -702,14 +708,14 @@ function subjectBoard() {
 
   let sortController = new SortController(parentNode, SubjectBoardParser);
   // 没有初始顺序 因为初始顺序是最后回复日期 但最后回复日期有可能是同一天 导致排序结果与原始顺序不同
-  sortController.addSortButton('目录ID', 'parseIndexId', 'ascend');
-  sortController.addSortButton('发布顺序', 'parseTopicId', 'descend');
-  sortController.addSortButton('用户名', 'parseName', 'ascend');
-  sortController.addSortButton('回复数量', 'parseReplyNum', 'descend');
-  sortController.addSortButton('最后回复', 'parseDate', 'descend');
+  sortController.addSortButton('目录ID', 'indexIdParser', 'ascend');
+  sortController.addSortButton('发布顺序', 'topicIdParser', 'descend');
+  sortController.addSortButton('用户名', 'nameParser', 'ascend');
+  sortController.addSortButton('回复数量', 'replyNumParser', 'descend');
+  sortController.addSortButton('最后回复', 'dateParser', 'descend');
 
   let replyNumFilter = new NumberFilterer({
-    elParser: SubjectBoardParser.parseReplyNum,
+    elParser: SubjectBoardParser.replyNumParser,
     titleStr: '回复数量',
     min: 0, max: null,
     rytDft: Infinity,
@@ -717,7 +723,7 @@ function subjectBoard() {
     setPlaceholder: true
   });
   let dateFilter = new DateFilterer({
-    elParser: SubjectBoardParser.parseDate,
+    elParser: SubjectBoardParser.dateParser,
     titleStr: '最后回复',
     min: '1970-01-01',
     max: '2999-01-01',
@@ -732,20 +738,20 @@ function subjectBoard() {
 
 // 评分页 /subject/{id}/(wishes|collections|doings|on_hold|dropped)
 class CollectParser {
-  static parseDatetime = el => parseDatetimeString(el.querySelector('p.info').innerText);
+  static datetimeParser = el => parseDatetimeString(el.querySelector('p.info').innerText);
 
-  static parseLen(el) {
+  static lengthParser(el) {
     let commentNode = el.querySelector('.userContainer').lastChild;
     if(commentNode.nodeType == Node.TEXT_NODE) return commentNode.length;
     return 0;
   }
 
-  static parseScore(el) {
+  static scoreParser(el) {
     let e = el.querySelector('.starlight');
     return e? parseInt(e.classList[1].slice(5)): 0;
   }
 
-  static parseUserId(el) {
+  static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
     let uid = el.querySelector('img.avatar').src.match(/\d+\.jpg/);
     if (uid) return parseInt(uid.toString().slice(0,-4));
@@ -762,28 +768,28 @@ function subjectCollect() {
   let parentNode = document.getElementById('memberUserList');
 
   let sortController = new SortController(parentNode, CollectParser);
-  sortController.addResetButton('初始顺序', 'parseDatetime', 'descend');
-  sortController.addSortButton('字数顺序', 'parseLen', 'descend');
-  sortController.addSortButton('评分顺序', 'parseScore', 'descend');
-  sortController.addSortButton('时间顺序', 'parseDatetime', 'ascend');
-  sortController.addSortButton('注册顺序', 'parseUserId', 'ascend');
+  sortController.addResetButton('初始顺序', 'datetimeParser', 'descend');
+  sortController.addSortButton('字数顺序', 'lengthParser', 'descend');
+  sortController.addSortButton('评分顺序', 'scoreParser', 'descend');
+  sortController.addSortButton('时间顺序', 'datetimeParser', 'ascend');
+  sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
   let commentFilter = new NumberFilterer({
-    elParser: CollectParser.parseLen,
+    elParser: CollectParser.lengthParser,
     titleStr: '字数',
     min: 0, max: 200,
     width: '40px',
     setPlaceholder: true
   });
   let scoreFilter = new NumberFilterer({
-    elParser: CollectParser.parseScore,
+    elParser: CollectParser.scoreParser,
     titleStr: '评分',
     min: 0, max: 10,
     width: '35px',
     setPlaceholder: true
   });
   let datetimeFilter = new DatetimeFilterer({
-    elParser: CollectParser.parseDatetime,
+    elParser: CollectParser.datetimeParser,
     titleStr: '时间',
     min: '1970-01-01T00:00',
     max: '2999-01-01T00:00',
@@ -793,7 +799,7 @@ function subjectCollect() {
     setPlaceholder: false
   });
   let userIdFilter = new NumberFilterer({
-    elParser: CollectParser.parseUserId,
+    elParser: CollectParser.userIdParser,
     titleStr: 'UID',
     min: 0, max: null,
     rytDft: Infinity,
@@ -808,10 +814,10 @@ function subjectCollect() {
 
 // 超展开 /rakuen/topiclist
 class RakuenParser {
-  static parseReplyNum = el => parseInt(el.querySelector('small.grey').innerText.slice(2, -1));
-  static parseDatetime = el => parseDatetimeString(el.querySelector('small.time').innerText.replace('...', ''));
+  static replyNumParser = el => parseInt(el.querySelector('small.grey').innerText.slice(2, -1));
+  static datetimeParser = el => parseDatetimeString(el.querySelector('small.time').innerText.replace('...', ''));
 
-  static parseItemId(el) {
+  static itemIdParser(el) {
     return parseInt(el.id.split('_')[2]);
     // 本想把 subject group ep crt prsn 等前缀字符串直接加入比较, 然而只有Python能正确对array进行比较
     //let id = el.id.split('_')[2];
@@ -819,7 +825,7 @@ class RakuenParser {
     //return id;
   }
 
-  static parseUserId(el) {
+  static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
     if(!/subject|group/.test(el.id)) return Infinity; // 不是小组帖子或条目讨论 自然没有UserId
     let uid = el.querySelector('.avatarNeue').style.backgroundImage.match(/\d+\.jpg/);
@@ -829,7 +835,7 @@ class RakuenParser {
     return Infinity;
   }
 
-  static parseType(el) {
+  static typeParser(el) {
     // 提取出groupID subjectID(章节讨论/条目讨论) 角色ID 人物ID (角色ID/人物ID 跟ItemId相同)
     let keyEl = el.querySelector('.row a') || el.querySelector('a.avatar');
     return new URL(keyEl.href).pathname;
@@ -840,23 +846,23 @@ function rakuen() {
   let parentNode = document.querySelector('#eden_tpc_list>ul');
 
   let sortController = new SortController(parentNode, RakuenParser);
-  sortController.addResetButton('初始顺序', 'parseDatetime', 'descend');
-  sortController.addSortButton('回复', 'parseReplyNum', 'descend');
-  sortController.addSortButton('活跃', 'parseDatetime', 'ascend');
+  sortController.addResetButton('初始顺序', 'datetimeParser', 'descend');
+  sortController.addSortButton('回复', 'replyNumParser', 'descend');
+  sortController.addSortButton('活跃', 'datetimeParser', 'ascend');
   if(!location.search) { //超展开的"全部"栏无法根据item编号排序
-    //sortController.addSortButton('发布', 'parseItemId', 'descend');
-    sortController.addSortButton('UID', 'parseUserId', 'ascend');
+    //sortController.addSortButton('发布', 'itemIdParser', 'descend');
+    sortController.addSortButton('UID', 'userIdParser', 'ascend');
   } else if(/group|subject/.test(location.search)) { //超展开的小组帖子与条目讨论可以根据item编号排序
-    sortController.addSortButton('发布', 'parseItemId', 'descend');
-    sortController.addSortButton('UID', 'parseUserId', 'ascend');
+    sortController.addSortButton('发布', 'itemIdParser', 'descend');
+    sortController.addSortButton('UID', 'userIdParser', 'ascend');
   } else { // 章节(ep) 角色(crt) 人物(prsn) 没有 UserId
-    sortController.addSortButton('发布', 'parseItemId', 'descend');
-    //sortController.addSortButton('UID', 'parseUserId', 'ascend');
+    sortController.addSortButton('发布', 'itemIdParser', 'descend');
+    //sortController.addSortButton('UID', 'userIdParser', 'ascend');
   }
-  sortController.addSortButton('类型', 'parseType', 'ascend');
+  sortController.addSortButton('类型', 'typeParser', 'ascend');
 
   let replyNumFilter = new NumberFilterer({
-    elParser: RakuenParser.parseReplyNum,
+    elParser: RakuenParser.replyNumParser,
     titleStr: '回复数量',
     min: 0, max: null,
     rytDft: Infinity,
@@ -864,7 +870,7 @@ function rakuen() {
     setPlaceholder: true
   });
   let userIdFilter = new NumberFilterer({
-    elParser: RakuenParser.parseUserId,
+    elParser: RakuenParser.userIdParser,
     titleStr: '用户ID',
     min: 0, max: null,
     rytDft: Infinity,
@@ -872,7 +878,7 @@ function rakuen() {
     setPlaceholder: true
   });
   let datetimeFilter = new DatetimeFilterer({
-    elParser: RakuenParser.parseDatetime,
+    elParser: RakuenParser.datetimeParser,
     titleStr: '最近活跃',
     min: '1970-01-01T00:00',
     max: '2999-01-01T00:00',
