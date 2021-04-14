@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.2
+// @version     2.2.1
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -32,15 +32,13 @@ GM_addStyle(`
   content: '↑';
 }
 /* filters
- * 这里必须用 flex-wrap: wrap 否则toggle函数会没反应*/
+ * 这里必须用 flex-wrap: wrap 否则不知为啥toggle函数会没反应 */
 .cedar-sort-and-filter-plugin-main-wrapper .filter-ui-wrapper {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   font-size: 14px;
-}
-/* 这几项是为slide效果做准备 */
-.cedar-sort-and-filter-plugin-main-wrapper .filter-ui-wrapper {
+  /* 后几项是为slide效果做准备 */
   overflow: hidden;
   transition: height 0.3s ease-out;
   height: auto;
@@ -49,20 +47,12 @@ GM_addStyle(`
   display: flex;
   flex-wrap: wrap;
 }
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper>div {
+  margin: 0 0.2em;
+}
 .cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper input {
-  margin-top: 3px;
-  margin-bottom: 3px;
+  margin: 0.2em;
   padding: 3px;
-}
-/*left input box*/
-.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper label>input {
-  margin-left: 0.5em;
-  margin-right: 0.5em;
-}
-/*right input box*/
-.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper label+label>input {
-  margin-left: 0.5em;
-  margin-right: 1em;
 }
 /*筛选结果的显示*/
 .cedar-sort-and-filter-plugin-hide-this {
@@ -75,9 +65,11 @@ GM_addStyle(`
 
 'use strict';
 
-/** Filterer的基本思路
- * Filterer 构建与页面元素关联的筛选模块
- * FilterController 统领全部Filterer, 添加重置功能与按钮
+/** 基本思路
+ * 针对各页面适配各类Parser
+ * SortController 控制排序
+ * FilterController 控制筛选
+ * MainController 整合二者
  */
 
 
