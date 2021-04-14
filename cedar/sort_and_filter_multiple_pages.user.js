@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.1.1
+// @version     2.2
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -14,46 +14,59 @@
 // ==/UserScript==
 
 GM_addStyle(`
-/*sorter buttons*/
-.main-wrapper a.chiiBtn {
-  min-width: max-content;
-}
-.main-wrapper a.chiiBtn:hover {
-  cursor: pointer;
-}
-.main-wrapper a.chiiBtn[data-order="descend"]::after {
-  content: '↓';
-}
-.main-wrapper a.chiiBtn[data-order="ascend"]::after {
-  content: '↑';
-}
-
-.button-wrapper {
+/*sort buttons*/
+.cedar-sort-and-filter-plugin-main-wrapper .button-wrapper {
   display: flex;
   justify-content: space-between;
 }
-
-.filter-wrapper>div{
-  display: inline-block;
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn {
+  min-width: max-content;
 }
-/*filter title*/
-.filter-wrapper span {
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn:hover {
+  cursor: pointer;
+}
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn[data-order="descend"]::after {
+  content: '↓';
+}
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn[data-order="ascend"]::after {
+  content: '↑';
+}
+/* filters
+ * 这里必须用 flex-wrap: wrap 否则toggle函数会没反应*/
+.cedar-sort-and-filter-plugin-main-wrapper .filter-ui-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   font-size: 14px;
 }
-.filter-wrapper input {
+/* 这几项是为slide效果做准备 */
+.cedar-sort-and-filter-plugin-main-wrapper .filter-ui-wrapper {
+  overflow: hidden;
+  transition: height 0.3s ease-out;
+  height: auto;
+}
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+}
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper input {
   margin-top: 3px;
   margin-bottom: 3px;
   padding: 3px;
 }
 /*left input box*/
-.filter-wrapper span+input {
-  margin-left: 4px;
-  margin-right: 2px;
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper label>input {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
 }
 /*right input box*/
-.filter-wrapper span+input+input {
-  margin-left: 2px;
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper label+label>input {
+  margin-left: 0.5em;
   margin-right: 1em;
+}
+/*筛选结果的显示*/
+.cedar-sort-and-filter-plugin-hide-this {
+  display: none;
 }
 .unknown-registration-time, html[data-theme='dark'] .unknown-registration-time {
   background-color: rgba(255,46,61,0.2);
@@ -184,19 +197,19 @@ function updateSubElements(parent, subElements, isReplace) {
 
 /**
  * @param {HTMLElement} parentNode
- * @param {object} parserCollection - contains some parser like datetimeParser or scoreParser,
- * and they will be called internally later like parserCollection['scoreParser'](element)
+ * @param {object} parsers - contains some parser like datetimeParser or scoreParser,
+ * and they will be called internally later like parsers['scoreParser'](element)
  *
  * @example
- * let s = new SortController(document.querySelector('ul.my-list'));
+ * let s = new SortController(document.querySelector('ul.my-list'), CommentsParser);
  * s.addResetButton(...); // see those functions for detail
  * s.addSortButton(...);
  * let ui = s.getSorterUI();
  */
 class SortController {
-  constructor(parentNode, parserCollection) {
+  constructor(parentNode, parsers) {
     this._parentNode = parentNode;
-    this._parsers = parserCollection;
+    this._parsers = parsers;
     this._sorterUI = this._createSorterUI();
   }
 
@@ -322,186 +335,242 @@ class SortController {
   }
 }
 
-class Filterer {
-  $filterEl;
-
-  constructor({
-    elParser,   // parse element info when check whether it should be filtered
-    titleStr,   // title string
-    inputType,  // should be 'number' or 'datetime-local' or 'date'
-    min, max,   // restirct the input range
-    lftDft=null, // left default value. if not set, same as 'min'
-    rytDft=null, // right default value. if not set, same as 'max'
-    width=null, // set input width
-    setPlaceholder=false  // will set placeholder with min and max if true
-  }) {
-    this._elParser = elParser;
-
-    this._wrapper = Filterer.createFilterEl(
-      titleStr, inputType, min, max,
-      width, setPlaceholder);
-
-    this._wrapper.$left.data('default', lftDft == null? min: lftDft);
-    this._wrapper.$right.data('default', rytDft == null? max: rytDft);
-
-    this.$filterEl = this._wrapper.$wrap;
-  }
-
-  static createFilterEl(titleStr, inputType, min, max, width=null, setPlaceholder=false) {
-    const $title = $(document.createElement('span')).text(titleStr);
-    const $left  = Filterer.createInputEl(inputType, min, max, width, setPlaceholder? min: null);
-    const $right = Filterer.createInputEl(inputType, min, max, width, setPlaceholder? max: null);
-    const $wrap  = $(document.createElement('div')).append($title, $left, $right);
-    return {$wrap, $title, $left, $right};
-  }
-
-  static createInputEl(inputType, min, max, width=null, placeholder=null) {
-    const attrs = {'type': inputType, min, max};
-    let $input = $(document.createElement('input')).attr(attrs);
-    if (width != null) {
-      $input.css('width', width);
-    }
-    if(placeholder != null) {
-      $input.attr('placeholder', placeholder);
-    }
-    return $input;
-  }
-
-  match(el) {
-    let n = this._elParser(el);
-    let min = this._valueParser(this._inputParser(this._wrapper.$left));
-    let max = this._valueParser(this._inputParser(this._wrapper.$right));
-    return min <= n && n <= max;
-  }
-
-  _inputParser($el) {
-    // 把值从input中取出, 没有值的话则返回默认值 (默认值由子类指定)
-    return $el.val() || $el.data('default');
-  }
-
-  reset() {
-    this._wrapper.$left.val('');
-    this._wrapper.$right.val('');
-  }
-
-  // implement this in subclass
-  _valueParser() {} // 把获得的值转换为可比较的形式 (如 时间字符串->时间戳)
-}
-
-class NumberFilterer extends Filterer {
-  constructor({
-    elParser, titleStr, min, max,
-    lftDft=null, rytDft=null, width=null, setPlaceholder=false
-  }) {
-    super({ elParser, titleStr, inputType: 'number',
-      min, max, lftDft, rytDft, width, setPlaceholder })
-  }
-
-  _valueParser(v) {
-    return Number(v);
-  }
-}
-
-class DatetimeFilterer extends Filterer {
-  constructor({ elParser, titleStr, min, max,
-    lftDft=null, rytDft=null, width=null, setPlaceholder=false
-  }) {
-    super({ elParser, titleStr, inputType: 'datetime-local',
-      min, max, lftDft, rytDft, width, setPlaceholder })
-  }
-
-  _valueParser(v) {
-    return new Date(v).getTime();
-  }
-
-  reset() {
-    this._wrapper.$left.val('');
-    this._wrapper.$right.val('');
-    // reset right input to current time
-    //let d = new Date(); // Note: d.getMonth() starts with 0.
-    //this._wrapper.$right.val(`${pz('0000', d.getFullYear())}-${pz('00', d.getMonth()+1)}-${pz('00', d.getDate())}T${pz('00', d.getHours())}:${pz('00', d.getMinutes())}`);
-  }
-}
-
-class DateFilterer extends Filterer {
-  constructor({ elParser, titleStr, min, max,
-    lftDft=null, rytDft=null, width=null, setPlaceholder=false
-  }) {
-    super({ elParser, titleStr, inputType: 'date',
-      min, max, lftDft, rytDft, width, setPlaceholder })
-  }
-
-  _valueParser(v) {
-    return new Date(v).getTime();
-  }
-
-  reset() {
-    this._wrapper.$left.val('');
-    this._wrapper.$right.val('');
-    // reset right input to current time
-    //let d = new Date(); // Note: d.getMonth() starts with 0.
-    //this._wrapper.$right.val(`${pz('0000', d.getFullYear())}-${pz('00', d.getMonth()+1)}-${pz('00', d.getDate())}T${pz('00', d.getHours())}:${pz('00', d.getMinutes())}`);
-  }
-}
-
+/**
+ * @param {HTMLElement} parentNode
+ * @param {object} elParsers - contains some parser like datetimeParser or scoreParser,
+ * and they will be called internally later like elParsers['scoreParser'](element)
+ * @param {object} inputParsers - contains some parser like datetimeParser or numberParser,
+ * and they will be called internally later like inputParsers['numberParser'](document.querySelector('input'))
+ *
+ * @example
+ * let s = new FilterController(document.querySelector('ul.my-list'));
+ * s.addFilterItem(...); // see those functions for detail
+ * let ui = s.getFilterUI();
+ */
 class FilterController {
-  $filterWrapper;
-  $showBtn;
-
-  constructor(parentNode, filterers) {
-    // filterers: 元素为 Filterer的子类 的数组
-    this._filterers = filterers;
+  constructor(parentNode, elParsers, inputParsers) {
     this._parentNode = parentNode;
+    this._elParsers = elParsers;
+    this._inputParsers = inputParsers;
+    this._toggleButton = null;
+    this._filterUnitWrapper = null;
+    this._filterUI = null;
 
-    this._$resetBtn = createButton('重置').on('click', () => this.resetAll());
-    this.$showBtn = createButton('筛选').on('click', () => this.$filterWrapper.slideToggle('fast'));
-
-    this.$filterWrapper = $(document.createElement('div'))
-      .append(this._filterers.map(x => x.$filterEl), this._$resetBtn)
-      .on('blur', 'input', () => this.doFilter())
-      .on('keydown', 'input', e => {
-        if(!e.isComposing && e.keyCode === 13) this.doFilter();
-      });
+    this._createToggleButton();
+    this._createFilterUI();
   }
 
-  doFilter() {
-    let items = Array.from(this._parentNode.children).map(x => this._parentNode.removeChild(x));
-    for(let c of items) {
-      if(this._filterers.some(x => !x.match(c))) {
-        c.style.display = 'none';
-        continue;
+  _createToggleButton() {
+    this._toggleButton = createElement('div', null, [
+      createElement('a', {
+        className: 'chiiBtn',
+        dataset: {collapsed: true, action: 'toggle'}
+      }, ['筛选'], {click: this})
+    ]);
+  }
+
+  /**
+   * UI结构类似这样 注意波浪号是全角符号:
+   * <div class="filter-ui-wrapper">
+   *   <div class="filter-unit-wrapper">
+   *     <div data-el-parser="lengthParser" data-input-parser="numberParser">
+   *       <label>字数<input type="number" min="0" placeholder="0" style="width: 4em;"></label>
+   *       <label>～<input type="number" min="0" style="width: 4em;"></label>
+   *     </div>
+   *     <div data-el-parser="scoreParser" data-input-parser="numberParser">
+   *       <label>评分<input type="number" min="0" max="10" placeholder="0" style="width: 2em;"></label>
+   *       <label>～<input type="number" min="0" max="10" placeholder="0" style="width: 2em;"></label>
+   *     </div>
+   *     <div data-el-parser="datetimeParser" data-input-parser="datetimeParser">
+   *       <label>时间<input type="datetime-local" min="1970-01-01T00:00" max="2999-01-01T00:00"></label>
+   *       <label>～<input type="datetime-local" min="1970-01-01T00:00" max="2999-01-01T00:00"></label>
+   *     </div>
+   *     ......
+   *   </div>
+   *
+   *   <div>
+   *     <a class="chiiBtn" data-action="reset">重置</a>
+   *   </div>
+   * </div>
+   */
+  _createFilterUI() {
+    this._filterUnitWrapper = createElement('div', {
+      className: 'filter-unit-wrapper',
+      dataset: {action: "filter"}
+    }, null, {
+      focusout: this,
+      keydown: this
+    });
+    let resetWrapper = createElement('div', null, [
+      createElement('a', {className: 'chiiBtn', dataset: {action: "reset"}}, ["重置"])
+    ], {click: this});
+    this._filterUI = createElement('div', {
+      className: 'filter-ui-wrapper',
+      style: {display: "none"}
+    }, [this._filterUnitWrapper, resetWrapper]);
+  }
+
+  getToggleButton() {
+    return this._toggleButton;
+  }
+
+  getFilterUI() {
+    return this._filterUI;
+  }
+
+  handleEvent(e) {
+    let action = e.target.dataset.action;
+    if (action) {
+      e.stopPropagation();
+      // 要特别处理一下 "回车触发筛选" 的情况
+      if (e.type !== "keydown" || !e.isComposing && e.keyCode === 13) {
+        this[action](e.target);
       }
-      c.style.display = '';
     }
-    items.forEach(x => this._parentNode.appendChild(x));
   }
 
-  resetFilters() {
-    this._filterers.forEach(x => x.reset());
+  /**
+   * @param {string} name
+   * @param {string} elParserName - 要在 this._elParsers 中有对应项
+   * @param {string} inputParserName - 要在 this._inputParsers 中有对应项
+   * @param {object} leftInputAttr - 左侧 input 的属性, 不能有 leftInputAttr.dataset.action 属性
+   * @param {object} rightInputAttr - 右侧 input 的属性, 不能有 rightInputAttr.dataset.action 属性
+   *
+   * @example
+   * class CommentsParser {
+   *   static userIdParser(s) { ... }
+   * }
+   * const InputParser = {
+   *   numberParser(inputEl) { return Number(inputEl.value || inputEl.dataset.default) }
+   * }
+   * let s = new FilterController(document.querySelector('ul.my-list'), CommentsParser, InputParser);
+   * s.addFilterUnit(
+   *   '用户ID', 'userIdParser', 'numberParser',
+   *   {min: 1, max: 999999, type='number', style: {width: '5em'}, dataset: {default: 0}, placeholder: '1'},
+   *   {min: 1, max: 999999, type='number', style: {width: '5em'}, dataset: {default: Infinity}}
+   * );
+   * s.addFilterUnit(...);
+   * s.addFilterUnit(...);
+   * let toggler = s.getToggleButton();
+   * let ui = s.getFilterUI();
+   */
+  addFilterUnit(name, elParserName, inputParserName, leftInputAttr, rightInputAttr) {
+    leftInputAttr = Object.assign({}, leftInputAttr); // 相当于copy
+    leftInputAttr.dataset = Object.assign({}, leftInputAttr.dataset); // Object.assign 能处理 dataset 不存在的情况
+    leftInputAttr.dataset.action = 'filter'; // 这样写能兼容leftInputAttr本就存在键"dataset"的情况
+    let leftLabel = createElement('label', null, [
+      name, createElement('input', leftInputAttr, null)
+    ]);
+    rightInputAttr = Object.assign({}, rightInputAttr);
+    rightInputAttr.dataset = Object.assign({}, rightInputAttr.dataset);
+    rightInputAttr.dataset.action = 'filter';
+    let rightLabel = createElement('label', null, [
+      '～', createElement('input', rightInputAttr, null)
+    ]);
+
+    let wrapper = createElement('div', {
+      dataset: {
+        elParser: elParserName,
+        inputParser: inputParserName
+      }
+    }, [leftLabel, rightLabel]);
+    this._filterUnitWrapper.appendChild(wrapper);
   }
 
-  resetAll() {
-    this.resetFilters();
-    this.doFilter();
+  toggle(button) {
+    // 写法修改自 https://css-tricks.com/using-css-transitions-auto-dimensions/
+    function collapseSection(element) {
+      requestAnimationFrame(function () {
+        element.style.height = element.scrollHeight + 'px';
+        requestAnimationFrame(function () {
+          element.style.height = 0;
+          // 动画播放完毕后把height和display设置为想要的值
+          element.addEventListener('transitionend', function () {
+            element.style.height = null;
+            element.style.display = 'none';
+          }, {once: true});
+        });
+      });
+    }
+
+    function expandSection(element) {
+      element.style.display = null;
+      element.style.height = 0;
+      requestAnimationFrame(function () {
+        element.style.height = element.scrollHeight + 'px';
+        element.addEventListener('transitionend', function () {
+          element.style.height = null;
+        }, {once: true});
+      });
+    }
+
+    if (button.dataset.collapsed === "true") {
+      expandSection(this._filterUI);
+      button.dataset.collapsed = false;
+    } else {
+      collapseSection(this._filterUI);
+      button.dataset.collapsed = true;
+    }
   }
+
+  filter(_) {
+    let filters = Array.from(this._filterUnitWrapper.children)
+      .map(unit => {
+        const elParser = this._elParsers[unit.dataset.elParser];
+        const inputParser = this._inputParsers[unit.dataset.inputParser];
+        let min = inputParser(unit.querySelector('label>input'));
+        let max = inputParser(unit.querySelector('label+label>input'));
+        return {elParser, min, max};
+      });
+    const match = function (filter, element) {
+      let value = filter.elParser(element);
+      return filter.min <= value && value <= filter.max;
+    }
+    for (let c of this._parentNode.children) {
+      if (filters.some(f => !match(f, c))) {
+        c.classList.add('cedar-sort-and-filter-plugin-hide-this');
+      } else {
+        c.classList.remove('cedar-sort-and-filter-plugin-hide-this');
+      }
+    }
+  }
+
+  reset(_) {
+    this._filterUnitWrapper.querySelectorAll('input').forEach(el => {el.value = null});
+    this.filter();
+  }
+}
+
+class InputParser {
+  static numberParser = input => Number(input.value || input.dataset.default);
+  static dateParser = input => input.value ? new Date(input.value).getTime() : Number(input.dataset.default);
+  static datetimeParser = input => input.value ? new Date(input.value).getTime() : Number(input.dataset.default);
 }
 
 class MainController {
   $mainWrapper;
 
-  constructor(sortController=null, filterController=null) {
+  constructor(sortController = null, filterController = null) {
     this._sortController = sortController;
     this._filterController = filterController;
+    this._mainWrapper = this._createMainWrapper();
+  }
 
-    this.$mainWrapper = $(document.createElement('div')).addClass('main-wrapper');
-    let buttonWrapper = $(document.createElement('div')).addClass('button-wrapper').appendTo(this.$mainWrapper);
+  _createMainWrapper() {
+    let buttonWrapper = createElement('div', {className: 'button-wrapper'}, null);
+    let mainWrapper = createElement('div', {className: 'cedar-sort-and-filter-plugin-main-wrapper'}, [buttonWrapper]);
     if (this._sortController) {
-      buttonWrapper.append(this._sortController.getSorterUI());
+      buttonWrapper.appendChild(this._sortController.getSorterUI()); 
     }
-    if(this._filterController) {
-      buttonWrapper.append($(document.createElement('span')).append(this._filterController.$showBtn));
-      this.$mainWrapper.append(this._filterController.$filterWrapper.addClass('filter-wrapper').hide());
+    if (this._filterController) {
+      buttonWrapper.appendChild(this._filterController.getToggleButton()); 
+      mainWrapper.appendChild(this._filterController.getFilterUI());
     }
+    return mainWrapper;
+  }
+
+  getMainWrapper() {
+    return this._mainWrapper;
   }
 }
 
@@ -538,42 +607,30 @@ function subjectComments() {
   sortController.addSortButton('时间顺序', 'datetimeParser', 'ascend');
   sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
-  let commentFilter = new NumberFilterer({
-    elParser: CommentsParser.lengthParser,
-    titleStr: '字数',
-    min: 0, max: 200,
-    width: '40px',
-    setPlaceholder: true
-  });
-  let scoreFilter = new NumberFilterer({
-    elParser: CommentsParser.scoreParser,
-    titleStr: '评分',
-    min: 0, max: 10,
-    width: '35px',
-    setPlaceholder: true
-  });
-  let datetimeFilter = new DatetimeFilterer({
-    elParser: CommentsParser.datetimeParser,
-    titleStr: '时间',
-    min: '1970-01-01T00:00',
-    max: '2999-01-01T00:00',
-    //lftDft: '1970',
-    //rytDft: '2999',
-    width: null,
-    setPlaceholder: false
-  });
-  let userIdFilter = new NumberFilterer({
-    elParser: CommentsParser.userIdParser,
-    titleStr: 'UID',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '70px',
-    setPlaceholder: true
-  });
-  let filterController = new FilterController(parentNode, [commentFilter, scoreFilter, userIdFilter, datetimeFilter]);
+  let filterController = new FilterController(parentNode, CommentsParser, InputParser);
+  filterController.addFilterUnit(
+    '字数', 'lengthParser', 'numberParser',
+    {min: 0, max: 200, type: 'number', style: {width: '3em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, max: 200, type: 'number', style: {width: '3em'}, dataset: {default: 200}, placeholder: 200}
+  );
+  filterController.addFilterUnit(
+    '评分', 'scoreParser', 'numberParser',
+    {min: 0, max: 10, type: 'number', style: {width: '2.5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, max: 10, type: 'number', style: {width: '2.5em'}, dataset: {default: 10}, placeholder: 10}
+  );
+  filterController.addFilterUnit(
+    'UID', 'userIdParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '时间', 'datetimeParser', 'datetimeParser',
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: 0}},
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: Infinity}}
+  );
 
   let mainController = new MainController(sortController, filterController);
-  $(parentNode).before(mainController.$mainWrapper);
+  parentNode.insertAdjacentElement('beforebegin', mainController.getMainWrapper());
 }
 
 // 评论页 /subject/{id}/reviews
@@ -604,42 +661,31 @@ function subjectReviews() {
   sortController.addSortButton('发布顺序', 'blogIdParser', 'ascend');
   sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
-  let replyNumFilter = new NumberFilterer({
-    elParser: ReviewsParser.replyNumParser,
-    titleStr: '回复',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '40px',
-    setPlaceholder: true
-  });
-  let datetimeFilter = new DatetimeFilterer({
-    elParser: ReviewsParser.datetimeParser,
-    titleStr: '时间',
-    min: '1970-01-01T00:00',
-    max: '2999-01-01T00:00',
-    //lftDft: '1970',
-    //rytDft: '2999',
-    width: null,
-    setPlaceholder: false
-  });
-  let userIdFilter = new NumberFilterer({
-    elParser: ReviewsParser.userIdParser,
-    titleStr: 'UID',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '70px',
-    setPlaceholder: false
-  });
-  let filterController = new FilterController(parentNode, [replyNumFilter, userIdFilter, datetimeFilter]);
+  let filterController = new FilterController(parentNode, ReviewsParser, InputParser);
+  filterController.addFilterUnit(
+    '回复', 'replyNumParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '4em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '4em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    'UID', 'userIdParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: 0}},
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '时间', 'datetimeParser', 'datetimeParser',
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: 0}},
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: Infinity}}
+  );
 
   let mainController = new MainController(sortController, filterController);
-  $(parentNode).before(mainController.$mainWrapper);
+  parentNode.insertAdjacentElement('beforebegin', mainController.getMainWrapper());
 }
 
 // 目录页 /subject/{id}/index
 class IndexParser {
   static indexIdParser = el => parseInt(el.id.slice(5));
-  static updateDateParser = el => parseDatetimeString(el.querySelector('.tip_j .tip').innerText);
+  static updateDatetimeParser = el => parseDatetimeString(el.querySelector('.tip_j .tip').innerText);
 
   static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
@@ -660,39 +706,28 @@ function subjectIndex() {
   let sortController = new SortController(parentNode, IndexParser);
   // 没有初始顺序 因为初始顺序是该目录加入该条目的时间 页面中没显示
   sortController.addSortButton('目录ID', 'indexIdParser', 'ascend');
-  sortController.addSortButton('最后更新', 'updateDateParser', 'descend');
+  sortController.addSortButton('最后更新', 'updateDatetimeParser', 'descend');
   sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
-  let indexIdFilter = new NumberFilterer({
-    elParser: IndexParser.indexIdParser,
-    titleStr: '目录ID',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '70px',
-    setPlaceholder: true
-  });
-  let updateDatetimeFilter = new DatetimeFilterer({
-    elParser: IndexParser.updateDatetimeParser,
-    titleStr: '更新时间',
-    min: '1970-01-01T00:00',
-    max: '2999-01-01T00:00',
-    //lftDft: '1970',
-    //rytDft: '2999',
-    width: null,
-    setPlaceholder: false
-  });
-  let userIdFilter = new NumberFilterer({
-    elParser: IndexParser.userIdParser,
-    titleStr: 'UID',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '70px',
-    setPlaceholder: true
-  });
-  let filterController = new FilterController(parentNode, [indexIdFilter, userIdFilter, updateDatetimeFilter]);
+  let filterController = new FilterController(parentNode, IndexParser, InputParser);
+  filterController.addFilterUnit(
+    '目录ID', 'indexIdParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '4.5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '4.5em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    'UID', 'userIdParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '更新时间', 'updateDatetimeParser', 'datetimeParser',
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: 0}},
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: Infinity}}
+  );
 
   let mainController = new MainController(sortController, filterController);
-  $(document.getElementById('timeline')).before(mainController.$mainWrapper);
+  document.getElementById('timeline').insertAdjacentElement('beforebegin', mainController.getMainWrapper());
 }
 
 // 讨论版 /subject/{id}/board
@@ -708,32 +743,25 @@ function subjectBoard() {
 
   let sortController = new SortController(parentNode, SubjectBoardParser);
   // 没有初始顺序 因为初始顺序是最后回复日期 但最后回复日期有可能是同一天 导致排序结果与原始顺序不同
-  sortController.addSortButton('目录ID', 'indexIdParser', 'ascend');
   sortController.addSortButton('发布顺序', 'topicIdParser', 'descend');
   sortController.addSortButton('用户名', 'nameParser', 'ascend');
   sortController.addSortButton('回复数量', 'replyNumParser', 'descend');
   sortController.addSortButton('最后回复', 'dateParser', 'descend');
 
-  let replyNumFilter = new NumberFilterer({
-    elParser: SubjectBoardParser.replyNumParser,
-    titleStr: '回复数量',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '40px',
-    setPlaceholder: true
-  });
-  let dateFilter = new DateFilterer({
-    elParser: SubjectBoardParser.dateParser,
-    titleStr: '最后回复',
-    min: '1970-01-01',
-    max: '2999-01-01',
-    width: null,
-    setPlaceholder: false
-  });
-  let filterController = new FilterController(parentNode, [replyNumFilter, dateFilter]);
+  let filterController = new FilterController(parentNode, SubjectBoardParser, InputParser);
+  filterController.addFilterUnit(
+    '回复数量', 'replyNumParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '4em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '4em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '最后回复', 'dateParser', 'dateParser',
+    {min: '1970-01-01', max: '2999-01-01', type: 'date', dataset: {default: 0}},
+    {min: '1970-01-01', max: '2999-01-01', type: 'date', dataset: {default: Infinity}}
+  );
 
   let mainController = new MainController(sortController, filterController);
-  $(document.querySelector('.topic_list')).before(mainController.$mainWrapper);
+  document.querySelector('.topic_list').insertAdjacentElement('beforebegin', mainController.getMainWrapper());
 }
 
 // 评分页 /subject/{id}/(wishes|collections|doings|on_hold|dropped)
@@ -774,42 +802,30 @@ function subjectCollect() {
   sortController.addSortButton('时间顺序', 'datetimeParser', 'ascend');
   sortController.addSortButton('注册顺序', 'userIdParser', 'ascend');
 
-  let commentFilter = new NumberFilterer({
-    elParser: CollectParser.lengthParser,
-    titleStr: '字数',
-    min: 0, max: 200,
-    width: '40px',
-    setPlaceholder: true
-  });
-  let scoreFilter = new NumberFilterer({
-    elParser: CollectParser.scoreParser,
-    titleStr: '评分',
-    min: 0, max: 10,
-    width: '35px',
-    setPlaceholder: true
-  });
-  let datetimeFilter = new DatetimeFilterer({
-    elParser: CollectParser.datetimeParser,
-    titleStr: '时间',
-    min: '1970-01-01T00:00',
-    max: '2999-01-01T00:00',
-    //lftDft: '1970',
-    //rytDft: '2999',
-    width: null,
-    setPlaceholder: false
-  });
-  let userIdFilter = new NumberFilterer({
-    elParser: CollectParser.userIdParser,
-    titleStr: 'UID',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '70px',
-    setPlaceholder: true
-  });
-  let filterController = new FilterController(parentNode, [commentFilter, scoreFilter, userIdFilter, datetimeFilter]);
+  let filterController = new FilterController(parentNode, CollectParser, InputParser);
+  filterController.addFilterUnit(
+    '字数', 'lengthParser', 'numberParser',
+    {min: 0, max: 200, type: 'number', style: {width: '3em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, max: 200, type: 'number', style: {width: '3em'}, dataset: {default: 200}, placeholder: 200}
+  );
+  filterController.addFilterUnit(
+    '评分', 'scoreParser', 'numberParser',
+    {min: 0, max: 10, type: 'number', style: {width: '2.5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, max: 10, type: 'number', style: {width: '2.5em'}, dataset: {default: Infinity}, placeholder: 10}
+  );
+  filterController.addFilterUnit(
+    'UID', 'userIdParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '时间', 'datetimeParser', 'datetimeParser',
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: 0}},
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: Infinity}}
+  );
 
   let mainController = new MainController(sortController, filterController);
-  $(parentNode).before(mainController.$mainWrapper);
+  parentNode.insertAdjacentElement('beforebegin', mainController.getMainWrapper());
 }
 
 // 超展开 /rakuen/topiclist
@@ -861,36 +877,25 @@ function rakuen() {
   }
   sortController.addSortButton('类型', 'typeParser', 'ascend');
 
-  let replyNumFilter = new NumberFilterer({
-    elParser: RakuenParser.replyNumParser,
-    titleStr: '回复数量',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '40px',
-    setPlaceholder: true
-  });
-  let userIdFilter = new NumberFilterer({
-    elParser: RakuenParser.userIdParser,
-    titleStr: '用户ID',
-    min: 0, max: null,
-    rytDft: Infinity,
-    width: '70px',
-    setPlaceholder: true
-  });
-  let datetimeFilter = new DatetimeFilterer({
-    elParser: RakuenParser.datetimeParser,
-    titleStr: '最近活跃',
-    min: '1970-01-01T00:00',
-    max: '2999-01-01T00:00',
-    //lftDft: '1970',
-    //rytDft: '2999',
-    width: null,
-    setPlaceholder: false
-  });
-  let filterController = new FilterController(parentNode, [replyNumFilter, userIdFilter, datetimeFilter]);
+  let filterController = new FilterController(parentNode, RakuenParser, InputParser);
+  filterController.addFilterUnit(
+    '回复数量', 'replyNumParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '4em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '4em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '用户ID', 'userIdParser', 'numberParser',
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: 0}, placeholder: 0},
+    {min: 0, type: 'number', style: {width: '5em'}, dataset: {default: Infinity}}
+  );
+  filterController.addFilterUnit(
+    '最近活跃', 'datetimeParser', 'datetimeParser',
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: 0}},
+    {min: '1970-01-01T00:00', max: '2999-01-01T00:00', type: 'datetime-local', dataset: {default: Infinity}}
+  );
 
   let mainController = new MainController(sortController, filterController);
-  $(document.getElementById('rakuenTab')).before(mainController.$mainWrapper);
+  document.getElementById('rakuenTab').insertAdjacentElement('beforebegin', mainController.getMainWrapper());
 }
 
 function main() {
