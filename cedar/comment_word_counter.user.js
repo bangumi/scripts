@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.4.1
+// @version     1.5
 // @description 统计简评字数
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/$/
@@ -24,35 +24,51 @@
 'use strict';
 
 function createWordCounter(dom = document) {
-  const total = 200;
-  let $comment = $('#comment', dom);
-  const getCount = () => $comment.val().length;
+  const LIMIT_NUM = 200;
+  let comment = dom.querySelector('#comment');
 
-  let $total = $(document.createElement('span')).css('padding', '0 5px').text(total);
-  let $wordcounter = $total.clone().text(getCount());
-  let $wordcounterWrapper = $(document.createElement('div'))
-    .css('margin-bottom', '8px').append($wordcounter, '/', $total);
-  $("#collectBoxForm", dom).children('.clearit').last().before($wordcounterWrapper);
+  let limit = document.createElement('span');
+  limit.style.padding = '0 5px';
+  limit.textContent = LIMIT_NUM;
+  let wordcounter = limit.cloneNode(true);
+  wordcounter.textContent = comment.value.length;
+  wordcounter.classList.add('word-counter');
+  wordcounter.dataset.limit = LIMIT_NUM;
+  let wrapper = document.createElement('div');
+  wrapper.style.fontWeight = 'bold';
+  wrapper.append(wordcounter, '/', limit);
+  dom.querySelector('textarea').insertAdjacentElement('afterend', wrapper);
 
-  $comment.on('input', function () {
-    let count = getCount();
-    $wordcounter.text(count);
-    if (count > total) $wordcounter.css("color", "red");
-    else $wordcounter.css("color", "");
+  comment.addEventListener('input', e => {
+    let count = e.target.value.length;
+    let wordcounter = e.target.closest('.cell').querySelector('.word-counter');
+    wordcounter.textContent = count;
+    wordcounter.style.color = count > wordcounter.dataset.limit ? "#F09199" : null;
   });
 }
 
-function mutationCallback(records) {
-  let $iframe = $('#TB_iframeContent');
-  let ready = $iframe.length && $('#comment', $iframe.contents()).length;
-  if (ready) {
-    createWordCounter($iframe.contents());
-    commentboxObserver.disconnect(mutationCallback);
-  }
+function mutationCallback(_, observer) {
+  let iframe = document.querySelector('#TB_iframeContent');
+  let ready = iframe && iframe.contentDocument.body.querySelector('#comment');
+  if (!ready) return;
+  observer.disconnect();
+  createWordCounter(iframe.contentDocument.body);
 };
 
-let commentboxObserver = new MutationObserver(mutationCallback);
-const eventHandler = () => { commentboxObserver.observe(document.body, { 'childList': true }) };
-if (location.pathname.startsWith("/subject/")) createWordCounter();
-else if (location.pathname == "/") $('.progress_percent_text').children('a').on('click', eventHandler);
-else $('a.thickbox').on('click', eventHandler);
+function eventHandler() {
+  new MutationObserver(mutationCallback).observe(document.body, {'childList': true});
+};
+
+function main() {
+  if (location.pathname.startsWith("/subject/")) createWordCounter();
+  // return false 害人!
+  // 本想靠 e.currentTarget 和 e.target 筛选, 减少事件监听器数量,
+  // 因为 bangumi 在它自己的函数里加了个 return false, 现在只能每个按键加上一个事件监听器了..
+  else if (location.pathname == "/") {
+    document.querySelectorAll('.progress_percent_text > a').forEach(x => x.addEventListener('click', eventHandler));
+  } else {
+    document.querySelectorAll('a.thickbox').forEach(x => x.addEventListener('click', eventHandler));
+  }
+}
+
+main();
