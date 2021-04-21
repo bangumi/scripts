@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.15
+// @version     0.3.16
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -783,7 +783,7 @@ function dealFuncByCategory(key, category) {
         return fn;
     }
     else {
-        return (str) => identity(str.trim());
+        return (str = '') => identity(str.trim());
     }
 }
 const sitesFuncDict = {
@@ -996,7 +996,7 @@ amazonSubjectModel.itemList.push({
 }, {
     name: '发售日',
     selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: '発売日' });
+        return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期'] });
     }),
     category: 'date',
 }, {
@@ -1730,6 +1730,7 @@ function getWikiItem(infoConfig, site) {
                 val = dealFuncByCategory(site, 'website')($d.getAttribute('href'));
                 break;
             case 'date':
+                // 日期预处理，不能删除
                 val = dealItemText(txt, infoConfig.category, keyWords);
                 val = dealFuncByCategory(site, infoConfig.category)(val);
                 break;
