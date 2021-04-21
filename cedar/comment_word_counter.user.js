@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.4
+// @version     1.4.1
 // @description 统计简评字数
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/$/
@@ -21,50 +21,38 @@
  * subject_search: 搜索页
  */
 
-(function() {
-  'use strict';
+'use strict';
 
-  function createWordCounter(dom=document) {
-    const total = 200;
-    let $comment = $('#comment', dom);
-    const getCount = () => $comment.val().length;
+function createWordCounter(dom = document) {
+  const total = 200;
+  let $comment = $('#comment', dom);
+  const getCount = () => $comment.val().length;
 
-    let $total = $(document.createElement('span')).css('padding', '0 5px').text(total);
-    let $wordcounter = $total.clone().text(getCount());
-    let $wordcounterWrapper = $(document.createElement('div'))
-      .css('margin-bottom', '8px').append($wordcounter, '/', $total);
-    $("#collectBoxForm", dom).children('.clearit').last().before($wordcounterWrapper);
+  let $total = $(document.createElement('span')).css('padding', '0 5px').text(total);
+  let $wordcounter = $total.clone().text(getCount());
+  let $wordcounterWrapper = $(document.createElement('div'))
+    .css('margin-bottom', '8px').append($wordcounter, '/', $total);
+  $("#collectBoxForm", dom).children('.clearit').last().before($wordcounterWrapper);
 
-    $comment.on('input', function() {
-      let count = getCount();
-      $wordcounter.text(count);
-      if(count > total) $wordcounter.css("color","red");
-      else $wordcounter.css("color","");
-    });
+  $comment.on('input', function () {
+    let count = getCount();
+    $wordcounter.text(count);
+    if (count > total) $wordcounter.css("color", "red");
+    else $wordcounter.css("color", "");
+  });
+}
+
+function mutationCallback(records) {
+  let $iframe = $('#TB_iframeContent');
+  let ready = $iframe.length && $('#comment', $iframe.contents()).length;
+  if (ready) {
+    createWordCounter($iframe.contents());
+    commentboxObserver.disconnect(mutationCallback);
   }
+};
 
-  function mutationCallback(records) {
-    let $iframe = $('#TB_iframeContent');
-    let ready = $iframe.length && $('#comment', $iframe.contents()).length;
-    if(ready) {
-      createWordCounter($iframe.contents());
-      commentboxObserver.disconnect(mutationCallback);
-    }
-  };
-
-  let commentboxObserver = new MutationObserver(mutationCallback);
-  const eventHandler = () => {commentboxObserver.observe(document.body, {'childList': true})};
-  if(location.pathname.startsWith("/subject/")) createWordCounter();
-  else if(location.pathname == "/") $('.progress_percent_text').children('a').on('click', eventHandler);
-  else $('a.thickbox').on('click', eventHandler);
-}) ();
-
-/** version:
- *  ver 1.4    实现方法优化
- *  ver 1.3    支持首页
- *  ver 1.2.1  少量优化
- *  ver 1.2    支持个人收藏, 目录, Tag, 搜索和排行榜页面
- *  ver 1.1    实现方法优化
- *  ver 1.0.1  修改metadata(@include @namespace)
- *  ver 1.0    初始版本.
- */
+let commentboxObserver = new MutationObserver(mutationCallback);
+const eventHandler = () => { commentboxObserver.observe(document.body, { 'childList': true }) };
+if (location.pathname.startsWith("/subject/")) createWordCounter();
+else if (location.pathname == "/") $('.progress_percent_text').children('a').on('click', eventHandler);
+else $('a.thickbox').on('click', eventHandler);
