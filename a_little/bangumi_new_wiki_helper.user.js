@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.3.16
+// @version     0.4.0
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -112,7 +112,10 @@ function contains(selector, text, $parent) {
 }
 function findElementByKeyWord(selector, $parent) {
     let res = null;
-    const targets = contains(selector.subSelector, selector.keyWord, $parent ? $parent : $q(selector.selector));
+    $parent = $parent ? $parent : $q(selector.selector);
+    if (!$parent)
+        return res;
+    const targets = contains(selector.subSelector, selector.keyWord, $parent);
     if (targets && targets.length) {
         let $t = targets[targets.length - 1];
         // 相邻节点
@@ -728,6 +731,41 @@ const steamdbTools = {
     ],
 };
 
+const dlsiteTools = {
+    hooks: {
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    let val = info.value;
+                    if (val &&
+                        typeof val === 'string' &&
+                        !/http/.test(val) &&
+                        ['原画', '剧本', '音乐', '游戏类型', '声优'].includes(info.name)) {
+                        const v = info.value.split('/');
+                        if (v && v.length > 1) {
+                            val = v.map((s) => s.trim()).join(', ');
+                        }
+                    }
+                    res.push(Object.assign(Object.assign({}, info), { value: val }));
+                }
+                return res;
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'date',
+            dealFunc(str) {
+                if (/年/.test(str)) {
+                    return dealDate(str.replace(/日.+$/, '日'));
+                }
+                return str;
+            },
+        },
+    ],
+};
+
 function trimParenthesis(str) {
     const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
     return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
@@ -819,6 +857,7 @@ const sitesFuncDict = {
     steamdb_game: steamdbTools,
     douban_game: doubanTools,
     douban_game_edit: doubanGameEditTools,
+    dlsite_game: dlsiteTools,
 };
 
 var SubjectTypeId;
@@ -1121,7 +1160,7 @@ erogamescapeModel.itemList.push({
     },
     category: 'cover',
 }, {
-    name: 'website',
+    name: '官方网站',
     selector: [
         {
             selector: '#links',
@@ -1647,6 +1686,130 @@ doubanGameEditModel.itemList.push({
     category: 'cover',
 });
 
+const dlsiteGameModel = {
+    key: 'dlsite_game',
+    description: 'dlsite游戏',
+    host: ['dlsite.com', 'www.dlsite.com'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.floorTab-item.type-doujin.is-active',
+        },
+        {
+            selector: '.floorTab-item.type-com.is-active',
+        },
+    ],
+    controlSelector: [
+        {
+            selector: '#work_name',
+        },
+    ],
+    itemList: [],
+};
+const commonSelector$2 = {
+    selector: '#work_outline',
+    subSelector: 'th',
+    sibling: true,
+};
+const arrDict = [
+    {
+        name: '发行日期',
+        key: ['販売日', '贩卖日'],
+        categrory: 'date',
+    },
+    // {
+    //   name: '游戏类型',
+    //   key: ['ジャンル', '分类'],
+    // },
+    {
+        name: '作者',
+        key: ['作者'],
+    },
+    {
+        name: '原画',
+        key: ['イラスト', '插画'],
+    },
+    {
+        name: '剧本',
+        key: ['シナリオ', '剧情'],
+    },
+    {
+        name: '声优',
+        key: ['声優', '声优'],
+    },
+    {
+        name: '音乐',
+        key: ['音乐', '音楽'],
+    },
+];
+const configArr$2 = arrDict.map((obj) => {
+    const r = {
+        name: obj.name,
+        selector: Object.assign({ keyWord: obj.key }, commonSelector$2),
+    };
+    if (obj.categrory) {
+        r.category = obj.categrory;
+    }
+    return r;
+});
+dlsiteGameModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#work_name',
+    },
+    category: 'subject_title',
+}, {
+    // name: '社团名',
+    name: '开发',
+    selector: [
+        {
+            selector: '#work_maker .maker_name a',
+        },
+    ],
+}, ...configArr$2, {
+    name: 'cover',
+    selector: [
+        {
+            selector: '.slider_body_inner.swiper-container-horizontal>ul.slider_items>li.slider_item:first-child>img',
+        },
+    ],
+    category: 'cover',
+}, {
+    name: '游戏简介',
+    selector: [
+        {
+            selector: '.work_parts_container',
+            subSelector: '.work_parts_heading',
+            keyWord: 'あらすじ',
+            sibling: true,
+        },
+        {
+            selector: '#intro-title + div',
+        },
+    ],
+    category: 'subject_summary',
+}, {
+    name: 'website',
+    selector: [
+        {
+            selector: '#work_name > a',
+        },
+    ],
+    category: 'website',
+});
+dlsiteGameModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+    {
+        name: 'subject_nsfw',
+        value: '1',
+        category: 'checkbox',
+    },
+];
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1658,6 +1821,7 @@ const configs = {
     [jdBookModel.key]: jdBookModel,
     [doubanGameModel.key]: doubanGameModel,
     [doubanGameEditModel.key]: doubanGameEditModel,
+    [dlsiteGameModel.key]: dlsiteGameModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
