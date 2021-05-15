@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.0
+// @version     0.4.2
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -65,6 +65,11 @@ function getText(elem) {
         return elem.value;
     }
     return elem.textContent || elem.innerText || '';
+}
+function getInnerText(elem) {
+    if (!elem)
+        return '';
+    return elem.innerText || elem.textContent || '';
 }
 /**
  * dollar 选择单个
@@ -159,706 +164,74 @@ function findElement(selector, $parent) {
     }
     return r;
 }
-
-function genRandomStr(len) {
-    return Array.apply(null, Array(len))
-        .map(function () {
-        return (function (chars) {
-            return chars.charAt(Math.floor(Math.random() * chars.length));
-        })('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
-    })
-        .join('');
-}
-function formatDate(time, fmt = 'yyyy-MM-dd') {
-    const date = new Date(time);
-    var o = {
-        'M+': date.getMonth() + 1,
-        'd+': date.getDate(),
-        'h+': date.getHours(),
-        'm+': date.getMinutes(),
-        's+': date.getSeconds(),
-        'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(),
-    };
-    if (/(y+)/i.test(fmt)) {
-        fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
-    }
-    for (var k in o) {
-        if (new RegExp('(' + k + ')', 'i').test(fmt)) {
-            fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
+function findAllElement(selector, $parent) {
+    var _a, _b;
+    let res = [];
+    if (selector instanceof Array) {
+        let i = 0;
+        let targetSelector = selector[i];
+        while (targetSelector) {
+            const arr = findAllElement(targetSelector, $parent);
+            if (arr.length) {
+                res.push(...arr);
+                break;
+            }
+            targetSelector = selector[++i];
         }
-    }
-    return fmt;
-}
-function dealDate(dataStr) {
-    // 2019年12月19
-    let l = [];
-    if (/\d{4}年\d{1,2}月(\d{1,2}日?)?/.test(dataStr)) {
-        l = dataStr
-            .replace('日', '')
-            .split(/年|月/)
-            .filter((i) => i);
-    }
-    else if (/\d{4}\/\d{1,2}(\/\d{1,2})?/.test(dataStr)) {
-        l = dataStr.split('/');
-    }
-    else if (/\d{4}-\d{1,2}(-\d{1,2})?/.test(dataStr)) {
-        return dataStr;
     }
     else {
-        return dataStr;
-    }
-    return l
-        .map((i) => {
-        if (i.length === 1) {
-            return `0${i}`;
-        }
-        return i;
-    })
-        .join('-');
-}
-function isEqualDate(d1, d2) {
-    const resultDate = new Date(d1);
-    const originDate = new Date(d2);
-    if (resultDate.getFullYear() === originDate.getFullYear() &&
-        resultDate.getMonth() === originDate.getMonth() &&
-        resultDate.getDate() === originDate.getDate()) {
-        return true;
-    }
-    return false;
-}
-
-const amazonUtils = {
-    dealTitle(str) {
-        str = str.trim().split('\n')[0].trim();
-        // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
-        // 去掉尾部括号的内容, (1) （1） 这类不处理
-        return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
-        // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
-    },
-};
-const amazonJpBookTools = {
-    filters: [
-        {
-            category: 'subject_title',
-            dealFunc: amazonUtils.dealTitle,
-        },
-    ],
-    hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const $t = document.querySelector('#title');
-                const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
-                if ($t && bookTypeList && bookTypeList.length > 1) {
-                    const $div = document.createElement('div');
-                    const $s = document.createElement('span');
-                    $s.style.color = 'red';
-                    $s.style.fontWeight = '600';
-                    $s.innerHTML = '注意: ';
-                    const $txt = document.createElement('span');
-                    $txt.innerHTML =
-                        '书籍存在多种版本，请优先选择实体书创建。(辅助创建脚本)';
-                    $div.appendChild($s);
-                    $div.appendChild($txt);
-                    $div.style.padding = '6px 0';
-                    $t.insertAdjacentElement('afterend', $div);
-                }
-                return true;
-            });
-        },
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    let newInfo = Object.assign({}, info);
-                    if (info.name === '页数') {
-                        let val = (info.value || '').trim().replace(/ページ|页/, '');
-                        if (val && val.length < 8 && val.indexOf('予約商品') === -1) {
-                            newInfo.value = val;
-                        }
-                        else {
-                            newInfo = null;
-                        }
-                    }
-                    if (newInfo) {
-                        res.push(Object.assign({}, newInfo));
-                    }
-                }
-                return res;
-            });
-        },
-    },
-};
-
-// support GM_XMLHttpRequest
-function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
-    // @ts-ignore
-    {
-        return new Promise((resolve, reject) => {
-            // @ts-ignore
-            GM_xmlhttpRequest(Object.assign({ method: 'GET', timeout: TIMEOUT, url, responseType: type, onload: function (res) {
-                    resolve(res.response);
-                }, onerror: reject }, opts));
-        });
-    }
-}
-function fetchBinary(url, opts = {}) {
-    return fetchInfo(url, 'blob', opts);
-}
-function fetchText(url, TIMEOUT = 10 * 1000) {
-    return fetchInfo(url, 'text', {}, TIMEOUT);
-}
-function fetchJson(url, opts = {}) {
-    return fetchInfo(url, 'json', opts);
-}
-
-/**
- * convert base64/URLEncoded data component to raw binary data held in a string
- * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
- * @param dataURI
- */
-function dataURItoBlob(dataURI) {
-    var byteString;
-    if (dataURI.split(',')[0].indexOf('base64') >= 0)
-        byteString = atob(dataURI.split(',')[1]);
-    else
-        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
-    // separate out the mime component
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    // write the bytes of the string to a typed array
-    var ia = new Uint8Array(byteString.length);
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ia], { type: mimeString });
-}
-function getImageDataByURL(url) {
-    if (!url)
-        return Promise.reject('invalid img url');
-    return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-        try {
-            const blob = yield fetchBinary(url);
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result);
-            };
-            reader.readAsDataURL(blob);
-            reader.onerror = reject;
-        }
-        catch (e) {
-            reject(e);
-        }
-    }));
-}
-/**
- * convert to img Element to base64 string
- * @param $img
- */
-function convertImgToBase64($img) {
-    const canvas = document.createElement('canvas');
-    canvas.width = $img.width;
-    canvas.height = $img.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage($img, 0, 0, $img.width, $img.height);
-    const dataURL = canvas.toDataURL('image/png');
-    return dataURL;
-}
-
-const getchuTools = {
-    dealTitle(str) {
-        str = str.trim().split('\n')[0];
-        str = str
-            .split('＋')[0]
-            .replace(/（このタイトルの関連商品）/, '')
-            .trim();
-        return str.replace(/\s[^ ]*?(スペシャルプライス版|限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
-    },
-    getExtraCharaInfo(txt) {
-        const re = /[^\s]+?[:：]/g;
-        const matchedArr = txt.match(re);
-        if (!matchedArr)
-            return [];
-        const infoArr = txt.split(re);
-        const res = [];
-        matchedArr.forEach((item, idx) => {
-            const val = (infoArr[idx + 1] || '').trim();
-            if (val) {
-                res.push({
-                    name: item.replace(/:|：/, ''),
-                    value: val,
-                });
+        // 没有下一步的选择器
+        if (!selector.nextSelector) {
+            // 没子选择器
+            if (!selector.subSelector) {
+                res = Array.from($parent
+                    ? $parent.querySelectorAll(selector.selector)
+                    : $qa(selector.selector));
             }
-        });
-        return res;
-    },
-    getCharacterInfo($t) {
-        const charaData = [];
-        const $name = $t.closest('dt').querySelector('h2');
-        let name;
-        if ($name.querySelector('charalist')) {
-            const $charalist = $name.querySelector('charalist');
-            name = getText($charalist);
-        }
-        else {
-            if ($name.classList.contains('chara-name') && $name.querySelector('br')) {
-                name = $name
-                    .querySelector('br')
-                    .nextSibling.textContent.split(/（|\(|\sCV|新建角色/)[0];
+            else if (selector.isIframe) {
+                const $iframeDoc = (_a = $q(selector.selector)) === null || _a === void 0 ? void 0 : _a.contentDocument;
+                res = Array.from($iframeDoc === null || $iframeDoc === void 0 ? void 0 : $iframeDoc.querySelectorAll(selector.subSelector));
             }
             else {
-                name = getText($name).split(/（|\(|\sCV|新建角色/)[0];
-            }
-        }
-        charaData.push({
-            name: '姓名',
-            value: name.replace(/\s/g, ''),
-            category: 'crt_name',
-        });
-        charaData.push({
-            name: '日文名',
-            value: name,
-        });
-        const nameTxt = getText($name);
-        if (nameTxt.match(/（(.*)）/)) {
-            charaData.push({
-                name: '纯假名',
-                value: nameTxt.match(/（(.*)）/)[1],
-            });
-        }
-        const cvMatch = nameTxt.match(/(?<=CV[：:]).+/);
-        if (cvMatch) {
-            charaData.push({
-                name: 'CV',
-                value: cvMatch[0].replace(/\s/g, ''),
-            });
-        }
-        const $img = $t.closest('tr').querySelector('td > img');
-        if ($img) {
-            charaData.push({
-                name: 'cover',
-                value: convertImgToBase64($img),
-                category: 'crt_cover',
-            });
-        }
-        // 处理杂项 参考 id=1074002 id=735329 id=1080370
-        // id=1080431
-        // id=840936
-        // dd tag
-        const $dd = $t.closest('dt').nextElementSibling;
-        const $clonedDd = $dd.cloneNode(true);
-        Array.prototype.forEach.call($clonedDd.querySelectorAll('span[style^="font-weight"]'), (node) => {
-            const t = getText(node).trim();
-            t.split(/\n/g).forEach((el) => {
-                const extraInfo = getchuTools.getExtraCharaInfo(el);
-                if (extraInfo.length) {
-                    charaData.push(...extraInfo);
+                if (selector.isIframe) {
+                    const $iframeDoc = (_b = $q(selector.selector)) === null || _b === void 0 ? void 0 : _b.contentDocument;
+                    // iframe 时不需要 keyWord
+                    $parent = $iframeDoc === null || $iframeDoc === void 0 ? void 0 : $iframeDoc.querySelector(selector.subSelector);
                 }
                 else {
-                    const c = el.match(/B.*W.*H\d+/);
-                    if (c) {
-                        charaData.push({
-                            name: 'BWH',
-                            value: c[0],
-                        });
-                    }
+                    $parent = $parent ? $parent : $q(selector.selector);
                 }
-            });
-            node.remove();
-        });
-        charaData.push({
-            name: '人物简介',
-            value: getText($clonedDd).trim(),
-            category: 'crt_summary',
-        });
-        const dict = {
-            誕生日: '生日',
-            '3サイズ': 'BWH',
-            スリーサイズ: 'BWH',
-            身長: '身高',
-            血液型: '血型',
-        };
-        charaData.forEach((item) => {
-            if (dict[item.name]) {
-                item.name = dict[item.name];
-            }
-        });
-        return charaData;
-    },
-};
-const getchuSiteTools = {
-    hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const $t = document.querySelector('#soft-title');
-                if (!$t)
-                    return false;
-                const rawTitle = $t.textContent.trim();
-                if (/［同人グッズ|同人誌|同人音楽］/.test(rawTitle))
-                    return false;
-                return true;
-            });
-        },
-    },
-    filters: [
-        {
-            category: 'subject_title',
-            dealFunc: getchuTools.dealTitle,
-        },
-    ],
-};
-
-const doubanTools = {
-    hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const href = window.location.href;
-                if (/\/game\//.test(href) && !/\/game\/\d+\/edit/.test(href)) {
-                    return {
-                        payload: {
-                            auxSite: document.querySelector('.th-modify > a').href,
-                            auxPrefs: {
-                                originNames: ['平台', '发行日期'],
-                                targetNames: 'all',
-                            },
-                        },
-                    };
+                if (!$parent)
+                    return res;
+                res = contains(selector.subSelector, selector.keyWord, $parent);
+                if (selector.sibling) {
+                    res = res.map(($t) => $t.nextElementSibling);
                 }
-            });
-        },
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    if (['平台', '别名'].includes(info.name)) {
-                        const pArr = info.value.split('/').map((i) => {
-                            return Object.assign(Object.assign({}, info), { value: i.trim() });
-                        });
-                        res.push(...pArr);
-                    }
-                    else if (info.category === 'cover') {
-                        res.push(Object.assign({}, info));
-                    }
-                    else {
-                        let val = info.value;
-                        if (val && typeof val === 'string') {
-                            const v = info.value.split('/');
-                            if (v && v.length > 1) {
-                                val = v.map((s) => s.trim()).join(', ');
-                            }
-                        }
-                        if (info.name === '游戏类型' && val) {
-                            val = val.replace('游戏, ', '').trim();
-                        }
-                        res.push(Object.assign(Object.assign({}, info), { value: val }));
-                    }
-                }
-                // 特殊处理平台
-                const $plateform = findElement({
-                    selector: '#content .game-attr',
-                    subSelector: 'dt',
-                    sibling: true,
-                    keyWord: '平台',
-                });
-                if ($plateform) {
-                    const aList = $plateform.querySelectorAll('a') || [];
-                    for (const $a of aList) {
-                        res.push({
-                            name: '平台',
-                            value: getText($a).replace(/\/.*/, '').trim(),
-                            category: 'platform',
-                        });
-                    }
-                }
-                return res;
-            });
-        },
-    },
-    filters: [],
-};
-const doubanGameEditTools = {
-    hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const href = window.location.href;
-                return /\/game\/\d+\/edit/.test(href);
-            });
-        },
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    const arr = Object.assign({}, info);
-                    if (['平台', '别名'].includes(info.name)) {
-                        const plateformDict = {
-                            ARC: 'Arcade',
-                            NES: 'FC',
-                            红白机: 'FC',
-                            街机: 'Arcade',
-                        };
-                        const pArr = info.value.split(',').map((i) => {
-                            let v = i.trim();
-                            if (plateformDict[v]) {
-                                v = plateformDict[v];
-                            }
-                            return Object.assign(Object.assign({}, info), { value: v });
-                        });
-                        res.push(...pArr);
-                    }
-                    else if (arr.category === 'cover' && arr.value && arr.value.url) {
-                        try {
-                            const url = arr.value.url.replace('/spic/', '/lpic/');
-                            const dataUrl = yield getImageDataByURL(url);
-                            const coverItem = Object.assign(Object.assign({}, arr), { value: {
-                                    dataUrl,
-                                    url,
-                                } });
-                            res.push(coverItem);
-                        }
-                        catch (error) {
-                            console.error(error);
-                        }
-                    }
-                    else if (arr.name === '游戏类型') {
-                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
-                        res.push(arr);
-                    }
-                    else if (arr.name === '开发') {
-                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
-                        res.push(arr);
-                    }
-                    else {
-                        res.push(arr);
-                    }
-                }
-                // 描述
-                const inputList = document.querySelectorAll('input[name="target"][type="hidden"]');
-                inputList.forEach(($input) => {
-                    const val = $input.value;
-                    if (val === 'description') {
-                        const $target = $input
-                            .closest('form')
-                            .querySelector('.desc-form-item #thing_desc_options_0');
-                        if ($target) {
-                            res.push({
-                                name: '游戏简介',
-                                value: $target.value,
-                                category: 'subject_summary',
-                            });
-                        }
-                    }
-                });
-                return res;
-            });
-        },
-    },
-    filters: [],
-};
-
-function getSteamdbURL(href) {
-    var _a;
-    href = href || (location === null || location === void 0 ? void 0 : location.href);
-    const id = (_a = href.match(/store\.steampowered\.com\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
-    if (id) {
-        return `https://steamdb.info/app/${id}/info/`;
-    }
-    return '';
-}
-function getSteamURL(href) {
-    var _a;
-    href = href || (location === null || location === void 0 ? void 0 : location.href);
-    const id = (_a = href.match(/steamdb\.info\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
-    if (id) {
-        return `https://store.steampowered.com/app/${id}/_/`;
-    }
-    return '';
-}
-const steamTools = {
-    hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                return {
-                    payload: {
-                        disableDate: true,
-                        auxSite: getSteamdbURL(window.location.href),
-                    },
-                };
-            });
-        },
-    },
-    filters: [
-        {
-            category: 'website',
-            dealFunc(str) {
-                // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
-                const arr = str.split('?url=');
-                return arr[1] || '';
-            },
-        },
-        {
-            category: 'date',
-            dealFunc(str) {
-                if (/年/.test(str)) {
-                    return dealDate(str);
-                }
-                return formatDate(str);
-            },
-        },
-    ],
-};
-const steamdbTools = {
-    hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                return {
-                    payload: {
-                        disableDate: true,
-                        auxSite: getSteamURL(window.location.href),
-                    },
-                };
-            });
-        },
-    },
-    filters: [
-        {
-            category: 'date',
-            dealFunc(str) {
-                const arr = str.split('–');
-                if (!arr[0])
-                    return '';
-                return formatDate(arr[0].trim());
-            },
-        },
-    ],
-};
-
-const dlsiteTools = {
-    hooks: {
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    let val = info.value;
-                    if (val &&
-                        typeof val === 'string' &&
-                        !/http/.test(val) &&
-                        ['原画', '剧本', '音乐', '游戏类型', '声优'].includes(info.name)) {
-                        const v = info.value.split('/');
-                        if (v && v.length > 1) {
-                            val = v.map((s) => s.trim()).join(', ');
-                        }
-                    }
-                    res.push(Object.assign(Object.assign({}, info), { value: val }));
-                }
-                return res;
-            });
-        },
-    },
-    filters: [
-        {
-            category: 'date',
-            dealFunc(str) {
-                if (/年/.test(str)) {
-                    return dealDate(str.replace(/日.+$/, '日'));
-                }
-                return str;
-            },
-        },
-    ],
-};
-
-function trimParenthesis(str) {
-    const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
-    return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
-}
-function identity(x) {
-    return x;
-}
-const noOps = () => Promise.resolve(true);
-function getHooks(siteConfig, timing) {
-    var _a;
-    const hooks = ((_a = sitesFuncDict[siteConfig.key]) === null || _a === void 0 ? void 0 : _a.hooks) || {};
-    return hooks[timing] || noOps;
-}
-function getCover($d, site) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let url;
-        let dataUrl = '';
-        if ($d.tagName.toLowerCase() === 'a') {
-            url = $d.getAttribute('href');
-        }
-        else if ($d.tagName.toLowerCase() === 'img') {
-            url = $d.getAttribute('src');
-        }
-        if (!url)
-            return;
-        try {
-            // 跨域的图片不能用这种方式
-            // dataUrl = convertImgToBase64($d as any);
-            dataUrl = yield getImageDataByURL(url);
-            if (dataUrl) {
-                return {
-                    url,
-                    dataUrl,
-                };
             }
         }
-        catch (error) {
-            return {
-                url,
-                dataUrl: url,
-            };
+        else {
+            // 有下一步的选择器时，selector 是用来定位父节点的
+            const localSel = Object.assign({}, selector);
+            delete localSel.nextSelector;
+            const $p = findElement(localSel);
+            if ($p) {
+                res = findAllElement(selector.nextSelector, $p);
+            }
         }
-    });
+    }
+    return res;
 }
-function dealFuncByCategory(key, category) {
-    var _a;
-    let fn;
-    if ((_a = sitesFuncDict[key]) === null || _a === void 0 ? void 0 : _a.filters) {
-        const obj = sitesFuncDict[key].filters.find((x) => x.category === category);
-        fn = obj && obj.dealFunc;
-    }
-    if (fn) {
-        return fn;
-    }
-    else {
-        return (str = '') => identity(str.trim());
-    }
+/**
+ * @param {String} HTML 字符串
+ * @return {Element}
+ */
+function htmlToElement(html) {
+    var template = document.createElement('template');
+    html = html.trim();
+    template.innerHTML = html;
+    // template.content.childNodes;
+    return template.content.firstChild;
 }
-const sitesFuncDict = {
-    amazon_jp_book: amazonJpBookTools,
-    dangdang_book: {
-        filters: [
-            {
-                category: 'date',
-                dealFunc(str) {
-                    return dealDate(str.replace(/出版时间[:：]/, '').trim());
-                },
-            },
-            {
-                category: 'subject_title',
-                dealFunc(str) {
-                    return trimParenthesis(str);
-                },
-            },
-        ],
-    },
-    jd_book: {
-        filters: [
-            {
-                category: 'subject_title',
-                dealFunc(str) {
-                    return trimParenthesis(str);
-                },
-            },
-        ],
-    },
-    getchu_game: getchuSiteTools,
-    steam_game: steamTools,
-    steamdb_game: steamdbTools,
-    douban_game: doubanTools,
-    douban_game_edit: doubanGameEditTools,
-    dlsite_game: dlsiteTools,
-};
 
 var SubjectTypeId;
 (function (SubjectTypeId) {
@@ -1810,6 +1183,182 @@ dlsiteGameModel.defaultInfos = [
     },
 ];
 
+const dmmGameModel = {
+    key: 'dmm_game',
+    description: 'dmm游戏',
+    host: ['dlsoft.dmm.co.jp'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.ntgnav-mainItem.is-active',
+            subSelector: 'span',
+            keyWord: 'ゲーム',
+        },
+    ],
+    controlSelector: [
+        {
+            selector: 'h1#title',
+        },
+    ],
+    itemList: [],
+};
+const commonSelector$3 = {
+    selector: '.main-area-center .container02 table',
+    subSelector: 'tr',
+    nextSelector: {
+        selector: '.type-right',
+    },
+};
+const contentIframe = {
+    selector: '#if_view',
+    isIframe: true,
+    subSelector: 'body',
+};
+const arrDict$1 = [
+    {
+        name: '发行日期',
+        key: ['配信開始日'],
+        categrory: 'date',
+    },
+    {
+        name: '游戏类型',
+        key: ['ゲームジャンル'],
+    },
+    {
+        name: '原画',
+        key: ['原画'],
+    },
+    {
+        name: '剧本',
+        key: ['シナリオ', '剧情'],
+    },
+];
+const configArr$3 = arrDict$1.map((obj) => {
+    const r = {
+        name: obj.name,
+        selector: Object.assign({ keyWord: obj.key }, commonSelector$3),
+    };
+    if (obj.categrory) {
+        r.category = obj.categrory;
+    }
+    return r;
+});
+dmmGameModel.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: '#title',
+    },
+    category: 'subject_title',
+}, {
+    name: '开发',
+    selector: [
+        {
+            selector: '.ranking-and-brand .brand',
+            subSelector: 'td',
+            keyWord: 'ブランド',
+            sibling: true,
+        },
+    ],
+}, ...configArr$3, {
+    name: 'cover',
+    selector: [
+        Object.assign(Object.assign({}, contentIframe), { nextSelector: {
+                selector: '#guide-head > img',
+            } }),
+    ],
+    category: 'cover',
+}, {
+    name: '游戏简介',
+    selector: [
+        Object.assign(Object.assign({}, contentIframe), { nextSelector: {
+                selector: '#guide-content',
+                subSelector: '.guide-capt',
+                keyWord: '作品紹介',
+                sibling: true,
+            } }),
+        {
+            selector: '.read-text-area .text-overflow',
+        },
+    ],
+    category: 'subject_summary',
+});
+dmmGameModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+    {
+        name: 'subject_nsfw',
+        value: '1',
+        category: 'checkbox',
+    },
+];
+
+const dlsiteGameCharaModel = {
+    key: 'dlsite_game_chara',
+    siteKey: 'dlsite_game',
+    description: 'dlsite游戏角色',
+    host: ['dlsite.com', 'www.dlsite.com'],
+    type: 'character',
+    itemSelector: {
+        selector: '.work_parts_multiimage_item',
+    },
+    controlSelector: [
+        {
+            selector: '.work_parts.type_multiimages *:first-child',
+        },
+        {
+            selector: '#work_name',
+        },
+    ],
+    itemList: [],
+};
+// 限定父节点
+dlsiteGameCharaModel.itemList.push({
+    name: 'cover',
+    selector: {
+        selector: '.image img',
+    },
+    category: 'crt_cover',
+});
+
+const dmmGameCharaModel = {
+    key: 'dmm_game_chara',
+    siteKey: 'dmm_game',
+    description: 'dmm 游戏角色',
+    type: 'character',
+    itemSelector: {
+        selector: '#if_view',
+        isIframe: true,
+        subSelector: 'body',
+        nextSelector: {
+            selector: '.guide-sect .guide-box-chr',
+        },
+    },
+    controlSelector: [
+        {
+            selector: '#title',
+        },
+    ],
+    itemList: [],
+};
+// 限定父节点
+dmmGameCharaModel.itemList.push({
+    name: '姓名',
+    selector: {
+        selector: '.guide-tx16.guide-bold.guide-lin-hgt',
+    },
+    category: 'crt_name',
+    pipes: ['p', 'ta'],
+}, {
+    name: 'cover',
+    selector: {
+        selector: 'img',
+    },
+    category: 'crt_cover',
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1822,6 +1371,11 @@ const configs = {
     [doubanGameModel.key]: doubanGameModel,
     [doubanGameEditModel.key]: doubanGameEditModel,
     [dlsiteGameModel.key]: dlsiteGameModel,
+    [dmmGameModel.key]: dmmGameModel,
+};
+const charaModelDict = {
+    [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
+    [dmmGameCharaModel.key]: dmmGameCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1835,6 +1389,950 @@ function findModelByHost(host) {
     }
     return models;
 }
+function getCharaModel(key) {
+    const keys = Object.keys(charaModelDict);
+    const targetKey = keys.find((k) => { var _a; return ((_a = charaModelDict[k]) === null || _a === void 0 ? void 0 : _a.siteKey) == key; });
+    if (!targetKey)
+        return null;
+    return charaModelDict[targetKey];
+}
+
+// support GM_XMLHttpRequest
+function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
+    // @ts-ignore
+    {
+        return new Promise((resolve, reject) => {
+            // @ts-ignore
+            GM_xmlhttpRequest(Object.assign({ method: 'GET', timeout: TIMEOUT, url, responseType: type, onload: function (res) {
+                    resolve(res.response);
+                }, onerror: reject }, opts));
+        });
+    }
+}
+function fetchBinary(url, opts = {}) {
+    return fetchInfo(url, 'blob', opts);
+}
+function fetchText(url, TIMEOUT = 10 * 1000) {
+    return fetchInfo(url, 'text', {}, TIMEOUT);
+}
+function fetchJson(url, opts = {}) {
+    return fetchInfo(url, 'json', opts);
+}
+
+const pipeFnDict = {
+    // t: 去除开头和结尾的空格
+    t: trimSpace,
+    // ta: 去除所有空格
+    ta: trimAllSpace,
+    // k: 去除关键字;
+    k: trimKeywords,
+    // p: 括号
+    p: trimParenthesis,
+    // pn: 括号不含数字
+    pn: trimParenthesisN,
+    // num: 提取数字
+    num: getNum,
+};
+function getStr(pipe) {
+    return (pipe.out || pipe.rawInfo).trim();
+}
+function trim(pipe, textList) {
+    let str = getStr(pipe);
+    return Object.assign(Object.assign({}, pipe), { out: str.replace(new RegExp(textList.join('|'), 'g'), '') });
+}
+function trimAllSpace(pipe) {
+    let str = getStr(pipe);
+    return Object.assign(Object.assign({}, pipe), { out: str.replace(/\s/g, '') });
+}
+function trimSpace(pipe) {
+    let str = getStr(pipe);
+    return Object.assign(Object.assign({}, pipe), { out: str.trim() });
+}
+function trimParenthesis(pipe) {
+    const textList = ['\\(.*?\\)', '（.*?）'];
+    // const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
+    return trim(pipe, textList);
+}
+// 保留括号里面的数字. 比如一些图书的 1 2 3
+function trimParenthesisN(pipe) {
+    // const textList = ['\\(.*?\\)', '（.*?）'];
+    const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
+    return trim(pipe, textList);
+}
+function trimKeywords(pipe, keyWords) {
+    return trim(pipe, keyWords.map((k) => `${k}\s*?(:|：)?`));
+}
+function getNum(pipe) {
+    let str = getStr(pipe);
+    const m = str.match(/\d+/);
+    return {
+        rawInfo: pipe.rawInfo,
+        out: m ? m[0] : '',
+    };
+}
+/**
+ *
+ * @param str 原字符串
+ * @param pipes 管道
+ * @returns 处理后的字符串
+ */
+function dealTextByPipe(str, pipes) {
+    let current = { rawInfo: str };
+    pipes = pipes || [];
+    for (const p of pipes) {
+        if (p instanceof Function) {
+            // @TODO 支持传递参数
+            current = p(current);
+        }
+        else {
+            current = pipeFnDict[p](current);
+        }
+    }
+    return current.out || str;
+}
+
+function genRandomStr(len) {
+    return Array.apply(null, Array(len))
+        .map(function () {
+        return (function (chars) {
+            return chars.charAt(Math.floor(Math.random() * chars.length));
+        })('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+    })
+        .join('');
+}
+function formatDate(time, fmt = 'yyyy-MM-dd') {
+    const date = new Date(time);
+    var o = {
+        'M+': date.getMonth() + 1,
+        'd+': date.getDate(),
+        'h+': date.getHours(),
+        'm+': date.getMinutes(),
+        's+': date.getSeconds(),
+        'q+': Math.floor((date.getMonth() + 3) / 3),
+        S: date.getMilliseconds(),
+    };
+    if (/(y+)/i.test(fmt)) {
+        fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
+    }
+    for (var k in o) {
+        if (new RegExp('(' + k + ')', 'i').test(fmt)) {
+            fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
+        }
+    }
+    return fmt;
+}
+function dealDate(dataStr) {
+    // 2019年12月19
+    let l = [];
+    if (/\d{4}年\d{1,2}月(\d{1,2}日?)?/.test(dataStr)) {
+        l = dataStr
+            .replace('日', '')
+            .split(/年|月/)
+            .filter((i) => i);
+    }
+    else if (/\d{4}\/\d{1,2}(\/\d{1,2})?/.test(dataStr)) {
+        l = dataStr.split('/');
+    }
+    else if (/\d{4}-\d{1,2}(-\d{1,2})?/.test(dataStr)) {
+        return dataStr;
+    }
+    else {
+        return dataStr;
+    }
+    return l
+        .map((i) => {
+        if (i.length === 1) {
+            return `0${i}`;
+        }
+        return i;
+    })
+        .join('-');
+}
+function isEqualDate(d1, d2) {
+    const resultDate = new Date(d1);
+    const originDate = new Date(d2);
+    if (resultDate.getFullYear() === originDate.getFullYear() &&
+        resultDate.getMonth() === originDate.getMonth() &&
+        resultDate.getDate() === originDate.getDate()) {
+        return true;
+    }
+    return false;
+}
+
+const amazonUtils = {
+    dealTitle(str) {
+        str = str.trim().split('\n')[0].trim();
+        // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
+        // 去掉尾部括号的内容, (1) （1） 这类不处理
+        return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
+        // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
+    },
+};
+const amazonJpBookTools = {
+    filters: [
+        {
+            category: 'subject_title',
+            dealFunc: amazonUtils.dealTitle,
+        },
+    ],
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const $t = document.querySelector('#title');
+                const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
+                if ($t && bookTypeList && bookTypeList.length > 1) {
+                    const $div = document.createElement('div');
+                    const $s = document.createElement('span');
+                    $s.style.color = 'red';
+                    $s.style.fontWeight = '600';
+                    $s.innerHTML = '注意: ';
+                    const $txt = document.createElement('span');
+                    $txt.innerHTML =
+                        '书籍存在多种版本，请优先选择实体书创建。(辅助创建脚本)';
+                    $div.appendChild($s);
+                    $div.appendChild($txt);
+                    $div.style.padding = '6px 0';
+                    $t.insertAdjacentElement('afterend', $div);
+                }
+                return true;
+            });
+        },
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    let newInfo = Object.assign({}, info);
+                    if (info.name === '页数') {
+                        let val = (info.value || '').trim().replace(/ページ|页/, '');
+                        if (val && val.length < 8 && val.indexOf('予約商品') === -1) {
+                            newInfo.value = val;
+                        }
+                        else {
+                            newInfo = null;
+                        }
+                    }
+                    if (newInfo) {
+                        res.push(Object.assign({}, newInfo));
+                    }
+                }
+                return res;
+            });
+        },
+    },
+};
+
+const dlsiteTools = {
+    hooks: {
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    let val = info.value;
+                    if (val &&
+                        typeof val === 'string' &&
+                        !/http/.test(val) &&
+                        ['原画', '剧本', '音乐', '游戏类型', '声优'].includes(info.name)) {
+                        const v = info.value.split('/');
+                        if (v && v.length > 1) {
+                            val = v.map((s) => s.trim()).join(', ');
+                        }
+                    }
+                    res.push(Object.assign(Object.assign({}, info), { value: val }));
+                }
+                return res;
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'date',
+            dealFunc(str) {
+                if (/年/.test(str)) {
+                    return dealDate(str.replace(/日.+$/, '日'));
+                }
+                return str;
+            },
+        },
+    ],
+};
+const dlsiteCharaTools = {
+    hooks: {
+        afterGetWikiData(infos, model, el) {
+            var _a;
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [...infos];
+                const txt = ((_a = el.querySelector('p')) === null || _a === void 0 ? void 0 : _a.textContent) || '';
+                res.push({
+                    name: '姓名',
+                    value: txt.split('\n')[0],
+                    category: 'crt_name',
+                });
+                res.push({
+                    name: 'CV',
+                    value: (txt.split('\n').find((s) => s.includes('CV')) || '')
+                        .replace('CV:', '')
+                        .trim(),
+                });
+                let idx = txt.indexOf('\n\n');
+                if (idx === -1) {
+                    idx = 0;
+                }
+                else {
+                    idx = idx + 2;
+                }
+                res.push({
+                    name: '人物简介',
+                    value: txt.slice(idx),
+                    category: 'crt_summary',
+                });
+                return res;
+            });
+        },
+    },
+};
+
+/**
+ * convert base64/URLEncoded data component to raw binary data held in a string
+ * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+ * @param dataURI
+ */
+function dataURItoBlob(dataURI) {
+    var byteString;
+    if (dataURI.split(',')[0].indexOf('base64') >= 0)
+        byteString = atob(dataURI.split(',')[1]);
+    else
+        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
+    // separate out the mime component
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    // write the bytes of the string to a typed array
+    var ia = new Uint8Array(byteString.length);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ia], { type: mimeString });
+}
+function getImageDataByURL(url) {
+    if (!url)
+        return Promise.reject('invalid img url');
+    return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+        try {
+            const blob = yield fetchBinary(url);
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+            reader.onerror = reject;
+        }
+        catch (e) {
+            reject(e);
+        }
+    }));
+}
+/**
+ * convert to img Element to base64 string
+ * @param $img
+ */
+function convertImgToBase64($img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = $img.width;
+    canvas.height = $img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage($img, 0, 0, $img.width, $img.height);
+    const dataURL = canvas.toDataURL('image/png');
+    return dataURL;
+}
+
+function getCover($d, site) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let url;
+        let dataUrl = '';
+        if ($d.tagName.toLowerCase() === 'a') {
+            url = $d.getAttribute('href');
+        }
+        else if ($d.tagName.toLowerCase() === 'img') {
+            url = $d.getAttribute('src');
+        }
+        if (!url)
+            return;
+        try {
+            // 跨域的图片不能用这种方式
+            // dataUrl = convertImgToBase64($d as any);
+            dataUrl = yield getImageDataByURL(url);
+            if (dataUrl) {
+                return {
+                    url,
+                    dataUrl,
+                };
+            }
+        }
+        catch (error) {
+            return {
+                url,
+                dataUrl: url,
+            };
+        }
+    });
+}
+const charaInfoDict = {
+    趣味: '爱好',
+    誕生日: '生日',
+    '3サイズ': 'BWH',
+    スリーサイズ: 'BWH',
+    身長: '身高',
+    血液型: '血型',
+};
+
+const dmmTools = {
+    hooks: {
+        afterGetWikiData(infos) {
+            var _a;
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                const hasCover = infos.some((info) => info.category == 'cover');
+                for (const info of infos) {
+                    let val = info.value;
+                    res.push(Object.assign(Object.assign({}, info), { value: val }));
+                }
+                if (!hasCover) {
+                    // 使用 slider 里面的第一个图片
+                    const slides = $qa('.image-slider.slick-slider li.slick-slide');
+                    if (slides) {
+                        let url;
+                        let dataUrl = '';
+                        const targetSlide = Array.from(slides).find((slide) => slide.dataset.slickIndex === '0');
+                        url = (_a = targetSlide.querySelector('img')) === null || _a === void 0 ? void 0 : _a.getAttribute('src');
+                        if (url) {
+                            try {
+                                dataUrl = yield getImageDataByURL(url);
+                            }
+                            catch (error) {
+                                dataUrl = url;
+                            }
+                            res.push({
+                                name: 'cover',
+                                category: 'cover',
+                                value: {
+                                    url,
+                                    dataUrl,
+                                },
+                            });
+                        }
+                    }
+                }
+                return res;
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'date',
+            dealFunc(str) {
+                const re = /\d{4}\/\d{1,2}(\/\d{1,2})?/;
+                const m = str.match(re);
+                if (m) {
+                    return dealDate(m[0]);
+                }
+                return str;
+            },
+        },
+    ],
+};
+const dmmCharaTools = {
+    hooks: {
+        afterGetWikiData(infos, model, $el) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [...infos];
+                const $nameTxt = $el.querySelector('.guide-tx16.guide-bold.guide-lin-hgt');
+                if ($nameTxt) {
+                    // （きのみや なのか）
+                    const nameTxt = $nameTxt.textContent;
+                    if (nameTxt.match(/（(.*)）/)) {
+                        res.push({
+                            name: '纯假名',
+                            value: nameTxt.match(/（(.*)）/)[1],
+                        });
+                    }
+                    const cvTxt = $nameTxt.nextSibling.textContent;
+                    if (/CV/.test(cvTxt)) {
+                        res.push({
+                            name: 'CV',
+                            value: cvTxt.replace(/CV：/, '').replace(/\s/g, ''),
+                        });
+                    }
+                }
+                const boxArr = Array.from($el.querySelectorAll('.box'));
+                for (const $box of boxArr) {
+                    const txtArr = $box.textContent
+                        .trim()
+                        .split(/：|:/)
+                        .map((s) => s.trim());
+                    if (charaInfoDict[txtArr[0]]) {
+                        res.push({
+                            name: charaInfoDict[txtArr[0]],
+                            value: txtArr[1],
+                        });
+                    }
+                    else {
+                        res.push({
+                            name: txtArr[0],
+                            value: txtArr[1],
+                        });
+                    }
+                }
+                const $summary = $nameTxt.closest('div').cloneNode(true);
+                $summary.firstElementChild.remove();
+                res.push({
+                    name: '人物简介',
+                    value: $summary.textContent,
+                    category: 'crt_summary',
+                });
+                return res;
+            });
+        },
+    },
+};
+
+const doubanTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const href = window.location.href;
+                if (/\/game\//.test(href) && !/\/game\/\d+\/edit/.test(href)) {
+                    return {
+                        payload: {
+                            auxSite: document.querySelector('.th-modify > a').href,
+                            auxPrefs: {
+                                originNames: ['平台', '发行日期'],
+                                targetNames: 'all',
+                            },
+                        },
+                    };
+                }
+            });
+        },
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    if (['平台', '别名'].includes(info.name)) {
+                        const pArr = info.value.split('/').map((i) => {
+                            return Object.assign(Object.assign({}, info), { value: i.trim() });
+                        });
+                        res.push(...pArr);
+                    }
+                    else if (info.category === 'cover') {
+                        res.push(Object.assign({}, info));
+                    }
+                    else {
+                        let val = info.value;
+                        if (val && typeof val === 'string') {
+                            const v = info.value.split('/');
+                            if (v && v.length > 1) {
+                                val = v.map((s) => s.trim()).join(', ');
+                            }
+                        }
+                        if (info.name === '游戏类型' && val) {
+                            val = val.replace('游戏, ', '').trim();
+                        }
+                        res.push(Object.assign(Object.assign({}, info), { value: val }));
+                    }
+                }
+                // 特殊处理平台
+                const $plateform = findElement({
+                    selector: '#content .game-attr',
+                    subSelector: 'dt',
+                    sibling: true,
+                    keyWord: '平台',
+                });
+                if ($plateform) {
+                    const aList = $plateform.querySelectorAll('a') || [];
+                    for (const $a of aList) {
+                        res.push({
+                            name: '平台',
+                            value: getText($a).replace(/\/.*/, '').trim(),
+                            category: 'platform',
+                        });
+                    }
+                }
+                return res;
+            });
+        },
+    },
+    filters: [],
+};
+const doubanGameEditTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const href = window.location.href;
+                return /\/game\/\d+\/edit/.test(href);
+            });
+        },
+        afterGetWikiData(infos) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [];
+                for (const info of infos) {
+                    const arr = Object.assign({}, info);
+                    if (['平台', '别名'].includes(info.name)) {
+                        const plateformDict = {
+                            ARC: 'Arcade',
+                            NES: 'FC',
+                            红白机: 'FC',
+                            街机: 'Arcade',
+                        };
+                        const pArr = info.value.split(',').map((i) => {
+                            let v = i.trim();
+                            if (plateformDict[v]) {
+                                v = plateformDict[v];
+                            }
+                            return Object.assign(Object.assign({}, info), { value: v });
+                        });
+                        res.push(...pArr);
+                    }
+                    else if (arr.category === 'cover' && arr.value && arr.value.url) {
+                        try {
+                            const url = arr.value.url.replace('/spic/', '/lpic/');
+                            const dataUrl = yield getImageDataByURL(url);
+                            const coverItem = Object.assign(Object.assign({}, arr), { value: {
+                                    dataUrl,
+                                    url,
+                                } });
+                            res.push(coverItem);
+                        }
+                        catch (error) {
+                            console.error(error);
+                        }
+                    }
+                    else if (arr.name === '游戏类型') {
+                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
+                        res.push(arr);
+                    }
+                    else if (arr.name === '开发') {
+                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
+                        res.push(arr);
+                    }
+                    else {
+                        res.push(arr);
+                    }
+                }
+                // 描述
+                const inputList = document.querySelectorAll('input[name="target"][type="hidden"]');
+                inputList.forEach(($input) => {
+                    const val = $input.value;
+                    if (val === 'description') {
+                        const $target = $input
+                            .closest('form')
+                            .querySelector('.desc-form-item #thing_desc_options_0');
+                        if ($target) {
+                            res.push({
+                                name: '游戏简介',
+                                value: $target.value,
+                                category: 'subject_summary',
+                            });
+                        }
+                    }
+                });
+                return res;
+            });
+        },
+    },
+    filters: [],
+};
+
+const getchuTools = {
+    dealTitle(str) {
+        str = str.trim().split('\n')[0];
+        str = str
+            .split('＋')[0]
+            .replace(/（このタイトルの関連商品）/, '')
+            .trim();
+        return str.replace(/\s[^ ]*?(スペシャルプライス版|限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし).*?$|＜.*＞$/g, '');
+    },
+    getExtraCharaInfo(txt) {
+        const re = /[^\s]+?[:：]/g;
+        const matchedArr = txt.match(re);
+        if (!matchedArr)
+            return [];
+        const infoArr = txt.split(re);
+        const res = [];
+        matchedArr.forEach((item, idx) => {
+            const val = (infoArr[idx + 1] || '').trim();
+            if (val) {
+                res.push({
+                    name: item.replace(/:|：/, ''),
+                    value: val,
+                });
+            }
+        });
+        return res;
+    },
+    getCharacterInfo($t) {
+        const charaData = [];
+        const $name = $t.closest('dt').querySelector('h2');
+        let name;
+        if ($name.querySelector('charalist')) {
+            const $charalist = $name.querySelector('charalist');
+            name = getText($charalist);
+        }
+        else {
+            if ($name.classList.contains('chara-name') && $name.querySelector('br')) {
+                name = $name
+                    .querySelector('br')
+                    .nextSibling.textContent.split(/（|\(|\sCV|新建角色/)[0];
+            }
+            else {
+                name = getText($name).split(/（|\(|\sCV|新建角色/)[0];
+            }
+        }
+        charaData.push({
+            name: '姓名',
+            value: name.replace(/\s/g, ''),
+            category: 'crt_name',
+        });
+        charaData.push({
+            name: '日文名',
+            value: name,
+        });
+        const nameTxt = getText($name);
+        if (nameTxt.match(/（(.*)）/)) {
+            charaData.push({
+                name: '纯假名',
+                value: nameTxt.match(/（(.*)）/)[1],
+            });
+        }
+        const cvMatch = nameTxt.match(/(?<=CV[：:]).+/);
+        if (cvMatch) {
+            charaData.push({
+                name: 'CV',
+                value: cvMatch[0].replace(/\s/g, ''),
+            });
+        }
+        const $img = $t.closest('tr').querySelector('td > img');
+        if ($img) {
+            charaData.push({
+                name: 'cover',
+                value: convertImgToBase64($img),
+                category: 'crt_cover',
+            });
+        }
+        // 处理杂项 参考 id=1074002 id=735329 id=1080370
+        // id=1080431
+        // id=840936
+        // dd tag
+        const $dd = $t.closest('dt').nextElementSibling;
+        const $clonedDd = $dd.cloneNode(true);
+        Array.prototype.forEach.call($clonedDd.querySelectorAll('span[style^="font-weight"]'), (node) => {
+            const t = getText(node).trim();
+            t.split(/\n/g).forEach((el) => {
+                const extraInfo = getchuTools.getExtraCharaInfo(el);
+                if (extraInfo.length) {
+                    charaData.push(...extraInfo);
+                }
+                else {
+                    const c = el.match(/B.*W.*H\d+/);
+                    if (c) {
+                        charaData.push({
+                            name: 'BWH',
+                            value: c[0],
+                        });
+                    }
+                }
+            });
+            node.remove();
+        });
+        charaData.push({
+            name: '人物简介',
+            value: getText($clonedDd).trim(),
+            category: 'crt_summary',
+        });
+        const dict = {
+            誕生日: '生日',
+            '3サイズ': 'BWH',
+            スリーサイズ: 'BWH',
+            身長: '身高',
+            血液型: '血型',
+        };
+        charaData.forEach((item) => {
+            if (dict[item.name]) {
+                item.name = dict[item.name];
+            }
+        });
+        return charaData;
+    },
+};
+const getchuSiteTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const $t = document.querySelector('#soft-title');
+                if (!$t)
+                    return false;
+                const rawTitle = $t.textContent.trim();
+                if (/［同人グッズ|同人誌|同人音楽］/.test(rawTitle))
+                    return false;
+                return true;
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'subject_title',
+            dealFunc: getchuTools.dealTitle,
+        },
+    ],
+};
+
+function getSteamdbURL(href) {
+    var _a;
+    href = href || (location === null || location === void 0 ? void 0 : location.href);
+    const id = (_a = href.match(/store\.steampowered\.com\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
+    if (id) {
+        return `https://steamdb.info/app/${id}/info/`;
+    }
+    return '';
+}
+function getSteamURL(href) {
+    var _a;
+    href = href || (location === null || location === void 0 ? void 0 : location.href);
+    const id = (_a = href.match(/steamdb\.info\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
+    if (id) {
+        return `https://store.steampowered.com/app/${id}/_/`;
+    }
+    return '';
+}
+const steamTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return {
+                    payload: {
+                        disableDate: true,
+                        auxSite: getSteamdbURL(window.location.href),
+                    },
+                };
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'website',
+            dealFunc(str) {
+                // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
+                const arr = str.split('?url=');
+                return arr[1] || '';
+            },
+        },
+        {
+            category: 'date',
+            dealFunc(str) {
+                if (/年/.test(str)) {
+                    return dealDate(str);
+                }
+                return formatDate(str);
+            },
+        },
+    ],
+};
+const steamdbTools = {
+    hooks: {
+        beforeCreate() {
+            return __awaiter(this, void 0, void 0, function* () {
+                return {
+                    payload: {
+                        disableDate: true,
+                        auxSite: getSteamURL(window.location.href),
+                    },
+                };
+            });
+        },
+    },
+    filters: [
+        {
+            category: 'date',
+            dealFunc(str) {
+                const arr = str.split('–');
+                if (!arr[0])
+                    return '';
+                return formatDate(arr[0].trim());
+            },
+        },
+    ],
+};
+
+function trimParenthesis$1(str) {
+    const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
+    return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
+}
+function identity(x) {
+    return x;
+}
+const noOps = () => Promise.resolve(true);
+function getHooks(siteConfig, timing) {
+    var _a;
+    const hooks = ((_a = sitesFuncDict[siteConfig.key]) === null || _a === void 0 ? void 0 : _a.hooks) || {};
+    return hooks[timing] || noOps;
+}
+function getCharaHooks(config, timing) {
+    var _a;
+    const hooks = ((_a = charaFuncDict[config.key]) === null || _a === void 0 ? void 0 : _a.hooks) || {};
+    return hooks[timing] || noOps;
+}
+function dealFuncByCategory(key, category) {
+    var _a;
+    let fn;
+    if ((_a = sitesFuncDict[key]) === null || _a === void 0 ? void 0 : _a.filters) {
+        const obj = sitesFuncDict[key].filters.find((x) => x.category === category);
+        fn = obj && obj.dealFunc;
+    }
+    if (fn) {
+        return fn;
+    }
+    else {
+        return (str = '') => identity(str.trim());
+    }
+}
+const sitesFuncDict = {
+    amazon_jp_book: amazonJpBookTools,
+    dangdang_book: {
+        filters: [
+            {
+                category: 'date',
+                dealFunc(str) {
+                    return dealDate(str.replace(/出版时间[:：]/, '').trim());
+                },
+            },
+            {
+                category: 'subject_title',
+                dealFunc(str) {
+                    return trimParenthesis$1(str);
+                },
+            },
+        ],
+    },
+    jd_book: {
+        filters: [
+            {
+                category: 'subject_title',
+                dealFunc(str) {
+                    return trimParenthesis$1(str);
+                },
+            },
+        ],
+    },
+    getchu_game: getchuSiteTools,
+    steam_game: steamTools,
+    steamdb_game: steamdbTools,
+    douban_game: doubanTools,
+    douban_game_edit: doubanGameEditTools,
+    dlsite_game: dlsiteTools,
+    dmm_game: dmmTools,
+};
+// 存储新建角色的钩子函数和 filters
+const charaFuncDict = {
+    dlsite_game_chara: dlsiteCharaTools,
+    dmm_game_chara: dmmCharaTools,
+};
 
 /**
  * 处理单项 wiki 信息
@@ -1857,6 +2355,8 @@ function dealItemText(str, category = '', keyWords = []) {
 }
 function getWikiItem(infoConfig, site) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (!infoConfig)
+            return;
         const sl = infoConfig.selector;
         let $d;
         let targetSelector;
@@ -1881,25 +2381,50 @@ function getWikiItem(infoConfig, site) {
             keyWords = [targetSelector.keyWord];
         }
         let val;
-        const txt = getText($d);
+        let txt = getText($d);
         switch (infoConfig.category) {
             case 'cover':
+            case 'crt_cover':
                 val = yield getCover($d);
                 break;
+            case 'subject_summary':
+                // 优先使用 innerText
+                const innerTxt = getInnerText($d);
+                if (innerTxt) {
+                    txt = innerTxt;
+                }
             case 'alias':
             case 'subject_title':
-                val = dealFuncByCategory(site, infoConfig.category)(txt);
+                // 有管道优先使用管道处理数据. 兼容之前使用写法
+                if (infoConfig.pipes) {
+                    val = dealTextByPipe(txt, infoConfig.pipes);
+                }
+                else {
+                    val = dealFuncByCategory(site, infoConfig.category)(txt);
+                }
                 break;
             case 'website':
                 val = dealFuncByCategory(site, 'website')($d.getAttribute('href'));
                 break;
             case 'date':
-                // 日期预处理，不能删除
-                val = dealItemText(txt, infoConfig.category, keyWords);
-                val = dealFuncByCategory(site, infoConfig.category)(val);
+                // 有管道优先使用管道处理数据. 兼容之前使用写法
+                if (infoConfig.pipes) {
+                    val = dealTextByPipe(txt, infoConfig.pipes);
+                }
+                else {
+                    // 日期预处理，不能删除
+                    val = dealItemText(txt, infoConfig.category, keyWords);
+                    val = dealFuncByCategory(site, infoConfig.category)(val);
+                }
                 break;
             default:
-                val = dealItemText(txt, infoConfig.category, keyWords);
+                // 有管道优先使用管道处理数据. 兼容之前使用写法
+                if (infoConfig.pipes) {
+                    val = dealTextByPipe(txt, infoConfig.pipes);
+                }
+                else {
+                    val = dealItemText(txt, infoConfig.category, keyWords);
+                }
         }
         // 信息后处理
         if (infoConfig.category === 'creator') {
@@ -1926,7 +2451,26 @@ function getWikiData(siteConfig, el) {
         delete window._parsedEl;
         const defaultInfos = siteConfig.defaultInfos || [];
         let rawInfo = r.filter((i) => i);
-        const hookRes = yield getHooks(siteConfig, 'afterGetWikiData')(rawInfo);
+        const hookRes = yield getHooks(siteConfig, 'afterGetWikiData')(rawInfo, siteConfig);
+        if (Array.isArray(hookRes) && hookRes.length) {
+            rawInfo = hookRes;
+        }
+        return [...rawInfo, ...defaultInfos];
+    });
+}
+function getCharaData(model, el) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (el) {
+            window._parsedEl = el;
+        }
+        else {
+            window._parsedEl = null;
+        }
+        const r = yield Promise.all(model.itemList.map((item) => getWikiItem(item, model.key)));
+        delete window._parsedEl;
+        const defaultInfos = model.defaultInfos || [];
+        let rawInfo = r.filter((i) => i);
+        const hookRes = yield getCharaHooks(model, 'afterGetWikiData')(rawInfo, model, el);
         if (Array.isArray(hookRes) && hookRes.length) {
             rawInfo = hookRes;
         }
@@ -2045,6 +2589,30 @@ function insertControlBtnChara($t, cb) {
     $t.insertAdjacentElement('afterend', $div);
     $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
         yield cb(e);
+    }));
+}
+function addCharaUI($t, names, cb) {
+    if (!$t)
+        return;
+    // @TODO 增加全部
+    // <option value="all">全部</option>
+    const btn = `<a class="e-wiki-new-character">添加新虚拟角色</a>`;
+    const $div = htmlToElement(`
+  <div class="e-bnwh-add-chara-wrap">
+  ${btn}
+<select class="e-bnwh-select">
+${names.map((n) => `<option value="${n}">${n}</option>`)}
+</select>
+  </div>
+  `);
+    $t.insertAdjacentElement('afterend', $div);
+    $div
+        .querySelector('.e-wiki-new-character')
+        .addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+        // 获取下拉选项
+        const $sel = $div.querySelector('.e-bnwh-select');
+        const val = $sel.value;
+        yield cb(e, val);
     }));
 }
 function isChineseStr(str) {
@@ -2507,7 +3075,7 @@ function initCommon(siteConfig) {
         const $title = findElement(siteConfig.controlSelector);
         if (!$title)
             return;
-        let bcRes = yield getHooks(siteConfig, 'beforeCreate')();
+        let bcRes = yield getHooks(siteConfig, 'beforeCreate')(siteConfig);
         if (!bcRes)
             return;
         if (bcRes === true) {
@@ -2638,6 +3206,10 @@ function addStyle() {
   font-weight: 500;
   color: #149bff !important;
   text-decoration: none;
+}
+.e-bnwh-add-chara-wrap {
+  margin-top: 6px;
+  margin-bottom: 6px;
 }
   `);
 }
@@ -3545,6 +4117,7 @@ function initNewSubject(wikiInfo) {
     }
 }
 function initNewCharacter(wikiInfo, subjectId) {
+    var _a;
     const $t = $q('form[name=new_character] #crt_name').parentElement;
     const defaultVal = $q('#subject_infobox').value;
     insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
@@ -3560,9 +4133,18 @@ function initNewCharacter(wikiInfo, subjectId) {
         $q('#crt_summary').value = '';
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'crt_cover')[0];
-    if (coverInfo && coverInfo.value && coverInfo.value.match(/^data:image/)) {
+    let dataUrl = '';
+    if (coverInfo && coverInfo.value) {
+        if (typeof coverInfo.value !== 'string') {
+            dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
+        }
+        else {
+            dataUrl = coverInfo.value;
+        }
+    }
+    if (dataUrl.match(/^data:image/)) {
         const $form = $q('form[name=new_character]');
-        dealImageWidget($form, coverInfo.value);
+        dealImageWidget($form, dataUrl);
         // 修改文本
         setTimeout(() => {
             const $input = $q('.e-wiki-cover-container [name=submit]');
@@ -3585,7 +4167,7 @@ function initNewCharacter(wikiInfo, subjectId) {
                         $wikiMode && $wikiMode.click();
                         yield sleep(200);
                         const currentHost = getBgmHost();
-                        const url = yield sendFormImg($form, coverInfo.value);
+                        const url = yield sendFormImg($form, dataUrl);
                         insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
                         const charaId = getSubjectId(url);
                         if (charaId && subjectId) {
@@ -3698,6 +4280,79 @@ const getchu = {
     },
 };
 
+function initChara(siteConfig) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        // 查找标志性的元素
+        const $page = findElement(siteConfig.pageSelectors);
+        if (!$page)
+            return;
+        const charaModel = getCharaModel(siteConfig.key);
+        if (!charaModel)
+            return;
+        const $el = findElement(charaModel.controlSelector);
+        if (!$el)
+            return;
+        // 判断是否在 iframe 里面
+        let iframeSel = '';
+        let $doc;
+        if (charaModel.itemSelector instanceof Array) {
+            iframeSel = (_a = charaModel.itemSelector.find((i) => i.isIframe === true)) === null || _a === void 0 ? void 0 : _a.selector;
+        }
+        else if (charaModel.itemSelector.isIframe) {
+            iframeSel = charaModel.itemSelector.selector;
+        }
+        if (iframeSel) {
+            console.log('fetch html by background');
+            const url = findElement({
+                selector: iframeSel,
+            }).getAttribute('src');
+            if (url) {
+                const rawHtml = yield fetchText(url);
+                $doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+            }
+            else {
+                return;
+            }
+        }
+        const protocol = GM_getValue(PROTOCOL) || 'https';
+        const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+        const bgmHost = `${protocol}://${bgm_domain}`;
+        const itemArr = findAllElement(charaModel.itemSelector);
+        // 获取名字列表
+        const names = yield Promise.all(itemArr.map(($t) => __awaiter(this, void 0, void 0, function* () {
+            var _b;
+            const nameConfig = charaModel.itemList.find((item) => item.category == 'crt_name');
+            const nameInfo = yield getCharaData(Object.assign(Object.assign({}, charaModel), { itemList: [nameConfig] }), $t);
+            return (_b = nameInfo[0]) === null || _b === void 0 ? void 0 : _b.value;
+        })));
+        addCharaUI($el, names, (e, val) => __awaiter(this, void 0, void 0, function* () {
+            let targetList = [];
+            if (val === 'all') ;
+            else {
+                const idx = names.indexOf(val);
+                if (idx !== -1) {
+                    targetList = itemArr.slice(idx, idx + 1);
+                }
+            }
+            for (const $target of targetList) {
+                const charaInfo = yield getCharaData(charaModel, $target);
+                console.info('character info list: ', charaInfo);
+                const charaData = {
+                    type: siteConfig.type,
+                    infos: charaInfo,
+                };
+                // 重置自动填表
+                GM_setValue(AUTO_FILL_FORM, 1);
+                GM_setValue(CHARA_DATA, JSON.stringify(charaData));
+                // @TODO 不使用定时器
+                yield sleep(200);
+                GM_openInTab(`${bgmHost}/character/new`);
+            }
+        }));
+    });
+}
+
 function setDomain() {
     bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
     GM_setValue(BGM_DOMAIN, bgm_domain);
@@ -3723,6 +4378,7 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
         addStyle();
         modelArr.forEach((m) => {
             initCommon(m);
+            initChara(m);
         });
     }
     if (['bangumi.tv', 'chii.tv', 'bgm.tv'].includes(host)) {
