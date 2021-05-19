@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.2
+// @version     0.4.3
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -156,6 +156,10 @@ function findElement(selector, $parent) {
             else {
                 r = findElementByKeyWord(selector, $parent);
             }
+            if (selector.closest) {
+                r = r.closest(selector.closest);
+            }
+            // recursive
             if (r && selector.nextSelector) {
                 const nextSelector = selector.nextSelector;
                 r = findElement(nextSelector, r);
@@ -207,6 +211,10 @@ function findAllElement(selector, $parent) {
                 if (selector.sibling) {
                     res = res.map(($t) => $t.nextElementSibling);
                 }
+            }
+            // closest
+            if (selector.closest) {
+                res = res.map((r) => r.closest(selector.closest));
             }
         }
         else {
@@ -363,6 +371,11 @@ const amazonSubjectModel = {
     itemList: [],
 };
 const commonSelectors = [
+    // 2021-05 日亚改版
+    {
+        selector: '#richProductInformation_feature_div',
+        subSelector: 'ol.a-carousel li',
+    },
     {
         selector: '#detailBullets_feature_div .detail-bullet-list',
         subSelector: 'li .a-list-item',
@@ -370,7 +383,6 @@ const commonSelectors = [
     {
         selector: '#detail_bullets_id .bucket .content',
         subSelector: 'li',
-        separator: ':',
     },
 ];
 amazonSubjectModel.itemList.push({
@@ -411,6 +423,7 @@ amazonSubjectModel.itemList.push({
         return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期'] });
     }),
     category: 'date',
+    pipes: ['k', 'date'],
 }, {
     name: '出版社',
     selector: commonSelectors.map((s) => {
@@ -421,6 +434,7 @@ amazonSubjectModel.itemList.push({
     selector: commonSelectors.map((s) => {
         return Object.assign(Object.assign({}, s), { keyWord: ['ページ', '页'] });
     }),
+    pipes: ['num'],
 }, {
     name: '作者',
     selector: [
@@ -1300,7 +1314,7 @@ const dlsiteGameCharaModel = {
     siteKey: 'dlsite_game',
     description: 'dlsite游戏角色',
     host: ['dlsite.com', 'www.dlsite.com'],
-    type: 'character',
+    type: SubjectTypeId.game,
     itemSelector: {
         selector: '.work_parts_multiimage_item',
     },
@@ -1327,7 +1341,7 @@ const dmmGameCharaModel = {
     key: 'dmm_game_chara',
     siteKey: 'dmm_game',
     description: 'dmm 游戏角色',
-    type: 'character',
+    type: SubjectTypeId.game,
     itemSelector: {
         selector: '#if_view',
         isIframe: true,
@@ -1419,78 +1433,6 @@ function fetchJson(url, opts = {}) {
     return fetchInfo(url, 'json', opts);
 }
 
-const pipeFnDict = {
-    // t: 去除开头和结尾的空格
-    t: trimSpace,
-    // ta: 去除所有空格
-    ta: trimAllSpace,
-    // k: 去除关键字;
-    k: trimKeywords,
-    // p: 括号
-    p: trimParenthesis,
-    // pn: 括号不含数字
-    pn: trimParenthesisN,
-    // num: 提取数字
-    num: getNum,
-};
-function getStr(pipe) {
-    return (pipe.out || pipe.rawInfo).trim();
-}
-function trim(pipe, textList) {
-    let str = getStr(pipe);
-    return Object.assign(Object.assign({}, pipe), { out: str.replace(new RegExp(textList.join('|'), 'g'), '') });
-}
-function trimAllSpace(pipe) {
-    let str = getStr(pipe);
-    return Object.assign(Object.assign({}, pipe), { out: str.replace(/\s/g, '') });
-}
-function trimSpace(pipe) {
-    let str = getStr(pipe);
-    return Object.assign(Object.assign({}, pipe), { out: str.trim() });
-}
-function trimParenthesis(pipe) {
-    const textList = ['\\(.*?\\)', '（.*?）'];
-    // const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
-    return trim(pipe, textList);
-}
-// 保留括号里面的数字. 比如一些图书的 1 2 3
-function trimParenthesisN(pipe) {
-    // const textList = ['\\(.*?\\)', '（.*?）'];
-    const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
-    return trim(pipe, textList);
-}
-function trimKeywords(pipe, keyWords) {
-    return trim(pipe, keyWords.map((k) => `${k}\s*?(:|：)?`));
-}
-function getNum(pipe) {
-    let str = getStr(pipe);
-    const m = str.match(/\d+/);
-    return {
-        rawInfo: pipe.rawInfo,
-        out: m ? m[0] : '',
-    };
-}
-/**
- *
- * @param str 原字符串
- * @param pipes 管道
- * @returns 处理后的字符串
- */
-function dealTextByPipe(str, pipes) {
-    let current = { rawInfo: str };
-    pipes = pipes || [];
-    for (const p of pipes) {
-        if (p instanceof Function) {
-            // @TODO 支持传递参数
-            current = p(current);
-        }
-        else {
-            current = pipeFnDict[p](current);
-        }
-    }
-    return current.out || str;
-}
-
 function genRandomStr(len) {
     return Array.apply(null, Array(len))
         .map(function () {
@@ -1557,6 +1499,91 @@ function isEqualDate(d1, d2) {
         return true;
     }
     return false;
+}
+
+const pipeFnDict = {
+    // t: 去除开头和结尾的空格
+    t: trimSpace,
+    // ta: 去除所有空格
+    ta: trimAllSpace,
+    // k: 去除关键字;
+    k: trimKeywords,
+    // p: 括号
+    p: trimParenthesis,
+    // pn: 括号不含数字
+    pn: trimParenthesisN,
+    // num: 提取数字
+    num: getNum,
+    date: getDate,
+};
+function getStr(pipe) {
+    return (pipe.out || pipe.rawInfo).trim();
+}
+function trim(pipe, textList) {
+    let str = getStr(pipe);
+    return Object.assign(Object.assign({}, pipe), { out: str.replace(new RegExp(textList.join('|'), 'g'), '') });
+}
+function trimAllSpace(pipe) {
+    let str = getStr(pipe);
+    return Object.assign(Object.assign({}, pipe), { out: str.replace(/\s/g, '') });
+}
+function trimSpace(pipe) {
+    let str = getStr(pipe);
+    return Object.assign(Object.assign({}, pipe), { out: str.trim() });
+}
+function trimParenthesis(pipe) {
+    const textList = ['\\(.*?\\)', '（.*?）'];
+    // const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
+    return trim(pipe, textList);
+}
+// 保留括号里面的数字. 比如一些图书的 1 2 3
+function trimParenthesisN(pipe) {
+    // const textList = ['\\(.*?\\)', '（.*?）'];
+    const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
+    return trim(pipe, textList);
+}
+function trimKeywords(pipe, keyWords) {
+    return trim(pipe, keyWords.map((k) => `${k}\s*?(:|：)?`));
+}
+function getNum(pipe) {
+    let str = getStr(pipe);
+    const m = str.match(/\d+/);
+    return {
+        rawInfo: pipe.rawInfo,
+        out: m ? m[0] : '',
+    };
+}
+function getDate(pipe) {
+    let dataStr = getStr(pipe);
+    return {
+        rawInfo: pipe.rawInfo,
+        out: dealDate(dataStr),
+    };
+}
+/**
+ *
+ * @param str 原字符串
+ * @param pipes 管道
+ * @returns 处理后的字符串
+ */
+function dealTextByPipe(str, pipes, argsDict = {}) {
+    let current = { rawInfo: str };
+    pipes = pipes || [];
+    for (const p of pipes) {
+        if (p instanceof Function) {
+            // @TODO 支持传递参数
+            current = p(current);
+        }
+        else {
+            if (argsDict[p]) {
+                current = pipeFnDict[p](current, ...argsDict[p]);
+            }
+            else {
+                current = pipeFnDict[p](current);
+            }
+        }
+    }
+    return current.out || str;
 }
 
 const amazonUtils = {
@@ -2182,6 +2209,20 @@ const getchuSiteTools = {
         },
     ],
 };
+const getchuCharaTools = {
+    hooks: {
+        afterGetWikiData(infos, model, $el) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const res = [...infos];
+                const $chara = $el.querySelector('h2.chara-name');
+                if ($chara) {
+                    res.push(...getchuTools.getCharacterInfo($chara));
+                }
+                return res;
+            });
+        },
+    },
+};
 
 function getSteamdbURL(href) {
     var _a;
@@ -2332,6 +2373,7 @@ const sitesFuncDict = {
 const charaFuncDict = {
     dlsite_game_chara: dlsiteCharaTools,
     dmm_game_chara: dmmCharaTools,
+    getchu_chara: getchuCharaTools,
 };
 
 /**
@@ -2382,6 +2424,9 @@ function getWikiItem(infoConfig, site) {
         }
         let val;
         let txt = getText($d);
+        const pipeArgsDict = {
+            k: [keyWords],
+        };
         switch (infoConfig.category) {
             case 'cover':
             case 'crt_cover':
@@ -2397,7 +2442,7 @@ function getWikiItem(infoConfig, site) {
             case 'subject_title':
                 // 有管道优先使用管道处理数据. 兼容之前使用写法
                 if (infoConfig.pipes) {
-                    val = dealTextByPipe(txt, infoConfig.pipes);
+                    val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
                 }
                 else {
                     val = dealFuncByCategory(site, infoConfig.category)(txt);
@@ -2409,7 +2454,7 @@ function getWikiItem(infoConfig, site) {
             case 'date':
                 // 有管道优先使用管道处理数据. 兼容之前使用写法
                 if (infoConfig.pipes) {
-                    val = dealTextByPipe(txt, infoConfig.pipes);
+                    val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
                 }
                 else {
                     // 日期预处理，不能删除
@@ -2420,7 +2465,7 @@ function getWikiItem(infoConfig, site) {
             default:
                 // 有管道优先使用管道处理数据. 兼容之前使用写法
                 if (infoConfig.pipes) {
-                    val = dealTextByPipe(txt, infoConfig.pipes);
+                    val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
                 }
                 else {
                     val = dealItemText(txt, infoConfig.category, keyWords);
@@ -3210,6 +3255,11 @@ function addStyle() {
 .e-bnwh-add-chara-wrap {
   margin-top: 6px;
   margin-bottom: 6px;
+}
+.e-bnwh-related-id {
+  margin-left: 12px;
+  display: inline-block;
+  vertical-align: -5px;
 }
   `);
 }
@@ -4154,8 +4204,17 @@ function initNewCharacter(wikiInfo, subjectId) {
             }
             $input.insertAdjacentElement('afterend', $clonedInput);
             $input.remove();
+            // 2021-05-19 关联条目 id.
+            const $relatedInput = htmlToElement(`
+<span class="e-bnwh-related-id">
+<span title="为空时不做关联操作">关联条目 id:</span>
+<input type="number" placeholder="输入关联条目 id" />
+</span>
+      `);
+            $clonedInput.insertAdjacentElement('afterend', $relatedInput);
             const $canvas = $q('#e-wiki-cover-preview');
             $clonedInput.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+                var _a;
                 e.preventDefault();
                 if ($canvas.width > 8 && $canvas.height > 10) {
                     const $el = e.target;
@@ -4170,6 +4229,8 @@ function initNewCharacter(wikiInfo, subjectId) {
                         const url = yield sendFormImg($form, dataUrl);
                         insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
                         const charaId = getSubjectId(url);
+                        // subject id
+                        const subjectId = ((_a = $relatedInput.querySelector('input')) === null || _a === void 0 ? void 0 : _a.value) || '';
                         if (charaId && subjectId) {
                             insertLogInfo($el, '存在条目 id, 开始关联条目');
                             yield addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
@@ -4231,7 +4292,7 @@ const bangumi = {
                     break;
                 case 'character/new':
                     if (charaData) {
-                        initNewCharacter(charaData, subjectId);
+                        initNewCharacter(charaData);
                         if (autoFill == 1) {
                             setTimeout(() => {
                                 // @ts-ignore
@@ -4320,11 +4381,11 @@ function initChara(siteConfig) {
         const bgmHost = `${protocol}://${bgm_domain}`;
         const itemArr = findAllElement(charaModel.itemSelector);
         // 获取名字列表
-        const names = yield Promise.all(itemArr.map(($t) => __awaiter(this, void 0, void 0, function* () {
+        let names = yield Promise.all(itemArr.map(($t) => __awaiter(this, void 0, void 0, function* () {
             var _b;
             const nameConfig = charaModel.itemList.find((item) => item.category == 'crt_name');
-            const nameInfo = yield getCharaData(Object.assign(Object.assign({}, charaModel), { itemList: [nameConfig] }), $t);
-            return (_b = nameInfo[0]) === null || _b === void 0 ? void 0 : _b.value;
+            const infos = yield getCharaData(Object.assign(Object.assign({}, charaModel), { itemList: [nameConfig] }), $t);
+            return (_b = infos.find((i) => i.category === 'crt_name')) === null || _b === void 0 ? void 0 : _b.value;
         })));
         addCharaUI($el, names, (e, val) => __awaiter(this, void 0, void 0, function* () {
             let targetList = [];
