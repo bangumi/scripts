@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.3
+// @version     0.4.4
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -1607,7 +1607,10 @@ const amazonJpBookTools = {
             return __awaiter(this, void 0, void 0, function* () {
                 const $t = document.querySelector('#title');
                 const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
-                if ($t && bookTypeList && bookTypeList.length > 1) {
+                const books = document.querySelectorAll('#tmmSwatches > .a-row div');
+                if ($t &&
+                    ((bookTypeList && bookTypeList.length > 1) ||
+                        (books && books.length > 1))) {
                     const $div = document.createElement('div');
                     const $s = document.createElement('span');
                     $s.style.color = 'red';
