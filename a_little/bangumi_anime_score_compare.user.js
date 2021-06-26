@@ -6,8 +6,7 @@
 // @description:zh-cn bangumi动画页面显示豆瓣和MAL的评分
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @include     https://movie.douban.com/subject/*
-// @updateURL   https://raw.githubusercontent.com/bangumi/scripts/master/a_little/bangumi_anime_score_compare.user.js
-// @version     0.3.0
+// @version     0.3.1
 // @note        0.2.0 支持豆瓣上显示Bangumi评分,暂时禁用豆瓣上显示MAL的评分功能以及修改过滤方式
 // @note        0.2.4 豆瓣 api 失效，使用搜索页面查询结果
 // @TODO        统一豆瓣和Bangumi的缓存数据信息,
@@ -123,10 +122,8 @@ function isEqualDate(d1, d2) {
     }
     return false;
 }
-function roundNum(num, len = 2) {
-    //@ts-ignore
-    return +(Math.round(num + `e+${len}`) + `e-${len}`);
-}
+
+const SEARCH_RESULT = 'search_result';
 
 /**
  * 过滤搜索结果： 通过名称以及日期
@@ -173,6 +170,27 @@ function filterResults(items, subjectInfo, opts = {}, isSearch = true) {
         }
     }
     return (_a = results[0]) === null || _a === void 0 ? void 0 : _a.item;
+}
+async function getSearchResultByGM() {
+    return new Promise((resolve, reject) => {
+        const listenId = window.gm_val_listen_id;
+        if (listenId) {
+            GM_removeValueChangeListener(listenId);
+        }
+        window.gm_val_listen_id = GM_addValueChangeListener(
+        // const listenId = GM_addValueChangeListener(
+        SEARCH_RESULT, (n, oldValue, newValue) => {
+            console.log('enter promise');
+            const now = +new Date();
+            if (newValue.type === SEARCH_RESULT &&
+                newValue.timestamp &&
+                newValue.timestamp < now) {
+                // GM_removeValueChangeListener(listenId);
+                resolve(newValue.data);
+            }
+            reject('mismatch timestamp');
+        });
+    });
 }
 
 var BangumiDomain;
@@ -510,6 +528,27 @@ function findElement(selector, $parent) {
     }
     return r;
 }
+/**
+ * 载入 iframe
+ * @param $iframe iframe DOM
+ * @param src iframe URL
+ * @param TIMEOUT time out
+ */
+function loadIframe($iframe, src, TIMEOUT = 5000) {
+    return new Promise((resolve, reject) => {
+        $iframe.src = src;
+        let timer = setTimeout(() => {
+            timer = null;
+            $iframe.onload = undefined;
+            reject('iframe timeout');
+        }, TIMEOUT);
+        $iframe.onload = () => {
+            clearTimeout(timer);
+            $iframe.onload = null;
+            resolve(null);
+        };
+    });
+}
 
 function convertHomeSearchItem($item) {
     const dealHref = (href) => {
@@ -565,7 +604,35 @@ async function getHomeSearchResults(query, cat = '1002') {
         .call(items)
         .map(($item) => convertHomeSearchItem($item));
 }
-async function checkAnimeSubjectExist(subjectInfo) {
+/**
+ * 单独类型搜索入口
+ * @param query 搜索字符串
+ * @param cat 搜索类型
+ * @param type 获取传递数据的类型: gm 通过 GM_setValue, message 通过 postMessage
+ */
+async function getSubjectSearchResults(query, cat = '1002') {
+    const url = `https://search.douban.com/movie/subject_search?search_text=${encodeURIComponent(query)}&cat=${cat}`;
+    console.info('Douban search URL: ', url);
+    const iframeId = 'e-userjs-search-subject';
+    let $iframe = document.querySelector(`#${iframeId}`);
+    if (!$iframe) {
+        $iframe = document.createElement('iframe');
+        $iframe.setAttribute('sandbox', 'allow-forms allow-same-origin allow-scripts');
+        $iframe.style.display = 'none';
+        $iframe.id = iframeId;
+        document.body.appendChild($iframe);
+    }
+    // 这里不能使用 await 否则数据加载完毕了监听器还没有初始化
+    loadIframe($iframe, url, 1000 * 10);
+    return await getSearchResultByGM();
+}
+/**
+ *
+ * @param subjectInfo 条目信息
+ * @param type 默认使用主页搜索
+ * @returns 搜索结果
+ */
+async function checkAnimeSubjectExist(subjectInfo, type = 'home_search') {
     let query = (subjectInfo.name || '').trim();
     if (!query) {
         console.info('Query string is empty');
@@ -576,19 +643,13 @@ async function checkAnimeSubjectExist(subjectInfo) {
     const options = {
         keys: ['name', 'greyName'],
     };
-    rawInfoList = await getHomeSearchResults(query);
+    if (type === 'home_search') {
+        rawInfoList = await getHomeSearchResults(query);
+    }
+    else {
+        rawInfoList = await getSubjectSearchResults(query);
+    }
     searchResult = filterResults(rawInfoList, subjectInfo, options, true);
-    // if (Math.random() > 0.2) {
-    //   rawInfoList = await getHomeSearchResults(query);
-    //   searchResult = filterResults(rawInfoList, subjectInfo, options, true);
-    // } else {
-    //   rawInfoList = await getSubjectSearchResults(query);
-    //   searchResult = filterResults(rawInfoList, subjectInfo, options, true);
-    //   // searchResult = filterSearchResultsByYear(
-    //   //   rawInfoList,
-    //   //   new Date(subjectInfo.releaseDate).getFullYear() + ''
-    //   // );
-    // }
     console.info(`Search result of ${query} on Douban: `, searchResult);
     if (searchResult && searchResult.url) {
         return searchResult;
@@ -800,7 +861,7 @@ const DoubanScorePage = {
             $friendsRatingWrap.className = 'friends_rating_wrap clearbox';
             $panel.appendChild($friendsRatingWrap);
         }
-        const score = roundNum(Number(info.score || 0), 1);
+        const score = info.score || 0;
         const $div = document.createElement('div');
         const favicon = GM_getResourceURL(`${info.site}_favicon`);
         const rawHTML = `<strong class="rating_avg">${score}</strong>
@@ -854,7 +915,7 @@ const BangumiScorePage = {
     insertScoreInfo(info) {
         let $panel = $q('.SidePanel.png_bg');
         if ($panel) {
-            const score = roundNum(Number(info.score || 0), 2);
+            const score = info.score || 0;
             let $div = document.createElement('div');
             $div.classList.add('frdScore');
             $div.classList.add('e-userjs-score-compare');
