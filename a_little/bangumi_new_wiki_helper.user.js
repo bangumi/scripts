@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.4
+// @version     0.4.6
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -19,33 +19,12 @@
 // @grant       GM_xmlhttpRequest
 // @grant       GM_getValue
 // @grant       GM_setValue
+// @grant       GM_getResourceText
+// @resource    NOTYF_CSS https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css
 // @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
+// @require     https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js
 // ==/UserScript==
 
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
 
 /**
  * 为页面添加样式
@@ -117,7 +96,12 @@ function contains(selector, text, $parent) {
 }
 function findElementByKeyWord(selector, $parent) {
     let res = null;
-    $parent = $parent ? $parent : $q(selector.selector);
+    if ($parent) {
+        $parent = $parent.querySelector(selector.selector);
+    }
+    else {
+        $parent = $q(selector.selector);
+    }
     if (!$parent)
         return res;
     const targets = contains(selector.subSelector, selector.keyWord, $parent);
@@ -239,6 +223,14 @@ function htmlToElement(html) {
     template.innerHTML = html;
     // template.content.childNodes;
     return template.content.firstChild;
+}
+function genAnonymousLinkText(url, text) {
+    return `<a
+      _target="blank"
+      href="${url}"
+      rel="noopener noreferrer nofollow">
+      ${text}</a>
+    `;
 }
 
 var SubjectTypeId;
@@ -577,6 +569,18 @@ erogamescapeModel.itemList.push({
         selector: '#kasyu > td:last-child',
     },
 });
+erogamescapeModel.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+    {
+        name: 'subject_nsfw',
+        value: '1',
+        category: 'checkbox',
+    },
+];
 
 const steamdbModel = {
     key: 'steamdb_game',
@@ -1246,6 +1250,14 @@ const arrDict$1 = [
         name: '剧本',
         key: ['シナリオ', '剧情'],
     },
+    // {
+    //   name: '声优',
+    //   key: ['声優', '声优'],
+    // },
+    // {
+    //   name: '音乐',
+    //   key: ['音乐', '音楽'],
+    // },
 ];
 const configArr$3 = arrDict$1.map((obj) => {
     const r = {
@@ -1354,6 +1366,16 @@ const dmmGameCharaModel = {
         {
             selector: '#title',
         },
+        // {
+        //   selector: '#if_view',
+        //   isIframe: true,
+        //   subSelector: 'body',
+        //   nextSelector: {
+        //     selector: '.guide-content',
+        //     subSelector: 'guide-capt',
+        //     keyWord: 'キャラクター',
+        //   },
+        // },
     ],
     itemList: [],
 };
@@ -1390,6 +1412,8 @@ const configs = {
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
     [dmmGameCharaModel.key]: dmmGameCharaModel,
+    // @TODO getchu chara
+    // [getchuCharaModel.key]: getchuCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1413,21 +1437,39 @@ function getCharaModel(key) {
 
 // support GM_XMLHttpRequest
 function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
+    var _a;
+    const method = ((_a = opts === null || opts === void 0 ? void 0 : opts.method) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || 'GET';
     // @ts-ignore
     {
+        const gmXhrOpts = Object.assign({}, opts);
+        if (method === 'POST' && gmXhrOpts.body) {
+            gmXhrOpts.data = gmXhrOpts.body;
+        }
+        if (opts.decode) {
+            type = 'arraybuffer';
+        }
         return new Promise((resolve, reject) => {
             // @ts-ignore
-            GM_xmlhttpRequest(Object.assign({ method: 'GET', timeout: TIMEOUT, url, responseType: type, onload: function (res) {
-                    resolve(res.response);
-                }, onerror: reject }, opts));
+            GM_xmlhttpRequest(Object.assign({ method, timeout: TIMEOUT, url, responseType: type, onload: function (res) {
+                    if (res.status === 404) {
+                        reject(404);
+                    }
+                    if (opts.decode && type === 'arraybuffer') {
+                        let decoder = new TextDecoder(opts.decode);
+                        resolve(decoder.decode(res.response));
+                    }
+                    else {
+                        resolve(res.response);
+                    }
+                }, onerror: reject }, gmXhrOpts));
         });
     }
 }
 function fetchBinary(url, opts = {}) {
     return fetchInfo(url, 'blob', opts);
 }
-function fetchText(url, TIMEOUT = 10 * 1000) {
-    return fetchInfo(url, 'text', {}, TIMEOUT);
+function fetchText(url, opts = {}, TIMEOUT = 10 * 1000) {
+    return fetchInfo(url, 'text', opts, TIMEOUT);
 }
 function fetchJson(url, opts = {}) {
     return fetchInfo(url, 'json', opts);
@@ -1451,7 +1493,7 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
         'm+': date.getMinutes(),
         's+': date.getSeconds(),
         'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(),
+        S: date.getMilliseconds(), //毫秒
     };
     if (/(y+)/i.test(fmt)) {
         fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
@@ -1603,74 +1645,68 @@ const amazonJpBookTools = {
         },
     ],
     hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const $t = document.querySelector('#title');
-                const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
-                const books = document.querySelectorAll('#tmmSwatches > .a-row div');
-                if ($t &&
-                    ((bookTypeList && bookTypeList.length > 1) ||
-                        (books && books.length > 1))) {
-                    const $div = document.createElement('div');
-                    const $s = document.createElement('span');
-                    $s.style.color = 'red';
-                    $s.style.fontWeight = '600';
-                    $s.innerHTML = '注意: ';
-                    const $txt = document.createElement('span');
-                    $txt.innerHTML =
-                        '书籍存在多种版本，请优先选择实体书创建。(辅助创建脚本)';
-                    $div.appendChild($s);
-                    $div.appendChild($txt);
-                    $div.style.padding = '6px 0';
-                    $t.insertAdjacentElement('afterend', $div);
-                }
-                return true;
-            });
+        async beforeCreate() {
+            const $t = document.querySelector('#title');
+            const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
+            const books = document.querySelectorAll('#tmmSwatches > .a-row div');
+            if ($t &&
+                ((bookTypeList && bookTypeList.length > 1) ||
+                    (books && books.length > 1))) {
+                const $div = document.createElement('div');
+                const $s = document.createElement('span');
+                $s.style.color = 'red';
+                $s.style.fontWeight = '600';
+                $s.innerHTML = '注意: ';
+                const $txt = document.createElement('span');
+                $txt.innerHTML =
+                    '书籍存在多种版本，请优先选择实体书创建。(辅助创建脚本)';
+                $div.appendChild($s);
+                $div.appendChild($txt);
+                $div.style.padding = '6px 0';
+                $t.insertAdjacentElement('afterend', $div);
+            }
+            return true;
         },
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    let newInfo = Object.assign({}, info);
-                    if (info.name === '页数') {
-                        let val = (info.value || '').trim().replace(/ページ|页/, '');
-                        if (val && val.length < 8 && val.indexOf('予約商品') === -1) {
-                            newInfo.value = val;
-                        }
-                        else {
-                            newInfo = null;
-                        }
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let newInfo = Object.assign({}, info);
+                if (info.name === '页数') {
+                    let val = (info.value || '').trim().replace(/ページ|页/, '');
+                    if (val && val.length < 8 && val.indexOf('予約商品') === -1) {
+                        newInfo.value = val;
                     }
-                    if (newInfo) {
-                        res.push(Object.assign({}, newInfo));
+                    else {
+                        newInfo = null;
                     }
                 }
-                return res;
-            });
+                if (newInfo) {
+                    res.push(Object.assign({}, newInfo));
+                }
+            }
+            return res;
         },
     },
 };
 
 const dlsiteTools = {
     hooks: {
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    let val = info.value;
-                    if (val &&
-                        typeof val === 'string' &&
-                        !/http/.test(val) &&
-                        ['原画', '剧本', '音乐', '游戏类型', '声优'].includes(info.name)) {
-                        const v = info.value.split('/');
-                        if (v && v.length > 1) {
-                            val = v.map((s) => s.trim()).join(', ');
-                        }
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let val = info.value;
+                if (val &&
+                    typeof val === 'string' &&
+                    !/http/.test(val) &&
+                    ['原画', '剧本', '音乐', '游戏类型', '声优'].includes(info.name)) {
+                    const v = info.value.split('/');
+                    if (v && v.length > 1) {
+                        val = v.map((s) => s.trim()).join(', ');
                     }
-                    res.push(Object.assign(Object.assign({}, info), { value: val }));
                 }
-                return res;
-            });
+                res.push(Object.assign(Object.assign({}, info), { value: val }));
+            }
+            return res;
         },
     },
     filters: [
@@ -1687,36 +1723,34 @@ const dlsiteTools = {
 };
 const dlsiteCharaTools = {
     hooks: {
-        afterGetWikiData(infos, model, el) {
+        async afterGetWikiData(infos, model, el) {
             var _a;
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [...infos];
-                const txt = ((_a = el.querySelector('p')) === null || _a === void 0 ? void 0 : _a.textContent) || '';
-                res.push({
-                    name: '姓名',
-                    value: txt.split('\n')[0],
-                    category: 'crt_name',
-                });
-                res.push({
-                    name: 'CV',
-                    value: (txt.split('\n').find((s) => s.includes('CV')) || '')
-                        .replace('CV:', '')
-                        .trim(),
-                });
-                let idx = txt.indexOf('\n\n');
-                if (idx === -1) {
-                    idx = 0;
-                }
-                else {
-                    idx = idx + 2;
-                }
-                res.push({
-                    name: '人物简介',
-                    value: txt.slice(idx),
-                    category: 'crt_summary',
-                });
-                return res;
+            const res = [...infos];
+            const txt = ((_a = el.querySelector('p')) === null || _a === void 0 ? void 0 : _a.textContent) || '';
+            res.push({
+                name: '姓名',
+                value: txt.split('\n')[0],
+                category: 'crt_name',
             });
+            res.push({
+                name: 'CV',
+                value: (txt.split('\n').find((s) => s.includes('CV')) || '')
+                    .replace('CV:', '')
+                    .trim(),
+            });
+            let idx = txt.indexOf('\n\n');
+            if (idx === -1) {
+                idx = 0;
+            }
+            else {
+                idx = idx + 2;
+            }
+            res.push({
+                name: '人物简介',
+                value: txt.slice(idx),
+                category: 'crt_summary',
+            });
+            return res;
         },
     },
 };
@@ -1741,12 +1775,12 @@ function dataURItoBlob(dataURI) {
     }
     return new Blob([ia], { type: mimeString });
 }
-function getImageDataByURL(url) {
+function getImageDataByURL(url, opts = {}) {
     if (!url)
         return Promise.reject('invalid img url');
-    return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+    return new Promise(async (resolve, reject) => {
         try {
-            const blob = yield fetchBinary(url);
+            const blob = await fetchBinary(url, opts);
             var reader = new FileReader();
             reader.onloadend = function () {
                 resolve(reader.result);
@@ -1757,7 +1791,7 @@ function getImageDataByURL(url) {
         catch (e) {
             reject(e);
         }
-    }));
+    });
 }
 /**
  * convert to img Element to base64 string
@@ -1773,36 +1807,49 @@ function convertImgToBase64($img) {
     return dataURL;
 }
 
-function getCover($d, site) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let url;
-        let dataUrl = '';
-        if ($d.tagName.toLowerCase() === 'a') {
-            url = $d.getAttribute('href');
+async function getCover($d, site) {
+    let url;
+    let dataUrl = '';
+    if ($d.tagName.toLowerCase() === 'a') {
+        url = $d.getAttribute('href');
+    }
+    else if ($d.tagName.toLowerCase() === 'img') {
+        url = $d.getAttribute('src');
+    }
+    if (!url)
+        return;
+    try {
+        // 在其它网站上获取的相对路径的链接
+        // @TODO 这里临时使用的全局变量来处理
+        if (window._fetch_url_bg && !/^https?:/.test(url)) {
+            const urlObj = new URL(window._fetch_url_bg);
+            url = `${urlObj.origin}/${url.replace(/^\.?\/?/, '')}`;
         }
-        else if ($d.tagName.toLowerCase() === 'img') {
-            url = $d.getAttribute('src');
-        }
-        if (!url)
-            return;
-        try {
-            // 跨域的图片不能用这种方式
-            // dataUrl = convertImgToBase64($d as any);
-            dataUrl = yield getImageDataByURL(url);
-            if (dataUrl) {
-                return {
-                    url,
-                    dataUrl,
-                };
+        // 跨域的图片不能用这种方式
+        // dataUrl = convertImgToBase64($d as any);
+        let opts = {};
+        if (site.includes('getchu')) {
+            opts.headers = {
+                Referer: location.href,
+            };
+            if (!location.href.includes('getchu.com') && window._fetch_url_bg) {
+                opts.headers.Referer = window._fetch_url_bg;
             }
         }
-        catch (error) {
+        dataUrl = await getImageDataByURL(url, opts);
+        if (dataUrl) {
             return {
                 url,
-                dataUrl: url,
+                dataUrl,
             };
         }
-    });
+    }
+    catch (error) {
+        return {
+            url,
+            dataUrl: url,
+        };
+    }
 }
 const charaInfoDict = {
     趣味: '爱好',
@@ -1815,43 +1862,41 @@ const charaInfoDict = {
 
 const dmmTools = {
     hooks: {
-        afterGetWikiData(infos) {
+        async afterGetWikiData(infos) {
             var _a;
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                const hasCover = infos.some((info) => info.category == 'cover');
-                for (const info of infos) {
-                    let val = info.value;
-                    res.push(Object.assign(Object.assign({}, info), { value: val }));
-                }
-                if (!hasCover) {
-                    // 使用 slider 里面的第一个图片
-                    const slides = $qa('.image-slider.slick-slider li.slick-slide');
-                    if (slides) {
-                        let url;
-                        let dataUrl = '';
-                        const targetSlide = Array.from(slides).find((slide) => slide.dataset.slickIndex === '0');
-                        url = (_a = targetSlide.querySelector('img')) === null || _a === void 0 ? void 0 : _a.getAttribute('src');
-                        if (url) {
-                            try {
-                                dataUrl = yield getImageDataByURL(url);
-                            }
-                            catch (error) {
-                                dataUrl = url;
-                            }
-                            res.push({
-                                name: 'cover',
-                                category: 'cover',
-                                value: {
-                                    url,
-                                    dataUrl,
-                                },
-                            });
+            const res = [];
+            const hasCover = infos.some((info) => info.category == 'cover');
+            for (const info of infos) {
+                let val = info.value;
+                res.push(Object.assign(Object.assign({}, info), { value: val }));
+            }
+            if (!hasCover) {
+                // 使用 slider 里面的第一个图片
+                const slides = $qa('.image-slider.slick-slider li.slick-slide');
+                if (slides) {
+                    let url;
+                    let dataUrl = '';
+                    const targetSlide = Array.from(slides).find((slide) => slide.dataset.slickIndex === '0');
+                    url = (_a = targetSlide.querySelector('img')) === null || _a === void 0 ? void 0 : _a.getAttribute('src');
+                    if (url) {
+                        try {
+                            dataUrl = await getImageDataByURL(url);
                         }
+                        catch (error) {
+                            dataUrl = url;
+                        }
+                        res.push({
+                            name: 'cover',
+                            category: 'cover',
+                            value: {
+                                url,
+                                dataUrl,
+                            },
+                        });
                     }
                 }
-                return res;
-            });
+            }
+            return res;
         },
     },
     filters: [
@@ -1870,201 +1915,241 @@ const dmmTools = {
 };
 const dmmCharaTools = {
     hooks: {
-        afterGetWikiData(infos, model, $el) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [...infos];
-                const $nameTxt = $el.querySelector('.guide-tx16.guide-bold.guide-lin-hgt');
-                if ($nameTxt) {
-                    // （きのみや なのか）
-                    const nameTxt = $nameTxt.textContent;
-                    if (nameTxt.match(/（(.*)）/)) {
-                        res.push({
-                            name: '纯假名',
-                            value: nameTxt.match(/（(.*)）/)[1],
-                        });
-                    }
-                    const cvTxt = $nameTxt.nextSibling.textContent;
-                    if (/CV/.test(cvTxt)) {
-                        res.push({
-                            name: 'CV',
-                            value: cvTxt.replace(/CV：/, '').replace(/\s/g, ''),
-                        });
-                    }
+        async afterGetWikiData(infos, model, $el) {
+            const res = [...infos];
+            const $nameTxt = $el.querySelector('.guide-tx16.guide-bold.guide-lin-hgt');
+            if ($nameTxt) {
+                // （きのみや なのか）
+                const nameTxt = $nameTxt.textContent;
+                if (nameTxt.match(/（(.*)）/)) {
+                    res.push({
+                        name: '纯假名',
+                        value: nameTxt.match(/（(.*)）/)[1],
+                    });
                 }
-                const boxArr = Array.from($el.querySelectorAll('.box'));
-                for (const $box of boxArr) {
-                    const txtArr = $box.textContent
-                        .trim()
-                        .split(/：|:/)
-                        .map((s) => s.trim());
-                    if (charaInfoDict[txtArr[0]]) {
-                        res.push({
-                            name: charaInfoDict[txtArr[0]],
-                            value: txtArr[1],
-                        });
-                    }
-                    else {
-                        res.push({
-                            name: txtArr[0],
-                            value: txtArr[1],
-                        });
-                    }
+                const cvTxt = $nameTxt.nextSibling.textContent;
+                if (/CV/.test(cvTxt)) {
+                    res.push({
+                        name: 'CV',
+                        value: cvTxt.replace(/CV：/, '').replace(/\s/g, ''),
+                    });
                 }
-                const $summary = $nameTxt.closest('div').cloneNode(true);
-                $summary.firstElementChild.remove();
-                res.push({
-                    name: '人物简介',
-                    value: $summary.textContent,
-                    category: 'crt_summary',
-                });
-                return res;
+            }
+            const boxArr = Array.from($el.querySelectorAll('.box'));
+            for (const $box of boxArr) {
+                const txtArr = $box.textContent
+                    .trim()
+                    .split(/：|:/)
+                    .map((s) => s.trim());
+                if (charaInfoDict[txtArr[0]]) {
+                    res.push({
+                        name: charaInfoDict[txtArr[0]],
+                        value: txtArr[1],
+                    });
+                }
+                else {
+                    res.push({
+                        name: txtArr[0],
+                        value: txtArr[1],
+                    });
+                }
+            }
+            const $summary = $nameTxt.closest('div').cloneNode(true);
+            $summary.firstElementChild.remove();
+            res.push({
+                name: '人物简介',
+                value: $summary.textContent,
+                category: 'crt_summary',
             });
+            return res;
         },
     },
 };
 
 const doubanTools = {
     hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const href = window.location.href;
-                if (/\/game\//.test(href) && !/\/game\/\d+\/edit/.test(href)) {
-                    return {
-                        payload: {
-                            auxSite: document.querySelector('.th-modify > a').href,
-                            auxPrefs: {
+        async beforeCreate() {
+            const href = window.location.href;
+            if (/\/game\//.test(href) && !/\/game\/\d+\/edit/.test(href)) {
+                return {
+                    payload: {
+                        auxSite: {
+                            url: document.querySelector('.th-modify > a').href,
+                            prefs: {
                                 originNames: ['平台', '发行日期'],
                                 targetNames: 'all',
                             },
                         },
-                    };
-                }
-            });
+                    },
+                };
+            }
         },
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    if (['平台', '别名'].includes(info.name)) {
-                        const pArr = info.value.split('/').map((i) => {
-                            return Object.assign(Object.assign({}, info), { value: i.trim() });
-                        });
-                        res.push(...pArr);
-                    }
-                    else if (info.category === 'cover') {
-                        res.push(Object.assign({}, info));
-                    }
-                    else {
-                        let val = info.value;
-                        if (val && typeof val === 'string') {
-                            const v = info.value.split('/');
-                            if (v && v.length > 1) {
-                                val = v.map((s) => s.trim()).join(', ');
-                            }
-                        }
-                        if (info.name === '游戏类型' && val) {
-                            val = val.replace('游戏, ', '').trim();
-                        }
-                        res.push(Object.assign(Object.assign({}, info), { value: val }));
-                    }
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                if (['平台', '别名'].includes(info.name)) {
+                    const pArr = info.value.split('/').map((i) => {
+                        return Object.assign(Object.assign({}, info), { value: i.trim() });
+                    });
+                    res.push(...pArr);
                 }
-                // 特殊处理平台
-                const $plateform = findElement({
-                    selector: '#content .game-attr',
-                    subSelector: 'dt',
-                    sibling: true,
-                    keyWord: '平台',
-                });
-                if ($plateform) {
-                    const aList = $plateform.querySelectorAll('a') || [];
-                    for (const $a of aList) {
-                        res.push({
-                            name: '平台',
-                            value: getText($a).replace(/\/.*/, '').trim(),
-                            category: 'platform',
-                        });
-                    }
+                else if (info.category === 'cover') {
+                    res.push(Object.assign({}, info));
                 }
-                return res;
+                else {
+                    let val = info.value;
+                    if (val && typeof val === 'string') {
+                        const v = info.value.split('/');
+                        if (v && v.length > 1) {
+                            val = v.map((s) => s.trim()).join(', ');
+                        }
+                    }
+                    if (info.name === '游戏类型' && val) {
+                        val = val.replace('游戏, ', '').trim();
+                    }
+                    res.push(Object.assign(Object.assign({}, info), { value: val }));
+                }
+            }
+            // 特殊处理平台
+            const $plateform = findElement({
+                selector: '#content .game-attr',
+                subSelector: 'dt',
+                sibling: true,
+                keyWord: '平台',
             });
+            if ($plateform) {
+                const aList = $plateform.querySelectorAll('a') || [];
+                for (const $a of aList) {
+                    res.push({
+                        name: '平台',
+                        value: getText($a).replace(/\/.*/, '').trim(),
+                        category: 'platform',
+                    });
+                }
+            }
+            return res;
         },
     },
     filters: [],
 };
 const doubanGameEditTools = {
     hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const href = window.location.href;
-                return /\/game\/\d+\/edit/.test(href);
-            });
+        async beforeCreate() {
+            const href = window.location.href;
+            return /\/game\/\d+\/edit/.test(href);
         },
-        afterGetWikiData(infos) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [];
-                for (const info of infos) {
-                    const arr = Object.assign({}, info);
-                    if (['平台', '别名'].includes(info.name)) {
-                        const plateformDict = {
-                            ARC: 'Arcade',
-                            NES: 'FC',
-                            红白机: 'FC',
-                            街机: 'Arcade',
-                        };
-                        const pArr = info.value.split(',').map((i) => {
-                            let v = i.trim();
-                            if (plateformDict[v]) {
-                                v = plateformDict[v];
-                            }
-                            return Object.assign(Object.assign({}, info), { value: v });
-                        });
-                        res.push(...pArr);
-                    }
-                    else if (arr.category === 'cover' && arr.value && arr.value.url) {
-                        try {
-                            const url = arr.value.url.replace('/spic/', '/lpic/');
-                            const dataUrl = yield getImageDataByURL(url);
-                            const coverItem = Object.assign(Object.assign({}, arr), { value: {
-                                    dataUrl,
-                                    url,
-                                } });
-                            res.push(coverItem);
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                const arr = Object.assign({}, info);
+                if (['平台', '别名'].includes(info.name)) {
+                    const plateformDict = {
+                        ARC: 'Arcade',
+                        NES: 'FC',
+                        红白机: 'FC',
+                        街机: 'Arcade',
+                    };
+                    const pArr = info.value.split(',').map((i) => {
+                        let v = i.trim();
+                        if (plateformDict[v]) {
+                            v = plateformDict[v];
                         }
-                        catch (error) {
-                            console.error(error);
-                        }
+                        return Object.assign(Object.assign({}, info), { value: v });
+                    });
+                    res.push(...pArr);
+                }
+                else if (arr.category === 'cover' && arr.value && arr.value.url) {
+                    try {
+                        const url = arr.value.url.replace('/spic/', '/lpic/');
+                        const dataUrl = await getImageDataByURL(url);
+                        const coverItem = Object.assign(Object.assign({}, arr), { value: {
+                                dataUrl,
+                                url,
+                            } });
+                        res.push(coverItem);
                     }
-                    else if (arr.name === '游戏类型') {
-                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
-                        res.push(arr);
-                    }
-                    else if (arr.name === '开发') {
-                        arr.value = arr.value.replace(/,(?!\s)/g, ', ');
-                        res.push(arr);
-                    }
-                    else {
-                        res.push(arr);
+                    catch (error) {
+                        console.error(error);
                     }
                 }
-                // 描述
-                const inputList = document.querySelectorAll('input[name="target"][type="hidden"]');
-                inputList.forEach(($input) => {
-                    const val = $input.value;
-                    if (val === 'description') {
-                        const $target = $input
-                            .closest('form')
-                            .querySelector('.desc-form-item #thing_desc_options_0');
-                        if ($target) {
-                            res.push({
-                                name: '游戏简介',
-                                value: $target.value,
-                                category: 'subject_summary',
-                            });
-                        }
+                else if (arr.name === '游戏类型') {
+                    arr.value = arr.value.replace(/,(?!\s)/g, ', ');
+                    res.push(arr);
+                }
+                else if (arr.name === '开发') {
+                    arr.value = arr.value.replace(/,(?!\s)/g, ', ');
+                    res.push(arr);
+                }
+                else {
+                    res.push(arr);
+                }
+            }
+            // 描述
+            const inputList = document.querySelectorAll('input[name="target"][type="hidden"]');
+            inputList.forEach(($input) => {
+                const val = $input.value;
+                if (val === 'description') {
+                    const $target = $input
+                        .closest('form')
+                        .querySelector('.desc-form-item #thing_desc_options_0');
+                    if ($target) {
+                        res.push({
+                            name: '游戏简介',
+                            value: $target.value,
+                            category: 'subject_summary',
+                        });
                     }
-                });
-                return res;
+                }
             });
+            return res;
+        },
+    },
+    filters: [],
+};
+
+var ErogamescapeCategory;
+(function (ErogamescapeCategory) {
+    ErogamescapeCategory["game"] = "game";
+    ErogamescapeCategory["brand"] = "brand";
+    ErogamescapeCategory["creater"] = "creater";
+    ErogamescapeCategory["music"] = "music";
+    ErogamescapeCategory["pov"] = "pov";
+    ErogamescapeCategory["character"] = "character";
+})(ErogamescapeCategory || (ErogamescapeCategory = {}));
+const erogamescapeTools = {
+    hooks: {
+        async beforeCreate() {
+            var _a;
+            const $el = findElement([
+                {
+                    selector: '#links',
+                    subSelector: 'a',
+                    keyWord: 'Getchu.com',
+                },
+                {
+                    selector: '#bottom_inter_links_main',
+                    subSelector: 'a',
+                    keyWord: 'Getchu.com',
+                },
+            ]);
+            const softQuery = (_a = $el === null || $el === void 0 ? void 0 : $el.getAttribute('href')) === null || _a === void 0 ? void 0 : _a.match(/\?id=\d+$/);
+            if (softQuery) {
+                return {
+                    payload: {
+                        auxSite: {
+                            url: `http://www.getchu.com/soft.phtml${softQuery[0]}`,
+                            opts: {
+                                cookie: 'getchu_adalt_flag=getchu.com',
+                                decode: 'EUC-JP',
+                            },
+                            prefs: {
+                                targetNames: ['cover'],
+                            },
+                        },
+                    },
+                };
+            }
+            return true;
         },
     },
     filters: [],
@@ -2193,16 +2278,14 @@ const getchuTools = {
 };
 const getchuSiteTools = {
     hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const $t = document.querySelector('#soft-title');
-                if (!$t)
-                    return false;
-                const rawTitle = $t.textContent.trim();
-                if (/［同人グッズ|同人誌|同人音楽］/.test(rawTitle))
-                    return false;
-                return true;
-            });
+        async beforeCreate() {
+            const $t = document.querySelector('#soft-title');
+            if (!$t)
+                return false;
+            const rawTitle = $t.textContent.trim();
+            if (/［同人グッズ|同人誌|同人音楽］/.test(rawTitle))
+                return false;
+            return true;
         },
     },
     filters: [
@@ -2214,15 +2297,13 @@ const getchuSiteTools = {
 };
 const getchuCharaTools = {
     hooks: {
-        afterGetWikiData(infos, model, $el) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const res = [...infos];
-                const $chara = $el.querySelector('h2.chara-name');
-                if ($chara) {
-                    res.push(...getchuTools.getCharacterInfo($chara));
-                }
-                return res;
-            });
+        async afterGetWikiData(infos, model, $el) {
+            const res = [...infos];
+            const $chara = $el.querySelector('h2.chara-name');
+            if ($chara) {
+                res.push(...getchuTools.getCharacterInfo($chara));
+            }
+            return res;
         },
     },
 };
@@ -2247,15 +2328,15 @@ function getSteamURL(href) {
 }
 const steamTools = {
     hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                return {
-                    payload: {
-                        disableDate: true,
-                        auxSite: getSteamdbURL(window.location.href),
+        async beforeCreate() {
+            return {
+                payload: {
+                    disableDate: true,
+                    auxSite: {
+                        url: getSteamdbURL(window.location.href),
                     },
-                };
-            });
+                },
+            };
         },
     },
     filters: [
@@ -2280,15 +2361,15 @@ const steamTools = {
 };
 const steamdbTools = {
     hooks: {
-        beforeCreate() {
-            return __awaiter(this, void 0, void 0, function* () {
-                return {
-                    payload: {
-                        disableDate: true,
-                        auxSite: getSteamURL(window.location.href),
+        async beforeCreate() {
+            return {
+                payload: {
+                    disableDate: true,
+                    auxSite: {
+                        url: getSteamURL(window.location.href),
                     },
-                };
-            });
+                },
+            };
         },
     },
     filters: [
@@ -2365,6 +2446,7 @@ const sitesFuncDict = {
         ],
     },
     getchu_game: getchuSiteTools,
+    erogamescape: erogamescapeTools,
     steam_game: steamTools,
     steamdb_game: steamdbTools,
     douban_game: doubanTools,
@@ -2398,132 +2480,126 @@ function dealItemText(str, category = '', keyWords = []) {
         .replace(/[^\d:]+?(:|：)/, '')
         .trim();
 }
-function getWikiItem(infoConfig, site) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!infoConfig)
-            return;
-        const sl = infoConfig.selector;
-        let $d;
-        let targetSelector;
-        if (sl instanceof Array) {
-            let i = 0;
-            targetSelector = sl[i];
-            while (!($d = findElement(targetSelector)) && i < sl.length) {
-                targetSelector = sl[++i];
+async function getWikiItem(infoConfig, site) {
+    if (!infoConfig)
+        return;
+    const sl = infoConfig.selector;
+    let $d;
+    let targetSelector;
+    if (sl instanceof Array) {
+        let i = 0;
+        targetSelector = sl[i];
+        while (!($d = findElement(targetSelector)) && i < sl.length) {
+            targetSelector = sl[++i];
+        }
+    }
+    else {
+        targetSelector = sl;
+        $d = findElement(targetSelector);
+    }
+    if (!$d)
+        return;
+    let keyWords;
+    if (targetSelector.keyWord instanceof Array) {
+        keyWords = targetSelector.keyWord;
+    }
+    else {
+        keyWords = [targetSelector.keyWord];
+    }
+    let val;
+    let txt = getText($d);
+    const pipeArgsDict = {
+        k: [keyWords],
+    };
+    switch (infoConfig.category) {
+        case 'cover':
+        case 'crt_cover':
+            val = await getCover($d, site);
+            break;
+        case 'subject_summary':
+            // 优先使用 innerText
+            const innerTxt = getInnerText($d);
+            if (innerTxt) {
+                txt = innerTxt;
             }
-        }
-        else {
-            targetSelector = sl;
-            $d = findElement(targetSelector);
-        }
-        if (!$d)
-            return;
-        let keyWords;
-        if (targetSelector.keyWord instanceof Array) {
-            keyWords = targetSelector.keyWord;
-        }
-        else {
-            keyWords = [targetSelector.keyWord];
-        }
-        let val;
-        let txt = getText($d);
-        const pipeArgsDict = {
-            k: [keyWords],
+        case 'alias':
+        case 'subject_title':
+            // 有管道优先使用管道处理数据. 兼容之前使用写法
+            if (infoConfig.pipes) {
+                val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
+            }
+            else {
+                val = dealFuncByCategory(site, infoConfig.category)(txt);
+            }
+            break;
+        case 'website':
+            val = dealFuncByCategory(site, 'website')($d.getAttribute('href'));
+            break;
+        case 'date':
+            // 有管道优先使用管道处理数据. 兼容之前使用写法
+            if (infoConfig.pipes) {
+                val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
+            }
+            else {
+                // 日期预处理，不能删除
+                val = dealItemText(txt, infoConfig.category, keyWords);
+                val = dealFuncByCategory(site, infoConfig.category)(val);
+            }
+            break;
+        default:
+            // 有管道优先使用管道处理数据. 兼容之前使用写法
+            if (infoConfig.pipes) {
+                val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
+            }
+            else {
+                val = dealItemText(txt, infoConfig.category, keyWords);
+            }
+    }
+    // 信息后处理
+    if (infoConfig.category === 'creator') {
+        val = val.replace(/\s/g, '');
+    }
+    if (val) {
+        return {
+            name: infoConfig.name,
+            value: val,
+            category: infoConfig.category,
         };
-        switch (infoConfig.category) {
-            case 'cover':
-            case 'crt_cover':
-                val = yield getCover($d);
-                break;
-            case 'subject_summary':
-                // 优先使用 innerText
-                const innerTxt = getInnerText($d);
-                if (innerTxt) {
-                    txt = innerTxt;
-                }
-            case 'alias':
-            case 'subject_title':
-                // 有管道优先使用管道处理数据. 兼容之前使用写法
-                if (infoConfig.pipes) {
-                    val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
-                }
-                else {
-                    val = dealFuncByCategory(site, infoConfig.category)(txt);
-                }
-                break;
-            case 'website':
-                val = dealFuncByCategory(site, 'website')($d.getAttribute('href'));
-                break;
-            case 'date':
-                // 有管道优先使用管道处理数据. 兼容之前使用写法
-                if (infoConfig.pipes) {
-                    val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
-                }
-                else {
-                    // 日期预处理，不能删除
-                    val = dealItemText(txt, infoConfig.category, keyWords);
-                    val = dealFuncByCategory(site, infoConfig.category)(val);
-                }
-                break;
-            default:
-                // 有管道优先使用管道处理数据. 兼容之前使用写法
-                if (infoConfig.pipes) {
-                    val = dealTextByPipe(txt, infoConfig.pipes, pipeArgsDict);
-                }
-                else {
-                    val = dealItemText(txt, infoConfig.category, keyWords);
-                }
-        }
-        // 信息后处理
-        if (infoConfig.category === 'creator') {
-            val = val.replace(/\s/g, '');
-        }
-        if (val) {
-            return {
-                name: infoConfig.name,
-                value: val,
-                category: infoConfig.category,
-            };
-        }
-    });
+    }
 }
-function getWikiData(siteConfig, el) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (el) {
-            window._parsedEl = el;
-        }
-        else {
-            window._parsedEl = null;
-        }
-        const r = yield Promise.all(siteConfig.itemList.map((item) => getWikiItem(item, siteConfig.key)));
-        delete window._parsedEl;
-        const defaultInfos = siteConfig.defaultInfos || [];
-        let rawInfo = r.filter((i) => i);
-        const hookRes = yield getHooks(siteConfig, 'afterGetWikiData')(rawInfo, siteConfig);
-        if (Array.isArray(hookRes) && hookRes.length) {
-            rawInfo = hookRes;
-        }
-        return [...rawInfo, ...defaultInfos];
-    });
+async function getWikiData(siteConfig, el) {
+    if (el) {
+        window._parsedEl = el;
+    }
+    else {
+        window._parsedEl = null;
+    }
+    const r = await Promise.all(siteConfig.itemList.map((item) => getWikiItem(item, siteConfig.key)));
+    delete window._parsedEl;
+    const defaultInfos = siteConfig.defaultInfos || [];
+    let rawInfo = r.filter((i) => i);
+    const hookRes = await getHooks(siteConfig, 'afterGetWikiData')(rawInfo, siteConfig);
+    if (Array.isArray(hookRes) && hookRes.length) {
+        rawInfo = hookRes;
+    }
+    return [...rawInfo, ...defaultInfos];
 }
-function getCharaData(model, el) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (el) {
-            window._parsedEl = el;
-        }
-        else {
-            window._parsedEl = null;
-        }
-        const r = yield Promise.all(model.itemList.map((item) => getWikiItem(item, model.key)));
-        delete window._parsedEl;
-        const defaultInfos = model.defaultInfos || [];
-        let rawInfo = r.filter((i) => i);
-        const hookRes = yield getCharaHooks(model, 'afterGetWikiData')(rawInfo, model, el);
-        if (Array.isArray(hookRes) && hookRes.length) {
-            rawInfo = hookRes;
-        }
-        return [...rawInfo, ...defaultInfos];
-    });
+async function getCharaData(model, el) {
+    if (el) {
+        window._parsedEl = el;
+    }
+    else {
+        window._parsedEl = null;
+    }
+    const r = await Promise.all(model.itemList.map((item) => getWikiItem(item, model.key)));
+    delete window._parsedEl;
+    const defaultInfos = model.defaultInfos || [];
+    let rawInfo = r.filter((i) => i);
+    const hookRes = await getCharaHooks(model, 'afterGetWikiData')(rawInfo, model, el);
+    if (Array.isArray(hookRes) && hookRes.length) {
+        rawInfo = hookRes;
+    }
+    return [...rawInfo, ...defaultInfos];
 }
 /**
  * 过滤搜索结果： 通过名称以及日期
@@ -2601,15 +2677,15 @@ function insertControlBtn($t, cb) {
     $div.appendChild($s);
     $div.appendChild($search);
     $t.insertAdjacentElement('afterend', $div);
-    $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
-        yield cb(e);
-    }));
-    $search.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+    $s.addEventListener('click', async (e) => {
+        await cb(e);
+    });
+    $search.addEventListener('click', async (e) => {
         if ($search.innerHTML !== '新建并查重')
             return;
         $search.innerHTML = '查重中...';
         try {
-            yield cb(e, true);
+            await cb(e, true);
             $search.innerHTML = '新建并查重';
         }
         catch (e) {
@@ -2618,7 +2694,7 @@ function insertControlBtn($t, cb) {
             }
             console.error(e);
         }
-    }));
+    });
 }
 /**
  * 插入新建角色控制的按钮
@@ -2635,9 +2711,9 @@ function insertControlBtnChara($t, cb) {
     $s.innerHTML = '添加新虚拟角色';
     $div.appendChild($s);
     $t.insertAdjacentElement('afterend', $div);
-    $s.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
-        yield cb(e);
-    }));
+    $s.addEventListener('click', async (e) => {
+        await cb(e);
+    });
 }
 function addCharaUI($t, names, cb) {
     if (!$t)
@@ -2656,12 +2732,12 @@ ${names.map((n) => `<option value="${n}">${n}</option>`)}
     $t.insertAdjacentElement('afterend', $div);
     $div
         .querySelector('.e-wiki-new-character')
-        .addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+        .addEventListener('click', async (e) => {
         // 获取下拉选项
         const $sel = $div.querySelector('.e-bnwh-select');
         const val = $sel.value;
-        yield cb(e, val);
-    }));
+        await cb(e, val);
+    });
 }
 function isChineseStr(str) {
     return /^[\u4e00-\u9fa5]+/i.test(str) && !hasJpStr(str);
@@ -2794,37 +2870,35 @@ function combineInfoList(infoList, otherInfoList, auxPrefs = {}) {
     });
 }
 // 后台抓取其它网站的 wiki 信息
-function getWikiDataByURL(url) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const urlObj = new URL(url);
-        const models = findModelByHost(urlObj.hostname);
-        if (models && models.length) {
-            const rawText = yield fetchText(url, 4 * 1000);
-            let $doc = new DOMParser().parseFromString(rawText, 'text/html');
-            let model = models[0];
-            if (models.length > 1) {
-                for (const m of models) {
-                    if (m.urlRules && m.urlRules.some((r) => r.test(url))) {
-                        model = m;
-                    }
+async function getWikiDataByURL(url, opts = {}) {
+    const urlObj = new URL(url);
+    const models = findModelByHost(urlObj.hostname);
+    if (models && models.length) {
+        const rawText = await fetchText(url, opts, 4 * 1000);
+        let $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        let model = models[0];
+        if (models.length > 1) {
+            for (const m of models) {
+                if (m.urlRules && m.urlRules.some((r) => r.test(url))) {
+                    model = m;
                 }
             }
-            try {
-                // 查找标志性的元素
-                const $page = findElement(model.pageSelectors, $doc);
-                if (!$page)
-                    return [];
-                const $title = findElement(model.controlSelector, $doc);
-                if (!$title)
-                    return [];
-                return yield getWikiData(model, $doc);
-            }
-            catch (error) {
-                return [];
-            }
         }
-        return [];
-    });
+        try {
+            // 查找标志性的元素
+            const $page = findElement(model.pageSelectors, $doc);
+            if (!$page)
+                return [];
+            const $title = findElement(model.controlSelector, $doc);
+            if (!$title)
+                return [];
+            return await getWikiData(model, $doc);
+        }
+        catch (error) {
+            return [];
+        }
+    }
+    return [];
 }
 
 function sleep(num) {
@@ -2908,38 +2982,36 @@ function dealSearchResults(info) {
  * @param type
  * @param uniqueQueryStr
  */
-function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTypeId.all, uniqueQueryStr = '') {
-    return __awaiter(this, void 0, void 0, function* () {
-        let releaseDate;
-        if (subjectInfo && subjectInfo.releaseDate) {
-            releaseDate = subjectInfo.releaseDate;
-        }
-        let query = (subjectInfo.name || '').trim();
-        if (type === SubjectTypeId.book) {
-            // 去掉末尾的括号并加上引号
-            query = query.replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
-            query = `"${query}"`;
-        }
-        if (uniqueQueryStr) {
-            query = `"${uniqueQueryStr || ''}"`;
-        }
-        if (!query || query === '""') {
-            console.info('Query string is empty');
-            return;
-        }
-        const url = `${bgmHost}/subject_search/${encodeURIComponent(query)}?cat=${type}`;
-        console.info('search bangumi subject URL: ', url);
-        const rawText = yield fetchText(url);
-        const rawInfoList = dealSearchResults(rawText)[0] || [];
-        // 使用指定搜索字符串如 ISBN 搜索时, 并且结果只有一条时，不再使用名称过滤
-        if (uniqueQueryStr && rawInfoList && rawInfoList.length === 1) {
-            return rawInfoList[0];
-        }
-        const options = {
-            keys: ['name', 'greyName'],
-        };
-        return filterResults(rawInfoList, subjectInfo, options);
-    });
+async function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTypeId.all, uniqueQueryStr = '') {
+    let releaseDate;
+    if (subjectInfo && subjectInfo.releaseDate) {
+        releaseDate = subjectInfo.releaseDate;
+    }
+    let query = (subjectInfo.name || '').trim();
+    if (type === SubjectTypeId.book) {
+        // 去掉末尾的括号并加上引号
+        query = query.replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
+        query = `"${query}"`;
+    }
+    if (uniqueQueryStr) {
+        query = `"${uniqueQueryStr || ''}"`;
+    }
+    if (!query || query === '""') {
+        console.info('Query string is empty');
+        return;
+    }
+    const url = `${bgmHost}/subject_search/${encodeURIComponent(query)}?cat=${type}`;
+    console.info('search bangumi subject URL: ', url);
+    const rawText = await fetchText(url);
+    const rawInfoList = dealSearchResults(rawText)[0] || [];
+    // 使用指定搜索字符串如 ISBN 搜索时, 并且结果只有一条时，不再使用名称过滤
+    if (uniqueQueryStr && rawInfoList && rawInfoList.length === 1) {
+        return rawInfoList[0];
+    }
+    const options = {
+        keys: ['name', 'greyName'],
+    };
+    return filterResults(rawInfoList, subjectInfo, options);
 }
 /**
  * 通过时间查找条目
@@ -2947,65 +3019,61 @@ function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTy
  * @param pageNumber 页码
  * @param type 条目类型
  */
-function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNumber = 1, type) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!subjectInfo || !subjectInfo.releaseDate || !subjectInfo.name) {
-            throw new Error('invalid subject info');
+async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNumber = 1, type) {
+    if (!subjectInfo || !subjectInfo.releaseDate || !subjectInfo.name) {
+        throw new Error('invalid subject info');
+    }
+    const releaseDate = new Date(subjectInfo.releaseDate);
+    if (isNaN(releaseDate.getTime())) {
+        throw `invalid releasedate: ${subjectInfo.releaseDate}`;
+    }
+    const sort = releaseDate.getDate() > 15 ? 'sort=date' : '';
+    const page = pageNumber ? `page=${pageNumber}` : '';
+    let query = '';
+    if (sort && page) {
+        query = '?' + sort + '&' + page;
+    }
+    else if (sort) {
+        query = '?' + sort;
+    }
+    else if (page) {
+        query = '?' + page;
+    }
+    const url = `${bgmHost}/${type}/browser/airtime/${releaseDate.getFullYear()}-${releaseDate.getMonth() + 1}${query}`;
+    console.info('find subject by date: ', url);
+    const rawText = await fetchText(url);
+    let [rawInfoList, numOfPage] = dealSearchResults(rawText);
+    const options = {
+        threshold: 0.3,
+        keys: ['name', 'greyName'],
+    };
+    let result = filterResults(rawInfoList, subjectInfo, options, false);
+    if (!result) {
+        if (pageNumber < numOfPage) {
+            await sleep(300);
+            return await findSubjectByDate(subjectInfo, bgmHost, pageNumber + 1, type);
         }
-        const releaseDate = new Date(subjectInfo.releaseDate);
-        if (isNaN(releaseDate.getTime())) {
-            throw `invalid releasedate: ${subjectInfo.releaseDate}`;
+        else {
+            throw 'notmatched';
         }
-        const sort = releaseDate.getDate() > 15 ? 'sort=date' : '';
-        const page = pageNumber ? `page=${pageNumber}` : '';
-        let query = '';
-        if (sort && page) {
-            query = '?' + sort + '&' + page;
-        }
-        else if (sort) {
-            query = '?' + sort;
-        }
-        else if (page) {
-            query = '?' + page;
-        }
-        const url = `${bgmHost}/${type}/browser/airtime/${releaseDate.getFullYear()}-${releaseDate.getMonth() + 1}${query}`;
-        console.info('find subject by date: ', url);
-        const rawText = yield fetchText(url);
-        let [rawInfoList, numOfPage] = dealSearchResults(rawText);
-        const options = {
-            threshold: 0.3,
-            keys: ['name', 'greyName'],
-        };
-        let result = filterResults(rawInfoList, subjectInfo, options, false);
-        if (!result) {
-            if (pageNumber < numOfPage) {
-                yield sleep(300);
-                return yield findSubjectByDate(subjectInfo, bgmHost, pageNumber + 1, type);
-            }
-            else {
-                throw 'notmatched';
-            }
-        }
-        return result;
-    });
+    }
+    return result;
 }
-function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let searchResult = yield searchSubject(subjectInfo, bgmHost, type, subjectInfo.isbn);
-        console.info(`First: search book of bangumi: `, searchResult);
-        if (searchResult && searchResult.url) {
-            return searchResult;
-        }
-        searchResult = yield searchSubject(subjectInfo, bgmHost, type, subjectInfo.asin);
-        console.info(`Second: search book by ${subjectInfo.asin}: `, searchResult);
-        if (searchResult && searchResult.url) {
-            return searchResult;
-        }
-        // 默认使用名称搜索
-        searchResult = yield searchSubject(subjectInfo, bgmHost, type);
-        console.info('Third: search book of bangumi: ', searchResult);
+async function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+    let searchResult = await searchSubject(subjectInfo, bgmHost, type, subjectInfo.isbn);
+    console.info(`First: search book of bangumi: `, searchResult);
+    if (searchResult && searchResult.url) {
         return searchResult;
-    });
+    }
+    searchResult = await searchSubject(subjectInfo, bgmHost, type, subjectInfo.asin);
+    console.info(`Second: search book by ${subjectInfo.asin}: `, searchResult);
+    if (searchResult && searchResult.url) {
+        return searchResult;
+    }
+    // 默认使用名称搜索
+    searchResult = await searchSubject(subjectInfo, bgmHost, type);
+    console.info('Third: search book of bangumi: ', searchResult);
+    return searchResult;
 }
 /**
  * 查找条目是否存在： 通过名称搜索或者日期加上名称的过滤查询
@@ -3013,47 +3081,43 @@ function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
  * @param bgmHost bangumi 域名
  * @param type 条目类型
  */
-function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type, disabelDate) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const subjectTypeDict = {
-            [SubjectTypeId.game]: 'game',
-            [SubjectTypeId.anime]: 'anime',
-            [SubjectTypeId.music]: 'music',
-            [SubjectTypeId.book]: 'book',
-            [SubjectTypeId.real]: 'real',
-            [SubjectTypeId.all]: 'all',
-        };
-        let searchResult = yield searchSubject(subjectInfo, bgmHost, type);
-        console.info(`First: search result of bangumi: `, searchResult);
-        if (searchResult && searchResult.url) {
-            return searchResult;
-        }
-        if (disabelDate) {
-            return;
-        }
-        searchResult = yield findSubjectByDate(subjectInfo, bgmHost, 1, subjectTypeDict[type]);
-        console.info(`Second: search result by date: `, searchResult);
+async function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type, disabelDate) {
+    const subjectTypeDict = {
+        [SubjectTypeId.game]: 'game',
+        [SubjectTypeId.anime]: 'anime',
+        [SubjectTypeId.music]: 'music',
+        [SubjectTypeId.book]: 'book',
+        [SubjectTypeId.real]: 'real',
+        [SubjectTypeId.all]: 'all',
+    };
+    let searchResult = await searchSubject(subjectInfo, bgmHost, type);
+    console.info(`First: search result of bangumi: `, searchResult);
+    if (searchResult && searchResult.url) {
         return searchResult;
-    });
+    }
+    if (disabelDate) {
+        return;
+    }
+    searchResult = await findSubjectByDate(subjectInfo, bgmHost, 1, subjectTypeDict[type]);
+    console.info(`Second: search result by date: `, searchResult);
+    return searchResult;
 }
-function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type, disableDate) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let result;
-        switch (type) {
-            case SubjectTypeId.book:
-                result = yield checkBookSubjectExist(subjectInfo, bgmHost, type);
-                break;
-            case SubjectTypeId.game:
-                result = yield checkExist(subjectInfo, bgmHost, type, disableDate);
-                break;
-            case SubjectTypeId.anime:
-            case SubjectTypeId.real:
-            case SubjectTypeId.music:
-            default:
-                console.info('not support type: ', type);
-        }
-        return result;
-    });
+async function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type, disableDate) {
+    let result;
+    switch (type) {
+        case SubjectTypeId.book:
+            result = await checkBookSubjectExist(subjectInfo, bgmHost, type);
+            break;
+        case SubjectTypeId.game:
+            result = await checkExist(subjectInfo, bgmHost, type, disableDate);
+            break;
+        case SubjectTypeId.anime:
+        case SubjectTypeId.real:
+        case SubjectTypeId.music:
+        default:
+            console.info('not support type: ', type);
+    }
+    return result;
 }
 
 // 配置变量
@@ -3092,86 +3156,630 @@ function insertLogInfo($sibling, txt) {
     return $log;
 }
 
-function updateAuxData(auxSite, auxPrefs = {}) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            console.info('the start of updating aux data');
-            const auxData = yield getWikiDataByURL(auxSite);
-            console.info('auxiliary data: ', auxData);
-            const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
-            let infos = combineInfoList(wikiData.infos, auxData, auxPrefs);
-            if (auxSite.match(/store\.steampowered\.com/)) {
-                infos = combineInfoList(auxData, wikiData.infos);
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
+var NotyfNotification = /** @class */ (function () {
+    function NotyfNotification(options) {
+        this.options = options;
+        this.listeners = {};
+    }
+    NotyfNotification.prototype.on = function (eventType, cb) {
+        var callbacks = this.listeners[eventType] || [];
+        this.listeners[eventType] = callbacks.concat([cb]);
+    };
+    NotyfNotification.prototype.triggerEvent = function (eventType, event) {
+        var _this = this;
+        var callbacks = this.listeners[eventType] || [];
+        callbacks.forEach(function (cb) { return cb({ target: _this, event: event }); });
+    };
+    return NotyfNotification;
+}());
+var NotyfArrayEvent;
+(function (NotyfArrayEvent) {
+    NotyfArrayEvent[NotyfArrayEvent["Add"] = 0] = "Add";
+    NotyfArrayEvent[NotyfArrayEvent["Remove"] = 1] = "Remove";
+})(NotyfArrayEvent || (NotyfArrayEvent = {}));
+var NotyfArray = /** @class */ (function () {
+    function NotyfArray() {
+        this.notifications = [];
+    }
+    NotyfArray.prototype.push = function (elem) {
+        this.notifications.push(elem);
+        this.updateFn(elem, NotyfArrayEvent.Add, this.notifications);
+    };
+    NotyfArray.prototype.splice = function (index, num) {
+        var elem = this.notifications.splice(index, num)[0];
+        this.updateFn(elem, NotyfArrayEvent.Remove, this.notifications);
+        return elem;
+    };
+    NotyfArray.prototype.indexOf = function (elem) {
+        return this.notifications.indexOf(elem);
+    };
+    NotyfArray.prototype.onUpdate = function (fn) {
+        this.updateFn = fn;
+    };
+    return NotyfArray;
+}());
+
+var NotyfEvent;
+(function (NotyfEvent) {
+    NotyfEvent["Dismiss"] = "dismiss";
+    NotyfEvent["Click"] = "click";
+})(NotyfEvent || (NotyfEvent = {}));
+var DEFAULT_OPTIONS = {
+    types: [
+        {
+            type: 'success',
+            className: 'notyf__toast--success',
+            backgroundColor: '#3dc763',
+            icon: {
+                className: 'notyf__icon--success',
+                tagName: 'i',
+            },
+        },
+        {
+            type: 'error',
+            className: 'notyf__toast--error',
+            backgroundColor: '#ed3d3d',
+            icon: {
+                className: 'notyf__icon--error',
+                tagName: 'i',
+            },
+        },
+    ],
+    duration: 2000,
+    ripple: true,
+    position: {
+        x: 'right',
+        y: 'bottom',
+    },
+    dismissible: false,
+};
+
+var NotyfView = /** @class */ (function () {
+    function NotyfView() {
+        this.notifications = [];
+        this.events = {};
+        this.X_POSITION_FLEX_MAP = {
+            left: 'flex-start',
+            center: 'center',
+            right: 'flex-end',
+        };
+        this.Y_POSITION_FLEX_MAP = {
+            top: 'flex-start',
+            center: 'center',
+            bottom: 'flex-end',
+        };
+        // Creates the main notifications container
+        var docFrag = document.createDocumentFragment();
+        var notyfContainer = this._createHTMLElement({ tagName: 'div', className: 'notyf' });
+        docFrag.appendChild(notyfContainer);
+        document.body.appendChild(docFrag);
+        this.container = notyfContainer;
+        // Identifies the main animation end event
+        this.animationEndEventName = this._getAnimationEndEventName();
+        this._createA11yContainer();
+    }
+    NotyfView.prototype.on = function (event, cb) {
+        var _a;
+        this.events = __assign(__assign({}, this.events), (_a = {}, _a[event] = cb, _a));
+    };
+    NotyfView.prototype.update = function (notification, type) {
+        if (type === NotyfArrayEvent.Add) {
+            this.addNotification(notification);
+        }
+        else if (type === NotyfArrayEvent.Remove) {
+            this.removeNotification(notification);
+        }
+    };
+    NotyfView.prototype.removeNotification = function (notification) {
+        var _this = this;
+        var renderedNotification = this._popRenderedNotification(notification);
+        var node;
+        if (!renderedNotification) {
+            return;
+        }
+        node = renderedNotification.node;
+        node.classList.add('notyf__toast--disappear');
+        var handleEvent;
+        node.addEventListener(this.animationEndEventName, (handleEvent = function (event) {
+            if (event.target === node) {
+                node.removeEventListener(_this.animationEndEventName, handleEvent);
+                _this.container.removeChild(node);
             }
-            GM_setValue(WIKI_DATA, JSON.stringify({
-                type: wikiData.type,
-                subtype: wikiData.subType || 0,
-                infos,
-            }));
-            console.info('the end of updating aux data');
+        }));
+    };
+    NotyfView.prototype.addNotification = function (notification) {
+        var node = this._renderNotification(notification);
+        this.notifications.push({ notification: notification, node: node });
+        // For a11y purposes, we still want to announce that there's a notification in the screen
+        // even if it comes with no message.
+        this._announce(notification.options.message || 'Notification');
+    };
+    NotyfView.prototype._renderNotification = function (notification) {
+        var _a;
+        var card = this._buildNotificationCard(notification);
+        var className = notification.options.className;
+        if (className) {
+            (_a = card.classList).add.apply(_a, className.split(' '));
         }
-        catch (e) {
-            console.error(e);
+        this.container.appendChild(card);
+        return card;
+    };
+    NotyfView.prototype._popRenderedNotification = function (notification) {
+        var idx = -1;
+        for (var i = 0; i < this.notifications.length && idx < 0; i++) {
+            if (this.notifications[i].notification === notification) {
+                idx = i;
+            }
         }
-    });
-}
-function initCommon(siteConfig) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const $page = findElement(siteConfig.pageSelectors);
-        if (!$page)
-            return;
-        const $title = findElement(siteConfig.controlSelector);
-        if (!$title)
-            return;
-        let bcRes = yield getHooks(siteConfig, 'beforeCreate')(siteConfig);
-        if (!bcRes)
-            return;
-        if (bcRes === true) {
-            bcRes = {};
+        if (idx !== -1) {
+            return this.notifications.splice(idx, 1)[0];
         }
-        const { payload = {} } = bcRes;
-        console.info(siteConfig.description, ' content script init');
-        insertControlBtn($title, (e, flag) => __awaiter(this, void 0, void 0, function* () {
-            const protocol = GM_getValue(PROTOCOL) || 'https';
-            const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
-            const bgmHost = `${protocol}://${bgm_domain}`;
-            console.info('init');
-            const infoList = yield getWikiData(siteConfig);
-            console.info('wiki info list: ', infoList);
-            const wikiData = {
-                type: siteConfig.type,
-                subtype: siteConfig.subType,
-                infos: infoList,
-            };
-            GM_setValue(WIKI_DATA, JSON.stringify(wikiData));
-            if (flag) {
-                let result = yield checkSubjectExit(getQueryInfo(infoList), bgmHost, wikiData.type, payload === null || payload === void 0 ? void 0 : payload.disableDate);
-                console.info('search results: ', result);
-                if (result && result.url) {
-                    GM_setValue(SUBJECT_ID, getSubjectId(result.url));
-                    yield sleep(100);
-                    GM_openInTab(bgmHost + result.url);
-                }
-                else {
-                    payload.auxSite &&
-                        (yield updateAuxData(payload.auxSite, payload.auxPrefs || {}));
-                    // 重置自动填表
-                    GM_setValue(AUTO_FILL_FORM, 1);
-                    setTimeout(() => {
-                        GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
-                    }, 200);
-                }
+        return;
+    };
+    NotyfView.prototype.getXPosition = function (options) {
+        var _a;
+        return ((_a = options === null || options === void 0 ? void 0 : options.position) === null || _a === void 0 ? void 0 : _a.x) || 'right';
+    };
+    NotyfView.prototype.getYPosition = function (options) {
+        var _a;
+        return ((_a = options === null || options === void 0 ? void 0 : options.position) === null || _a === void 0 ? void 0 : _a.y) || 'bottom';
+    };
+    NotyfView.prototype.adjustContainerAlignment = function (options) {
+        var align = this.X_POSITION_FLEX_MAP[this.getXPosition(options)];
+        var justify = this.Y_POSITION_FLEX_MAP[this.getYPosition(options)];
+        var style = this.container.style;
+        style.setProperty('justify-content', justify);
+        style.setProperty('align-items', align);
+    };
+    NotyfView.prototype._buildNotificationCard = function (notification) {
+        var _this = this;
+        var options = notification.options;
+        var iconOpts = options.icon;
+        // Adjust container according to position (e.g. top-left, bottom-center, etc)
+        this.adjustContainerAlignment(options);
+        // Create elements
+        var notificationElem = this._createHTMLElement({ tagName: 'div', className: 'notyf__toast' });
+        var ripple = this._createHTMLElement({ tagName: 'div', className: 'notyf__ripple' });
+        var wrapper = this._createHTMLElement({ tagName: 'div', className: 'notyf__wrapper' });
+        var message = this._createHTMLElement({ tagName: 'div', className: 'notyf__message' });
+        message.innerHTML = options.message || '';
+        var mainColor = options.background || options.backgroundColor;
+        // Build the icon and append it to the card
+        if (iconOpts) {
+            var iconContainer = this._createHTMLElement({ tagName: 'div', className: 'notyf__icon' });
+            if (typeof iconOpts === 'string' || iconOpts instanceof String)
+                iconContainer.innerHTML = new String(iconOpts).valueOf();
+            if (typeof iconOpts === 'object') {
+                var _a = iconOpts.tagName, tagName = _a === void 0 ? 'i' : _a, className_1 = iconOpts.className, text = iconOpts.text, _b = iconOpts.color, color = _b === void 0 ? mainColor : _b;
+                var iconElement = this._createHTMLElement({ tagName: tagName, className: className_1, text: text });
+                if (color)
+                    iconElement.style.color = color;
+                iconContainer.appendChild(iconElement);
+            }
+            wrapper.appendChild(iconContainer);
+        }
+        wrapper.appendChild(message);
+        notificationElem.appendChild(wrapper);
+        // Add ripple if applicable, else just paint the full toast
+        if (mainColor) {
+            if (options.ripple) {
+                ripple.style.background = mainColor;
+                notificationElem.appendChild(ripple);
             }
             else {
+                notificationElem.style.background = mainColor;
+            }
+        }
+        // Add dismiss button
+        if (options.dismissible) {
+            var dismissWrapper = this._createHTMLElement({ tagName: 'div', className: 'notyf__dismiss' });
+            var dismissButton = this._createHTMLElement({
+                tagName: 'button',
+                className: 'notyf__dismiss-btn',
+            });
+            dismissWrapper.appendChild(dismissButton);
+            wrapper.appendChild(dismissWrapper);
+            notificationElem.classList.add("notyf__toast--dismissible");
+            dismissButton.addEventListener('click', function (event) {
+                var _a, _b;
+                (_b = (_a = _this.events)[NotyfEvent.Dismiss]) === null || _b === void 0 ? void 0 : _b.call(_a, { target: notification, event: event });
+                event.stopPropagation();
+            });
+        }
+        notificationElem.addEventListener('click', function (event) { var _a, _b; return (_b = (_a = _this.events)[NotyfEvent.Click]) === null || _b === void 0 ? void 0 : _b.call(_a, { target: notification, event: event }); });
+        // Adjust margins depending on whether its an upper or lower notification
+        var className = this.getYPosition(options) === 'top' ? 'upper' : 'lower';
+        notificationElem.classList.add("notyf__toast--" + className);
+        return notificationElem;
+    };
+    NotyfView.prototype._createHTMLElement = function (_a) {
+        var tagName = _a.tagName, className = _a.className, text = _a.text;
+        var elem = document.createElement(tagName);
+        if (className) {
+            elem.className = className;
+        }
+        elem.textContent = text || null;
+        return elem;
+    };
+    /**
+     * Creates an invisible container which will announce the notyfs to
+     * screen readers
+     */
+    NotyfView.prototype._createA11yContainer = function () {
+        var a11yContainer = this._createHTMLElement({ tagName: 'div', className: 'notyf-announcer' });
+        a11yContainer.setAttribute('aria-atomic', 'true');
+        a11yContainer.setAttribute('aria-live', 'polite');
+        // Set the a11y container to be visible hidden. Can't use display: none as
+        // screen readers won't read it.
+        a11yContainer.style.border = '0';
+        a11yContainer.style.clip = 'rect(0 0 0 0)';
+        a11yContainer.style.height = '1px';
+        a11yContainer.style.margin = '-1px';
+        a11yContainer.style.overflow = 'hidden';
+        a11yContainer.style.padding = '0';
+        a11yContainer.style.position = 'absolute';
+        a11yContainer.style.width = '1px';
+        a11yContainer.style.outline = '0';
+        document.body.appendChild(a11yContainer);
+        this.a11yContainer = a11yContainer;
+    };
+    /**
+     * Announces a message to screenreaders.
+     */
+    NotyfView.prototype._announce = function (message) {
+        var _this = this;
+        this.a11yContainer.textContent = '';
+        // This 100ms timeout is necessary for some browser + screen-reader combinations:
+        // - Both JAWS and NVDA over IE11 will not announce anything without a non-zero timeout.
+        // - With Chrome and IE11 with NVDA or JAWS, a repeated (identical) message won't be read a
+        //   second time without clearing and then using a non-zero delay.
+        // (using JAWS 17 at time of this writing).
+        // https://github.com/angular/material2/blob/master/src/cdk/a11y/live-announcer/live-announcer.ts
+        setTimeout(function () {
+            _this.a11yContainer.textContent = message;
+        }, 100);
+    };
+    /**
+     * Determine which animationend event is supported
+     */
+    NotyfView.prototype._getAnimationEndEventName = function () {
+        var el = document.createElement('_fake');
+        var transitions = {
+            MozTransition: 'animationend',
+            OTransition: 'oAnimationEnd',
+            WebkitTransition: 'webkitAnimationEnd',
+            transition: 'animationend',
+        };
+        var t;
+        for (t in transitions) {
+            if (el.style[t] !== undefined) {
+                return transitions[t];
+            }
+        }
+        // No supported animation end event. Using "animationend" as a fallback
+        return 'animationend';
+    };
+    return NotyfView;
+}());
+
+/**
+ * Main controller class. Defines the main Notyf API.
+ */
+var Notyf = /** @class */ (function () {
+    function Notyf(opts) {
+        var _this = this;
+        this.dismiss = this._removeNotification;
+        this.notifications = new NotyfArray();
+        this.view = new NotyfView();
+        var types = this.registerTypes(opts);
+        this.options = __assign(__assign({}, DEFAULT_OPTIONS), opts);
+        this.options.types = types;
+        this.notifications.onUpdate(function (elem, type) { return _this.view.update(elem, type); });
+        this.view.on(NotyfEvent.Dismiss, function (_a) {
+            var target = _a.target, event = _a.event;
+            _this._removeNotification(target);
+            // tslint:disable-next-line: no-string-literal
+            target['triggerEvent'](NotyfEvent.Dismiss, event);
+        });
+        // tslint:disable-next-line: no-string-literal
+        this.view.on(NotyfEvent.Click, function (_a) {
+            var target = _a.target, event = _a.event;
+            return target['triggerEvent'](NotyfEvent.Click, event);
+        });
+    }
+    Notyf.prototype.error = function (payload) {
+        var options = this.normalizeOptions('error', payload);
+        return this.open(options);
+    };
+    Notyf.prototype.success = function (payload) {
+        var options = this.normalizeOptions('success', payload);
+        return this.open(options);
+    };
+    Notyf.prototype.open = function (options) {
+        var defaultOpts = this.options.types.find(function (_a) {
+            var type = _a.type;
+            return type === options.type;
+        }) || {};
+        var config = __assign(__assign({}, defaultOpts), options);
+        this.assignProps(['ripple', 'position', 'dismissible'], config);
+        var notification = new NotyfNotification(config);
+        this._pushNotification(notification);
+        return notification;
+    };
+    Notyf.prototype.dismissAll = function () {
+        while (this.notifications.splice(0, 1))
+            ;
+    };
+    /**
+     * Assigns properties to a config object based on two rules:
+     * 1. If the config object already sets that prop, leave it as so
+     * 2. Otherwise, use the default prop from the global options
+     *
+     * It's intended to build the final config object to open a notification. e.g. if
+     * 'dismissible' is not set, then use the value from the global config.
+     *
+     * @param props - properties to be assigned to the config object
+     * @param config - object whose properties need to be set
+     */
+    Notyf.prototype.assignProps = function (props, config) {
+        var _this = this;
+        props.forEach(function (prop) {
+            // intentional double equality to check for both null and undefined
+            config[prop] = config[prop] == null ? _this.options[prop] : config[prop];
+        });
+    };
+    Notyf.prototype._pushNotification = function (notification) {
+        var _this = this;
+        this.notifications.push(notification);
+        var duration = notification.options.duration !== undefined ? notification.options.duration : this.options.duration;
+        if (duration) {
+            setTimeout(function () { return _this._removeNotification(notification); }, duration);
+        }
+    };
+    Notyf.prototype._removeNotification = function (notification) {
+        var index = this.notifications.indexOf(notification);
+        if (index !== -1) {
+            this.notifications.splice(index, 1);
+        }
+    };
+    Notyf.prototype.normalizeOptions = function (type, payload) {
+        var options = { type: type };
+        if (typeof payload === 'string') {
+            options.message = payload;
+        }
+        else if (typeof payload === 'object') {
+            options = __assign(__assign({}, options), payload);
+        }
+        return options;
+    };
+    Notyf.prototype.registerTypes = function (opts) {
+        var incomingTypes = ((opts && opts.types) || []).slice();
+        var finalDefaultTypes = DEFAULT_OPTIONS.types.map(function (defaultType) {
+            // find if there's a default type within the user input's types, if so, it means the user
+            // wants to change some of the default settings
+            var userTypeIdx = -1;
+            incomingTypes.forEach(function (t, idx) {
+                if (t.type === defaultType.type)
+                    userTypeIdx = idx;
+            });
+            var userType = userTypeIdx !== -1 ? incomingTypes.splice(userTypeIdx, 1)[0] : {};
+            return __assign(__assign({}, defaultType), userType);
+        });
+        return finalDefaultTypes.concat(incomingTypes);
+    };
+    return Notyf;
+}());
+
+const notyf = new Notyf({
+    duration: 3000,
+    types: [
+        {
+            type: 'success',
+            // background: '#F09199',
+        },
+        {
+            type: 'info',
+            background: '#F09199',
+        },
+        {
+            type: 'error',
+            duration: 0,
+            dismissible: true,
+        },
+    ],
+    position: {
+        x: 'right',
+        y: 'top',
+    },
+});
+const NOTYF_LIST = [];
+async function logMessage(request) {
+    if (request.cmd === 'dismissAll') {
+        notyf.dismissAll();
+        NOTYF_LIST.length = 0;
+    }
+    else if (request.cmd === 'dismissNotError') {
+        for (const obj of NOTYF_LIST) {
+            obj && notyf.dismiss(obj);
+        }
+        NOTYF_LIST.length = 0;
+    }
+    // 消息为空时
+    if (request.message === '') {
+        return;
+    }
+    let newNotyf;
+    switch (request.type) {
+        case 'succuss':
+            newNotyf = notyf.success(request);
+            break;
+        case 'error':
+            notyf.error(request);
+            break;
+        case 'info':
+            newNotyf = notyf.open(request);
+            // notyf.success(request.msg);
+            break;
+    }
+    newNotyf && NOTYF_LIST.push(newNotyf);
+}
+
+async function updateAuxData(payload) {
+    const { url: auxSite, opts: auxSiteOpts = {}, prefs: auxPrefs = {}, } = payload;
+    try {
+        logMessage({
+            type: 'info',
+            message: `抓取第三方网站信息中:<br/>${genAnonymousLinkText(auxSite, auxSite)}`,
+            duration: 0,
+        });
+        console.info('the start of updating aux data');
+        window._fetch_url_bg = auxSite;
+        const auxData = await getWikiDataByURL(auxSite, auxSiteOpts);
+        window._fetch_url_bg = null;
+        if (!auxData || (auxData && auxData.length === 0)) {
+            logMessage({
+                type: 'error',
+                message: `抓取信息为空<br/>
+      ${genAnonymousLinkText(auxSite, auxSite)}
+      <br/>
+      打开上面链接确认是否能访问以及有信息，再尝试`,
+                cmd: 'dismissNotError',
+            });
+        }
+        else {
+            logMessage({
+                type: 'info',
+                message: `抓取第三方网站信息成功:<br/>${genAnonymousLinkText(auxSite, auxSite)}`,
+                cmd: 'dismissNotError',
+            });
+        }
+        console.info('auxiliary data: ', auxData);
+        const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
+        let infos = combineInfoList(wikiData.infos, auxData, auxPrefs);
+        if (auxSite.match(/store\.steampowered\.com/)) {
+            infos = combineInfoList(auxData, wikiData.infos);
+        }
+        GM_setValue(WIKI_DATA, JSON.stringify({
+            type: wikiData.type,
+            subtype: wikiData.subType || 0,
+            infos,
+        }));
+        console.info('the end of updating aux data');
+    }
+    catch (e) {
+        console.error(e);
+        logMessage({
+            type: 'error',
+            message: `抓取信息失败<br/>
+      ${genAnonymousLinkText(auxSite, auxSite)}
+      <br/>
+      打开上面链接确认是否能访问以及有信息，再尝试`,
+            cmd: 'dismissNotError',
+        });
+    }
+}
+async function initCommon(siteConfig) {
+    const $page = findElement(siteConfig.pageSelectors);
+    if (!$page)
+        return;
+    const $title = findElement(siteConfig.controlSelector);
+    if (!$title)
+        return;
+    let bcRes = await getHooks(siteConfig, 'beforeCreate')(siteConfig);
+    if (!bcRes)
+        return;
+    if (bcRes === true) {
+        bcRes = {};
+    }
+    const { payload = {} } = bcRes;
+    console.info(siteConfig.description, ' content script init');
+    insertControlBtn($title, async (e, flag) => {
+        var _a, _b;
+        const protocol = GM_getValue(PROTOCOL) || 'https';
+        const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+        const bgmHost = `${protocol}://${bgm_domain}`;
+        console.info('init');
+        const infoList = await getWikiData(siteConfig);
+        console.info('wiki info list: ', infoList);
+        const wikiData = {
+            type: siteConfig.type,
+            subtype: siteConfig.subType,
+            infos: infoList,
+        };
+        GM_setValue(WIKI_DATA, JSON.stringify(wikiData));
+        if (flag) {
+            const info = getQueryInfo(infoList);
+            logMessage({
+                type: 'info',
+                message: `搜索中...<br/>${(_a = info === null || info === void 0 ? void 0 : info.name) !== null && _a !== void 0 ? _a : ''}`,
+                duration: 0,
+            });
+            let result = undefined;
+            try {
+                result = await checkSubjectExit(info, bgmHost, wikiData.type, payload === null || payload === void 0 ? void 0 : payload.disableDate);
+                console.info('search results: ', result);
+                logMessage({
+                    type: 'info',
+                    message: '',
+                    cmd: 'dismissNotError',
+                });
+            }
+            catch (error) {
+                logMessage({
+                    type: 'error',
+                    // message: `搜索结果为空<br/>${info?.name ?? ''}`,
+                    message: `Bangumi 搜索匹配结果为空: <br/><b>${(_b = info === null || info === void 0 ? void 0 : info.name) !== null && _b !== void 0 ? _b : ''}</b>`,
+                    cmd: 'dismissNotError',
+                });
+            }
+            if (result && result.url) {
+                GM_setValue(SUBJECT_ID, getSubjectId(result.url));
+                await sleep(100);
+                GM_openInTab(bgmHost + result.url);
+            }
+            else {
+                payload.auxSite && (await updateAuxData(payload.auxSite));
                 // 重置自动填表
                 GM_setValue(AUTO_FILL_FORM, 1);
-                payload.auxSite &&
-                    (yield updateAuxData(payload.auxSite, payload.auxPrefs || {}));
                 setTimeout(() => {
                     GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
                 }, 200);
             }
-        }));
+        }
+        else {
+            // 重置自动填表
+            GM_setValue(AUTO_FILL_FORM, 1);
+            payload.auxSite && (await updateAuxData(payload.auxSite));
+            setTimeout(() => {
+                GM_openInTab(`${bgmHost}/new_subject/${wikiData.type}`);
+            }, 200);
+        }
     });
 }
 function addStyle() {
@@ -3265,6 +3873,8 @@ function addStyle() {
   vertical-align: -5px;
 }
   `);
+    const my_css = GM_getResourceText('NOTYF_CSS');
+    GM_addStyle(my_css);
 }
 
 function _typeof(obj) {
@@ -3603,18 +4213,16 @@ var BlurStack = function BlurStack() {
  * @param $form
  * @param dataURL
  */
-function sendFormImg($form, dataURL) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const info = [];
-        const $file = $form.querySelector('input[type=file]');
-        const inputFileName = $file.name ? $file.name : 'picfile';
-        info.push({
-            name: inputFileName,
-            value: dataURItoBlob(dataURL),
-            filename: genRandomStr(5) + '.png'
-        });
-        return yield sendForm($form, info);
+async function sendFormImg($form, dataURL) {
+    const info = [];
+    const $file = $form.querySelector('input[type=file]');
+    const inputFileName = $file.name ? $file.name : 'picfile';
+    info.push({
+        name: inputFileName,
+        value: dataURItoBlob(dataURL),
+        filename: genRandomStr(5) + '.png'
     });
+    return await sendForm($form, info);
 }
 /**
  * send form as xhr promise
@@ -3768,74 +4376,72 @@ function previewFileImage($file, $canvas, $img = new Image()) {
  * @param {Object} $form - 包含 input file 的 DOM
  * @param {string} base64Data - 图片链接或者 base64 信息
  */
-function dealImageWidget($form, base64Data) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (document.querySelector('.e-wiki-cover-container'))
-            return;
-        initContainer($form);
-        const $canvas = document.querySelector('#e-wiki-cover-preview');
-        const $img = document.querySelector('.e-wiki-cover-container img.preview');
-        if (base64Data) {
-            if (base64Data.match(/^http/)) {
-                // 跨域和refer 的问题，暂时改成链接
-                // base64Data = await getImageDataByURL(base64Data);
-                const link = document.createElement('a');
-                link.classList.add('preview-fetch-img-link');
-                link.href = base64Data;
-                link.setAttribute('rel', 'noopener noreferrer nofollow');
-                link.setAttribute('target', '_blank');
-                link.innerText = '查看抓取封面';
-                document
-                    .querySelector('.e-wiki-cover-container')
-                    .insertBefore(link, document.querySelector('#e-wiki-cover-preview'));
-            }
-            else {
-                $img.src = base64Data;
-            }
-        }
-        const $file = $form.querySelector('input[type = file]');
-        previewFileImage($file, $canvas, $img);
-        blur($canvas);
-        document.querySelector('#e-wiki-cover-reset').addEventListener('click', (e) => {
-            // wiki 填表按钮
-            const $fillForm = document.querySelector('.e-wiki-fill-form');
-            if (base64Data) {
-                $img.dispatchEvent(new Event('load'));
-            }
-            else if ($file && $file.files[0]) {
-                $file.dispatchEvent(new Event('change'));
-            }
-            else if ($fillForm) {
-                $fillForm.dispatchEvent(new Event('click'));
-            }
-        }, false);
-        const $inputBtn = document.querySelector('.e-wiki-cover-container .inputBtn');
-        if ($file) {
-            $inputBtn.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
-                e.preventDefault();
-                if ($canvas.width > 8 && $canvas.height > 10) {
-                    const $el = e.target;
-                    $el.style.display = 'none';
-                    const $loading = insertLoading($el);
-                    try {
-                        const $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-                        $wikiMode && $wikiMode.click();
-                        yield sleep(200);
-                        const url = yield sendFormImg($form, $canvas.toDataURL('image/png', 1));
-                        $el.style.display = '';
-                        $loading.remove();
-                        location.assign(url);
-                    }
-                    catch (e) {
-                        console.log('send form err: ', e);
-                    }
-                }
-            }), false);
+async function dealImageWidget($form, base64Data) {
+    if (document.querySelector('.e-wiki-cover-container'))
+        return;
+    initContainer($form);
+    const $canvas = document.querySelector('#e-wiki-cover-preview');
+    const $img = document.querySelector('.e-wiki-cover-container img.preview');
+    if (base64Data) {
+        if (base64Data.match(/^http/)) {
+            // 跨域和refer 的问题，暂时改成链接
+            // base64Data = await getImageDataByURL(base64Data);
+            const link = document.createElement('a');
+            link.classList.add('preview-fetch-img-link');
+            link.href = base64Data;
+            link.setAttribute('rel', 'noopener noreferrer nofollow');
+            link.setAttribute('target', '_blank');
+            link.innerText = '查看抓取封面';
+            document
+                .querySelector('.e-wiki-cover-container')
+                .insertBefore(link, document.querySelector('#e-wiki-cover-preview'));
         }
         else {
-            $inputBtn.value = '处理图片';
+            $img.src = base64Data;
         }
-    });
+    }
+    const $file = $form.querySelector('input[type = file]');
+    previewFileImage($file, $canvas, $img);
+    blur($canvas);
+    document.querySelector('#e-wiki-cover-reset').addEventListener('click', (e) => {
+        // wiki 填表按钮
+        const $fillForm = document.querySelector('.e-wiki-fill-form');
+        if (base64Data) {
+            $img.dispatchEvent(new Event('load'));
+        }
+        else if ($file && $file.files[0]) {
+            $file.dispatchEvent(new Event('change'));
+        }
+        else if ($fillForm) {
+            $fillForm.dispatchEvent(new Event('click'));
+        }
+    }, false);
+    const $inputBtn = document.querySelector('.e-wiki-cover-container .inputBtn');
+    if ($file) {
+        $inputBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if ($canvas.width > 8 && $canvas.height > 10) {
+                const $el = e.target;
+                $el.style.display = 'none';
+                const $loading = insertLoading($el);
+                try {
+                    const $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                    $wikiMode && $wikiMode.click();
+                    await sleep(200);
+                    const url = await sendFormImg($form, $canvas.toDataURL('image/png', 1));
+                    $el.style.display = '';
+                    $loading.remove();
+                    location.assign(url);
+                }
+                catch (e) {
+                    console.log('send form err: ', e);
+                }
+            }
+        }, false);
+    }
+    else {
+        $inputBtn.value = '处理图片';
+    }
 }
 function insertLoading($sibling) {
     const $loading = document.createElement('div');
@@ -3844,97 +4450,89 @@ function insertLoading($sibling) {
     return $loading;
 }
 
-function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!bgmHost) {
-            bgmHost = `${location.protocol}//${location.host}`;
-        }
-        const url = `${bgmHost}/subject/${subjectId}/upload_img`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('form[name=img_upload');
-        yield sendFormImg($form, dataUrl);
-    });
+async function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
+    if (!bgmHost) {
+        bgmHost = `${location.protocol}//${location.host}`;
+    }
+    const url = `${bgmHost}/subject/${subjectId}/upload_img`;
+    const rawText = await fetchText(url);
+    const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+    const $form = $doc.querySelector('form[name=img_upload');
+    await sendFormImg($form, dataUrl);
 }
-function searchCVByName(name, charaId = '') {
-    return __awaiter(this, void 0, void 0, function* () {
-        const bgmHost = getBgmHost();
-        let url = `${bgmHost}/json/search-cv_person/${name.replace(/\s/g, '')}`;
-        if (charaId) {
-            url = `${url}?character_id=${charaId}`;
-        }
-        const res = yield fetchJson(url, 'json');
-        return Object.keys(res)[0];
-    });
+async function searchCVByName(name, charaId = '') {
+    const bgmHost = getBgmHost();
+    let url = `${bgmHost}/json/search-cv_person/${name.replace(/\s/g, '')}`;
+    if (charaId) {
+        url = `${url}?character_id=${charaId}`;
+    }
+    const res = await fetchJson(url);
+    return Object.keys(res)[0];
 }
 // 添加角色的关联条目
-function addPersonRelatedSubject(subjectIds, charaId, typeId, charaType = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const typeDict = {
-            [SubjectTypeId.game]: 'game',
-            [SubjectTypeId.anime]: 'anime',
-            [SubjectTypeId.music]: 'music',
-            [SubjectTypeId.book]: 'book',
-            [SubjectTypeId.real]: 'real',
-            [SubjectTypeId.all]: 'all',
-        };
-        const bgmHost = `${location.protocol}//${location.host}`;
-        const type = typeDict[typeId];
-        const url = `${bgmHost}/character/${charaId}/add_related/${type}`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('.mainWrapper form');
-        const extroInfo = [];
-        // 1 主角 2 配角 3 客串
-        subjectIds.forEach((v, i) => {
-            extroInfo.push({
-                name: `infoArr[n${i}][crt_type]`,
-                value: charaType,
-            });
-            extroInfo.push({
-                name: `infoArr[n${i}][subject_id]`,
-                value: v,
-            });
+async function addPersonRelatedSubject(subjectIds, charaId, typeId, charaType = 1) {
+    const typeDict = {
+        [SubjectTypeId.game]: 'game',
+        [SubjectTypeId.anime]: 'anime',
+        [SubjectTypeId.music]: 'music',
+        [SubjectTypeId.book]: 'book',
+        [SubjectTypeId.real]: 'real',
+        [SubjectTypeId.all]: 'all',
+    };
+    const bgmHost = `${location.protocol}//${location.host}`;
+    const type = typeDict[typeId];
+    const url = `${bgmHost}/character/${charaId}/add_related/${type}`;
+    const rawText = await fetchText(url);
+    const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+    const $form = $doc.querySelector('.mainWrapper form');
+    const extroInfo = [];
+    // 1 主角 2 配角 3 客串
+    subjectIds.forEach((v, i) => {
+        extroInfo.push({
+            name: `infoArr[n${i}][crt_type]`,
+            value: charaType,
         });
-        // {name: 'submit', value: '保存关联数据'}
-        yield sendForm($form, [...extroInfo]);
+        extroInfo.push({
+            name: `infoArr[n${i}][subject_id]`,
+            value: v,
+        });
     });
+    // {name: 'submit', value: '保存关联数据'}
+    await sendForm($form, [...extroInfo]);
 }
 // 未设置域名的兼容，只能在 Bangumi 本身上面使用
 // 添加角色的关联 CV
-function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const typeDict = {
-            [SubjectTypeId.game]: 'game',
-            [SubjectTypeId.anime]: 'anime',
-            [SubjectTypeId.music]: 'music',
-            [SubjectTypeId.book]: 'book',
-            [SubjectTypeId.real]: 'real',
-            [SubjectTypeId.all]: 'all',
-        };
-        const bgmHost = `${location.protocol}//${location.host}`;
-        const type = typeDict[typeId];
-        const url = `${bgmHost}/character/${charaId}/add_related/person/${type}`;
-        const rawText = yield fetchText(url);
-        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-        const $form = $doc.querySelector('.mainWrapper form');
-        const personInfo = personIds.map((v, i) => ({
-            name: `infoArr[n${i}][prsn_id]`,
-            value: v,
-        }));
-        // {name: 'submit', value: '保存关联数据'}
-        yield sendForm($form, [
-            {
-                name: 'infoArr[n0][subject_id]',
-                value: subjectId,
-            },
-            {
-                name: 'infoArr[n0][subject_type_id]',
-                value: typeId,
-            },
-            ...personInfo,
-        ]);
-    });
+async function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
+    const typeDict = {
+        [SubjectTypeId.game]: 'game',
+        [SubjectTypeId.anime]: 'anime',
+        [SubjectTypeId.music]: 'music',
+        [SubjectTypeId.book]: 'book',
+        [SubjectTypeId.real]: 'real',
+        [SubjectTypeId.all]: 'all',
+    };
+    const bgmHost = `${location.protocol}//${location.host}`;
+    const type = typeDict[typeId];
+    const url = `${bgmHost}/character/${charaId}/add_related/person/${type}`;
+    const rawText = await fetchText(url);
+    const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+    const $form = $doc.querySelector('.mainWrapper form');
+    const personInfo = personIds.map((v, i) => ({
+        name: `infoArr[n${i}][prsn_id]`,
+        value: v,
+    }));
+    // {name: 'submit', value: '保存关联数据'}
+    await sendForm($form, [
+        {
+            name: 'infoArr[n0][subject_id]',
+            value: subjectId,
+        },
+        {
+            name: 'infoArr[n0][subject_type_id]',
+            value: typeId,
+        },
+        ...personInfo,
+    ]);
 }
 
 /**
@@ -4015,73 +4613,71 @@ function convertInfoValue(originValue, infoArr) {
  * TODO: 使用 MutationObserver 实现
  * @param wikiData
  */
-function fillInfoBox(wikiData) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const dict = {
-            誕生日: '生日',
-            スリーサイズ: 'BWH',
-        };
-        const { infos } = wikiData;
-        const subType = +wikiData.subtype;
-        const infoArray = [];
-        const $typeInput = $qa('table tr:nth-of-type(2) > td:nth-of-type(2) input');
-        if ($typeInput) {
+async function fillInfoBox(wikiData) {
+    const dict = {
+        誕生日: '生日',
+        スリーサイズ: 'BWH',
+    };
+    const { infos } = wikiData;
+    const subType = +wikiData.subtype;
+    const infoArray = [];
+    const $typeInput = $qa('table tr:nth-of-type(2) > td:nth-of-type(2) input');
+    if ($typeInput) {
+        // @ts-ignore
+        $typeInput[0].click();
+        if (!isNaN(subType)) {
             // @ts-ignore
-            $typeInput[0].click();
-            if (!isNaN(subType)) {
-                // @ts-ignore
-                $typeInput[subType].click();
+            $typeInput[subType].click();
+        }
+    }
+    await sleep(100);
+    const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+    const $newbieMode = $q('table small a:nth-of-type(2)[href="javascript:void(0)"]');
+    for (let i = 0, len = infos.length; i < len; i++) {
+        const currentInfo = infos[i];
+        if (infos[i].category === 'subject_title') {
+            let $title = $q('input[name=subject_title]');
+            $title.value = (infos[i].value || '').trim();
+            continue;
+        }
+        if (infos[i].category === 'subject_summary') {
+            let $summary = $q('#subject_summary');
+            $summary.value = (infos[i].value || '').trim();
+            continue;
+        }
+        if (infos[i].category === 'crt_summary') {
+            let $t = $q('#crt_summary');
+            $t.value = (infos[i].value || '').trim();
+            continue;
+        }
+        if (infos[i].category === 'crt_name') {
+            let $t = $q('#crt_name');
+            $t.value = (infos[i].value || '').trim();
+            continue;
+        }
+        if (currentInfo.category === 'checkbox') {
+            const $t = $q(`input[name=${currentInfo.name}]`);
+            $t.checked = currentInfo.value ? true : false;
+            continue;
+        }
+        // 有名称并且category不在特定列表里面
+        if (infos[i].name &&
+            ['cover', 'crt_cover'].indexOf(infos[i].category) === -1) {
+            const name = infos[i].name;
+            if (dict.hasOwnProperty(name)) {
+                infoArray.push(Object.assign(Object.assign({}, infos[i]), { name: dict[name] }));
+            }
+            else {
+                infoArray.push(infos[i]);
             }
         }
-        yield sleep(100);
-        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-        const $newbieMode = $q('table small a:nth-of-type(2)[href="javascript:void(0)"]');
-        for (let i = 0, len = infos.length; i < len; i++) {
-            const currentInfo = infos[i];
-            if (infos[i].category === 'subject_title') {
-                let $title = $q('input[name=subject_title]');
-                $title.value = (infos[i].value || '').trim();
-                continue;
-            }
-            if (infos[i].category === 'subject_summary') {
-                let $summary = $q('#subject_summary');
-                $summary.value = (infos[i].value || '').trim();
-                continue;
-            }
-            if (infos[i].category === 'crt_summary') {
-                let $t = $q('#crt_summary');
-                $t.value = (infos[i].value || '').trim();
-                continue;
-            }
-            if (infos[i].category === 'crt_name') {
-                let $t = $q('#crt_name');
-                $t.value = (infos[i].value || '').trim();
-                continue;
-            }
-            if (currentInfo.category === 'checkbox') {
-                const $t = $q(`input[name=${currentInfo.name}]`);
-                $t.checked = currentInfo.value ? true : false;
-                continue;
-            }
-            // 有名称并且category不在特定列表里面
-            if (infos[i].name &&
-                ['cover', 'crt_cover'].indexOf(infos[i].category) === -1) {
-                const name = infos[i].name;
-                if (dict.hasOwnProperty(name)) {
-                    infoArray.push(Object.assign(Object.assign({}, infos[i]), { name: dict[name] }));
-                }
-                else {
-                    infoArray.push(infos[i]);
-                }
-            }
-        }
-        $wikiMode.click();
-        yield sleep(200);
-        const $infoBox = $q('#subject_infobox');
-        $infoBox.value = convertInfoValue($infoBox.value, infoArray);
-        yield sleep(200);
-        $newbieMode.click();
-    });
+    }
+    $wikiMode.click();
+    await sleep(200);
+    const $infoBox = $q('#subject_infobox');
+    $infoBox.value = convertInfoValue($infoBox.value, infoArray);
+    await sleep(200);
+    $newbieMode.click();
 }
 /**
  * 插入控制填表的按钮
@@ -4109,9 +4705,9 @@ function initNewSubject(wikiInfo) {
     var _a;
     const $t = $q('form[name=create_subject] [name=subject_title]').parentElement;
     const defaultVal = $q('#subject_infobox').value;
-    insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
-        yield fillInfoBox(wikiInfo);
-    }), () => {
+    insertFillFormBtn($t, async (e) => {
+        await fillInfoBox(wikiInfo);
+    }, () => {
         // 清除默认值
         $qa('input[name=platform]').forEach((element) => {
             element.checked = false;
@@ -4140,7 +4736,7 @@ function initNewSubject(wikiInfo) {
             $input.insertAdjacentElement('afterend', $clonedInput);
             $input.remove();
             const $canvas = $q('#e-wiki-cover-preview');
-            $clonedInput.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+            $clonedInput.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if ($canvas.width > 8 && $canvas.height > 10) {
                     const $el = e.target;
@@ -4150,11 +4746,11 @@ function initNewSubject(wikiInfo) {
                     try {
                         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
                         $wikiMode && $wikiMode.click();
-                        yield sleep(200);
-                        const url = yield sendForm($form);
+                        await sleep(200);
+                        const url = await sendForm($form);
                         const subjectId = getSubjectId(url);
                         if (subjectId) {
-                            yield uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
+                            await uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
                         }
                         $loading.remove();
                         $el.style.display = '';
@@ -4165,7 +4761,7 @@ function initNewSubject(wikiInfo) {
                         console.log('send form err: ', e);
                     }
                 }
-            }));
+            });
         }, 300);
     }
 }
@@ -4173,9 +4769,9 @@ function initNewCharacter(wikiInfo, subjectId) {
     var _a;
     const $t = $q('form[name=new_character] #crt_name').parentElement;
     const defaultVal = $q('#subject_infobox').value;
-    insertFillFormBtn($t, (e) => __awaiter(this, void 0, void 0, function* () {
-        yield fillInfoBox(wikiInfo);
-    }), () => {
+    insertFillFormBtn($t, async (e) => {
+        await fillInfoBox(wikiInfo);
+    }, () => {
         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
         $wikiMode && $wikiMode.click();
         // @ts-ignore
@@ -4216,7 +4812,7 @@ function initNewCharacter(wikiInfo, subjectId) {
       `);
             $clonedInput.insertAdjacentElement('afterend', $relatedInput);
             const $canvas = $q('#e-wiki-cover-preview');
-            $clonedInput.addEventListener('click', (e) => __awaiter(this, void 0, void 0, function* () {
+            $clonedInput.addEventListener('click', async (e) => {
                 var _a;
                 e.preventDefault();
                 if ($canvas.width > 8 && $canvas.height > 10) {
@@ -4227,22 +4823,22 @@ function initNewCharacter(wikiInfo, subjectId) {
                     try {
                         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
                         $wikiMode && $wikiMode.click();
-                        yield sleep(200);
+                        await sleep(200);
                         const currentHost = getBgmHost();
-                        const url = yield sendFormImg($form, dataUrl);
+                        const url = await sendFormImg($form, dataUrl);
                         insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
                         const charaId = getSubjectId(url);
                         // subject id
                         const subjectId = ((_a = $relatedInput.querySelector('input')) === null || _a === void 0 ? void 0 : _a.value) || '';
                         if (charaId && subjectId) {
                             insertLogInfo($el, '存在条目 id, 开始关联条目');
-                            yield addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
+                            await addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
                             insertLogInfo($el, `关联条目成功: ${genLinkText(`${currentHost}/subject/${subjectId}`, '条目地址')}`);
                             const cvInfo = wikiInfo.infos.filter((item) => item.name.toUpperCase() === 'CV')[0];
                             if (cvInfo) {
-                                const cvId = yield searchCVByName(cvInfo.value, charaId);
+                                const cvId = await searchCVByName(cvInfo.value, charaId);
                                 cvId &&
-                                    (yield addPersonRelatedCV(subjectId, charaId, [cvId], wikiInfo.type));
+                                    (await addPersonRelatedCV(subjectId, charaId, [cvId], wikiInfo.type));
                                 insertLogInfo($el, `关联 CV 成功: ${genLinkText(`${currentHost}/person/${cvId}`)}`);
                             }
                         }
@@ -4256,7 +4852,7 @@ function initNewCharacter(wikiInfo, subjectId) {
                         insertLogInfo($el, `出错了: ${e}`);
                     }
                 }
-            }));
+            });
         }, 300);
     }
 }
@@ -4268,50 +4864,48 @@ function initUploadImg(wikiInfo) {
 }
 
 const bangumi = {
-    init() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const re = new RegExp(['new_subject', 'add_related', 'character/new', 'upload_img'].join('|'));
-            const page = document.location.href.match(re);
-            if (!page)
-                return;
-            const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
-            const charaData = JSON.parse(GM_getValue(CHARA_DATA) || null);
-            const subjectId = GM_getValue(SUBJECT_ID);
-            const autoFill = GM_getValue(AUTO_FILL_FORM);
-            switch (page[0]) {
-                case 'new_subject':
-                    if (wikiData) {
-                        initNewSubject(wikiData);
-                        if (autoFill == 1) {
-                            setTimeout(() => {
-                                // @ts-ignore
-                                $q('.e-wiki-fill-form').click();
-                                GM_setValue(AUTO_FILL_FORM, 0);
-                            }, 300);
-                        }
+    async init() {
+        const re = new RegExp(['new_subject', 'add_related', 'character/new', 'upload_img'].join('|'));
+        const page = document.location.href.match(re);
+        if (!page)
+            return;
+        const wikiData = JSON.parse(GM_getValue(WIKI_DATA) || null);
+        const charaData = JSON.parse(GM_getValue(CHARA_DATA) || null);
+        const subjectId = GM_getValue(SUBJECT_ID);
+        const autoFill = GM_getValue(AUTO_FILL_FORM);
+        switch (page[0]) {
+            case 'new_subject':
+                if (wikiData) {
+                    initNewSubject(wikiData);
+                    if (autoFill == 1) {
+                        setTimeout(() => {
+                            // @ts-ignore
+                            $q('.e-wiki-fill-form').click();
+                            GM_setValue(AUTO_FILL_FORM, 0);
+                        }, 300);
                     }
-                    break;
-                case 'add_related':
-                    break;
-                case 'character/new':
-                    if (charaData) {
-                        initNewCharacter(charaData);
-                        if (autoFill == 1) {
-                            setTimeout(() => {
-                                // @ts-ignore
-                                $q('.e-wiki-fill-form').click();
-                                GM_setValue(AUTO_FILL_FORM, 0);
-                            }, 300);
-                        }
+                }
+                break;
+            case 'add_related':
+                break;
+            case 'character/new':
+                if (charaData) {
+                    initNewCharacter(charaData);
+                    if (autoFill == 1) {
+                        setTimeout(() => {
+                            // @ts-ignore
+                            $q('.e-wiki-fill-form').click();
+                            GM_setValue(AUTO_FILL_FORM, 0);
+                        }, 300);
                     }
-                    break;
-                case 'upload_img':
-                    if (wikiData) {
-                        initUploadImg(wikiData);
-                    }
-                    break;
-            }
-        });
+                }
+                break;
+            case 'upload_img':
+                if (wikiData) {
+                    initUploadImg(wikiData);
+                }
+                break;
+        }
     },
 };
 
@@ -4325,7 +4919,7 @@ const getchu = {
         const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
         const bgmHost = `${protocol}://${bgm_domain}`;
         Array.prototype.forEach.call($qa('h2.chara-name'), (node) => {
-            insertControlBtnChara(node, (e) => __awaiter(this, void 0, void 0, function* () {
+            insertControlBtnChara(node, async (e) => {
                 const charaInfo = getchuTools.getCharacterInfo(e.target);
                 console.info('character info list: ', charaInfo);
                 const charaData = {
@@ -4339,81 +4933,79 @@ const getchu = {
                 setTimeout(() => {
                     GM_openInTab(`${bgmHost}/character/new`);
                 }, 200);
-            }));
+            });
         });
     },
 };
 
-function initChara(siteConfig) {
+async function initChara(siteConfig) {
     var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        // 查找标志性的元素
-        const $page = findElement(siteConfig.pageSelectors);
-        if (!$page)
-            return;
-        const charaModel = getCharaModel(siteConfig.key);
-        if (!charaModel)
-            return;
-        const $el = findElement(charaModel.controlSelector);
-        if (!$el)
-            return;
-        // 判断是否在 iframe 里面
-        let iframeSel = '';
-        let $doc;
-        if (charaModel.itemSelector instanceof Array) {
-            iframeSel = (_a = charaModel.itemSelector.find((i) => i.isIframe === true)) === null || _a === void 0 ? void 0 : _a.selector;
+    // 查找标志性的元素
+    const $page = findElement(siteConfig.pageSelectors);
+    if (!$page)
+        return;
+    const charaModel = getCharaModel(siteConfig.key);
+    if (!charaModel)
+        return;
+    const $el = findElement(charaModel.controlSelector);
+    if (!$el)
+        return;
+    // 判断是否在 iframe 里面
+    let iframeSel = '';
+    let $doc;
+    if (charaModel.itemSelector instanceof Array) {
+        iframeSel = (_a = charaModel.itemSelector.find((i) => i.isIframe === true)) === null || _a === void 0 ? void 0 : _a.selector;
+    }
+    else if (charaModel.itemSelector.isIframe) {
+        iframeSel = charaModel.itemSelector.selector;
+    }
+    if (iframeSel) {
+        console.log('fetch html by background');
+        const url = findElement({
+            selector: iframeSel,
+        }).getAttribute('src');
+        if (url) {
+            const rawHtml = await fetchText(url);
+            $doc = new DOMParser().parseFromString(rawHtml, 'text/html');
         }
-        else if (charaModel.itemSelector.isIframe) {
-            iframeSel = charaModel.itemSelector.selector;
+        else {
+            return;
         }
-        if (iframeSel) {
-            console.log('fetch html by background');
-            const url = findElement({
-                selector: iframeSel,
-            }).getAttribute('src');
-            if (url) {
-                const rawHtml = yield fetchText(url);
-                $doc = new DOMParser().parseFromString(rawHtml, 'text/html');
-            }
-            else {
-                return;
+    }
+    const protocol = GM_getValue(PROTOCOL) || 'https';
+    const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+    const bgmHost = `${protocol}://${bgm_domain}`;
+    const itemArr = findAllElement(charaModel.itemSelector);
+    // 获取名字列表
+    let names = await Promise.all(itemArr.map(async ($t) => {
+        var _a;
+        const nameConfig = charaModel.itemList.find((item) => item.category == 'crt_name');
+        const infos = await getCharaData(Object.assign(Object.assign({}, charaModel), { itemList: [nameConfig] }), $t);
+        return (_a = infos.find((i) => i.category === 'crt_name')) === null || _a === void 0 ? void 0 : _a.value;
+    }));
+    addCharaUI($el, names, async (e, val) => {
+        let targetList = [];
+        if (val === 'all') ;
+        else {
+            const idx = names.indexOf(val);
+            if (idx !== -1) {
+                targetList = itemArr.slice(idx, idx + 1);
             }
         }
-        const protocol = GM_getValue(PROTOCOL) || 'https';
-        const bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
-        const bgmHost = `${protocol}://${bgm_domain}`;
-        const itemArr = findAllElement(charaModel.itemSelector);
-        // 获取名字列表
-        let names = yield Promise.all(itemArr.map(($t) => __awaiter(this, void 0, void 0, function* () {
-            var _b;
-            const nameConfig = charaModel.itemList.find((item) => item.category == 'crt_name');
-            const infos = yield getCharaData(Object.assign(Object.assign({}, charaModel), { itemList: [nameConfig] }), $t);
-            return (_b = infos.find((i) => i.category === 'crt_name')) === null || _b === void 0 ? void 0 : _b.value;
-        })));
-        addCharaUI($el, names, (e, val) => __awaiter(this, void 0, void 0, function* () {
-            let targetList = [];
-            if (val === 'all') ;
-            else {
-                const idx = names.indexOf(val);
-                if (idx !== -1) {
-                    targetList = itemArr.slice(idx, idx + 1);
-                }
-            }
-            for (const $target of targetList) {
-                const charaInfo = yield getCharaData(charaModel, $target);
-                console.info('character info list: ', charaInfo);
-                const charaData = {
-                    type: siteConfig.type,
-                    infos: charaInfo,
-                };
-                // 重置自动填表
-                GM_setValue(AUTO_FILL_FORM, 1);
-                GM_setValue(CHARA_DATA, JSON.stringify(charaData));
-                // @TODO 不使用定时器
-                yield sleep(200);
-                GM_openInTab(`${bgmHost}/character/new`);
-            }
-        }));
+        for (const $target of targetList) {
+            const charaInfo = await getCharaData(charaModel, $target);
+            console.info('character info list: ', charaInfo);
+            const charaData = {
+                type: siteConfig.type,
+                infos: charaInfo,
+            };
+            // 重置自动填表
+            GM_setValue(AUTO_FILL_FORM, 1);
+            GM_setValue(CHARA_DATA, JSON.stringify(charaData));
+            // @TODO 不使用定时器
+            await sleep(200);
+            GM_openInTab(`${bgmHost}/character/new`);
+        }
     });
 }
 
@@ -4435,7 +5027,7 @@ if (GM_registerMenuCommand) {
     GM_registerMenuCommand('设置 Bangumi 域名', setDomain, 'b');
     GM_registerMenuCommand('新建条目页面(http 或者 https)', setProtocol, 'h');
 }
-const init = () => __awaiter(void 0, void 0, void 0, function* () {
+const init = async () => {
     const host = window.location.hostname;
     const modelArr = findModelByHost(host);
     if (modelArr && modelArr.length) {
@@ -4453,5 +5045,5 @@ const init = () => __awaiter(void 0, void 0, void 0, function* () {
     else if (host === 'www.getchu.com') {
         getchu.init(getchuGameModel);
     }
-});
+};
 init();
