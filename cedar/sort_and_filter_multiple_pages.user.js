@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.2.1
+// @version     2.2.2
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -836,7 +836,10 @@ class RakuenParser {
   static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
     if(!/subject|group/.test(el.id)) return Infinity; // 不是小组帖子或条目讨论 自然没有UserId
-    let uid = el.querySelector('.avatarNeue').style.backgroundImage.match(/\d+\.jpg/);
+    let avatar = el.querySelector('.avatarNeue');
+    let uid = avatar.dataset.user;
+    if (/^\d+$/.test(uid)) return parseInt(uid);
+    uid = avatar.style.backgroundImage.match(/\d+\.jpg/);
     if (uid) return parseInt(uid.toString().slice(0,-4));
     //fail-to-parse user
     el.classList.add('unknown-registration-time');
