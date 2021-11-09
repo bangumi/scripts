@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.7
+// @version     0.4.8
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -226,7 +226,7 @@ function htmlToElement(html) {
 }
 function genAnonymousLinkText(url, text) {
     return `<a
-      _target="blank"
+      target="_blank"
       href="${url}"
       rel="noopener noreferrer nofollow">
       ${text}</a>
@@ -1377,6 +1377,88 @@ dmmGameCharaModel.itemList.push({
     category: 'crt_cover',
 });
 
+const adultComicModel = {
+    key: 'adultcomic',
+    description: 'adultcomic',
+    host: ['adultcomic.dbsearch.net'],
+    type: SubjectTypeId.book,
+    pageSelectors: [
+        {
+            selector: '#pankuz > ol > li:nth-child(1) > a[href$="adultcomic.dbsearch.net"]',
+        },
+    ],
+    controlSelector: {
+        selector: '#main-inner h2',
+    },
+    itemList: [],
+};
+const commonSelectors$1 = [
+    {
+        selector: '#info-table > div.info-box > dl',
+        subSelector: 'dt',
+        sibling: true,
+    },
+];
+const genSelectors = (keyWord) => commonSelectors$1.map((s) => {
+    return Object.assign(Object.assign({}, s), { keyWord });
+});
+adultComicModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '#main-inner > article > h2',
+    },
+    category: 'subject_title',
+}, 
+// 图片使用的懒加载. 在 hook 里面读取 data-src
+{
+    name: 'cover',
+    selector: [
+        {
+            selector: '#sample-image > figure > img',
+        },
+    ],
+    category: 'cover',
+}, {
+    name: 'ISBN',
+    selector: genSelectors('ISBN'),
+    category: 'ISBN',
+}, {
+    name: '发售日',
+    selector: genSelectors('発売日'),
+    category: 'date',
+    pipes: ['k', 'date'],
+}, {
+    name: '出版社',
+    selector: genSelectors('出版社'),
+}, {
+    name: '页数',
+    selector: genSelectors(['ページ']),
+    pipes: ['num'],
+}, {
+    name: '作者',
+    selector: [
+        {
+            selector: '#info-table > div.info-box .author-list > li',
+        },
+        ...genSelectors('漫画家'),
+    ],
+    category: 'creator',
+}, {
+    name: '价格',
+    selector: genSelectors('本体価格'),
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '#main-inner > article > section.comment-box.section-box > .iteminfo-box',
+            subSelector: 'h4',
+            sibling: true,
+            keyWord: ['内容紹介'],
+        },
+    ],
+    category: 'subject_summary',
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1390,6 +1472,7 @@ const configs = {
     [doubanGameEditModel.key]: doubanGameEditModel,
     [dlsiteGameModel.key]: dlsiteGameModel,
     [dmmGameModel.key]: dmmGameModel,
+    [adultComicModel.key]: adultComicModel,
 };
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
@@ -1608,6 +1691,42 @@ function dealTextByPipe(str, pipes, argsDict = {}) {
     return current.out || str;
 }
 
+const adultComicTools = {
+    hooks: {
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let newInfo = Object.assign({}, info);
+                if (info.name === '作者') {
+                    const lists = document.querySelectorAll('#info-table > div.info-box .author-list > li');
+                    if (lists && lists.length > 1) {
+                        newInfo.value = Array.from(lists)
+                            .map((node) => node.textContent.trim())
+                            .join(', ');
+                    }
+                }
+                if (newInfo) {
+                    res.push(Object.assign({}, newInfo));
+                }
+            }
+            // getCover 判断 data-src。这里就禁用了
+            // const $img = document.querySelector('#sample-image > figure > img');
+            // if ($img) {
+            //   const info: SingleInfo = {
+            //     category: 'cover',
+            //     name: 'cover',
+            //     value: {
+            //       url: $img.getAttribute('data-src'),
+            //       dataUrl: $img.getAttribute('data-src'),
+            //     },
+            //   };
+            //   res.push(info);
+            // }
+            return res;
+        },
+    },
+};
+
 const amazonUtils = {
     dealTitle(str) {
         str = str.trim().split('\n')[0].trim();
@@ -1795,6 +1914,10 @@ async function getCover($d, site) {
     }
     else if ($d.tagName.toLowerCase() === 'img') {
         url = $d.getAttribute('src');
+        const dataSrc = $d.getAttribute('data-src');
+        if (dataSrc) {
+            url = dataSrc;
+        }
     }
     if (!url)
         return;
@@ -2433,6 +2556,7 @@ const sitesFuncDict = {
     douban_game_edit: doubanGameEditTools,
     dlsite_game: dlsiteTools,
     dmm_game: dmmTools,
+    adultcomic: adultComicTools,
 };
 // 存储新建角色的钩子函数和 filters
 const charaFuncDict = {
