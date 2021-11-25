@@ -34,16 +34,16 @@ GM_addStyle ( `
 ` );
 
 
-var STATUS = ['wishes', 'collections', 'doings'];
+var STATUS = ['wishes', 'collections', 'doings', 'on_hold', 'dropped'];
 
 function getStatusWords() {
     var t = $('.focus.chl').text().trim();
     var a_dict = {
-        '动画': {'doings': '在看', 'collections': '看过', 'wishes': '想看'},
-        '书籍': {'doings': '在读', 'collections': '读过', 'wishes': '想读'},
-        '音乐': {'doings': '在听', 'collections': '听过', 'wishes': '想听'},
-        '游戏': {'doings': '在玩', 'collections': '玩过', 'wishes': '想玩'},
-        '三次元': {'doings': '在看', 'collections': '看过', 'wishes': '想看'}
+        '动画': {'doings': '在看', 'collections': '看过', 'wishes': '想看', 'on_hold':'搁置', 'dropped':'抛弃'},
+        '书籍': {'doings': '在读', 'collections': '读过', 'wishes': '想读', 'on_hold':'搁置', 'dropped':'抛弃'},
+        '音乐': {'doings': '在听', 'collections': '听过', 'wishes': '想听', 'on_hold':'搁置', 'dropped':'抛弃'},
+        '游戏': {'doings': '在玩', 'collections': '玩过', 'wishes': '想玩', 'on_hold':'搁置', 'dropped':'抛弃'},
+        '三次元': {'doings': '在看', 'collections': '看过', 'wishes': '想看', 'on_hold':'搁置', 'dropped':'抛弃'},
     };
     if (a_dict.hasOwnProperty(t)) {
         return a_dict[t];
