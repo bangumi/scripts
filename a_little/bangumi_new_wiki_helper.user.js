@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.8
+// @version     0.4.9
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -490,6 +490,9 @@ amazonSubjectModel.itemList.push({
             subSelector: 'h3',
             sibling: true,
             keyWord: ['内容紹介', '内容'],
+        },
+        {
+            selector: '#bookDescription_feature_div',
         },
         {
             selector: '#bookDesc_iframe',
@@ -1250,6 +1253,14 @@ const arrDict$1 = [
         name: '剧本',
         key: ['シナリオ', '剧情'],
     },
+    // {
+    //   name: '声优',
+    //   key: ['声優', '声优'],
+    // },
+    // {
+    //   name: '音乐',
+    //   key: ['音乐', '音楽'],
+    // },
 ];
 const configArr$3 = arrDict$1.map((obj) => {
     const r = {
@@ -1358,6 +1369,16 @@ const dmmGameCharaModel = {
         {
             selector: '#title',
         },
+        // {
+        //   selector: '#if_view',
+        //   isIframe: true,
+        //   subSelector: 'body',
+        //   nextSelector: {
+        //     selector: '.guide-content',
+        //     subSelector: 'guide-capt',
+        //     keyWord: 'キャラクター',
+        //   },
+        // },
     ],
     itemList: [],
 };
@@ -1477,6 +1498,8 @@ const configs = {
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
     [dmmGameCharaModel.key]: dmmGameCharaModel,
+    // @TODO getchu chara
+    // [getchuCharaModel.key]: getchuCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1556,7 +1579,7 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
         'm+': date.getMinutes(),
         's+': date.getSeconds(),
         'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(),
+        S: date.getMilliseconds(), //毫秒
     };
     if (/(y+)/i.test(fmt)) {
         fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
@@ -3705,6 +3728,7 @@ const notyf = new Notyf({
     types: [
         {
             type: 'success',
+            // background: '#F09199',
         },
         {
             type: 'info',
