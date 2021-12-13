@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.9
+// @version     0.4.10
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -492,7 +492,7 @@ amazonSubjectModel.itemList.push({
             keyWord: ['内容紹介', '内容'],
         },
         {
-            selector: '#bookDescription_feature_div',
+            selector: '#bookDescription_feature_div .a-expander-content',
         },
         {
             selector: '#bookDesc_iframe',
@@ -1288,15 +1288,21 @@ dmmGameModel.itemList.push({
             sibling: true,
         },
     ],
-}, ...configArr$3, {
-    name: 'cover',
-    selector: [
-        Object.assign(Object.assign({}, contentIframe), { nextSelector: {
-                selector: '#guide-head > img',
-            } }),
-    ],
-    category: 'cover',
-}, {
+}, ...configArr$3, 
+// 部分页面的图片是预览图，不少封面。所以改在 hook 里面，提取图片。
+// {
+//   name: 'cover',
+//   selector: [
+//     {
+//       ...contentIframe,
+//       nextSelector: {
+//         selector: '#guide-head > img',
+//       },
+//     },
+//   ],
+//   category: 'cover',
+// },
+{
     name: '游戏简介',
     selector: [
         Object.assign(Object.assign({}, contentIframe), { nextSelector: {
@@ -1802,6 +1808,10 @@ const amazonJpBookTools = {
                         newInfo = null;
                     }
                 }
+                else if (info.name === '价格') {
+                    let val = (info.value || '').replace(/来自|より/, '').trim();
+                    newInfo.value = val;
+                }
                 if (newInfo) {
                     res.push(Object.assign({}, newInfo));
                 }
@@ -2020,6 +2030,23 @@ const dmmTools = {
                             },
                         });
                     }
+                }
+                else {
+                    const coverInfo = await getWikiItem({
+                        name: 'cover',
+                        selector: [
+                            {
+                                selector: '#if_view',
+                                isIframe: true,
+                                subSelector: 'body',
+                                nextSelector: {
+                                    selector: '#guide-head > img',
+                                },
+                            },
+                        ],
+                        category: 'cover',
+                    }, 'dmm_game');
+                    coverInfo && res.push(coverInfo);
                 }
             }
             return res;
