@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Bangumi.tv Topic Reversal
+// @name         Bangumi.tv Topic Comments Reversal
 // @namespace    https://github.com/bangumi/scripts
 // @version      1.0.0
 // @description  倒序显示讨论串
