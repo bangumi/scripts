@@ -57,7 +57,7 @@ function getState() {
  */
 function setState(checked) {
     const value = checked ? "true" : "false";
-    $.cookie(COOKIE_COMMENT_REVERSAL_STATE_KEY, value);
+    $.cookie(COOKIE_COMMENT_REVERSAL_STATE_KEY, value, { expires: new Date("3000-01-01T00:00:00Z") });
 }
 
 function reverseCommentList() {
