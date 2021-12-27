@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi.tv Topic Comments Reversal
 // @namespace    https://github.com/bangumi/scripts
-// @version      1.0.0
+// @version      1.0.1
 // @description  倒序显示讨论串
 // @icon         https://bgm.tv/img/smiles/tv/15.gif
 // @author       JarvieK
