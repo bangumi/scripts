@@ -8,7 +8,7 @@
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.3.1';
+const CURRENT_VERSION = '1.3.3';
 
 const ACTIONS = [
     'wishes',
