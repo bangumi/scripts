@@ -281,7 +281,7 @@ function listRequest(action, page = 1, limit = settings[action + 'Num']) {
             }
             tops[action].push({
                 uid: $(this).find('a').attr('href').split('/')[2],
-                img: $(this).find('img').attr('src').replace('/m/', '/s/'),
+                img: $(this).find('.userImage > span').attr('style').replace(/background-image:url\(\'(.+)\'\)/, '$1').replace('/l/', '/s/'),
                 name: $(this).find('a').text(),
                 time: $(this).find('p.info').text(),
                 star: starInfo,
