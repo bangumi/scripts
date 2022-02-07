@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.10
+// @version     0.4.12
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -1253,14 +1253,6 @@ const arrDict$1 = [
         name: '剧本',
         key: ['シナリオ', '剧情'],
     },
-    // {
-    //   name: '声优',
-    //   key: ['声優', '声优'],
-    // },
-    // {
-    //   name: '音乐',
-    //   key: ['音乐', '音楽'],
-    // },
 ];
 const configArr$3 = arrDict$1.map((obj) => {
     const r = {
@@ -1375,16 +1367,6 @@ const dmmGameCharaModel = {
         {
             selector: '#title',
         },
-        // {
-        //   selector: '#if_view',
-        //   isIframe: true,
-        //   subSelector: 'body',
-        //   nextSelector: {
-        //     selector: '.guide-content',
-        //     subSelector: 'guide-capt',
-        //     keyWord: 'キャラクター',
-        //   },
-        // },
     ],
     itemList: [],
 };
@@ -1504,8 +1486,6 @@ const configs = {
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
     [dmmGameCharaModel.key]: dmmGameCharaModel,
-    // @TODO getchu chara
-    // [getchuCharaModel.key]: getchuCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1585,7 +1565,7 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
         'm+': date.getMinutes(),
         's+': date.getSeconds(),
         'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(), //毫秒
+        S: date.getMilliseconds(),
     };
     if (/(y+)/i.test(fmt)) {
         fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
@@ -1761,8 +1741,23 @@ const amazonUtils = {
         str = str.trim().split('\n')[0].trim();
         // str = str.split(/\s[(（][^0-9)）]+?[)）]/)[0]
         // 去掉尾部括号的内容, (1) （1） 这类不处理
-        return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
-        // return str.replace(/(?:(\d+))(\)|）).*$/, '$1$2').trim();
+        const textList = [
+            '\\([^0-9]+?\\)$',
+            '（[^0-9]+?）$',
+            '\\(.+?\\d+.+?\\)$',
+            '（.+?\\d+.+?）$',
+        ]; // 去掉多余的括号信息
+        str = str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
+        // return str.replace(/\s[(（][^0-9)）]+?[)）]$/g, '').trim();
+        return str;
+    },
+    // 获取 URL 的 dp
+    getUrlDp(str) {
+        const m = str.match(/\/dp\/(.*?)\//);
+        if (m) {
+            return m[1];
+        }
+        return '';
     },
 };
 const amazonJpBookTools = {
@@ -1792,6 +1787,28 @@ const amazonJpBookTools = {
                 $div.appendChild($txt);
                 $div.style.padding = '6px 0';
                 $t.insertAdjacentElement('afterend', $div);
+                // 没有简介时，使用 kindle 版本的介绍
+                const $desc = document.querySelector('#bookDescription_feature_div .a-expander-content');
+                if (!$desc) {
+                    const btns = document.querySelectorAll('#tmmSwatches ul > li.swatchElement .a-button-text');
+                    if (btns && btns.length) {
+                        const url = Array.from(btns)
+                            .map((a) => a.href)
+                            .filter((h) => h.match(/^http/))[0];
+                        if (url) {
+                            return {
+                                payload: {
+                                    auxSite: {
+                                        url,
+                                        prefs: {
+                                            originNames: ['ISBN', '名称'],
+                                        },
+                                    },
+                                },
+                            };
+                        }
+                    }
+                }
             }
             return true;
         },
@@ -1957,9 +1974,9 @@ async function getCover($d, site) {
     try {
         // 在其它网站上获取的相对路径的链接
         // @TODO 这里临时使用的全局变量来处理
-        if (window._fetch_url_bg && !/^https?:/.test(url)) {
-            const urlObj = new URL(window._fetch_url_bg);
-            url = `${urlObj.origin}/${url.replace(/^\.?\/?/, '')}`;
+        if (!/^https?:/.test(url)) {
+            let baseUrl = window._fetch_url_bg || location.href;
+            url = new URL(url, baseUrl).href;
         }
         // 跨域的图片不能用这种方式
         // dataUrl = convertImgToBase64($d as any);
@@ -3755,7 +3772,6 @@ const notyf = new Notyf({
     types: [
         {
             type: 'success',
-            // background: '#F09199',
         },
         {
             type: 'info',
@@ -4612,6 +4628,10 @@ async function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
     const rawText = await fetchText(url);
     const $doc = new DOMParser().parseFromString(rawText, 'text/html');
     const $form = $doc.querySelector('form[name=img_upload');
+    if (!$form) {
+        console.error('获取封面表单失败');
+        return;
+    }
     await sendFormImg($form, dataUrl);
 }
 async function searchCVByName(name, charaId = '') {
@@ -4862,6 +4882,7 @@ function initNewSubject(wikiInfo) {
     insertFillFormBtn($t, async (e) => {
         await fillInfoBox(wikiInfo);
     }, () => {
+        var _a;
         // 清除默认值
         $qa('input[name=platform]').forEach((element) => {
             element.checked = false;
@@ -4874,6 +4895,8 @@ function initNewSubject(wikiInfo) {
         $q('#columnInSubjectA [name=subject_title]').value = '';
         // @ts-ignore
         $q('#subject_summary').value = '';
+        // 移除上传图片
+        (_a = $q('.e-wiki-cover-container')) === null || _a === void 0 ? void 0 : _a.remove();
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
     const dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
@@ -4926,6 +4949,7 @@ function initNewCharacter(wikiInfo, subjectId) {
     insertFillFormBtn($t, async (e) => {
         await fillInfoBox(wikiInfo);
     }, () => {
+        var _a;
         const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
         $wikiMode && $wikiMode.click();
         // @ts-ignore
@@ -4934,6 +4958,8 @@ function initNewCharacter(wikiInfo, subjectId) {
         $q('#columnInSubjectA #crt_name').value = '';
         // @ts-ignore
         $q('#crt_summary').value = '';
+        // 移除上传图片
+        (_a = $q('.e-wiki-cover-container')) === null || _a === void 0 ? void 0 : _a.remove();
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'crt_cover')[0];
     let dataUrl = '';
