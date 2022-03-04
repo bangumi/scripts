@@ -37,7 +37,7 @@ function createWordCounter(dom = document) {
   let wrapper = document.createElement('div');
   wrapper.style.fontWeight = 'bold';
   wrapper.append(wordcounter, '/', limit);
-  dom.querySelector('textarea').insertAdjacentElement('afterend', wrapper);
+  comment.insertAdjacentElement('afterend', wrapper);
 
   comment.addEventListener('input', e => {
     let count = e.target.value.length;
