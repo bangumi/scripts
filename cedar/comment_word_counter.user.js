@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.5
+// @version     1.5.1
 // @description 统计简评字数
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/$/
