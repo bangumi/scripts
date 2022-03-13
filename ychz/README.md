@@ -1,6 +1,6 @@
 # [ychz](https://bgm.tv/user/ychz)
 
-## [目录页多标签筛选](naiveFilter.user.js?raw=true)
+## [目录页多标签筛选](naiveFilter.user.js?raw=true)  
 
 [![install with tampermonkey](https://img.shields.io/badge/Install%20with-TamperMonkey-00adad.svg)](https://greasyfork.org/en/scripts/408448-%E7%95%AA%E7%BB%84%E8%AE%A1%E5%88%92-bangumi-%E7%9B%AE%E5%BD%95%E9%A1%B5%E5%A4%9A%E6%A0%87%E7%AD%BE%E7%AD%9B%E9%80%89)
 [![enable in dev](https://img.shields.io/badge/Enable-超合金组件-F09199.svg)](https://bangumi.tv/dev/app/2036)
