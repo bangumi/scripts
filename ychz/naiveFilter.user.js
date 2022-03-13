@@ -1,16 +1,17 @@
 // ==UserScript==
 // @name         番组计划(bangumi)目录页多标签筛选
 // @namespace    http://tampermonkey.net/
-// @version      0.1.3.1
+// @version      0.1.3.2
 // @description  filter space separated tags in comment box on bangumi index page
 // @author       oscardoudou
 // @include      /^https?://(bangumi|bgm).tv/index.*$/
 // @icon         https://bangumi.tv/img/favicon.ico
 // @require      https://code.jquery.com/ui/1.12.1/jquery-ui.js
-// @resource     jqueryuicss https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css
 // @grant        unsafeWindow
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
+// @grant        GM.setValue
+// @grant        GM.getValue
 // @grant        GM_setValue
 // @grant        GM_getValue
 
@@ -23,11 +24,10 @@ GM_addStyle(".searchLabel { height: 25px; min-width: 100%}")
 GM_addStyle(".searchInput { position: relative; width: 80%; top: 0; left: 0; margin: 0; height: 25px !important; border-radius: 4px; background-color: white !important; outline: 0px solid white !important; border: 0p}")
 GM_addStyle("#browserTools { height: 55px;}")
 GM_addStyle(".grey {font-size: 10px; color: #999;}")
-var newCSS = GM_getResourceText("jqueryuicss");
-GM_addStyle (newCSS);
 
 //global var
-var $ = unsafeWindow.jQuery;
+//var $ = unsafeWindow.jQuery;
+let GM4 = (typeof GM.getValue === 'undefined') ? false : true;
 if (window.itemList == undefined) {
    window.itemList = $('#browserItemList')[0].children
    window.comments = $('#browserItemList #comment_box .text')
@@ -57,7 +57,9 @@ const maxInfoTipTagLength = 10
 let indexUrl = window.location.href
 let indexId = indexUrl.substring(indexUrl.lastIndexOf("/") + 1, indexUrl.length);
 let persistKey = `bgm_index_${indexId}_tags`
-let tagList = GM_getValue(persistKey) || []
+//let tagList = getStorage(persistKey, [])
+var tagList = []
+
 
 //create hash from string
 Object.defineProperty(String.prototype, 'hashCode', {
@@ -73,7 +75,10 @@ Object.defineProperty(String.prototype, 'hashCode', {
 });
 
 (function() {
-    'use strict';
+    getStorage(persistKey, []).then(x => main())
+})();
+
+function main(){
      for ( let i = 0 ; i < infotips.length ; i++){
          process(comments[i], true)
          process(infotips[i], false)
@@ -82,8 +87,30 @@ Object.defineProperty(String.prototype, 'hashCode', {
     addSideSummary("标签汇总",true)
     addSideSummary("时间/制作标签汇总",false)
     //reapply previous used filter/tags
+    console.log("tagList:"+ tagList)
     tagList.forEach(tag => filterTag(tag))
-})();
+}
+
+//to use GM.getValue or GM.setValue you have to wrap it in async await or use the value in callback then
+async function getStorage(key, defaultValue){
+    if(!GM4){
+        console.log('not GM4')
+        tagList = GM_getValue(key, defaultValue)
+    }else{
+//         GM.getValue(key, defaultValue).then(x => {tagList = x; console.log("tagList: "+tagList); main()});
+        tagList = await GM.getValue(key, defaultValue)
+    }
+}
+
+//to use GM.getValue or GM.setValue you have to wrap it in async await or use the value in callback then
+async function setStorage(key, value){
+    if(!GM4){
+        console.log('not GM4')
+        GM_setValue(key, value)
+    }else{
+        await GM.setValue(key, value)
+    }
+}
 
 
 //use for both comment and infotip
@@ -232,7 +259,7 @@ function filterTag(tag){
     if(tagList.indexOf(tag) == -1) {
         tagList.push(tag)
     }
-    GM_setValue(persistKey, tagList)
+    setStorage(persistKey, tagList)
 }
 
 function removeFilter(tag){
@@ -251,7 +278,7 @@ function removeFilter(tag){
     if(index > -1){
         tagList.splice(index, 1)
     }
-    GM_setValue(persistKey, tagList)
+    setStorage(persistKey, tagList)
 }
 
 function getActiveFilterIds(){
@@ -272,4 +299,5 @@ function itemQualified(activeFitlerIds, comment, infotip){
     }
     return true;
 }
+
 
