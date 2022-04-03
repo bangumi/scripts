@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.12
+// @version     0.4.13
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -26,10 +26,16 @@
 // ==/UserScript==
 
 
-/**
- * 为页面添加样式
- * @param style
- */
+let contextDom = null;
+function setCtxDom(dom) {
+    contextDom = dom;
+}
+function getCtxDom() {
+    return contextDom;
+}
+function clearCtxDom() {
+    setCtxDom(undefined);
+}
 /**
  * 获取节点文本
  * @param elem
@@ -55,8 +61,9 @@ function getInnerText(elem) {
  * @param {string} selector
  */
 function $q(selector) {
-    if (window._parsedEl) {
-        return window._parsedEl.querySelector(selector);
+    const ctxDom = getCtxDom();
+    if (ctxDom) {
+        return ctxDom.querySelector(selector);
     }
     return document.querySelector(selector);
 }
@@ -65,8 +72,9 @@ function $q(selector) {
  * @param {string} selector
  */
 function $qa(selector) {
-    if (window._parsedEl) {
-        return window._parsedEl.querySelectorAll(selector);
+    const ctxDom = getCtxDom();
+    if (ctxDom) {
+        return ctxDom.querySelectorAll(selector);
     }
     return document.querySelectorAll(selector);
 }
@@ -1239,7 +1247,7 @@ const arrDict$1 = [
     {
         name: '发行日期',
         key: ['配信開始日'],
-        categrory: 'date',
+        category: 'date',
     },
     {
         name: '游戏类型',
@@ -1259,8 +1267,8 @@ const configArr$3 = arrDict$1.map((obj) => {
         name: obj.name,
         selector: Object.assign({ keyWord: obj.key }, commonSelector$3),
     };
-    if (obj.categrory) {
-        r.category = obj.categrory;
+    if (obj.category) {
+        r.category = obj.category;
     }
     return r;
 });
@@ -1468,6 +1476,99 @@ adultComicModel.itemList.push({
     category: 'subject_summary',
 });
 
+const moepedia = {
+    key: 'moepedia',
+    description: 'moepedia.net',
+    host: ['moepedia.net'],
+    type: SubjectTypeId.game,
+    pageSelectors: [
+        {
+            selector: '.gme-Contents > .gme-Body',
+        },
+    ],
+    controlSelector: [
+        {
+            selector: '.body-top_info_title > h2',
+        },
+    ],
+    itemList: [],
+};
+const topTableSelector = {
+    selector: 'body > div.st-Container.visible > div.gme-Contents > div > div > div.body-top > div.body-top_table.body-table > table',
+    subSelector: 'tr > th',
+    sibling: true,
+};
+const middleTableSelector = {
+    selector: 'body > div.st-Container.visible > div.gme-Contents > div > div > div.body-middle',
+    subSelector: 'tr > th',
+    sibling: true,
+};
+moepedia.itemList.push({
+    name: '游戏名',
+    selector: {
+        selector: 'div.gme-Contents h2',
+    },
+    category: 'subject_title',
+}, {
+    name: '发行日期',
+    selector: [
+        Object.assign(Object.assign({}, topTableSelector), { keyWord: '発売日' }),
+    ],
+    pipes: ['date'],
+}, {
+    name: '售价',
+    selector: [
+        Object.assign(Object.assign({}, topTableSelector), { keyWord: '価格' }),
+    ],
+    pipes: ['p'],
+}, {
+    name: 'website',
+    selector: [
+        {
+            selector: 'body > div.st-Container.visible > div.gme-Contents > div > div > div.body-top > div.body-top_table.body-table > div > a',
+        },
+    ],
+    category: 'website',
+}, {
+    name: 'cover',
+    selector: [
+        {
+            selector: 'div.gme-Contents div.body-top > div.body-top_image img',
+        },
+    ],
+    category: 'cover',
+}, {
+    name: '原画',
+    selector: Object.assign(Object.assign({}, middleTableSelector), { keyWord: ['原画'] }),
+}, {
+    name: '开发',
+    selector: Object.assign(Object.assign({}, middleTableSelector), { keyWord: ['ブランド'] }),
+}, {
+    name: '剧本',
+    selector: Object.assign(Object.assign({}, middleTableSelector), { keyWord: ['シナリオ'] }),
+}, {
+    name: '游戏类型',
+    selector: Object.assign(Object.assign({}, middleTableSelector), { keyWord: ['ジャンル'] }),
+}, {
+    name: '音乐',
+    selector: Object.assign(Object.assign({}, middleTableSelector), { keyWord: ['音楽'] }),
+}, {
+    name: '主题歌演唱',
+    selector: Object.assign(Object.assign({}, middleTableSelector), { keyWord: ['歌手'] }),
+});
+moepedia.defaultInfos = [
+    {
+        name: '平台',
+        value: 'PC',
+        category: 'platform',
+    },
+    {
+        name: 'subject_nsfw',
+        value: '1',
+        category: 'checkbox',
+    },
+];
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1482,6 +1583,7 @@ const configs = {
     [dlsiteGameModel.key]: dlsiteGameModel,
     [dmmGameModel.key]: dmmGameModel,
     [adultComicModel.key]: adultComicModel,
+    [moepedia.key]: moepedia,
 };
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
@@ -1582,7 +1684,7 @@ function dealDate(dataStr) {
     let l = [];
     if (/\d{4}年\d{1,2}月(\d{1,2}日?)?/.test(dataStr)) {
         l = dataStr
-            .replace('日', '')
+            .replace(/日.*$/, '')
             .split(/年|月/)
             .filter((i) => i);
     }
@@ -2478,6 +2580,32 @@ const getchuCharaTools = {
     },
 };
 
+function dealTitle(str) {
+    str = str.trim().split('\n')[0];
+    return str.replace(/\s[^ ]*?(スペシャルプライス版|限定版|通常版|廉価版|復刻版|初回.*?版|描き下ろし|パッケージ版).*?$|＜.*＞$/g, '');
+}
+const moepediaTools = {
+    hooks: {
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let val = info.value;
+                if (info.name === '游戏名') {
+                    val = dealTitle(val);
+                }
+                else if (['原画', '剧本', '音乐', '主题歌演唱', '游戏类型'].includes(info.name)) {
+                    val = val.replace(/\n\s*/g, ', ');
+                }
+                else if (info.name === '售价') {
+                    val = val.replace(/.*¥/, '¥');
+                }
+                res.push(Object.assign(Object.assign({}, info), { value: val }));
+            }
+            return res;
+        },
+    },
+};
+
 function getSteamdbURL(href) {
     var _a;
     href = href || (location === null || location === void 0 ? void 0 : location.href);
@@ -2522,7 +2650,7 @@ const steamTools = {
             category: 'date',
             dealFunc(str) {
                 if (/年/.test(str)) {
-                    return dealDate(str);
+                    return dealDate(str.replace(/\s/g, ''));
                 }
                 return formatDate(str);
             },
@@ -2624,6 +2752,7 @@ const sitesFuncDict = {
     dlsite_game: dlsiteTools,
     dmm_game: dmmTools,
     adultcomic: adultComicTools,
+    moepedia: moepediaTools,
 };
 // 存储新建角色的钩子函数和 filters
 const charaFuncDict = {
@@ -2739,14 +2868,9 @@ async function getWikiItem(infoConfig, site) {
     }
 }
 async function getWikiData(siteConfig, el) {
-    if (el) {
-        window._parsedEl = el;
-    }
-    else {
-        window._parsedEl = null;
-    }
+    el ? setCtxDom(el) : clearCtxDom();
     const r = await Promise.all(siteConfig.itemList.map((item) => getWikiItem(item, siteConfig.key)));
-    delete window._parsedEl;
+    clearCtxDom();
     const defaultInfos = siteConfig.defaultInfos || [];
     let rawInfo = r.filter((i) => i);
     const hookRes = await getHooks(siteConfig, 'afterGetWikiData')(rawInfo, siteConfig);
@@ -2756,14 +2880,9 @@ async function getWikiData(siteConfig, el) {
     return [...rawInfo, ...defaultInfos];
 }
 async function getCharaData(model, el) {
-    if (el) {
-        window._parsedEl = el;
-    }
-    else {
-        window._parsedEl = null;
-    }
+    el ? setCtxDom(el) : clearCtxDom();
     const r = await Promise.all(model.itemList.map((item) => getWikiItem(item, model.key)));
-    delete window._parsedEl;
+    clearCtxDom();
     const defaultInfos = model.defaultInfos || [];
     let rawInfo = r.filter((i) => i);
     const hookRes = await getCharaHooks(model, 'afterGetWikiData')(rawInfo, model, el);
