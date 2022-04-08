@@ -192,8 +192,8 @@ const LANG_TO_REGIONS = {
     'en': [],
 }
 
-async function update({ path, version }) {
-    const items = (await Promise.all(path.split(',').map(path => request(path)))).reduce((r, it) => r.concat(it.items), []);
+async function update({ paths, version }) {
+    const items = (await Promise.all(paths.split(',').map(path => request(path)))).reduce((r, it) => r.concat(it.items), []);
 
     const siteInfoMap = await request('https://bgmlist.com/api/v1/bangumi/site');
     // 不需要bangumi的站点信息, 删掉它
@@ -261,7 +261,7 @@ async function update({ path, version }) {
         }
     }
     GM_setValue('bgmlist', bgmlist);
-    GM_setValue('path', path);
+    GM_setValue('paths', paths);
     GM_setValue('version', version);
 
     showTbWindow('bgmlist 数据更新成功! 请<a class="l" href="javascript:location.reload();">刷新页面</a><br>',
@@ -279,11 +279,11 @@ function checkUpdate() {
             const version = archive.version
 
             // 拉取最近两年的数据
-            const path = archive.items.slice(-8).map(it => `https://bgmlist.com/api/v1/bangumi/archive/${it}`).join(',');
-            const oldPath = GM_getValue('path');
+            const paths = archive.items.slice(-8).map(it => `https://bgmlist.com/api/v1/bangumi/archive/${it}`).join(',');
+            const oldPaths = GM_getValue('paths');
             const oldVersion = GM_getValue('version');
-            if (!oldPath || !oldVersion || path != oldPath || version != oldVersion || DEBUG) {
-                update({ path: path, version: version });
+            if (!oldPaths || !oldVersion || paths != oldPaths || version != oldVersion || DEBUG) {
+                update({ paths: paths, version: version });
             }
             GM_setValue('lastCheckUpdate', new Date().getTime());
         })
