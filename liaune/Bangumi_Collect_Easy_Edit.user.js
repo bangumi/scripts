@@ -5,7 +5,7 @@
 // @license      MIT
 // @description  在收藏页面点击“Edit”即可修改收藏条目的状态，评分，标签，评论等信息，可单项修改，随改随存。
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/\S+\/(wish|collect|do|on_hold|dropped).*
-// @version      1.4
+// @version      1.4.1
 // @grant        GM_addStyle
 // ==/UserScript==
 GM_addStyle(`
