@@ -26,6 +26,7 @@ const addOnSources = {
 ////////////////////////////////////////////////////////////////
 };
 
+const DEBUG = false;
 const TIME_ZONE = 'CN';
 // valid value: 'CN', 'JP'
 
@@ -86,7 +87,7 @@ class Bangumi {
         const $re = $(this.a).clone();
         $re.find('img').removeAttr('class');
         $re.find('span').remove();
-        $re.attr('title', this.bgm.titleCN + '\n'+ this.bgm.titleJP + '\n播放时间:\n' + this.getTime());
+        $re.attr('title', this.bgm.titleCN + '\n' + this.bgm.titleJP + '\n播放时间:\n' + this.getTime());
         $re.attr('alt', this.bgm.titleCN + '<br>' + this.bgm.titleJP);
         $re.data('onAirSite', this.bgm.onAirSite);
         return $re;
@@ -114,7 +115,7 @@ class Bangumi {
 }
 
 const myBangumis = $('#prgSubjectList > [subject_type=2] > .thumbTip')
-        .toArray().map(i => new Bangumi(i.getAttribute('subject_id'), i)).filter(i => i.bgm);
+    .toArray().map(i => new Bangumi(i.getAttribute('subject_id'), i)).filter(i => i.bgm);
 
 $('.tooltip').hide();
 $('.week:eq(1)').remove();
@@ -137,7 +138,7 @@ $week.each(function () {
     $div.html('');
     const weekDay = WEEK_DAY.indexOf(this.classList[2]); // <li class="clearit week Sat">
     myBangumis.filter(i => i.bgm['weekDay' + TIME_ZONE] === weekDay && i.isInRange(lastWeekRange))
-            .forEach(i => $div.append(i.get$Html()));
+        .forEach(i => $div.append(i.get$Html()));
 });
 
 function rmTbWindow() {
@@ -184,64 +185,129 @@ function getLast(obj) {
     return obj[last];
 }
 
-function createIndexOnBgmId(bgmlistOriginJson) {
-    const origin = JSON.parse(bgmlistOriginJson);
-    const bgmlist = {};
-    for (let i in origin) {
-        bgmlist[origin[i].bgmId] = origin[i];
-    }
-    return bgmlist;
+const LANG_TO_REGIONS = {
+    'ja': ['JP'],
+    'zh-Hans': ['CN'],
+    'zh-Hant': ['TW', 'MO', 'HK'],
+    'en': [],
 }
 
-function update({path, version}) {
-    GM_xmlhttpRequest({
-        method: 'GET',
-        url: path,
-        data: {"__t": Date.now()},
-        onload: function(response) {
-            if (response.status === 200) {
-                GM_setValue('bgmlist', createIndexOnBgmId(response.responseText));
-                GM_setValue('path', path);
-                GM_setValue('version', version);
-                showTbWindow('bgmlist 数据更新成功! 请<a class="l" href="javascript:location.reload();">刷新页面</a><br>',
-                        'left:80%;top:20px;width:18%;');
-                setTimeout(rmTbWindow, 5000);
-            } else {
-                showTbWindow(`Error, status code: ${response.status}<br>`,
-                        'left:80%;top:20px;width:18%;');
-                setTimeout(rmTbWindow, 5000);
+async function update({ path, version }) {
+    const items = (await Promise.all(path.split(',').map(path => request(path)))).reduce((r, it) => r.concat(it.items), []);
+
+    const siteInfoMap = await request('https://bgmlist.com/api/v1/bangumi/site');
+    // 不需要bangumi的站点信息, 删掉它
+    delete siteInfoMap.bangumi;
+
+    const bgmlist = {};
+    for (let item of items) {
+        for (const site of item.sites) {
+            if (site.site == 'bangumi') {
+                const titleTranslate = {
+                    [item.lang]: [item.title],
+                    ...item.titleTranslate,
+                }
+                const allSites = [
+                    ...item.sites
+                        .filter(it => it.site !== 'bangumi')
+                        .map((site) => ({
+                            site: site.site,
+                            id: site.id,
+                            url: site.url,
+                            begin: site.begin,
+                            end: site.end ?? '',
+                            broadcast: site.broadcast,
+                            regions: site.regions ?? siteInfoMap[site.site]?.regions ?? [],
+                        })),
+                    {
+                        site: 'origin',
+                        id: undefined,
+                        url: undefined,
+                        begin: item.begin,
+                        end: item.end ?? '',
+                        broadcast: item.broadcast,
+                        // 为空的regions是特殊值, 表示该site支持所有区域
+                        regions: LANG_TO_REGIONS[item.lang] ?? [],
+                    },
+                ]
+                const cnSites = allSites.filter(it => it.regions.length == 0 || it.regions.some(r => ['CN', 'TW', 'MO', 'HK'].includes(r)));
+                const jpSites = allSites.filter(it => it.regions.length == 0 || it.regions.includes('JP'));
+                const getBeginDate = (sites) => sites.filter(it => it.broadcast || it.begin).map(it => new Date(it.broadcast?.split('/')[1] ?? it.begin)).sort((a, b) => a - b)[0];
+                const cnDate = getBeginDate(cnSites);
+                const jpDate = getBeginDate(jpSites);
+                const getWeek = (date) => WEEK_DAY.indexOf(date.toDateString().substr(0, 3))
+                const getTime = (date) => `${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}`;
+
+                // 将新的播放信息转换成旧的播放信息...
+                // 参考: https://github.com/bangumi-data/bangumi-data/blob/master/CONTRIBUTING.md/#%E7%95%AA%E7%BB%84%E6%95%B0%E6%8D%AE
+                bgmlist[site.id] = {
+                    _source: DEBUG ? item : undefined,
+                    titleCN: [...(titleTranslate['zh-Hans'] ?? []), ...(titleTranslate['zh-Hant'] ?? [])]?.join('/') ?? '',
+                    titleJP: titleTranslate['ja']?.join('/') ?? '',
+                    titleEn: titleTranslate['en']?.join('/') ?? '',
+                    weekDayJP: getWeek(jpDate),
+                    weekDayCN: getWeek(cnDate ?? jpDate),
+                    timeJP: getTime(jpDate),
+                    timeCN: cnDate != null ? getTime(cnDate) : '',
+                    onAirSite: item.sites.map((site) => site.url ?? siteInfoMap[site.site]?.urlTemplate.replace('{{id}}', site.id)).filter(it => it),
+                    officalSite: item.officalSite,
+                    bgmId: +site.id,
+                    showDate: item.begin,
+                    endDate: item.end,
+                    newBgm: false,
+                };
+                break;
             }
         }
-    });
+    }
+    GM_setValue('bgmlist', bgmlist);
+    GM_setValue('path', path);
+    GM_setValue('version', version);
+
+    showTbWindow('bgmlist 数据更新成功! 请<a class="l" href="javascript:location.reload();">刷新页面</a><br>',
+        'left:80%;top:20px;width:18%;');
+    setTimeout(rmTbWindow, 5000);
 }
 
 function checkUpdate() {
     const lastCheckUpdate = GM_getValue('lastCheckUpdate') || 0;
-    if (new Date().getTime() - lastCheckUpdate < CHECK_UPDATE_INTERVAL) {
+    if (new Date().getTime() - lastCheckUpdate < CHECK_UPDATE_INTERVAL && !DEBUG) {
         return;
     }
-    GM_xmlhttpRequest({
-        method: 'GET',
-        url: 'https://bgmlist.com/tempapi/archive.json',
-        data: {"__t": Date.now()},
-        onload: function (response) {
-            if (response.status === 200) {
-                const archive = JSON.parse(response.responseText);
-                const data = archive.data;
-                const last = getLast(getLast(data));
-                const oldPath = GM_getValue('path');
-                const oldVersion = GM_getValue('version');
-                if (!oldPath || !oldVersion || last.path > oldPath || last.version > oldVersion) {
-                    update(last);
-                }
-                GM_setValue('lastCheckUpdate', new Date().getTime());
-            } else {
-                showTbWindow(`Error, status code: ${response.status}<br>`,
-                        'left:80%;top:20px;width:18%;');
-                setTimeout(rmTbWindow, 5000);
+    request('https://bgmlist.com/api/v1/bangumi/season/?start=2020q1')
+        .then((archive) => {
+            const version = archive.version
+
+            // 拉取最近两年的数据
+            const path = archive.items.slice(-8).map(it => `https://bgmlist.com/api/v1/bangumi/archive/${it}`).join(',');
+            const oldPath = GM_getValue('path');
+            const oldVersion = GM_getValue('version');
+            if (!oldPath || !oldVersion || path != oldPath || version != oldVersion || DEBUG) {
+                update({ path: path, version: version });
             }
-        }
-    });
+            GM_setValue('lastCheckUpdate', new Date().getTime());
+        })
 }
 
 setTimeout(checkUpdate, 500);
+
+function request(url, { showError = true } = {}) {
+    return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: url,
+            onload: function (response) {
+                if (response.status === 200) {
+                    resolve(JSON.parse(response.responseText));
+                } else {
+                    if (showError) {
+                        showTbWindow(`Error, status code: ${response.status}<br>`,
+                            'left:80%;top:20px;width:18%;');
+                        setTimeout(rmTbWindow, 5000);
+                    }
+                    reject(response);
+                }
+            }
+        });
+    });
+}
