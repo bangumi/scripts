@@ -31,7 +31,7 @@ class BgmCollections {
 	}
 	init(){
 		// $('#browserTools').append('<a id="saveCollect" class="chiiBtn" href="#">保存修改</a>');
-		let securitycode = $('#badgeUserPanel a[href*="logout"]')[0].href.split('/logout/')[1].toString();
+		let securitycode = document.querySelector('#browserItemList .collectBlock a:last-of-type').getAttribute('onclick').slice(-10, -2);
 		let interest = this.get_interest();
 		let itemsList = document.querySelectorAll('#browserItemList li.item');
 		itemsList.forEach( (elem, i) =>{
