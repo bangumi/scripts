@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.1.5
-// @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论以及时间线动态
+// @version     2.1.6
+// @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen(/topiclist)?(\?.*)?$/
@@ -72,7 +72,7 @@ li:hover .content-blacklist-rakuen-button {
 .content-blacklist-config .item > .match {
   flex-grow: 1;
 }
-/* 所有config按钮的共同样式 */
+/* 所有config按钮的共同样式 模仿排行榜页面右侧的“收藏”按钮样式 */
 .content-blacklist-config .action,
 .content-blacklist-config .new {
   border: 1px solid #DDDDDD;
@@ -160,6 +160,56 @@ html[data-theme='dark'] .content-blacklist-config .item {
 
 const DB_NAME = "xdcedar.contentBlacklist";
 const DB_VERSION = 1;
+
+
+/* 创建一个元素.
+ * 用法举例(紧凑写法):
+   createElement(
+     'button', {
+       id: 'confirm-button',
+       className: 'button active',
+       style: {borderRadius: '5px'}, // 或者 {'border-radius': '5px'}
+       dataset: {clicked: 'false'}
+     },
+     ['确定'], {
+       click: function(e) { ... }
+     }
+   )
+ */
+function createElement(tagName, options, subElements, eventHandlers=null) {
+  let el = document.createElement(tagName);
+  if (options) {
+    for (let opt in options) {
+      if (opt === 'dataset' || opt === 'style') {
+        for (let k in options[opt]) {
+          el[opt][k] = options[opt][k];
+        }
+      } else {
+        el[opt] = options[opt];
+      }
+    }
+  }
+  if (subElements) {
+    updateSubElements(el, subElements, false);
+  }
+  if (eventHandlers) {
+    for (let e in eventHandlers) {
+      el.addEventListener(e, eventHandlers[e]);
+    }
+  }
+  return el;
+}
+
+/* 更新 parent 元素的内容 */
+function updateSubElements(parent, subElements, isReplace) {
+  if (isReplace) parent.innerHTML = '';
+  if (!subElements) return parent;
+  if (typeof subElements === 'string') subElements = [subElements];
+  for (let e of subElements) {
+    parent.appendChild(typeof e === 'string'? document.createTextNode(e): e);
+  }
+  return parent;
+}
 
 const ID_TYPE = {
   GROUP: "id.group", //小组ID
@@ -416,6 +466,7 @@ const Parser = {
 // 部分代码参考 https://bgm.tv/dev/app/258/gadget/938
 class Database {
   constructor(db) {
+    if(! db instanceof IDBOpenDBRequest) throw new Error("wrong database instance");
     this._db = db;
   }
 
@@ -441,7 +492,7 @@ class Database {
       "subjectTitleKeywords": [...],
     }
     存储结构v1 (indexedDB)
-    DB_NAME = "xdcedar.bgmContentBlacklist"
+    DB_NAME = "xdcedar.contentBlacklist"
     {
       // 两个对象仓库 IDs, keywords. ["type", "id"]或["type", "match"] 共同作为单个的key
       "IDs": [
@@ -480,7 +531,7 @@ class Database {
       }
       localStorage.removeItem("bangumi_homepage_rakuen_blacklist");
     } else {
-      throw "Unexpected old version";
+      throw new Error("Unexpected old version");
     }
   }
 
@@ -599,7 +650,7 @@ class Model {
   }
 
   /* input: IDList 是个 object array, 里面的元素为 {type, id} 或者 null;
-   *        type 是这些id的种类, 如果type==null, 则判断时会根据IDList中各元素的type判断
+   *        type 是这些id的种类, 如果type==null, 则认为列表元素的type不唯一, 取屏蔽列表项时会取全部type的项
    *        checktype 表示比较时是否会比较type, 因为有时传进来的IDList会包含多个type
    * output: Array中符合条件的项的index
    */
@@ -855,55 +906,6 @@ async function rakuenFilter() {
 }
 
 
-/* 创建一个元素.
- * 用法举例(紧凑写法):
-   createElement(
-     'button', {
-       id: 'confirm-button',
-       className: 'button active',
-       style: {borderRadius: '5px'}, // 或者 {'border-radius': '5px'}
-       dataset: {clicked: 'false'}
-     },
-     ['确定'], {
-       click: function(e) { ... }
-     }
-   )
- */
-function createElement(tagName, options, subElements, eventHandlers=null) {
-  let el = document.createElement(tagName);
-  if (options) {
-    for (let opt in options) {
-      if (opt === 'dataset' || opt === 'style') {
-        for (let k in options[opt]) {
-          el[opt][k] = options[opt][k];
-        }
-      } else {
-        el[opt] = options[opt];
-      }
-    }
-  }
-  if (subElements) {
-    updateSubElements(el, subElements, false);
-  }
-  if (eventHandlers) {
-    for (let e in eventHandlers) {
-      el.addEventListener(e, eventHandlers[e]);
-    }
-  }
-  return el;
-}
-
-/* 更新 parent 元素的内容 */
-function updateSubElements(parent, subElements, isReplace) {
-  if (isReplace) parent.innerHTML = '';
-  if (!subElements) return parent;
-  if (typeof subElements === 'string') subElements = [subElements];
-  for (let e of subElements) {
-    parent.appendChild(typeof e === 'string'? document.createTextNode(e): e);
-  }
-  return parent;
-}
-
 
 /* 这里采用 delegation 的方式控制各个按钮
  * 设计理念见 https://javascript.info/event-delegation#delegation-example-actions-in-markup
@@ -955,7 +957,7 @@ class ConfigUI {
     let itemListEl = createElement('ul', {className: 'content-blacklist-config'}, [
       ...items.map(this._toConfigItemEl),
       createElement('li', {className: 'new'}, [
-        createElement('button', {className: 'new-button', dataset: {action: 'new'}}, ['新增'], null)
+        createElement('button', {className: 'new-button', dataset: {action: 'new'}, textContent: '新增'}, null, null)
       ])
     ]);
     return createElement(
@@ -968,7 +970,7 @@ class ConfigUI {
 
 class IDConfigUI extends ConfigUI {
   _getTitleEl() {
-    return createElement('h2', {className: 'subtitle'}, ['内容ID屏蔽列表']);
+    return createElement('h2', {className: 'subtitle', textContent: '内容ID屏蔽列表'}, null, null);
   }
 
   async _getItemsfromDB() {
@@ -1010,7 +1012,7 @@ class IDConfigUI extends ConfigUI {
          [
            createElement('form', null, [
              createElement('label', null, [
-               createElement('span', null, ['链接：']),
+               createElement('span', {textContent: '链接：'}}, null, null),
                createElement('input', {name: 'url', className: 'edit-input', val: url})
              ], null)
            ], null)
@@ -1028,10 +1030,10 @@ class IDConfigUI extends ConfigUI {
 
     let actionWrapper = createElement( 'div', {className: 'action'}, [
       // 暂时不需要跟编辑相关的按钮
-      //createElement('button', {className: 'update-button', dataset: {action: 'update'}}, ['更新']),
-      //createElement('button', {className: 'cancel-button', dataset: {action: 'cancel'}}, ['取消']),
-      //createElement('button', {className: 'edit-button', dataset: {action: 'edit'}}, ['编辑']),
-      createElement('button', {className: 'delete-button', dataset: {action: 'delete'}}, ['删除']),
+      //createElement('button', {className: 'update-button', dataset: {action: 'update'}, textContent: '更新'}),
+      //createElement('button', {className: 'cancel-button', dataset: {action: 'cancel'}, textContent: '取消'}),
+      //createElement('button', {className: 'edit-button', dataset: {action: 'edit'}, textContent: '编辑'}),
+      createElement('button', {className: 'delete-button', dataset: {action: 'delete'}, textContent: '删除'}),
     ]);
 
     let li = createElement( 'li', {className: 'item'}, [typeWrapper, idWrapper, actionWrapper]);
@@ -1060,15 +1062,15 @@ class IDConfigUI extends ConfigUI {
     let editWrapper = createElement('div', {className: 'edit-wrapper'}, [
       createElement('form', null, [
         createElement('label', null, [
-          createElement('span', null, ['链接：']),
+          createElement('span', {textContent: '链接：'}),
           createElement('input', {name: 'url', type: 'url', className: 'edit-input'})
         ])
       ])
     ]);
 
     let actionWrapper = createElement( 'div', {className: 'action'}, [
-      createElement('button', {className: 'add-button', dataset: {action: 'add'}}, ['添加']),
-      createElement('button', {className: 'cancel-add-button', dataset: {action: 'cancelAdd'}}, ['取消']),
+      createElement('button', {className: 'add-button', dataset: {action: 'add'}, textContent: '添加'}),
+      createElement('button', {className: 'cancel-add-button', dataset: {action: 'cancelAdd'}, textContent: '取消'}),
     ]);
 
     let li = createElement('li', {className: 'item'}, [editWrapper, actionWrapper]);
@@ -1129,7 +1131,7 @@ class IDConfigUI extends ConfigUI {
 
 class KeywordConfigUI extends ConfigUI {
   _getTitleEl() {
-    return createElement('h2', {className: 'subtitle'}, ['内容关键词屏蔽列表']);
+    return createElement('h2', {className: 'subtitle', textContent: '内容关键词屏蔽列表'});
   }
 
   async _getItemsfromDB() {
@@ -1162,7 +1164,7 @@ class KeywordConfigUI extends ConfigUI {
     // 暂时不需要
     // let editWrapper = createElement('div', {className: 'edit-wrapper'}, [
     //   createElement( 'label', null, [
-    //     createElement('span', null, ['链接：']),
+    //     createElement('span', {textContent: '链接：'}),
     //     createElement('input', {name: 'url', className: 'edit-input', val: url})
     //   ])
     // ]);
@@ -1176,10 +1178,10 @@ class KeywordConfigUI extends ConfigUI {
 
     let actionWrapper = createElement( 'div', {className: 'action'}, [
       // 暂时不需要与编辑相关的按钮
-      //createElement('button', {className: 'update-button', dataset: {action: 'update'}}, ['更新']),
-      //createElement('button', {className: 'cancel-button', dataset: {action: 'cancel'}}, ['取消']),
-      //createElement('button', {className: 'edit-button', dataset: {action: 'edit'}}, ['编辑']),
-      createElement('button', {className: 'delete-button', dataset: {action: 'delete'}}, ['删除']),
+      //createElement('button', {className: 'update-button', dataset: {action: 'update'}, textContent: '更新'}),
+      //createElement('button', {className: 'cancel-button', dataset: {action: 'cancel'}, textContent: '取消'}),
+      //createElement('button', {className: 'edit-button', dataset: {action: 'edit'}, textContent: '编辑'}),
+      createElement('button', {className: 'delete-button', dataset: {action: 'delete'}, textContent: '删除'}),
     ]);
 
     let li = createElement( 'li', {className: 'item'}, [typeWrapper, kwWrapper, actionWrapper]);
@@ -1219,19 +1221,19 @@ class KeywordConfigUI extends ConfigUI {
       Object.values(KW_TYPE).filter(v => !(v instanceof Function))
         .map(v => createElement('option', {value: v}, [KW_TYPE.toReadableString(v)]))
     );
-    let editWrapper = createElement( 'div', {className: 'edit-wrapper'}, [
+    let editWrapper = createElement('div', {className: 'edit-wrapper'}, [
       createElement('form', null, [
-        createElement('label', null, [createElement('span', null, ['类型：']), optionEl]),
+        createElement('label', null, [createElement('span', {textContent: '类型：'}), optionEl]),
         createElement('label', null, [
-          createElement('span', null, ['关键词：']),
+          createElement('span', {textContent: '关键词：'}),
           createElement('input', {name: 'match', className: 'edit-input'})
         ])
       ])
     ]);
 
     let actionWrapper = createElement( 'div', {className: 'action'}, [
-      createElement('button', {className: 'add-button', dataset: {action: 'add'}}, ['添加']),
-      createElement('button', {className: 'cancel-add-button', dataset: {action: 'cancelAdd'}}, ['取消']),
+      createElement('button', {className: 'add-button', dataset: {action: 'add'}, textContent: '添加'}),
+      createElement('button', {className: 'cancel-add-button', dataset: {action: 'cancelAdd'}, textContent: '取消'}),
     ]);
 
     let li = createElement('li', {className: 'item'}, [editWrapper, actionWrapper]);
@@ -1315,7 +1317,8 @@ class RakuenMenu {
       let button = createElement('button', {
         className: 'content-blacklist-rakuen-button',
         dataset: {action: 'ban'},
-      }, ['屏蔽本项']);
+        textContent: '屏蔽本项',
+      });
       el.querySelector('.inner .row').appendChild(button);
     })
     rakuenList.querySelector('ul').addEventListener('click', this.onClick.bind(this));
@@ -1330,7 +1333,7 @@ class RakuenMenu {
   }
 
   async ban(li) {
-    let buttons = li.querySelectorAll('button');
+    let buttons = li.querySelectorAll('button.content-blacklist-rakuen-button');
     buttons.forEach(btn => {btn.disabled = true;});
     let item = Parser.rakuen.topicIdParser(li);
     try {
