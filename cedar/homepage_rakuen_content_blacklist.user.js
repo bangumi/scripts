@@ -6,7 +6,7 @@
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen(/topiclist)?(\?.*)?$/
-// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/timeline/
+// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/group/discover
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/settings/privacy$/
 // @grant       GM_addStyle
 // ==/UserScript==
@@ -387,7 +387,7 @@ const KW_TYPE = {
 };
 
 // 一些Parser.
-// 函数的参数为el, 输入是homepage或rakuen中的HTML元素, 输出是对应的type和ID 或 type和title
+// 函数的参数为el, 输入是homepage或rakuen或discover中的HTML元素, 输出是对应的type和ID 或 type和title
 const Parser = {
   homepage: {
     idParser(el) {
@@ -439,6 +439,42 @@ const Parser = {
     titleParser(el) {
       let a = el.querySelector('.inner>a');
       let type = KW_TYPE.fromRakuenURL(a);
+      return {type, title: a.innerHTML};
+    },
+
+    /* input: 一个元素 el
+     * output: 一个object, 包括
+       {
+         node: el,
+         id: {type, id},
+         topicId: {type, id},
+         title: {type, title}
+       }
+     */
+    parseAll(el) {
+      return {
+        node: el,
+        id: this.idParser(el),
+        topicId: this.topicIdParser(el),
+        title: this.titleParser(el)
+      };
+    },
+  },
+
+  // 对应 group/discover 页面
+  discover: {
+    // id 在此指小组group的id, subject的id在本页面没有出现
+    idParser(el) {
+      return ID_TYPE.fromURL(el.querySelector('td:nth-of-type(2) a'));
+    },
+
+    topicIdParser(el) {
+      return ID_TYPE.fromURL(el.querySelector('td:nth-of-type(1) a'));
+    },
+
+    titleParser(el) {
+      let a = el.querySelector('td:nth-of-type(1) a');
+      let type = KW_TYPE.fromURL(a);
       return {type, title: a.innerHTML};
     },
 
@@ -905,7 +941,34 @@ async function rakuenFilter() {
   }
 }
 
+async function discoverFilter() {
+  let model = await Model.build();
 
+  let itemList = document.querySelectorAll('#columnA table.topic_list>tbody:nth-of-type(2)>tr');
+  itemList = Array.from(itemList).map(x => Parser.discover.parseAll(x));
+  let parsedList, indexes;
+
+  // 筛选小组的ID
+  parsedList = itemList.map(x => x.id);
+  indexes = await model.IDFilter(parsedList, ID_TYPE.GROUP);
+  for (let idx of indexes) {
+    itemList[idx].node.style.display = "none";
+  }
+
+  // 筛选小组讨论的ID
+  parsedList = itemList.map(x => x.topicId);
+  indexes = await model.IDFilter(parsedList, ID_TYPE.GROUP_TOPIC);
+  for (let idx of indexes) {
+    itemList[idx].node.style.display = "none";
+  }
+
+  // 筛选小组讨论的标题关键词
+  parsedList = itemList.map(x => x.title);
+  indexes = await model.keywordFilter(parsedList, KW_TYPE.GROUP_TOPIC);
+  for (let idx of indexes) {
+    itemList[idx].node.style.display = "none";
+  }
+}
 
 /* 这里采用 delegation 的方式控制各个按钮
  * 设计理念见 https://javascript.info/event-delegation#delegation-example-actions-in-markup
@@ -1358,6 +1421,8 @@ async function main() {
     await rakuenFilter();
   } else if (location.pathname === '/') {
     await homepageFilter();
+  } else if (location.pathname === '/group/discover') {
+    await discoverFilter();
   } else if (location.pathname === '/settings/privacy') {
     let idconfigui = await IDConfigUI.build();
     let kwconfigui = await KeywordConfigUI.build();
