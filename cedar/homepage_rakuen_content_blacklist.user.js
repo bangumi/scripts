@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        首页与超展开内容屏蔽
 // @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.1.6
+// @version     2.2
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
