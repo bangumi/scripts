@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name        首页与超展开内容屏蔽
-// @namespace   tv.bgm.cedar.homepagerakuencontentblacklist
-// @version     2.2
+// @name        Bangumi多页面内容屏蔽
+// @namespace   tv.bgm.cedar.bangumicontentblacklist
+// @version     2.2.1
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -840,7 +840,7 @@ async function rakuenFilter() {
       parsedList = filteredList.map(x => x.topicId);
       indexes = await model.IDFilter(parsedList, null, true);
       for (let idx of indexes) {
-        itemList[idx].style.display = "none";
+        filteredList[idx].node.style.display = "none";
       }
 
       // 筛选小组的标题关键词
@@ -941,6 +941,7 @@ async function rakuenFilter() {
   }
 }
 
+// discover filter 筛选“随便看看”
 async function discoverFilter() {
   let model = await Model.build();
 
@@ -998,7 +999,7 @@ class ConfigUI {
     let action = e.target.dataset.action;
     if (action) {
       let el = e.target.closest('.content-blacklist-config>li');
-      if (el) this[action](el);
+      if (el) this[`_action_${action}`](el);
     }
   }
 
@@ -1020,7 +1021,11 @@ class ConfigUI {
     let itemListEl = createElement('ul', {className: 'content-blacklist-config'}, [
       ...items.map(this._toConfigItemEl),
       createElement('li', {className: 'new'}, [
-        createElement('button', {className: 'new-button', dataset: {action: 'new'}, textContent: '新增'}, null, null)
+        createElement('button', {
+          className: 'new-button',
+          dataset: {action: 'new'},
+          textContent: '新增',
+        })
       ])
     ]);
     return createElement(
@@ -1045,17 +1050,19 @@ class IDConfigUI extends ConfigUI {
    * 不过，注意！目前的功能还比较简单，暂时不需要“编辑”“更新”“取消”按钮, 也不需要edit-wrapper
    * 只需要删除功能
    * 布局如下
-     <li class='item'>
+     <li class='item' data-type='id.group_topic' data-id='123456'>
        <div class='edit-wrapper'>
+         <!-- 暂时不需要与编辑相关的元素
          <form>
            <label>
              <span>链接：</span>
              <input name='url' class='edit-input'>
            </label>
          </form>
+         -->
        </div>
-       <div class='type' data-type='id.group_topic'>小组帖子ID</div>
-       <div class='id', data-id='123456'>
+       <div class='type'>小组帖子ID</div>
+       <div class='id'>
          <a href='/group/topic/123456'>123456</a></div>
        </div>
        <div class='action'>
@@ -1082,13 +1089,14 @@ class IDConfigUI extends ConfigUI {
          ], null
        );
     */
-    let typeWrapper = createElement(
-      'div', {className: 'type', dataset: {type: item.type}},
-      [ID_TYPE.toReadableString(item.type)]);
+    let typeWrapper = createElement('div', {
+      className: 'type',
+      textContent: ID_TYPE.toReadableString(item.type)
+    });
 
     let idWrapper = createElement(
-      'div', {className: 'id', dataset: {id: item.id}},
-      [createElement('a', {href: url, target: '_blank', rel: 'noreferrer noopener'}, [item.id])]
+      'div', {className: 'id'},
+      [createElement('a', {href: url, target: '_blank', rel: 'noreferrer noopener', textContent: item.id})]
     );
 
     let actionWrapper = createElement( 'div', {className: 'action'}, [
@@ -1099,7 +1107,10 @@ class IDConfigUI extends ConfigUI {
       createElement('button', {className: 'delete-button', dataset: {action: 'delete'}, textContent: '删除'}),
     ]);
 
-    let li = createElement( 'li', {className: 'item'}, [typeWrapper, idWrapper, actionWrapper]);
+    let li = createElement(
+      'li', {className: 'item', dataset: {type: item.type, id: item.id}},
+      [typeWrapper, idWrapper, actionWrapper]
+    );
     return li;
   }
 
@@ -1140,13 +1151,13 @@ class IDConfigUI extends ConfigUI {
     return li;
   }
 
-  new(li) {
+  _action_new(li) {
     let el = this._getAddNewEl();
     li.insertAdjacentElement('beforebegin', el);
     //li.parentElement.removeChild(li);
   }
 
-  async add(li) {
+  async _action_add(li) {
     let buttons = li.querySelectorAll('button');
     buttons.forEach(btn => {btn.disabled = true;});
     let url = new FormData(li.querySelector('.edit-wrapper form')).get('url');
@@ -1170,15 +1181,15 @@ class IDConfigUI extends ConfigUI {
     li.parentElement.removeChild(li);
   }
 
-  cancelAdd(li) {
+  _action_cancelAdd(li) {
     li.parentElement.removeChild(li);
   }
 
-  async delete(li) {
+  async _action_delete(li) {
     let buttons = li.querySelectorAll('button');
     buttons.forEach(btn => {btn.disabled = true;});
-    let type = li.querySelector('div.type').dataset.type;
-    let id = li.querySelector('div.id').dataset.id;
+    let type = li.dataset.type;
+    let id = li.dataset.id;
     try {
       await this._model.deleteID({type, id});
     } catch(e) {
@@ -1206,15 +1217,17 @@ class KeywordConfigUI extends ConfigUI {
    * 不过，注意！目前的功能还比较简单，暂时不需要“编辑”“更新”“取消”按钮, 也不需要edit-wrapper
    * 只需要删除功能
    * 布局如下
-     <li>
+     <li data-type='kw.group_topic' data-match='里番'>
+       <!-- 暂时不需要与编辑相关的元素
        <div class='edit-wrapper'>
          <label>
            <span>关键词：</span>
            <input name='match' class='edit-input'>
          </label>
        </div>
+       -->
        <div class='type'>小组帖子</div>
-       <div class='match' data-match='里番'>里番</div>
+       <div class='match'>里番</div>
        <div class='action'>
          <button class='update-button' data-action='update'>更新</button>
          <button class='cancel-button' data-action='cancel'>取消</button>
@@ -1231,13 +1244,12 @@ class KeywordConfigUI extends ConfigUI {
     //     createElement('input', {name: 'url', className: 'edit-input', val: url})
     //   ])
     // ]);
-    let typeWrapper = createElement(
-      'div', {className: 'type', dataset: {type: item.type}},
-      [KW_TYPE.toReadableString(item.type)]);
+    let typeWrapper = createElement('div', {
+      className: 'type',
+      textContent: KW_TYPE.toReadableString(item.type)
+    });
 
-    let kwWrapper = createElement(
-      'div', {className: 'match', dataset: {match: item.match}}, [item.match]
-    );
+    let kwWrapper = createElement('div', {className: 'match', textContent: item.match});
 
     let actionWrapper = createElement( 'div', {className: 'action'}, [
       // 暂时不需要与编辑相关的按钮
@@ -1247,7 +1259,10 @@ class KeywordConfigUI extends ConfigUI {
       createElement('button', {className: 'delete-button', dataset: {action: 'delete'}, textContent: '删除'}),
     ]);
 
-    let li = createElement( 'li', {className: 'item'}, [typeWrapper, kwWrapper, actionWrapper]);
+    let li = createElement(
+      'li',
+      {className: 'item', dataset: {type: item.type, match: item.match}},
+      [typeWrapper, kwWrapper, actionWrapper]);
     return li;
   }
 
@@ -1282,7 +1297,7 @@ class KeywordConfigUI extends ConfigUI {
     let optionEl = createElement(
       'select', {name: 'type'},
       Object.values(KW_TYPE).filter(v => !(v instanceof Function))
-        .map(v => createElement('option', {value: v}, [KW_TYPE.toReadableString(v)]))
+        .map(v => createElement('option', {value: v, textContent: KW_TYPE.toReadableString(v)}))
     );
     let editWrapper = createElement('div', {className: 'edit-wrapper'}, [
       createElement('form', null, [
@@ -1303,13 +1318,13 @@ class KeywordConfigUI extends ConfigUI {
     return li;
   }
 
-  new(li) {
+  _action_new(li) {
     let el = this._getAddNewEl();
     li.insertAdjacentElement('beforebegin', el);
     //li.parentElement.removeChild(li);
   }
 
-  async add(li) {
+  async _action_add(li) {
     let buttons = li.querySelectorAll('button');
     buttons.forEach(btn => {btn.disabled = true;});
     let fd = new FormData(li.querySelector('.edit-wrapper form'));
@@ -1334,15 +1349,15 @@ class KeywordConfigUI extends ConfigUI {
     li.parentElement.removeChild(li);
   }
 
-  cancelAdd(li) {
+  _action_cancelAdd(li) {
     li.parentElement.removeChild(li);
   }
 
-  async delete(li) {
+  async _action_delete(li) {
     let buttons = li.querySelectorAll('button');
     buttons.forEach(btn => {btn.disabled = true;});
-    let type = li.querySelector('div.type').dataset.type;
-    let match = li.querySelector('div.match').dataset.match;
+    let type = li.dataset.type;
+    let match = li.dataset.match;
     try {
       await this._model.deleteKeyword({type, match});
     } catch(e) {
@@ -1391,11 +1406,11 @@ class RakuenMenu {
     let action = e.target.dataset.action;
     if (action) {
       let el = e.target.closest('li');
-      if (el) this[action](el);
+      if (el) this[`_action_${action}`](el);
     }
   }
 
-  async ban(li) {
+  async _action_ban(li) {
     let buttons = li.querySelectorAll('button.content-blacklist-rakuen-button');
     buttons.forEach(btn => {btn.disabled = true;});
     let item = Parser.rakuen.topicIdParser(li);
