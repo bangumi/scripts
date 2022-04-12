@@ -5,7 +5,7 @@
 // @license      MIT
 // @description  在收藏页面点击“Edit”即可修改收藏条目的状态，评分，标签，评论等信息，可单项修改，随改随存。
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)\/\S+\/list\/\S+\/(wish|collect|do|on_hold|dropped).*
-// @version      1.4
+// @version      1.4.1
 // @grant        GM_addStyle
 // ==/UserScript==
 GM_addStyle(`
@@ -31,10 +31,14 @@ class BgmCollections {
 	}
 	init(){
 		// $('#browserTools').append('<a id="saveCollect" class="chiiBtn" href="#">保存修改</a>');
-		let securitycode = $('#badgeUserPanel a[href*="logout"]')[0].href.split('/logout/')[1].toString();
+		let securitycode = $('#badgeUserPanel a[href*="logout"]').length? $('#badgeUserPanel a[href*="logout"]')[0].href.split('/logout/')[1].toString(): '';
 		let interest = this.get_interest();
 		let itemsList = document.querySelectorAll('#browserItemList li.item');
 		itemsList.forEach( (elem, i) =>{
+			if(!securitycode){
+				let del = elem.querySelector('a[href="#;"]');
+				if(del.textContent == '删除') securitycode = del.onclick.toString().match(/'(\S+)'/)[1];
+			}
 			let subject_id = elem.querySelector('a.subjectCover').href.split('/subject/')[1];
 			//评分
 			let rating = elem.querySelector('.collectInfo .starlight')? elem.querySelector('.collectInfo .starlight').className.match(/stars(\d+)/)[1]:0;
