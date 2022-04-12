@@ -1,19 +1,20 @@
 // ==UserScript==
 // @name        Bangumi多页面内容屏蔽
 // @namespace   tv.bgm.cedar.bangumicontentblacklist
-// @version     2.2.1
+// @version     2.3
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen(/topiclist)?(\?.*)?$/
-// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/group/discover
+// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/group/discover/
+// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/group/topic/\d+/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/settings/privacy$/
 // @grant       GM_addStyle
 // ==/UserScript==
 
 GM_addStyle(`
 /* === 超展开页面的屏蔽按钮 === */
-.content-blacklist-rakuen-button {
+.content-blacklist-button {
   display: none;
   cursor: pointer;
   margin: 0 10px 0 0;
@@ -24,13 +25,14 @@ GM_addStyle(`
   background: none;
   float: right;
 }
-.content-blacklist-rakuen-button::before {
+.content-blacklist-button::before {
   content: '[';
 }
-.content-blacklist-rakuen-button::after {
+.content-blacklist-button::after {
   content: ']';
 }
-li:hover .content-blacklist-rakuen-button {
+li:hover .content-blacklist-button,
+h1:hover .content-blacklist-button {
   display: inline-block;
 }
 /* === config页面 === */
@@ -145,7 +147,7 @@ html[data-theme='dark'] .content-blacklist-config .new {
   border-color: #6e6e6e;
 }
 /* 按钮文字颜色变浅 */
-html[data-theme='dark'] .content-blacklist-rakuen-button,
+html[data-theme='dark'] .content-blacklist-button,
 html[data-theme='dark'] .content-blacklist-config button {
   color: #DDDDDD;
 }
@@ -989,18 +991,18 @@ class ConfigUI {
     return new this(model); // 必须用 new this() 而非 new ConfigUI() (其中this指代当前的Class), 否则其子类调用build时会获得父类对象
   }
 
-  async getConfigUI() {
-    let configUI = await this._createConfigUI();
-    configUI.querySelector('ul').addEventListener('click', this.onClick.bind(this));
-    return configUI;
-  }
-
   onClick(e) {
     let action = e.target.dataset.action;
     if (action) {
       let el = e.target.closest('.content-blacklist-config>li');
       if (el) this[`_action_${action}`](el);
     }
+  }
+
+  async getConfigUI() {
+    let configUI = await this._createConfigUI();
+    configUI.querySelector('ul').addEventListener('click', this.onClick.bind(this));
+    return configUI;
   }
 
   /* 构建的是最外层的 wrapper.
@@ -1371,7 +1373,64 @@ class KeywordConfigUI extends ConfigUI {
 }
 
 
-class RakuenMenu {
+/* 这里采用 delegation 的方式控制各个按钮，类似 ConfigUI
+ * 父类用于在各个按钮界面一键屏蔽
+ * 子类需要实现 TODO
+ * this._getActiveEl(), this._getItemListRoot(), this._getItemList(), this._insertButton()
+ */
+// 各页面都有微妙不同，不好合并
+// class ButtonUI {
+//   constructor(model) {
+//     this._model = model;
+//   }
+
+//   static async build() {
+//     let model = await Model.build();
+//     return new this(model); // 必须用 new this() 而非 new ConfigUI() (其中this指代当前的Class), 否则其子类调用build时会获得父类对象
+//   }
+
+//   onClick(e) {
+//     let action = e.target.dataset.action;
+//     if (action) {
+//       let el = this._getActiveEl(e.target);
+//       if (el) this[`_action_${action}`](el);
+//     }
+//   }
+
+//   /* 给允许屏蔽的项目添加屏蔽按钮 */
+//   addButtons() {
+//     let itemListRoot = this._getItemListRoot();
+//     this._getItemList().forEach(el => {
+//       const button = createElement('button', {
+//         className: 'content-blacklist-button',
+//         dataset: {action: 'ban'},
+//         textContent: '屏蔽',
+//       });
+//       this._insertButton(el, button);
+//     });
+//     itemListRoot.addEventListener('click', this.onClick.bind(this));
+//   }
+
+//   async _action_ban(el) {
+//     let buttons = el.querySelectorAll('button.content-blacklist-button');
+//     buttons.forEach(btn => {btn.disabled = true;});
+//     let item = Parser.rakuen.topicIdParser(el);
+//     try {
+//       await this._model.addID(item);
+//     } catch(e) {
+//       console.error(e);
+//       if (e.name !== "ConstraintError") {
+//         alert("添加失败！");
+//         buttons.forEach(btn => {btn.disabled = false;});
+//         return;
+//       }
+//     }
+//     el.style.display = 'none';
+//   }
+// }
+
+/* 超展开页面的屏蔽按钮 */
+class RakuenButtonUI {
   constructor(model) {
     this._model = model;
   }
@@ -1381,21 +1440,17 @@ class RakuenMenu {
     return new this(model); // 必须用 new this() 而非 new ConfigUI() (其中this指代当前的Class), 否则其子类调用build时会获得父类对象
   }
 
-  /* 给超展开的项目添加屏蔽按钮 */
-  /* TODO
-   * 在此记录一下控制按钮位置的CSS:
-     position: absolute;
-     right: 10px;
-     top: 50%;
-     transform: translate(0, -50%);
-   */
+  //_getItemListRoot() { return document.querySelectorAll("#eden_tpc_list>ul"); }
+  //_getItemList() { return document.querySelectorAll("#eden_tpc_list .item_list"); }
+  //_insertButton(el, button) { el.querySelector('.inner .row').appendChild(button); }
+
   addButtons() {
     let rakuenList = document.getElementById("eden_tpc_list");
     rakuenList.querySelectorAll('.item_list').forEach(el => {
       let button = createElement('button', {
-        className: 'content-blacklist-rakuen-button',
+        className: 'content-blacklist-button',
         dataset: {action: 'ban'},
-        textContent: '屏蔽本项',
+        textContent: '屏蔽',
       });
       el.querySelector('.inner .row').appendChild(button);
     })
@@ -1411,7 +1466,7 @@ class RakuenMenu {
   }
 
   async _action_ban(li) {
-    let buttons = li.querySelectorAll('button.content-blacklist-rakuen-button');
+    let buttons = li.querySelectorAll('button.content-blacklist-button');
     buttons.forEach(btn => {btn.disabled = true;});
     let item = Parser.rakuen.topicIdParser(li);
     try {
@@ -1428,12 +1483,82 @@ class RakuenMenu {
   }
 }
 
+/* 特定小组讨论页(如/group/topic/123456)的屏蔽按钮 */
+class TopicPageButtonUI {
+  constructor(model) {
+    this._model = model;
+  }
+
+  static async build() {
+    let model = await Model.build();
+    return new this(model); // 必须用 new this() 而非 new ConfigUI() (其中this指代当前的Class), 否则其子类调用build时会获得父类对象
+  }
+
+  onClick(e) {
+    let action = e.target.dataset.action;
+    if (action) {
+      let el = e.target.closest('h1');
+      if (el) this[`_action_${action}`](el);
+    }
+  }
+
+  addButtons() {
+    let title = document.querySelector("#pageHeader h1");
+    let button = createElement('button', {
+      className: 'content-blacklist-button',
+      dataset: {action: 'ban'},
+      textContent: '屏蔽本项',
+    });
+    title.appendChild(button);
+    button.addEventListener('click', this.onClick.bind(this));
+  }
+
+  async _action_ban(h1) {
+    let button = h1.querySelector('button.content-blacklist-button');
+    button.disabled = true;
+    let item = ID_TYPE.fromURL(location.href);
+    try {
+      await this._model.addID(item);
+    } catch(e) {
+      console.error(e);
+      if (e.name !== "ConstraintError") {
+        alert("添加失败！");
+        button.disabled = false;
+        return;
+      }
+    }
+    button.disabled = false;
+    button.textContent = "取消屏蔽";
+    button.dataset.action = "unban";
+  }
+
+  async _action_unban(h1) {
+    let button = h1.querySelector('button.content-blacklist-button');
+    button.disabled = true;
+    let item = ID_TYPE.fromURL(location.href);
+    try {
+      await this._model.deleteID(item);
+    } catch (e) {
+      console.error(e);
+      alert("取消失败！");
+      button.disabled = false;
+      return;
+    }
+    button.disabled = false;
+    button.textContent = "屏蔽本项";
+    button.dataset.action = "ban";
+  }
+}
+
 
 async function main() {
   if (location.pathname === '/rakuen/topiclist') {
-    let rakuenmenu = await RakuenMenu.build();
-    rakuenmenu.addButtons();
+    let rakuenbtnui = await RakuenButtonUI.build();
+    rakuenbtnui.addButtons();
     await rakuenFilter();
+  } else if (location.pathname.startsWith('/group/topic/')) {
+    let topicpagebtnui = await TopicPageButtonUI.build();
+    topicpagebtnui.addButtons();
   } else if (location.pathname === '/') {
     await homepageFilter();
   } else if (location.pathname === '/group/discover') {
