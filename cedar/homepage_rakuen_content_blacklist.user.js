@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多页面内容屏蔽
 // @namespace   tv.bgm.cedar.bangumicontentblacklist
-// @version     2.3
+// @version     2.3.1
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -591,6 +591,24 @@ class Database {
     });
   }
 
+  hasID({type, id}) {
+    return this._querySingleStore({
+      storename: "IDs",
+      mode: "readonly",
+      onrequest: store => store.count([type, id]),
+      onsuccess: result => result >= 1
+    });
+  }
+
+  getID({type, id}) {
+    return this._querySingleStore({
+      storename: "IDs",
+      mode: "readonly",
+      onrequest: store => store.get([type, id]),
+      onsuccess: result => result || null
+    });
+  }
+
   /* 不输入type或type==null则会获得全部ID */
   getAllIDs(type=null) {
     const onrequest = type
@@ -725,6 +743,14 @@ class Model {
         idx.push(i);
     }
     return idx;
+  }
+
+  async hasID({type, id}) {
+    return await this._db.hasID({type, id});
+  }
+
+  async getID({type, id}) {
+    return await this._db.getID({type, id});
   }
 
   async getAllIDs(type) {
@@ -1502,12 +1528,20 @@ class TopicPageButtonUI {
     }
   }
 
-  addButtons() {
+  async addButtons() {
+    let item = ID_TYPE.fromURL(location.href);
+    let hasBlocked;
+    try {
+      hasBlocked = await this._model.hasID(item);
+    } catch (e) {
+      console.error(e);
+      return;
+    }
     let title = document.querySelector("#pageHeader h1");
     let button = createElement('button', {
       className: 'content-blacklist-button',
-      dataset: {action: 'ban'},
-      textContent: '屏蔽本项',
+      dataset: {action: hasBlocked? 'unban': 'ban'},
+      textContent: hasBlocked? '取消屏蔽': '屏蔽本帖',
     });
     title.appendChild(button);
     button.addEventListener('click', this.onClick.bind(this));
