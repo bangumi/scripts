@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多页面内容屏蔽
 // @namespace   tv.bgm.cedar.bangumicontentblacklist
-// @version     2.3.1
+// @version     2.3.2
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -745,36 +745,38 @@ class Model {
     return idx;
   }
 
-  async hasID({type, id}) {
-    return await this._db.hasID({type, id});
+  /* 以下函数只有一句，没做其他事，所以不需要用 async/await 再包一层 */
+
+  hasID({type, id}) {
+    return this._db.hasID({type, id});
   }
 
-  async getID({type, id}) {
-    return await this._db.getID({type, id});
+  getID({type, id}) {
+    return this._db.getID({type, id});
   }
 
-  async getAllIDs(type) {
-    return await this._db.getAllIDs(type);
+  getAllIDs(type) {
+    return this._db.getAllIDs(type);
   }
 
-  async getAllKeywords(type) {
-    return await this._db.getAllKeywords(type);
+  getAllKeywords(type) {
+    return this._db.getAllKeywords(type);
   }
 
-  async addID({type, id}) {
-    await this._db.addID({type, id});
+  addID({type, id}) {
+    this._db.addID({type, id});
   }
 
-  async addKeyword({type, match}) {
-    await this._db.addKeyword({type, match});
+  addKeyword({type, match}) {
+    this._db.addKeyword({type, match});
   }
 
-  async deleteID({type, id}) {
-    await this._db.deleteID({type, id});
+  deleteID({type, id}) {
+    this._db.deleteID({type, id});
   }
 
-  async deleteKeyword({type, match}) {
-    await this._db.deleteKeyword({type, match});
+  deleteKeyword({type, match}) {
+    this._db.deleteKeyword({type, match});
   }
 }
 
@@ -1579,7 +1581,7 @@ class TopicPageButtonUI {
       return;
     }
     button.disabled = false;
-    button.textContent = "屏蔽本项";
+    button.textContent = "屏蔽本帖";
     button.dataset.action = "ban";
   }
 }
