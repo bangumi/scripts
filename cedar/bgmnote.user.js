@@ -8,6 +8,7 @@
 // @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/group/topic/.*/
 // @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/subject/topic/.*/
 // @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/rakuen/topic/group/.*/
+// @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/rakuen/topic/subject/.*/
 // @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/rakuen/topic/ep/.*/
 // @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/blog/.*/
 // @include      /https://(bgm\.tv|bangumi\.tv|chii\.in)/ep/.*/
