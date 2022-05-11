@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      22earth
 // @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.13
+// @version     0.4.14
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -231,6 +231,27 @@ function htmlToElement(html) {
     template.innerHTML = html;
     // template.content.childNodes;
     return template.content.firstChild;
+}
+/**
+ * 载入 iframe
+ * @param $iframe iframe DOM
+ * @param src iframe URL
+ * @param TIMEOUT time out
+ */
+function loadIframe($iframe, src, TIMEOUT = 5000) {
+    return new Promise((resolve, reject) => {
+        $iframe.src = src;
+        let timer = setTimeout(() => {
+            timer = null;
+            $iframe.onload = undefined;
+            reject('iframe timeout');
+        }, TIMEOUT);
+        $iframe.onload = () => {
+            clearTimeout(timer);
+            $iframe.onload = null;
+            resolve(null);
+        };
+    });
 }
 function genAnonymousLinkText(url, text) {
     return `<a
@@ -3445,6 +3466,24 @@ function insertLogInfo($sibling, txt) {
     $sibling.insertAdjacentElement('afterend', $log);
     return $log;
 }
+/**
+ * 通过 iframe 获取表单
+ * @param url 链接地址
+ * @param formSelector 表单的 iframe
+ * @returns Promise<HTMLFormElement>
+ */
+async function getFormByIframe(url, formSelector) {
+    const iframeId = 'e-userjs-iframe';
+    let $iframe = document.querySelector(`#${iframeId}`);
+    if (!$iframe) {
+        $iframe = document.createElement('iframe');
+        $iframe.style.display = 'none';
+        $iframe.id = iframeId;
+        document.body.appendChild($iframe);
+    }
+    await loadIframe($iframe, url);
+    return $iframe.contentDocument.querySelector(formSelector);
+}
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -4775,9 +4814,7 @@ async function addPersonRelatedSubject(subjectIds, charaId, typeId, charaType = 
     const bgmHost = `${location.protocol}//${location.host}`;
     const type = typeDict[typeId];
     const url = `${bgmHost}/character/${charaId}/add_related/${type}`;
-    const rawText = await fetchText(url);
-    const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-    const $form = $doc.querySelector('.mainWrapper form');
+    const $form = await getFormByIframe(url, '.mainWrapper form');
     const extroInfo = [];
     // 1 主角 2 配角 3 客串
     subjectIds.forEach((v, i) => {
