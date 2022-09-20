@@ -8,7 +8,7 @@
 // @homepage    https://github.com/22earth/gm_scripts
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/subject\/.*$/
 // @include     https://movie.douban.com/subject/*
-// @version     0.3.4
+// @version     0.3.5
 // @note        0.3.3 支持 Anidb
 // @note        0.2.0 支持豆瓣上显示Bangumi评分,暂时禁用豆瓣上显示MAL的评分功能以及修改过滤方式
 // @note        0.2.4 豆瓣 api 失效，使用搜索页面查询结果
@@ -164,7 +164,7 @@ function filterResults(items, subjectInfo, opts = {}, isSearch = true) {
             const result = obj.item;
             if (result.releaseDate) {
                 // 只有年的时候
-                if (result.releaseDate.length === '4') {
+                if (result.releaseDate.length === 4) {
                     if (result.releaseDate === subjectInfo.releaseDate.slice(0, 4)) {
                         return result;
                     }
