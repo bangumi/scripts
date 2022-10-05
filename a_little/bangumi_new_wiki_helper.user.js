@@ -350,6 +350,12 @@ getchuGameModel.itemList.push({
             selector: '#wrapper',
             subSelector: '.tabletitle',
             sibling: true,
+            keyWord: '作品紹介',
+        },
+        {
+            selector: '#wrapper',
+            subSelector: '.tabletitle',
+            sibling: true,
             keyWord: '商品紹介',
         },
     ],
@@ -2436,6 +2442,7 @@ const erogamescapeTools = {
                                 decode: 'EUC-JP',
                             },
                             prefs: {
+                                originNames: ['游戏名'],
                                 targetNames: ['cover'],
                             },
                         },
@@ -2607,6 +2614,32 @@ function dealTitle(str) {
 }
 const moepediaTools = {
     hooks: {
+        async beforeCreate() {
+            const $el = findElement([
+                {
+                    selector: '.body-shop_list > .body-shop_item > a[href*="www.getchu.com/soft.phtml?id="]',
+                },
+            ]);
+            const url = $el === null || $el === void 0 ? void 0 : $el.getAttribute('href');
+            if (url) {
+                return {
+                    payload: {
+                        auxSite: {
+                            url,
+                            opts: {
+                                cookie: 'getchu_adalt_flag=getchu.com',
+                                decode: 'EUC-JP',
+                            },
+                            prefs: {
+                                originNames: ['游戏名'],
+                                targetNames: ['游戏简介'],
+                            },
+                        },
+                    },
+                };
+            }
+            return true;
+        },
         async afterGetWikiData(infos) {
             const res = [];
             for (const info of infos) {
@@ -4783,14 +4816,27 @@ async function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
         bgmHost = `${location.protocol}//${location.host}`;
     }
     const url = `${bgmHost}/subject/${subjectId}/upload_img`;
-    const rawText = await fetchText(url);
-    const $doc = new DOMParser().parseFromString(rawText, 'text/html');
-    const $form = $doc.querySelector('form[name=img_upload');
-    if (!$form) {
-        console.error('获取封面表单失败');
-        return;
+    const $hash = document.querySelector('form > input[name="formhash"]');
+    if ($hash) {
+        const fd = new FormData();
+        fd.set('formhash', $hash.value);
+        fd.set('picfile', dataURItoBlob(dataUrl), genRandomStr(5) + '.png');
+        fd.set('submit', '上传图片');
+        const res = await fetch(url, {
+            body: fd,
+            method: 'post',
+        });
     }
-    await sendFormImg($form, dataUrl);
+    else {
+        const rawText = await fetchText(url);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('form[name=img_upload');
+        if (!$form) {
+            console.error('获取封面表单失败');
+            return;
+        }
+        await sendFormImg($form, dataUrl);
+    }
 }
 async function searchCVByName(name, charaId = '') {
     const bgmHost = getBgmHost();
@@ -5355,10 +5401,6 @@ function setProtocol() {
     GM_setValue(PROTOCOL, p);
 }
 var bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
-// if (!bgm_domain.length || !bgm_domain.match(/bangumi\.tv|bgm\.tv/)) {
-//   bgm_domain = setDomain();
-//   bgm_domain = GM_getValue(BGM_DOMAIN);
-// }
 if (GM_registerMenuCommand) {
     GM_registerMenuCommand('设置 Bangumi 域名', setDomain, 'b');
     GM_registerMenuCommand('新建条目页面(http 或者 https)', setProtocol, 'h');
