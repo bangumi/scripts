@@ -1,19 +1,20 @@
 // ==UserScript==
 // @name        Bangumi多页面内容屏蔽
 // @namespace   tv.bgm.cedar.bangumicontentblacklist
-// @version     2.3.2
+// @version     2.4
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/rakuen(/topiclist)?(\?.*)?$/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/group/discover/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/group/topic/\d+/
+// @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/subject/topic/\d+/
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/settings/privacy$/
 // @grant       GM_addStyle
 // ==/UserScript==
 
 GM_addStyle(`
-/* === 超展开页面的屏蔽按钮 === */
+/* === 超展开、帖子等页面的屏蔽按钮 === */
 .content-blacklist-button {
   display: none;
   cursor: pointer;
@@ -31,8 +32,9 @@ GM_addStyle(`
 .content-blacklist-button::after {
   content: ']';
 }
-li:hover .content-blacklist-button,
-h1:hover .content-blacklist-button {
+li:hover .content-blacklist-button, /* 超展开页面的按钮 */
+h1:hover .content-blacklist-button, /* 小组帖子页面的按钮 */
+#header:hover .content-blacklist-button /* 条目讨论页面的按钮 */{
   display: inline-block;
 }
 /* === config页面 === */
@@ -114,7 +116,6 @@ h1:hover .content-blacklist-button {
    做法是让 .edit-wrapper 填满多余空间 (.item 已经是 flex 布局)
    把 form 设为 flex 布局, 让后一项 label (即包含 input 的那一项) 填满剩余空间
    再把 label 设为 flex 布局, 让其中的 input 尽量长, 填满剩余空间
-
    另外, input 有个默认的 size 属性, 导致其在移动端的宽度太长, 把 button 的位置挤没了.
    所以为了适配移动端, 要给 input 个比较短的 width 覆盖掉默认的 size
 */
@@ -1405,8 +1406,8 @@ class KeywordConfigUI extends ConfigUI {
  * 父类用于在各个按钮界面一键屏蔽
  * 子类需要实现 TODO
  * this._getActiveEl(), this._getItemListRoot(), this._getItemList(), this._insertButton()
+ * 因为各页面都有微妙不同，还没想好怎么合并，先注释掉了
  */
-// 各页面都有微妙不同，不好合并
 // class ButtonUI {
 //   constructor(model) {
 //     this._model = model;
@@ -1586,6 +1587,81 @@ class TopicPageButtonUI {
   }
 }
 
+/* 特定条目讨论页(如/subject/topic/123456)的屏蔽按钮 */
+class SubjectPageButtonUI {
+  constructor(model) {
+    this._model = model;
+  }
+
+  static async build() {
+    let model = await Model.build();
+    return new this(model); // 必须用 new this() 而非 new ConfigUI() (其中this指代当前的Class), 否则其子类调用build时会获得父类对象
+  }
+
+  onClick(e) {
+    let action = e.target.dataset.action;
+    if (action) {
+      let el = e.target.closest('h1');
+      if (el) this[`_action_${action}`](el);
+    }
+  }
+
+  async addButtons() {
+    let item = ID_TYPE.fromURL(location.href);
+    let hasBlocked;
+    try {
+      hasBlocked = await this._model.hasID(item);
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+    let title = document.querySelector("#header h1");
+    let button = createElement('button', {
+      className: 'content-blacklist-button',
+      dataset: {action: hasBlocked? 'unban': 'ban'},
+      textContent: hasBlocked? '取消屏蔽': '屏蔽本帖',
+    });
+    title.appendChild(button);
+    button.addEventListener('click', this.onClick.bind(this));
+  }
+
+  async _action_ban(h1) {
+    let button = h1.querySelector('button.content-blacklist-button');
+    button.disabled = true;
+    let item = ID_TYPE.fromURL(location.href);
+    try {
+      await this._model.addID(item);
+    } catch(e) {
+      console.error(e);
+      if (e.name !== "ConstraintError") {
+        alert("添加失败！");
+        button.disabled = false;
+        return;
+      }
+    }
+    button.disabled = false;
+    button.textContent = "取消屏蔽";
+    button.dataset.action = "unban";
+  }
+
+  async _action_unban(h1) {
+    let button = h1.querySelector('button.content-blacklist-button');
+    button.disabled = true;
+    let item = ID_TYPE.fromURL(location.href);
+    try {
+      await this._model.deleteID(item);
+    } catch (e) {
+      console.error(e);
+      alert("取消失败！");
+      button.disabled = false;
+      return;
+    }
+    button.disabled = false;
+    button.textContent = "屏蔽本帖";
+    button.dataset.action = "ban";
+  }
+}
+
 
 async function main() {
   if (location.pathname === '/rakuen/topiclist') {
@@ -1595,6 +1671,9 @@ async function main() {
   } else if (location.pathname.startsWith('/group/topic/')) {
     let topicpagebtnui = await TopicPageButtonUI.build();
     topicpagebtnui.addButtons();
+  } else if (location.pathname.startsWith('/subject/topic/')) {
+    let subjectpagebtnui = await SubjectPageButtonUI.build();
+    subjectpagebtnui.addButtons();
   } else if (location.pathname === '/') {
     await homepageFilter();
   } else if (location.pathname === '/group/discover') {
