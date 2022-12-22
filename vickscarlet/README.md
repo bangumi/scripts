@@ -1,6 +1,6 @@
 # [vickscarlet](https://bgm.tv/user/vickscarlet)
 
-## [Bangumi 用户备注与屏蔽](dist/kotorichan-remark.user.js?raw=true)
+## [Bangumi 用户备注与屏蔽](kotorichan-remark.user.js?raw=true)
 
 给用户添加备注或者屏蔽用户, 增加好友曾用名
 
@@ -22,4 +22,8 @@
 ![被屏蔽用户](images/remark/05.png)
 ![被屏蔽用户](images/remark/06.png)
 
-## [Bangumi 加密通信翻译](dist/kotorichan-encode_translate.user.js?raw=true)
+## [Bangumi 加密通信翻译](kotorichan-encode_translate.user.js?raw=true)
+
+## [Bangumi 年鉴](bangumi_report.user.js?raw=true)
+
+## [Bangumi 看过番剧时长统计](bgagumi_timer.user.js?raw=true)
