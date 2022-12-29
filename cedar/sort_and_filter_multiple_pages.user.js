@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.2.2
+// @version     2.2.3
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -54,7 +54,8 @@ GM_addStyle(`
   margin: 0.2em;
   padding: 3px;
 }
-/*筛选结果的显示*/
+/* 筛选结果的显示 */
+ul.usersLarge .cedar-sort-and-filter-plugin-hide-this, /* 新 UI 的评分页如 subject/{id}/collections 的 CSS 会把这个样式覆盖，为了获得高优先级，添加了一个 ul.userLarge 的父选择器 */
 .cedar-sort-and-filter-plugin-hide-this {
   display: none;
 }
@@ -773,10 +774,10 @@ class CollectParser {
 
   static userIdParser(el) {
     // this function will also add a class to fail-to-parse users.
-    let uid = el.querySelector('img.avatar').src.match(/\d+\.jpg/);
+    let uid = el.querySelector('.avatarNeue').style.backgroundImage.match(/\d+\.jpg/);
     if (uid) return parseInt(uid.toString().slice(0,-4));
     //default icon user
-    uid = el.querySelector('a.avatar').href.match(/\d+/);
+    uid = el.querySelector('a').href.match(/\d+/);
     if (uid) return parseInt((uid.toString()));
     //fail-to-parse user
     el.classList.add('unknown-registration-time');
