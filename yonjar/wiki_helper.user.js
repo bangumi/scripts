@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wiki helper
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.3
+// @version      0.1.4
 // @description  个人自用wiki助手
 // @require      https://unpkg.com/wanakana@4.0.2/umd/wanakana.min.js
 // @require      https://cdn.bootcdn.net/ajax/libs/dayjs/1.8.29/dayjs.min.js
@@ -61,12 +61,20 @@
   function addInput(id, type, describe) {
     let ipt_prn = document.createElement("input");
 
-    ipt_prn.placeholder = describe;
-
     ipt_prn.setAttribute("id", id);
     ipt_prn.setAttribute("type", type);
 
     document.querySelector("#columnInSubjectB").append(ipt_prn);
+
+    if (type == "checkbox" || type == "radio") {
+      let label = document.createElement("label");
+      label.setAttribute("for", id);
+      label.textContent = describe;
+
+      document.querySelector("#columnInSubjectB").append(label);
+    } else {
+      ipt_prn.placeholder = describe;
+    }
 
     return ipt_prn;
   }
@@ -183,24 +191,36 @@
     // document.querySelector("input[name=airdate]").value = today;
 
     let a = addInput("chap", "number", "章节编号");
-    let b = addInput("onair", "", "该章节的首播日期");
+    let b = addInput("onair", "date", "该章节的首播日期 可留空不填");
     let c = addInput("num", "number", "添加几个章节");
+    let d = addInput("interval", "number", "章节间隔几天");
+
+    let e = addInput("ep_title", "text", "默认标题");
+    // let f = addInput("skip_sun", "checkbox", "跳过周日");
 
     // 章节首播日期默认为当天
     b.value = dayjs().format("YYYY-MM-DD");
+
+    c.value = 5;
+    // 间隔默认7天
+    d.value = 1;
 
     addBtn("添加新章节", "click", () => {
       let chap = parseInt(a.value);
       let today = dayjs(b.value);
       let num = parseInt(c.value);
+      let interval = parseInt(d.value);
+      let ep_title = e.value;
       let str = "";
 
       for (let i = 0; i < num; i++) {
-        str += `${chap + i}||||${today
-          .add(7 * i, "day")
-          .format("YYYY-MM-DD")}\n`;
+        str += `${chap + i}|${ep_title}|||${
+          b.value == ""
+            ? ""
+            : today.add(interval * i, "day").format("YYYY-MM-DD")
+        }\n`;
       }
-      document.querySelector("textarea[name=eplist]").value = str;
+      document.querySelector("textarea[name=eplist]").value += str;
     });
   }
 
