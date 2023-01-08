@@ -35,9 +35,7 @@
 
 ## [用户详情爬取](https://github.com/bangumi/scripts/blob/master/yonjar/user_detail.user.js?raw=true)
 
-**bgm.tv 下不可用!**
-**bgm.tv 下不可用!**
-**bgm.tv 下不可用!**
+**2023年1月8日复活!**
 
 本脚本不提供实际的功能 但能方便其他用户自行编写脚本
 爬取用户的资料 导出到 localstorage
