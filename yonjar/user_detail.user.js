@@ -186,14 +186,14 @@ let componentInit = () => {
             elParent.textContent = "fetching characters...";
             user
               .fetchChars()
-              .then((msg) => {
+              .then(() => {
                 localStorage.setItem(
                   "bgm_user_detail_by_yonjar",
                   JSON.stringify(user)
                 );
                 elParent.previousSibling.textContent =
                   user.getCount("characters");
-                elParent.textContent = msg;
+                elParent.textContent = "角色表抓取完成";
               })
               .catch((err) => (elParent.textContent = err));
             break;
@@ -202,13 +202,13 @@ let componentInit = () => {
             elParent.textContent = "fetching persons...";
             user
               .fetchPrns()
-              .then((msg) => {
+              .then(() => {
                 localStorage.setItem(
                   "bgm_user_detail_by_yonjar",
                   JSON.stringify(user)
                 );
                 elParent.previousSibling.textContent = user.getCount("persons");
-                elParent.textContent = msg;
+                elParent.textContent = "人物表抓取完成";
               })
               .catch((err) => (elParent.textContent = err));
             break;
@@ -309,6 +309,8 @@ class User {
       await sleep(800);
     }
 
+    robotWork(`角色表${pagesNum}页抓取完成`, 3);
+
     let dom2 = parseToDOM(domStr);
     let li = [...dom2.querySelectorAll("li a.l")];
     this.charactersList = li.map((el) => el.href.split("/character/")[1]);
@@ -342,6 +344,8 @@ class User {
       await sleep(800);
     }
 
+    robotWork(`人物表${pagesNum}页抓取完成`, 3);
+
     let dom2 = parseToDOM(domStr);
     let li = [...dom2.querySelectorAll("li a.l")];
     this.personsList = li.map((el) => el.href.split("/person/")[1]);
@@ -362,6 +366,7 @@ class User {
           let li = [...dom.querySelectorAll("a.avatar")];
           this.friendsList = li.map((el) => el.href.split("/user/")[1]);
           console.log(this.friendsList);
+          robotWork(`好友表抓取完成`, 3);
           resolve("fetch Friends done!");
         })
         .catch((err) => reject(err));
@@ -383,6 +388,7 @@ class User {
           let li = [...dom.querySelectorAll("a.avatar")];
           this.groupsList = li.map((el) => el.href.split("/group/")[1]);
           console.log(this.groupsList);
+          robotWork(`小组表抓取完成`, 3);
           resolve("fetch Groups done!");
         })
         .catch((err) => reject(err));
