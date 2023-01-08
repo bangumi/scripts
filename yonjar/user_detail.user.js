@@ -1,70 +1,69 @@
 // ==UserScript==
 // @name         user detail
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.2
+// @version      0.2.0
 // @description  抓取用户数据
 // @author       Yonjar
-// @include      /^https?:\/\/(chii\.in|bangumi\.tv)\/settings.*$/
+// @include      /https?:\/\/(chii\.in|bangumi\.tv|bgm\.tv)\/settings/
 // @grant        none
 // ==/UserScript==
+
+const sleep = (delay) => {
+  return new Promise((resolve) => setTimeout(resolve, delay));
+};
+
+// const start = async () => {
+//   for (var i = 0; i < 10; i++) {
+//     // for-of也可以
+//     await sleep(500);
+//     console.log(i);
+//   }
+// };
+// start();
 
 let fetchHTMLString = (url, fetchMethod = "GET") => {
   let fetchInit = {
     method: fetchMethod,
     cache: "default",
-    credentials: "include"
+    credentials: "include",
   };
 
   let aRequest = new Request(url, fetchInit);
 
   return fetch(aRequest).then(
-    resp => resp.text(),
-    err => Promise.reject(err)
+    (resp) => resp.text(),
+    (err) => Promise.reject(err)
   );
 };
 
-// let fetchPages = function(url, page, max, fetchMethod = "GET") {
-//     let fetchInit = {
-//         method: fetchMethod,
-//         cache: "default",
-//         credentials: "include"
-//     };
-
-//     if (page <= max) {
-//         let aRequest = new Request(url + page, fetchInit);
-//         return new Promise((resolve, reject) => {
-//             fetch(aRequest)
-//                 .then(resp => {
-//                     // fetchPages(url, page + 1, max);
-//                     resolve(resp.text());
-//                 })
-//                 .catch(err => reject(err));
-//         });
-//     }
-// };
-
-let fetchPage = function(url, fetchMethod = "GET") {
+let fetchPage = function (url, fetchMethod = "GET") {
   let fetchInit = {
     method: fetchMethod,
     cache: "default",
-    credentials: "include"
+    credentials: "include",
   };
 
   let aRequest = new Request(url, fetchInit);
   return new Promise((resolve, reject) => {
     fetch(aRequest)
-      .then(resp => {
+      .then((resp) => {
         // fetchPages(url, page + 1, max);
         resolve(resp.text());
       })
-      .catch(err => reject(err));
+      .catch((err) => reject(err));
   });
 };
 
 let extractHTMLData = (HTMLString, matchRegExp) =>
   HTMLString.match(matchRegExp)[0];
 
-let getPagesNum = dom => {
+let getPagesNum = (dom, selecter) => {
+  let childCount = dom.querySelector(selecter).childElementCount;
+
+  if (childCount <= 11) {
+    return childCount - 1;
+  }
+
   let el = dom.lastElementChild.lastElementChild;
   let num = el.textContent;
 
@@ -75,7 +74,7 @@ let getPagesNum = dom => {
   return !isNaN(num) ? num - 0 : el.previousSibling.textContent - 0;
 };
 
-let parseToDOM = str => {
+let parseToDOM = (str) => {
   if (typeof str !== "string") {
     return;
   }
@@ -85,7 +84,7 @@ let parseToDOM = str => {
   return doc;
 };
 
-let removeSelf = el => el.parentNode.removeChild(el);
+let removeSelf = (el) => el.parentNode.removeChild(el);
 
 let robotWork = (sth, time) => {
   let status =
@@ -99,7 +98,7 @@ let robotWork = (sth, time) => {
   window.top.chiiLib.ukagaka.presentSpeech(
     `<p>${sth}</p><p>(本提醒将在${time}秒后关闭)</p>`
   );
-  setTimeout(function() {
+  setTimeout(function () {
     window.top.chiiLib.ukagaka.toggleDisplay();
   }, time * 1000);
 };
@@ -141,14 +140,14 @@ let componentInit = () => {
     todo.push(user1.fetchFriends());
     todo.push(user1.fetchGroups());
     Promise.all(todo)
-      .then(w => {
+      .then((w) => {
         localStorage.setItem(
           "bgm_user_detail_by_yonjar",
           JSON.stringify(user1)
         );
         robotWork("初始化完成!", 3);
       })
-      .catch(e => robotWork("初始化失败!" + e));
+      .catch((e) => robotWork("初始化失败!" + e));
   }
 
   let localData = JSON.parse(localStorage.getItem("bgm_user_detail_by_yonjar"));
@@ -177,7 +176,7 @@ let componentInit = () => {
   let table = document.querySelector("#show_table");
   table.addEventListener(
     "click",
-    e => {
+    (e) => {
       let elem = e.target;
       if (elem.tagName.toUpperCase() === "BUTTON") {
         let elParent = elem.parentElement;
@@ -187,24 +186,23 @@ let componentInit = () => {
             elParent.textContent = "fetching characters...";
             user
               .fetchChars()
-              .then(msg => {
+              .then((msg) => {
                 localStorage.setItem(
                   "bgm_user_detail_by_yonjar",
                   JSON.stringify(user)
                 );
-                elParent.previousSibling.textContent = user.getCount(
-                  "characters"
-                );
+                elParent.previousSibling.textContent =
+                  user.getCount("characters");
                 elParent.textContent = msg;
               })
-              .catch(err => (elParent.textContent = err));
+              .catch((err) => (elParent.textContent = err));
             break;
           case "persons":
             removeSelf(elem);
             elParent.textContent = "fetching persons...";
             user
               .fetchPrns()
-              .then(msg => {
+              .then((msg) => {
                 localStorage.setItem(
                   "bgm_user_detail_by_yonjar",
                   JSON.stringify(user)
@@ -212,14 +210,14 @@ let componentInit = () => {
                 elParent.previousSibling.textContent = user.getCount("persons");
                 elParent.textContent = msg;
               })
-              .catch(err => (elParent.textContent = err));
+              .catch((err) => (elParent.textContent = err));
             break;
           case "friends":
             removeSelf(elem);
             elParent.textContent = "fetching friends...";
             user
               .fetchFriends()
-              .then(msg => {
+              .then((msg) => {
                 localStorage.setItem(
                   "bgm_user_detail_by_yonjar",
                   JSON.stringify(user)
@@ -227,14 +225,14 @@ let componentInit = () => {
                 elParent.previousSibling.textContent = user.getCount("friends");
                 elParent.textContent = msg;
               })
-              .catch(err => (elParent.textContent = err));
+              .catch((err) => (elParent.textContent = err));
             break;
           case "groups":
             removeSelf(elem);
             elParent.textContent = "fetching groups...";
             user
               .fetchGroups()
-              .then(msg => {
+              .then((msg) => {
                 localStorage.setItem(
                   "bgm_user_detail_by_yonjar",
                   JSON.stringify(user)
@@ -242,7 +240,7 @@ let componentInit = () => {
                 elParent.previousSibling.textContent = user.getCount("groups");
                 elParent.textContent = msg;
               })
-              .catch(err => (elParent.textContent = err));
+              .catch((err) => (elParent.textContent = err));
             break;
           default:
             // statements_def
@@ -284,141 +282,110 @@ class User {
     }
   }
   // fetch characters
-  fetchChars() {
-    return new Promise((resolve, reject) => {
-      let charsStr = "";
-      let url = `${location.origin}/user/${this.uid}/mono/character`;
-      let pagesArray = [];
-      let pagesNum = 0;
+  async fetchChars() {
+    let url = `${location.origin}/user/${this.uid}/mono/character`;
 
-      fetchHTMLString(url)
-        .then(text => {
-          let domStr = extractHTMLData(
-            text,
-            /<div class="page_inner">[\S\s]*?<\/div>/
-          );
-          let dom = parseToDOM(domStr);
-          return Promise.resolve(getPagesNum(dom));
-        })
-        .then(num => {
-          pagesNum = num;
+    let text = await fetchHTMLString(url);
+    let dom = parseToDOM(
+      extractHTMLData(text, /<div class="page_inner">[\S\s]*?<\/div>/)
+    );
 
-          console.log(`角色表有${num}页待抓取`);
+    let pagesNum = getPagesNum(dom, ".page_inner");
 
-          for (let i = 1; i <= num; i++) {
-            pagesArray.push(fetchHTMLString(`${url}?page=${i}`));
-          }
+    console.log(`角色表有${pagesNum}页待抓取`);
 
-          Promise.all(pagesArray).then(pages => {
-            let domStr = "";
-            pages.forEach((page, i) => {
-              console.log(`characters: ${i + 1} / ${pagesNum} start`);
-              domStr += extractHTMLData(
-                page,
-                /<ul class="coversSmall">[\S\s]*?<\/ul>/
-              );
-              console.log(`characters: ${i + 1} / ${pagesNum} end`);
-            });
+    let domStr = "";
 
-            let dom = parseToDOM(domStr);
-            let li = [...dom.querySelectorAll("li a.l")];
-            this.charactersList = li.map(el => el.href.split("/character/")[1]);
-            resolve("fetch Characters done!");
-          });
-        });
-    }).catch(err => reject(err));
+    for (let i = 1; i <= pagesNum; i++) {
+      console.log(`characters: ${i} / ${pagesNum} start`);
+      robotWork(`characters: ${i} / ${pagesNum} start`, 3);
+      let pageData = await fetchPage(`${url}?page=${i}`);
+      domStr += extractHTMLData(
+        pageData,
+        /<ul class="coversSmall">[\S\s]*?<\/ul>/
+      );
+      console.log(`characters: ${i} / ${pagesNum} end`);
+      robotWork(`characters: ${i} / ${pagesNum} end`, 3);
+      await sleep(800);
+    }
+
+    let dom2 = parseToDOM(domStr);
+    let li = [...dom2.querySelectorAll("li a.l")];
+    this.charactersList = li.map((el) => el.href.split("/character/")[1]);
   }
 
   // fetch persons
-  fetchPrns() {
-    return new Promise((resolve, reject) => {
-      let prnsStr = "";
-      let url = `${location.origin}/user/${this.uid}/mono/person`;
-      let pagesArray = [];
-      let pagesNum = 0;
+  async fetchPrns() {
+    let url = `${location.origin}/user/${this.uid}/mono/person`;
 
-      fetchHTMLString(url)
-        .then(text => {
-          let domStr = extractHTMLData(
-            text,
-            /<div class="page_inner">[\S\s]*?<\/div>/
-          );
-          let dom = parseToDOM(domStr);
-          return Promise.resolve(getPagesNum(dom));
-        })
-        .then(num => {
-          pagesNum = num;
+    let text = await fetchHTMLString(url);
+    let dom = parseToDOM(
+      extractHTMLData(text, /<div class="page_inner">[\S\s]*?<\/div>/)
+    );
 
-          console.log(`人物表有${num}页待抓取`);
+    let pagesNum = getPagesNum(dom, ".page_inner");
 
-          for (let i = 1; i <= num; i++) {
-            pagesArray.push(fetchPage(`${url}?page=${i}`));
-          }
-          // pagesArray.push(fetchPages(`${url}?page=`, 1, num));
+    console.log(`人物表有${pagesNum}页待抓取`);
 
-          Promise.all(pagesArray)
-            .then(pages => {
-              let domStr = "";
-              pages.forEach((page, i) => {
-                console.log(`persons: ${i + 1} / ${pagesNum} start`);
-                domStr += extractHTMLData(
-                  page,
-                  /<ul class="coversSmall">[\S\s]*?<\/ul>/
-                );
-                console.log(`persons: ${i + 1} / ${pagesNum} end`);
-              });
+    let domStr = "";
 
-              let dom = parseToDOM(domStr);
-              let li = [...dom.querySelectorAll("li a.l")];
-              this.personsList = li.map(el => el.href.split("/person/")[1]);
-              resolve("fetch Persons done!");
-            })
-            .catch(err => reject(err));
-        });
-    }).catch(err => reject(err));
+    for (let i = 1; i <= pagesNum; i++) {
+      console.log(`persons: ${i} / ${pagesNum} start`);
+      robotWork(`persons: ${i} / ${pagesNum} start`, 3);
+      let pageData = await fetchPage(`${url}?page=${i}`);
+      domStr += extractHTMLData(
+        pageData,
+        /<ul class="coversSmall">[\S\s]*?<\/ul>/
+      );
+      console.log(`persons: ${i} / ${pagesNum} end`);
+      robotWork(`persons: ${i} / ${pagesNum} end`, 3);
+      await sleep(800);
+    }
+
+    let dom2 = parseToDOM(domStr);
+    let li = [...dom2.querySelectorAll("li a.l")];
+    this.personsList = li.map((el) => el.href.split("/person/")[1]);
   }
 
   // fetch friends
   fetchFriends() {
     return new Promise((resolve, reject) => {
-      let friendsStr = "";
       let url = `${location.origin}/user/${this.uid}/friends`;
 
       fetchHTMLString(url)
-        .then(text => {
+        .then((text) => {
           let domStr = extractHTMLData(
             text,
             /<ul id="memberUserList" class="usersMedium">[\S\s]*?<\/ul>/
           );
           let dom = parseToDOM(domStr);
           let li = [...dom.querySelectorAll("a.avatar")];
-          this.friendsList = li.map(el => el.href.split("/user/")[1]);
+          this.friendsList = li.map((el) => el.href.split("/user/")[1]);
           console.log(this.friendsList);
           resolve("fetch Friends done!");
         })
-        .catch(err => reject(err));
+        .catch((err) => reject(err));
     });
   }
 
   // fetch groups
   fetchGroups() {
     return new Promise((resolve, reject) => {
-      let groupsStr = "";
       let url = `${location.origin}/user/${this.uid}/groups`;
 
       fetchHTMLString(url)
-        .then(text => {
+        .then((text) => {
           let domStr = extractHTMLData(
             text,
             /<ul id="memberGroupList" class="browserMedium">[\S\s]*?<\/ul>/
           );
           let dom = parseToDOM(domStr);
           let li = [...dom.querySelectorAll("a.avatar")];
-          this.groupsList = li.map(el => el.href.split("/group/")[1]);
+          this.groupsList = li.map((el) => el.href.split("/group/")[1]);
           console.log(this.groupsList);
           resolve("fetch Groups done!");
         })
-        .catch(err => reject(err));
+        .catch((err) => reject(err));
     });
   }
 
@@ -431,7 +398,7 @@ class User {
       persons: this.personsList,
       friends: this.friendsList,
       groups: this.groupsList,
-      updateTime: now.getTime()
+      updateTime: now.getTime(),
     };
 
     return userObj;
