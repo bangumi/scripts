@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         user detail
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.2.0
+// @version      0.2.1
 // @description  抓取用户数据
 // @author       Yonjar
 // @include      /https?:\/\/(chii\.in|bangumi\.tv|bgm\.tv)\/settings/
@@ -55,7 +55,7 @@ let fetchPage = function (url, fetchMethod = "GET") {
 };
 
 let extractHTMLData = (HTMLString, matchRegExp) =>
-  HTMLString.match(matchRegExp)[0];
+  HTMLString.match(matchRegExp);
 
 let getPagesNum = (dom, selecter) => {
   let childCount = dom.querySelector(selecter).childElementCount;
@@ -286,11 +286,16 @@ class User {
     let url = `${location.origin}/user/${this.uid}/mono/character`;
 
     let text = await fetchHTMLString(url);
-    let dom = parseToDOM(
-      extractHTMLData(text, /<div class="page_inner">[\S\s]*?<\/div>/)
+    let exHTML = extractHTMLData(
+      text,
+      /<div class="page_inner">[\S\s]*?<\/div>/
     );
+    let pagesNum = 1;
 
-    let pagesNum = getPagesNum(dom, ".page_inner");
+    if (exHTML !== null) {
+      let dom = parseToDOM(exHTML[0]);
+      pagesNum = getPagesNum(dom, ".page_inner");
+    }
 
     console.log(`角色表有${pagesNum}页待抓取`);
 
@@ -303,7 +308,7 @@ class User {
       domStr += extractHTMLData(
         pageData,
         /<ul class="coversSmall">[\S\s]*?<\/ul>/
-      );
+      )[0];
       console.log(`characters: ${i} / ${pagesNum} end`);
       robotWork(`characters: ${i} / ${pagesNum} end`, 3);
       await sleep(800);
@@ -321,11 +326,17 @@ class User {
     let url = `${location.origin}/user/${this.uid}/mono/person`;
 
     let text = await fetchHTMLString(url);
-    let dom = parseToDOM(
-      extractHTMLData(text, /<div class="page_inner">[\S\s]*?<\/div>/)
-    );
 
-    let pagesNum = getPagesNum(dom, ".page_inner");
+    let exHTML = extractHTMLData(
+      text,
+      /<div class="page_inner">[\S\s]*?<\/div>/
+    );
+    let pagesNum = 1;
+
+    if (exHTML !== null) {
+      let dom = parseToDOM(exHTML[0]);
+      pagesNum = getPagesNum(dom, ".page_inner");
+    }
 
     console.log(`人物表有${pagesNum}页待抓取`);
 
@@ -338,7 +349,7 @@ class User {
       domStr += extractHTMLData(
         pageData,
         /<ul class="coversSmall">[\S\s]*?<\/ul>/
-      );
+      )[0];
       console.log(`persons: ${i} / ${pagesNum} end`);
       robotWork(`persons: ${i} / ${pagesNum} end`, 3);
       await sleep(800);
@@ -361,7 +372,7 @@ class User {
           let domStr = extractHTMLData(
             text,
             /<ul id="memberUserList" class="usersMedium">[\S\s]*?<\/ul>/
-          );
+          )[0];
           let dom = parseToDOM(domStr);
           let li = [...dom.querySelectorAll("a.avatar")];
           this.friendsList = li.map((el) => el.href.split("/user/")[1]);
@@ -383,7 +394,7 @@ class User {
           let domStr = extractHTMLData(
             text,
             /<ul id="memberGroupList" class="browserMedium">[\S\s]*?<\/ul>/
-          );
+          )[0];
           let dom = parseToDOM(domStr);
           let li = [...dom.querySelectorAll("a.avatar")];
           this.groupsList = li.map((el) => el.href.split("/group/")[1]);
