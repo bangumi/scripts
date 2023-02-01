@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wiki helper
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.1.4
+// @version      0.1.5
 // @description  个人自用wiki助手
 // @require      https://unpkg.com/wanakana@4.0.2/umd/wanakana.min.js
 // @require      https://cdn.bootcdn.net/ajax/libs/dayjs/1.8.29/dayjs.min.js
@@ -38,8 +38,19 @@
     addBtn("导出人物id", "click", toIDstr, true);
   }
 
+  // 新建条目页面
+  if (/new_subject/.test(location.href)) {
+    addBtn("导入资料", "click", importData, true);
+  }
+
   // 加个btn
-  function addBtn(describe, type, callback, arg) {
+  function addBtn(
+    describe,
+    type,
+    callback,
+    arg,
+    container_selector = "#columnInSubjectB"
+  ) {
     let btn_prn = document.createElement("button");
 
     btn_prn.textContent = describe;
@@ -52,7 +63,7 @@
       false
     );
 
-    document.querySelector("#columnInSubjectB").append(btn_prn);
+    document.querySelector(container_selector).append(btn_prn);
 
     return btn_prn;
   }
@@ -180,6 +191,27 @@
     copyText.select();
     document.execCommand("Copy");
     copyText.style.display = "none";
+  }
+
+  // 导入数据
+  function importData() {
+    let title = document.querySelector("input[name=subject_title]");
+    let infobox = document.querySelector("textarea[name=subject_infobox]");
+    let summary = document.querySelector("textarea[name=subject_summary]");
+    let json_data = prompt("输入json数据", "");
+    let data = JSON.parse(json_data);
+
+    title.value = data["TITLE"];
+    summary.value = data["INFO"];
+    infobox.value = `{{Infobox Album
+|中文名=
+|别名={
+}
+|艺术家= ${data["ARTIST"]}
+|版本特性= ${data["TYPE"]}
+|发售日期= ${data["DATE"]}
+|价格=
+}}`;
   }
 
   // 添加新章节
