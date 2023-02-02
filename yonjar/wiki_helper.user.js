@@ -204,13 +204,14 @@
     title.value = data["TITLE"];
     summary.value = data["INFO"];
     infobox.value = `{{Infobox Album
-|中文名=
+|中文名= 
 |别名={
 }
 |艺术家= ${data["ARTIST"]}
+|作词=  ${data["LYRICIST"] ? data["LYRICIST"] : ""}
 |版本特性= ${data["TYPE"]}
 |发售日期= ${data["DATE"]}
-|价格=
+|价格= ${data["PRICE"] ? data["PRICE"] : ""}
 }}`;
   }
 
