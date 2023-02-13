@@ -3,8 +3,7 @@
 // @namespace    xd.cedar.bgmnote
 // @description  简易备注
 // @author       niR, Cedar
-// @version      1.1.2
-// @encoding     UTF-8
+// @version      1.1.3
 // @match        *://bgm.tv/blog/*
 // @match        *://bgm.tv/ep/*
 // @match        *://bgm.tv/group/topic/*
@@ -374,7 +373,7 @@ class UserPageUI {
 
   static addNoteButton() {
     let btn = this._createNoteButton();
-    let parent = document.querySelector('#headerProfile div.rr');
+    let parent = document.querySelector('#headerProfile div.actions');
     parent.appendChild(btn);
   }
 
@@ -472,7 +471,7 @@ class UserPageUI {
     let el = document.querySelector('#headerProfile span.avatarNeue');
     numberID = el && el.style.backgroundImage.match(/(\d+)\.jpg/);
     if (numberID && Database.isNumberID(numberID[1])) return numberID[1];
-    el = document.querySelector('#headerProfile .rr a[href^="/pm/compose"]');
+    el = document.querySelector('#headerProfile .actions a[href^="/pm/compose"]');
     numberID = el && el.pathname.match(/(\d+)\.chii/);
     if (numberID && Database.isNumberID(numberID[1])) return numberID[1];
     el = document.getElementById('blog');
