@@ -121,7 +121,7 @@ def main(event, context):
         URL_PREFIX = "https://bgm.tv/group/" + TAG + "/forum?page="
 
         myState = State()
-        all_pages = [URL_PREFIX + str(tid) for tid in range(MAX_PAGE)]
+        all_pages = [URL_PREFIX + str(tid+1) for tid in range(MAX_PAGE)]
 
         while len(all_pages) > 0:
             failed_urls = []
