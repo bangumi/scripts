@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name        bangumi new wiki helper
 // @name:zh-CN  bangumi 创建条目助手
-// @namespace   https://github.com/22earth
+// @namespace   https://github.com/zhifengle
 // @description assist to create new subject
 // @description:zh-cn 辅助创建 bangumi.tv 上的条目
 // @include     http://www.getchu.com/soft.phtml?id=*
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @match      *://*/*
-// @author      22earth
-// @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.14
+// @author      zhifengle
+// @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
+// @version     0.4.15
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -1428,11 +1428,11 @@ const adultComicModel = {
     type: SubjectTypeId.book,
     pageSelectors: [
         {
-            selector: '#pankuz > ol > li:nth-child(1) > a[href$="adultcomic.dbsearch.net"]',
+            selector: '#pankuz > ol > li:nth-child(1) > a[href*="adultcomic.dbsearch.net"]',
         },
     ],
     controlSelector: {
-        selector: '#main-inner h2',
+        selector: '#h2-icon-bk',
     },
     itemList: [],
 };
@@ -1449,7 +1449,7 @@ const genSelectors = (keyWord) => commonSelectors$1.map((s) => {
 adultComicModel.itemList.push({
     name: '名称',
     selector: {
-        selector: '#main-inner > article > h2',
+        selector: '#h2-icon-bk',
     },
     category: 'subject_title',
 }, 
@@ -1458,7 +1458,10 @@ adultComicModel.itemList.push({
     name: 'cover',
     selector: [
         {
-            selector: '#sample-image > figure > img',
+            selector: '#sample-image > figure > a',
+        },
+        {
+            selector: '#info-table > .img-box > img',
         },
     ],
     category: 'cover',
@@ -1494,7 +1497,7 @@ adultComicModel.itemList.push({
     name: '内容简介',
     selector: [
         {
-            selector: '#main-inner > article > section.comment-box.section-box > .iteminfo-box',
+            selector: '#comment-clist > .iteminfo-box',
             subSelector: 'h4',
             sibling: true,
             keyWord: ['内容紹介'],
