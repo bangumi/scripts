@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Bangumi 旧帖提醒（“挖坟”警告！）
 // @namespace    tv.bgm.cedar.posttimereminder
-// @version      0.3.1
+// @version      0.4
 // @description  展示帖子发布距今的时间，顺便找找顶旧帖的评论
 // @author       Cedar
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/group/topic/.*/
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/topic/.*/
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/rakuen/group/.*/
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/rakuen/topic/.*/
+// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/rakuen/topic/group/.*/
+// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/rakuen/topic/subject/.*/
 // @grant        GM_addStyle
 // ==/UserScript==
 
@@ -19,8 +19,8 @@ const constants = {
 }
 
 const selectors = {
-  postActions: "#columnInSubjectA > .postTopic .topic_actions > .post_actions",
-  mainFloor: "#columnInSubjectA > .postTopic",
+  postActions: ".postTopic .topic_actions > .post_actions",
+  mainFloor: ".postTopic",
   commentList: "#comment_list",
   reply: "#comment_list .row_reply",
   subReply: ".sub_reply_bg",
@@ -75,6 +75,7 @@ function findAllPostDiggers(sortedInfo) {
       postDiggers.push(sortedInfo[i]);
     }
   }
+  // console.log(postDiggers);
   return postDiggers;
 }
 
@@ -88,10 +89,8 @@ function displayTimeSincePost(postInfo) {
   const postDiggerButton = document.createElement('button');
   postDiggerButton.innerText = '是谁在顶旧贴？';
   postDiggerButton.addEventListener('click', function (evt) {
-    // 获取所有评论
-    const commentInfo = getSortedCommentInfo();
-    // 创建顶贴楼层指示元素
-    const floorEl = document.createElement('span');
+    const commentInfo = getSortedCommentInfo(); // 获取所有评论
+    const floorEl = document.createElement('span'); // 创建顶贴楼层指示元素
     // 判断谁在顶旧帖
     if (Date.now() - postInfo.timestamp < constants.threshold) {
       // 不是旧贴
@@ -103,15 +102,20 @@ function displayTimeSincePost(postInfo) {
       // 是旧贴但无人顶帖
       floorEl.innerText = '最近无人顶帖';
     } else {
-      // 找到所有顶旧帖的评论
-      const postDiggers = findAllPostDiggers(commentInfo);
-      const newDigger = postDiggers[postDiggers.length - 1];
-      // 添加顶贴楼层指示元素
-      const postDiggerFloorEl = document.createElement('a');
-      postDiggerFloorEl.href = newDigger.replyLinkhash;
-      postDiggerFloorEl.innerText = newDigger.replyFloor;
-      floorEl.innerText = '原来是你，';
-      floorEl.appendChild(postDiggerFloorEl);
+      const postDiggers = findAllPostDiggers(commentInfo); // 找到所有顶旧帖的评论
+      if (postDiggers.length === 0) {
+        // 是长期活跃的旧帖，没有任何两条评论的间隔超出 thershold 时间
+        floorEl.innerText = "本帖一直活跃至今！";
+      } else {
+        // 确实被顶帖了的旧帖
+        const newDigger = postDiggers[postDiggers.length - 1];
+        // 添加顶贴楼层指示元素
+        const postDiggerFloorEl = document.createElement('a');
+        postDiggerFloorEl.href = newDigger.replyLinkhash;
+        postDiggerFloorEl.innerText = newDigger.replyFloor;
+        floorEl.innerText = '原来是你，';
+        floorEl.appendChild(postDiggerFloorEl);
+      }
     }
     evt.target.parentNode.replaceChild(floorEl, evt.target);
   });
@@ -150,7 +154,7 @@ GM_addStyle(`
   display: flex;
   align-items: center;
   justify-content: right;
-  column-gap: 3px;
+  column-gap: 5px;
 }
 .post-time-reminder .button-wrapper {
   visibility: hidden;
