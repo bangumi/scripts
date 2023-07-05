@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 旧帖提醒（“挖坟”警告！）
 // @namespace    tv.bgm.cedar.posttimereminder
-// @version      0.3
+// @version      0.3.1
 // @description  展示帖子发布距今的时间，顺便找找顶旧帖的评论
 // @author       Cedar
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/group/topic/.*/
@@ -96,6 +96,9 @@ function displayTimeSincePost(postInfo) {
     if (Date.now() - postInfo.timestamp < constants.threshold) {
       // 不是旧贴
       floorEl.innerText = '不是旧帖';
+    } else if (commentInfo.length === 1) {
+      // 没有评论（此时 Array 中只有楼主自己的 Info）
+      floorEl.innerText = '没有评论';
     } else if (Date.now() - commentInfo[commentInfo.length - 1].timestamp > constants.threshold) {
       // 是旧贴但无人顶帖
       floorEl.innerText = '最近无人顶帖';
