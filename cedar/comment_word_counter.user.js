@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        简评字数统计
 // @namespace   tv.bgm.cedar.wordcounter
-// @version     1.5.1
+// @version     1.6
 // @description 统计简评字数
 // @author      Cedar
 // @include     /^https?://((bgm|bangumi)\.tv|chii\.in)/$/
@@ -24,7 +24,7 @@
 'use strict';
 
 function createWordCounter(dom = document) {
-  const LIMIT_NUM = 200;
+  const LIMIT_NUM = 380;
   let comment = dom.querySelector('#comment');
 
   let limit = document.createElement('span');
