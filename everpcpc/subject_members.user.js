@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 条目页添加好友在看/看过
 // @namespace    com.everpcpc.bgm
-// @version      1.5.2
+// @version      1.5.3
 // @description  条目页面添加好友信息
 // @author       everpcpc
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+$/
@@ -107,7 +107,7 @@ function get_members(members_url, st) {
 
 function main() {
     var words = getStatusWords();
-    $('body').append('<div id="friend_watch_detail" style="display:hide;"></div>');
+    $('body').append('<div id="friend_watch_detail" style="display:none;"></div>');
     for (i = 0; i < STATUS.length; i++) {
         var st = STATUS[i];  // status type
         var status_url = location.href + '/' + st + '?filter=friends';
