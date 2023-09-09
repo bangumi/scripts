@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.15
+// @version     0.4.16
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -20,9 +20,9 @@
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_getResourceText
-// @resource    NOTYF_CSS https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css
+// @resource    NOTYF_CSS https://cdn.staticfile.org/notyf/3.10.0/notyf.min.css
 // @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
-// @require     https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js
+// @require     https://cdn.staticfile.org/notyf/3.10.0/notyf.min.js
 // ==/UserScript==
 
 
@@ -1868,6 +1868,58 @@ const adultComicTools = {
     },
 };
 
+/**
+ * convert base64/URLEncoded data component to raw binary data held in a string
+ * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+ * @param dataURI
+ */
+function dataURItoBlob(dataURI) {
+    var byteString;
+    if (dataURI.split(',')[0].indexOf('base64') >= 0)
+        byteString = atob(dataURI.split(',')[1]);
+    else
+        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
+    // separate out the mime component
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    // write the bytes of the string to a typed array
+    var ia = new Uint8Array(byteString.length);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ia], { type: mimeString });
+}
+function getImageDataByURL(url, opts = {}) {
+    if (!url)
+        return Promise.reject('invalid img url');
+    return new Promise(async (resolve, reject) => {
+        try {
+            const blob = await fetchBinary(url, opts);
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+            reader.onerror = reject;
+        }
+        catch (e) {
+            reject(e);
+        }
+    });
+}
+/**
+ * convert to img Element to base64 string
+ * @param $img
+ */
+function convertImgToBase64($img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = $img.width;
+    canvas.height = $img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage($img, 0, 0, $img.width, $img.height);
+    const dataURL = canvas.toDataURL('image/png');
+    return dataURL;
+}
+
 const amazonUtils = {
     dealTitle(str) {
         str = str.trim().split('\n')[0].trim();
@@ -1965,6 +2017,24 @@ const amazonJpBookTools = {
                     res.push(Object.assign({}, newInfo));
                 }
             }
+            const $cover = document.querySelector('#imgTagWrapperId>img');
+            if ($cover && !res.find((obj) => obj.name === 'cover')) {
+                const url = $cover.getAttribute('data-old-hires');
+                let dataUrl = url;
+                try {
+                    dataUrl = await getImageDataByURL(url);
+                }
+                catch (error) { }
+                const info = {
+                    category: 'cover',
+                    name: 'cover',
+                    value: {
+                        url,
+                        dataUrl,
+                    },
+                };
+                res.push(info);
+            }
             return res;
         },
     },
@@ -2035,58 +2105,6 @@ const dlsiteCharaTools = {
         },
     },
 };
-
-/**
- * convert base64/URLEncoded data component to raw binary data held in a string
- * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
- * @param dataURI
- */
-function dataURItoBlob(dataURI) {
-    var byteString;
-    if (dataURI.split(',')[0].indexOf('base64') >= 0)
-        byteString = atob(dataURI.split(',')[1]);
-    else
-        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
-    // separate out the mime component
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    // write the bytes of the string to a typed array
-    var ia = new Uint8Array(byteString.length);
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ia], { type: mimeString });
-}
-function getImageDataByURL(url, opts = {}) {
-    if (!url)
-        return Promise.reject('invalid img url');
-    return new Promise(async (resolve, reject) => {
-        try {
-            const blob = await fetchBinary(url, opts);
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result);
-            };
-            reader.readAsDataURL(blob);
-            reader.onerror = reject;
-        }
-        catch (e) {
-            reject(e);
-        }
-    });
-}
-/**
- * convert to img Element to base64 string
- * @param $img
- */
-function convertImgToBase64($img) {
-    const canvas = document.createElement('canvas');
-    canvas.width = $img.width;
-    canvas.height = $img.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage($img, 0, 0, $img.width, $img.height);
-    const dataURL = canvas.toDataURL('image/png');
-    return dataURL;
-}
 
 async function getCover($d, site) {
     let url;
