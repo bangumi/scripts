@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.16
+// @version     0.4.17
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -384,12 +384,12 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: ['本', '书'],
+            keyWord: ['本', '书', '漫画'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: ['本', '书'],
+            keyWord: ['本', '书', '漫画'],
         },
     ],
     controlSelector: {
@@ -2019,10 +2019,29 @@ const amazonJpBookTools = {
             }
             const $cover = document.querySelector('#imgTagWrapperId>img');
             if ($cover && !res.find((obj) => obj.name === 'cover')) {
-                const url = $cover.getAttribute('data-old-hires');
+                let url = '';
+                if ($cover.hasAttribute('data-a-dynamic-image')) {
+                    try {
+                        const obj = JSON.parse($cover.getAttribute('data-a-dynamic-image'));
+                        const urlArr = Object.keys(obj).sort().reverse();
+                        if (urlArr && urlArr.length > 0) {
+                            url = urlArr[0];
+                        }
+                    }
+                    catch (error) { }
+                }
+                else if ($cover.hasAttribute('data-old-hires')) {
+                    url = $cover.getAttribute('data-old-hires');
+                }
+                // 如果还是没有图片链接
+                if (!url) {
+                    url = $cover.src;
+                }
                 let dataUrl = url;
                 try {
-                    dataUrl = await getImageDataByURL(url);
+                    if (url) {
+                        dataUrl = await getImageDataByURL(url);
+                    }
                 }
                 catch (error) { }
                 const info = {
