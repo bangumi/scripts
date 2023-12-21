@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.19
+// @version     0.4.20
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -384,12 +384,12 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: ['本', '书', '漫画'],
+            keyWord: ['本', '书', '漫画', 'マンガ'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: ['本', '书', '漫画'],
+            keyWord: ['本', '书', '漫画', 'マンガ'],
         },
     ],
     controlSelector: {
@@ -511,7 +511,10 @@ amazonSubjectModel.itemList.push({
             selector: '#tmm-grid-swatch-OTHER .slot-price',
         },
         {
-            selector: '#tmmSwatches .slot-price',
+            selector: '#tmm-grid-swatch-PAPERBACK .slot-price',
+        },
+        {
+            selector: '#tmmSwatches > div > div:last-child .slot-price',
         },
     ],
     pipes: ['ta'],
