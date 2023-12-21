@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.17
+// @version     0.4.19
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -418,21 +418,18 @@ amazonSubjectModel.itemList.push({
         selector: '#productTitle',
     },
     category: 'subject_title',
-}, {
-    name: 'cover',
-    selector: [
-        {
-            selector: 'img#igImage',
-        },
-        {
-            selector: 'img#imgBlkFront',
-        },
-        {
-            selector: 'img#ebooksImgBlkFront',
-        },
-    ],
-    category: 'cover',
-}, {
+}, 
+// 在 afterGetWikiData 获取封面
+// {
+//   name: 'cover',
+//   selector: [
+//     {
+//       selector: 'img#igImage',
+//     },
+//   ],
+//   category: 'cover',
+// },
+{
     name: 'ASIN',
     selector: commonSelectors.map((s) => {
         return Object.assign(Object.assign({}, s), { keyWord: 'ISBN-10' });
@@ -450,7 +447,7 @@ amazonSubjectModel.itemList.push({
         return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期'] });
     }),
     category: 'date',
-    pipes: ['k', 'date'],
+    pipes: ['k', 'date', 'ta'],
 }, {
     name: '出版社',
     selector: commonSelectors.map((s) => {
@@ -511,12 +508,13 @@ amazonSubjectModel.itemList.push({
     name: '价格',
     selector: [
         {
-            selector: '.swatchElement.selected .a-color-base .a-size-base',
+            selector: '#tmm-grid-swatch-OTHER .slot-price',
         },
         {
-            selector: '.swatchElement.selected .a-color-base',
+            selector: '#tmmSwatches .slot-price',
         },
     ],
+    pipes: ['ta'],
 }, {
     name: '内容简介',
     selector: [
@@ -1288,6 +1286,14 @@ const arrDict$1 = [
         name: '剧本',
         key: ['シナリオ', '剧情'],
     },
+    // {
+    //   name: '声优',
+    //   key: ['声優', '声优'],
+    // },
+    // {
+    //   name: '音乐',
+    //   key: ['音乐', '音楽'],
+    // },
 ];
 const configArr$3 = arrDict$1.map((obj) => {
     const r = {
@@ -1402,6 +1408,16 @@ const dmmGameCharaModel = {
         {
             selector: '#title',
         },
+        // {
+        //   selector: '#if_view',
+        //   isIframe: true,
+        //   subSelector: 'body',
+        //   nextSelector: {
+        //     selector: '.guide-content',
+        //     subSelector: 'guide-capt',
+        //     keyWord: 'キャラクター',
+        //   },
+        // },
     ],
     itemList: [],
 };
@@ -1599,6 +1615,100 @@ moepedia.defaultInfos = [
     },
 ];
 
+// ref links
+// https://vgmdb.net/album/9683
+// https://vgmdb.net/album/134285
+const vgmdbModel = {
+    key: 'vgmdb',
+    description: 'vgmdb',
+    host: ['vgmdb.net'],
+    type: SubjectTypeId.music,
+    pageSelectors: [
+        {
+            selector: '#innermain > h1',
+        },
+    ],
+    controlSelector: {
+        selector: '#innermain > h1',
+    },
+    itemList: [],
+};
+const commonSelectors$2 = {
+    selector: '#album_infobit_large',
+    subSelector: 'tr > td:first-child',
+    sibling: true,
+};
+const creditsSelectors = {
+    selector: '#collapse_credits table',
+    subSelector: 'tr > td:first-child',
+    sibling: true,
+};
+vgmdbModel.itemList.push(
+// afterGetWikiData 里面
+// {
+//   name: '唱片名',
+//   selector: {
+//     selector: '#innermain > h1 > [lang=ja]',
+//   },
+//   category: 'subject_title',
+// },
+{
+    name: '录音',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Organizations' }),
+    ],
+}, {
+    name: '发售日期',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Release Date' }),
+    ],
+    pipes: ['date']
+}, {
+    name: '价格',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Price' }),
+    ],
+}, {
+    name: '版本特性',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Media Format' }),
+    ],
+}, {
+    name: '播放时长',
+    selector: [
+        {
+            selector: '#tracklist',
+            subSelector: 'span.smallfont',
+            sibling: true,
+            keyWord: 'Disc length',
+        },
+    ],
+}, {
+    name: '艺术家',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: ['Performer', 'Vocalist'] }),
+    ],
+    pipes: ['ti'],
+}, {
+    name: '作曲',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: 'Composer' }),
+    ],
+    pipes: ['ti'],
+}, {
+    name: '作词',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: ['Lyricist', 'Lyrics'] }),
+    ],
+    pipes: ['ti'],
+}, {
+    name: '编曲',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: 'Arranger' }),
+    ],
+    pipes: ['ti'],
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1614,10 +1724,13 @@ const configs = {
     [dmmGameModel.key]: dmmGameModel,
     [adultComicModel.key]: adultComicModel,
     [moepedia.key]: moepedia,
+    [vgmdbModel.key]: vgmdbModel,
 };
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
     [dmmGameCharaModel.key]: dmmGameCharaModel,
+    // @TODO getchu chara
+    // [getchuCharaModel.key]: getchuCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1697,7 +1810,7 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
         'm+': date.getMinutes(),
         's+': date.getSeconds(),
         'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(),
+        S: date.getMilliseconds(), //毫秒
     };
     if (/(y+)/i.test(fmt)) {
         fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
@@ -1725,6 +1838,9 @@ function dealDate(dataStr) {
         return dataStr;
     }
     else {
+        if (/[A-Za-z]+\s\d{1,2},?\s\d{4}$/.test(dataStr)) {
+            return formatDate(dataStr);
+        }
         return dataStr;
     }
     return l
@@ -1752,6 +1868,8 @@ const pipeFnDict = {
     t: trimSpace,
     // ta: 去除所有空格
     ta: trimAllSpace,
+    // ti: 去除空格，在 getWikiItem 里面，使用 innerText 取文本
+    ti: trimSpace,
     // k: 去除关键字;
     k: trimKeywords,
     // p: 括号
@@ -2020,7 +2138,10 @@ const amazonJpBookTools = {
             const $cover = document.querySelector('#imgTagWrapperId>img');
             if ($cover && !res.find((obj) => obj.name === 'cover')) {
                 let url = '';
-                if ($cover.hasAttribute('data-a-dynamic-image')) {
+                if ($cover.hasAttribute('data-old-hires')) {
+                    url = $cover.getAttribute('data-old-hires');
+                }
+                else if ($cover.hasAttribute('data-a-dynamic-image')) {
                     try {
                         const obj = JSON.parse($cover.getAttribute('data-a-dynamic-image'));
                         const urlArr = Object.keys(obj).sort().reverse();
@@ -2029,9 +2150,6 @@ const amazonJpBookTools = {
                         }
                     }
                     catch (error) { }
-                }
-                else if ($cover.hasAttribute('data-old-hires')) {
-                    url = $cover.getAttribute('data-old-hires');
                 }
                 // 如果还是没有图片链接
                 if (!url) {
@@ -2777,6 +2895,108 @@ const steamdbTools = {
     ],
 };
 
+const vgmdbTools = {
+    hooks: {
+        async beforeCreate() {
+            const $t = document.querySelector('#innermain h1 > .albumtitle[lang=ja]');
+            if ($t && $t.style.display === 'none') {
+                const $div = document.createElement('div');
+                const $s = document.createElement('span');
+                $s.style.color = 'red';
+                $s.style.fontWeight = '600';
+                $s.innerHTML = '注意: ';
+                const $txt = document.createElement('span');
+                $txt.innerHTML =
+                    '请设置 Title / Name Language 为 Original。(辅助创建脚本)';
+                $div.appendChild($s);
+                $div.appendChild($txt);
+                $div.style.padding = '6px 0';
+                $t.parentElement.insertAdjacentElement('afterend', $div);
+            }
+            return true;
+        },
+        async afterGetWikiData(infos) {
+            var _a;
+            const res = [];
+            const $h1 = document.querySelector('#innermain > h1');
+            res.push({
+                name: '唱片名',
+                value: $h1.innerText,
+                category: 'subject_title',
+            });
+            for (const item of infos) {
+                if (item.name === '价格' && item.value.includes('Not for Sale')) {
+                    continue;
+                }
+                res.push(item);
+            }
+            /*
+            for (const $td of document.querySelectorAll(
+              '#album_infobit_large td:first-child'
+            )) {
+              const label = ($td as HTMLElement).innerText;
+              const links = $td.nextElementSibling.querySelectorAll('a');
+              let value = '';
+              if ($td.nextElementSibling.querySelector('.artistname[lang=ja]')) {
+                value = [...links]
+                  .map(
+                    (node) => node.querySelector('.artistname[lang=ja]').textContent
+                  )
+                  .join('、');
+              } else {
+                value = [...links].map((node) => node.innerText).join('、');
+              }
+              let name = '';
+              if (label.includes('Performer')) {
+                name = '艺术家';
+              } else if (label.includes('Composer')) {
+                name = '作曲';
+              } else if (label.includes('Arranger')) {
+                name = '编曲';
+              } else if (label.includes('Lyricist')) {
+                name = '作词';
+              }
+              if (name) {
+                res.push({
+                  name,
+                  value,
+                });
+              }
+            }
+            */
+            let url = (_a = document.querySelector('meta[property="og:image"]')) === null || _a === void 0 ? void 0 : _a.content;
+            if (!url) {
+                try {
+                    url = document.querySelector('#coverart').style.backgroundImage.match(/url\(["']?([^"']*)["']?\)/)[1];
+                }
+                catch (error) { }
+            }
+            if (url) {
+                let dataUrl = url;
+                try {
+                    if (url) {
+                        dataUrl = await getImageDataByURL(url, {
+                            headers: {
+                                Referer: url,
+                            },
+                        });
+                    }
+                }
+                catch (error) { }
+                res.push({
+                    category: 'cover',
+                    name: 'cover',
+                    value: {
+                        url,
+                        dataUrl,
+                    },
+                });
+            }
+            return res;
+        },
+    },
+};
+
 function trimParenthesis$1(str) {
     const textList = ['\\([^d]*?\\)', '（[^d]*?）']; // 去掉多余的括号信息
     return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
@@ -2847,6 +3067,7 @@ const sitesFuncDict = {
     dmm_game: dmmTools,
     adultcomic: adultComicTools,
     moepedia: moepediaTools,
+    vgmdb: vgmdbTools,
 };
 // 存储新建角色的钩子函数和 filters
 const charaFuncDict = {
@@ -2875,6 +3096,7 @@ function dealItemText(str, category = '', keyWords = []) {
         .trim();
 }
 async function getWikiItem(infoConfig, site) {
+    var _a;
     if (!infoConfig)
         return;
     const sl = infoConfig.selector;
@@ -2902,6 +3124,9 @@ async function getWikiItem(infoConfig, site) {
     }
     let val;
     let txt = getText($d);
+    if ((_a = infoConfig.pipes) === null || _a === void 0 ? void 0 : _a.includes('ti')) {
+        txt = getInnerText($d);
+    }
     const pipeArgsDict = {
         k: [keyWords],
     };
@@ -4003,6 +4228,7 @@ const notyf = new Notyf({
     types: [
         {
             type: 'success',
+            // background: '#F09199',
         },
         {
             type: 'info',
