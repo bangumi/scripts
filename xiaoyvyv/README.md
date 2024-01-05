@@ -4,7 +4,7 @@
 ## [浏览器登录持久化修复插件](bangumi_login_fix.user.js?raw=true)
 
 登录持久化插件，让你登录后持久化，重启浏览器不会丢失登录信息！
-脚本代码：[https://github.com/bangumi/scripts/raw/master/xiaoyvyv/bangumi_login_fix.user.js](https://github.com/bangumi/scripts/raw/master/xiaoyvyv/bangumi_login_fix.user.js)
+脚本代码：[查看代码](https://github.com/bangumi/scripts/raw/master/xiaoyvyv/bangumi_login_fix.user.js)
 
 使用方法：
 1. 在超合金组件内成功启用该组件；
