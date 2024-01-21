@@ -384,12 +384,12 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: ['本', '书', '漫画', 'マンガ', 'Audibleストア'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Audible'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: ['本', '书', '漫画', 'マンガ', 'Audibleストア'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Audible'],
         },
     ],
     controlSelector: {
