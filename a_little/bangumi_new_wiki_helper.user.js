@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.21
+// @version     0.4.22
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -384,12 +384,12 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: ['本', '书', '漫画', 'マンガ'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Audibleストア'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: ['本', '书', '漫画', 'マンガ'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Audibleストア'],
         },
     ],
     controlSelector: {
@@ -432,7 +432,7 @@ amazonSubjectModel.itemList.push({
 {
     name: 'ASIN',
     selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: 'ISBN-10' });
+        return Object.assign(Object.assign({}, s), { keyWord: ['ASIN', 'ISBN-10'] });
     }),
     category: 'ASIN',
 }, {
@@ -444,21 +444,49 @@ amazonSubjectModel.itemList.push({
 }, {
     name: '发售日',
     selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期'] });
+        return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期', '配信日'] });
     }),
     category: 'date',
-    pipes: ['ta', 'k', 'date'],
+    pipes: ['ta', 'k', 'p', 'date'],
 }, {
     name: '出版社',
-    selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: '出版社' });
-    }),
+    selector: [
+        {
+            selector: '#bylineInfo',
+            subSelector: '.author',
+            keyWord: '\\(出版社\\)',
+            nextSelector: [
+                {
+                    selector: '.a-link-normal',
+                },
+                {
+                    selector: 'a',
+                },
+            ],
+        },
+        ...commonSelectors.map((s) => {
+            return Object.assign(Object.assign({}, s), { keyWord: '出版社' });
+        }),
+    ],
 }, {
     name: '页数',
     selector: commonSelectors.map((s) => {
         return Object.assign(Object.assign({}, s), { keyWord: ['ページ', '页'] });
     }),
     pipes: ['num'],
+}, 
+// 有声书
+{
+    name: '播放时长',
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: ['再生時間'] });
+    }),
+}, {
+    name: '演播',
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: ['ナレーター'] });
+    }),
+    pipes: ['ta', 'k'],
 }, {
     name: '作者',
     selector: [
@@ -507,6 +535,9 @@ amazonSubjectModel.itemList.push({
 }, {
     name: '价格',
     selector: [
+        {
+            selector: '#tmmSwatches .a-button-selected .slot-price',
+        },
         {
             selector: '#tmm-grid-swatch-OTHER .slot-price',
         },
@@ -2109,6 +2140,9 @@ const amazonJpBookTools = {
                     else {
                         newInfo = null;
                     }
+                }
+                else if (info.name === '播放时长') {
+                    newInfo.value = info.value.replace('時間', '小时').replace(/ /g, '');
                 }
                 else if (info.name === '价格') {
                     let val = (info.value || '').replace(/来自|より/, '').trim();
