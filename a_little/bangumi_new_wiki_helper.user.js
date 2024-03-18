@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.22
+// @version     0.4.23
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -706,6 +706,11 @@ const subTableSelector = {
     subSelector: 'td',
     sibling: true,
 };
+const assetsTableSelector = {
+    selector: '#js-assets-table',
+    subSelector: 'td',
+    sibling: true,
+};
 steamdbModel.itemList.push({
     name: '游戏名',
     selector: [
@@ -734,7 +739,7 @@ steamdbModel.itemList.push({
 }, {
     name: 'cover',
     selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'library_assets', nextSelector: {
+        Object.assign(Object.assign({}, assetsTableSelector), { keyWord: 'library_assets', nextSelector: {
                 selector: 'table.web-assets',
                 subSelector: 'td',
                 keyWord: 'library_capsule',
@@ -743,7 +748,7 @@ steamdbModel.itemList.push({
                     selector: 'a',
                 },
             } }),
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'Web Assets', nextSelector: {
+        Object.assign(Object.assign({}, assetsTableSelector), { keyWord: 'Web Assets', nextSelector: {
                 selector: 'table.web-assets',
                 subSelector: 'td > a',
                 keyWord: 'library_600x900',
@@ -2897,6 +2902,35 @@ const steamdbTools = {
                     },
                 },
             };
+        },
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let newInfo = Object.assign({}, info);
+                if (info.name === 'cover') {
+                    if (info.value.url) {
+                        const a = info.value.url;
+                        const h = a.lastIndexOf('?');
+                        const m = a.substring((h === -1 ? a.length : h) - 4);
+                        const scaleUrl = a.substring(0, a.length - m.length) + '_2x' + m;
+                        let dataUrl = '';
+                        try {
+                            dataUrl = await getImageDataByURL(scaleUrl);
+                        }
+                        catch (error) { }
+                        if (dataUrl) {
+                            newInfo.value = {
+                                url: scaleUrl,
+                                dataUrl,
+                            };
+                        }
+                    }
+                }
+                if (newInfo) {
+                    res.push(Object.assign({}, newInfo));
+                }
+            }
+            return res;
         },
     },
     filters: [
