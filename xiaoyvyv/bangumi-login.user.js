@@ -11,7 +11,7 @@
 // ==/UserScript==
 
 function init() {
-    console.log("Bangumi 登录持久化插件")
+    console.log("Bangumi 登录持久化插件");
     window.endurance = {
         setCookie: function setCookie(name, value, domain, daysToExpire) {
             const expirationDate = new Date();
@@ -33,7 +33,7 @@ function init() {
         removeCookie: function removeCookie(name, domain) {
             document.cookie = `${encodeURIComponent(name)}=; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
         }
-    }
+    };
 
     const columnA = document.querySelector("#columnA");
     if (columnA != null) {
@@ -63,7 +63,7 @@ function init() {
             "        </tr>\n" +
             "        </tbody>\n" +
             "    </table>\n" +
-            "</form>"
+            "</form>";
 
 
         const refreshSelect = () => {
@@ -75,7 +75,7 @@ function init() {
             } else if (localStorage.getItem("endurance")) {
                 columnA.querySelector("select[name=endurance]").value = 1;
             }
-        }
+        };
 
         columnA.innerHTML = insertHtml + columnA.innerHTML;
         columnA.querySelector("#endurance").addEventListener("submit", (event) => {
