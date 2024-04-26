@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        折叠Bangumi
 // @namespace   tv.bgm.cedar.spoilerFakeBBcode
-// @version     1.1
+// @version     1.2
 // @description 折叠Bangumi
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*(ep|blog|group|subject|index|index/\d+/comments|character).*/
