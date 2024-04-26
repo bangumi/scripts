@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        折叠Bangumi
 // @namespace   tv.bgm.cedar.spoilerFakeBBcode
-// @version     2.0
+// @version     2.0.1
 // @description 折叠Bangumi
 // @author      Cedar
 // @match       *://bgm.tv/*
@@ -64,6 +64,22 @@ html[data-theme='dark'] .spoiler-content {
     return el && el.nodeType === Node.ELEMENT_NODE && el.tagName === "BR";
   }
 
+  // 用于组装折叠元素
+  function getCollapseEl(title, collapseNodes) {
+    const summaryEl = document.createElement('summary');
+    summaryEl.style.fontWeight = "bold";
+    summaryEl.style.cursor = "pointer";
+    summaryEl.innerText = title;
+    const contentEl = document.createElement("div");
+    contentEl.classList.add("spoiler-content");
+    contentEl.append(...collapseNodes);
+    const collapseWrapper = document.createElement("details");
+    collapseWrapper.classList.add("spoiler-wrapper");
+    collapseWrapper.append(summaryEl, contentEl);
+
+    return collapseWrapper;
+  }
+
   function collapse(parentEl) {
     if (!keywords.test(parentEl.innerHTML)) return;
 
@@ -103,17 +119,7 @@ html[data-theme='dark'] .spoiler-content {
           if(isBr(collapseNodes[0])) parentEl.removeChild(collapseNodes.shift());
           if(isBr(collapseNodes[collapseNodes.length-1])) parentEl.removeChild(collapseNodes.pop());
 
-          // 创建元素
-          const summaryEl = document.createElement('summary');
-          summaryEl.style.fontWeight = "bold";
-          summaryEl.style.cursor = "pointer";
-          summaryEl.innerText = title;
-          const contentEl = document.createElement("div");
-          contentEl.classList.add("spoiler-content");
-          contentEl.append(...collapseNodes);
-          const collapseWrapper = document.createElement("details");
-          collapseWrapper.classList.add("spoiler-wrapper");
-          collapseWrapper.append(summaryEl, contentEl);
+          const collapseWrapper = getCollapseEl(title, collapseNodes);
           endNode.after(collapseWrapper);
 
           node = node.nextSibling; //摆前面, 因为removeChild后就没有nextSibling了
