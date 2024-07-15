@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name        bangumi new wiki helper
 // @name:zh-CN  bangumi 创建条目助手
-// @namespace   https://github.com/22earth
+// @namespace   https://github.com/zhifengle
 // @description assist to create new subject
 // @description:zh-cn 辅助创建 bangumi.tv 上的条目
 // @include     http://www.getchu.com/soft.phtml?id=*
 // @include     /^https?:\/\/www\.amazon\.co\.jp\/.*$/
 // @include     /^https?:\/\/(bangumi|bgm|chii)\.(tv|in)\/.*$/
 // @match      *://*/*
-// @author      22earth
-// @homepage    https://github.com/22earth/bangumi-new-wiki-helper
-// @version     0.4.14
+// @author      zhifengle
+// @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
+// @version     0.4.23
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -20,9 +20,9 @@
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_getResourceText
-// @resource    NOTYF_CSS https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css
+// @resource    NOTYF_CSS https://cdn.staticfile.org/notyf/3.10.0/notyf.min.css
 // @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
-// @require     https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js
+// @require     https://cdn.staticfile.org/notyf/3.10.0/notyf.min.js
 // ==/UserScript==
 
 
@@ -384,12 +384,12 @@ const amazonSubjectModel = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: ['本', '书'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Audible'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: ['本', '书'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Audible'],
         },
     ],
     controlSelector: {
@@ -418,24 +418,21 @@ amazonSubjectModel.itemList.push({
         selector: '#productTitle',
     },
     category: 'subject_title',
-}, {
-    name: 'cover',
-    selector: [
-        {
-            selector: 'img#igImage',
-        },
-        {
-            selector: 'img#imgBlkFront',
-        },
-        {
-            selector: 'img#ebooksImgBlkFront',
-        },
-    ],
-    category: 'cover',
-}, {
+}, 
+// 在 afterGetWikiData 获取封面
+// {
+//   name: 'cover',
+//   selector: [
+//     {
+//       selector: 'img#igImage',
+//     },
+//   ],
+//   category: 'cover',
+// },
+{
     name: 'ASIN',
     selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: 'ISBN-10' });
+        return Object.assign(Object.assign({}, s), { keyWord: ['ASIN', 'ISBN-10'] });
     }),
     category: 'ASIN',
 }, {
@@ -447,21 +444,49 @@ amazonSubjectModel.itemList.push({
 }, {
     name: '发售日',
     selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期'] });
+        return Object.assign(Object.assign({}, s), { keyWord: ['発売日', '出版日期', '配信日'] });
     }),
     category: 'date',
-    pipes: ['k', 'date'],
+    pipes: ['ta', 'k', 'p', 'date'],
 }, {
     name: '出版社',
-    selector: commonSelectors.map((s) => {
-        return Object.assign(Object.assign({}, s), { keyWord: '出版社' });
-    }),
+    selector: [
+        {
+            selector: '#bylineInfo',
+            subSelector: '.author',
+            keyWord: '\\(出版社\\)',
+            nextSelector: [
+                {
+                    selector: '.a-link-normal',
+                },
+                {
+                    selector: 'a',
+                },
+            ],
+        },
+        ...commonSelectors.map((s) => {
+            return Object.assign(Object.assign({}, s), { keyWord: '出版社' });
+        }),
+    ],
 }, {
     name: '页数',
     selector: commonSelectors.map((s) => {
         return Object.assign(Object.assign({}, s), { keyWord: ['ページ', '页'] });
     }),
     pipes: ['num'],
+}, 
+// 有声书
+{
+    name: '播放时长',
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: ['再生時間'] });
+    }),
+}, {
+    name: '演播',
+    selector: commonSelectors.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: ['ナレーター'] });
+    }),
+    pipes: ['ta', 'k'],
 }, {
     name: '作者',
     selector: [
@@ -511,12 +536,19 @@ amazonSubjectModel.itemList.push({
     name: '价格',
     selector: [
         {
-            selector: '.swatchElement.selected .a-color-base .a-size-base',
+            selector: '#tmmSwatches .a-button-selected .slot-price',
         },
         {
-            selector: '.swatchElement.selected .a-color-base',
+            selector: '#tmm-grid-swatch-OTHER .slot-price',
+        },
+        {
+            selector: '#tmm-grid-swatch-PAPERBACK .slot-price',
+        },
+        {
+            selector: '#tmmSwatches > div > div:last-child .slot-price',
         },
     ],
+    pipes: ['ta'],
 }, {
     name: '内容简介',
     selector: [
@@ -674,6 +706,11 @@ const subTableSelector = {
     subSelector: 'td',
     sibling: true,
 };
+const assetsTableSelector = {
+    selector: '#js-assets-table',
+    subSelector: 'td',
+    sibling: true,
+};
 steamdbModel.itemList.push({
     name: '游戏名',
     selector: [
@@ -702,7 +739,7 @@ steamdbModel.itemList.push({
 }, {
     name: 'cover',
     selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'library_assets', nextSelector: {
+        Object.assign(Object.assign({}, assetsTableSelector), { keyWord: 'library_assets', nextSelector: {
                 selector: 'table.web-assets',
                 subSelector: 'td',
                 keyWord: 'library_capsule',
@@ -711,7 +748,7 @@ steamdbModel.itemList.push({
                     selector: 'a',
                 },
             } }),
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'Web Assets', nextSelector: {
+        Object.assign(Object.assign({}, assetsTableSelector), { keyWord: 'Web Assets', nextSelector: {
                 selector: 'table.web-assets',
                 subSelector: 'td > a',
                 keyWord: 'library_600x900',
@@ -1428,11 +1465,11 @@ const adultComicModel = {
     type: SubjectTypeId.book,
     pageSelectors: [
         {
-            selector: '#pankuz > ol > li:nth-child(1) > a[href$="adultcomic.dbsearch.net"]',
+            selector: '#pankuz > ol > li:nth-child(1) > a[href*="adultcomic.dbsearch.net"]',
         },
     ],
     controlSelector: {
-        selector: '#main-inner h2',
+        selector: '#h2-icon-bk',
     },
     itemList: [],
 };
@@ -1449,7 +1486,7 @@ const genSelectors = (keyWord) => commonSelectors$1.map((s) => {
 adultComicModel.itemList.push({
     name: '名称',
     selector: {
-        selector: '#main-inner > article > h2',
+        selector: '#h2-icon-bk',
     },
     category: 'subject_title',
 }, 
@@ -1458,7 +1495,10 @@ adultComicModel.itemList.push({
     name: 'cover',
     selector: [
         {
-            selector: '#sample-image > figure > img',
+            selector: '#sample-image > figure > a',
+        },
+        {
+            selector: '#info-table > .img-box > img',
         },
     ],
     category: 'cover',
@@ -1494,7 +1534,7 @@ adultComicModel.itemList.push({
     name: '内容简介',
     selector: [
         {
-            selector: '#main-inner > article > section.comment-box.section-box > .iteminfo-box',
+            selector: '#comment-clist > .iteminfo-box',
             subSelector: 'h4',
             sibling: true,
             keyWord: ['内容紹介'],
@@ -1596,6 +1636,100 @@ moepedia.defaultInfos = [
     },
 ];
 
+// ref links
+// https://vgmdb.net/album/9683
+// https://vgmdb.net/album/134285
+const vgmdbModel = {
+    key: 'vgmdb',
+    description: 'vgmdb',
+    host: ['vgmdb.net'],
+    type: SubjectTypeId.music,
+    pageSelectors: [
+        {
+            selector: '#innermain > h1',
+        },
+    ],
+    controlSelector: {
+        selector: '#innermain > h1',
+    },
+    itemList: [],
+};
+const commonSelectors$2 = {
+    selector: '#album_infobit_large',
+    subSelector: 'tr > td:first-child',
+    sibling: true,
+};
+const creditsSelectors = {
+    selector: '#collapse_credits table',
+    subSelector: 'tr > td:first-child',
+    sibling: true,
+};
+vgmdbModel.itemList.push(
+// afterGetWikiData 里面
+// {
+//   name: '唱片名',
+//   selector: {
+//     selector: '#innermain > h1 > [lang=ja]',
+//   },
+//   category: 'subject_title',
+// },
+{
+    name: '录音',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Organizations' }),
+    ],
+}, {
+    name: '发售日期',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Release Date' }),
+    ],
+    pipes: ['date']
+}, {
+    name: '价格',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Price' }),
+    ],
+}, {
+    name: '版本特性',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Media Format' }),
+    ],
+}, {
+    name: '播放时长',
+    selector: [
+        {
+            selector: '#tracklist',
+            subSelector: 'span.smallfont',
+            sibling: true,
+            keyWord: 'Disc length',
+        },
+    ],
+}, {
+    name: '艺术家',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: ['Performer', 'Vocalist'] }),
+    ],
+    pipes: ['ti'],
+}, {
+    name: '作曲',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: 'Composer' }),
+    ],
+    pipes: ['ti'],
+}, {
+    name: '作词',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: ['Lyricist', 'Lyrics'] }),
+    ],
+    pipes: ['ti'],
+}, {
+    name: '编曲',
+    selector: [
+        Object.assign(Object.assign({}, creditsSelectors), { keyWord: 'Arranger' }),
+    ],
+    pipes: ['ti'],
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1611,6 +1745,7 @@ const configs = {
     [dmmGameModel.key]: dmmGameModel,
     [adultComicModel.key]: adultComicModel,
     [moepedia.key]: moepedia,
+    [vgmdbModel.key]: vgmdbModel,
 };
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
@@ -1722,6 +1857,9 @@ function dealDate(dataStr) {
         return dataStr;
     }
     else {
+        if (/[A-Za-z]+\s\d{1,2},?\s\d{4}$/.test(dataStr)) {
+            return formatDate(dataStr);
+        }
         return dataStr;
     }
     return l
@@ -1749,6 +1887,8 @@ const pipeFnDict = {
     t: trimSpace,
     // ta: 去除所有空格
     ta: trimAllSpace,
+    // ti: 去除空格，在 getWikiItem 里面，使用 innerText 取文本
+    ti: trimSpace,
     // k: 去除关键字;
     k: trimKeywords,
     // p: 括号
@@ -1865,6 +2005,58 @@ const adultComicTools = {
     },
 };
 
+/**
+ * convert base64/URLEncoded data component to raw binary data held in a string
+ * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+ * @param dataURI
+ */
+function dataURItoBlob(dataURI) {
+    var byteString;
+    if (dataURI.split(',')[0].indexOf('base64') >= 0)
+        byteString = atob(dataURI.split(',')[1]);
+    else
+        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
+    // separate out the mime component
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    // write the bytes of the string to a typed array
+    var ia = new Uint8Array(byteString.length);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ia], { type: mimeString });
+}
+function getImageDataByURL(url, opts = {}) {
+    if (!url)
+        return Promise.reject('invalid img url');
+    return new Promise(async (resolve, reject) => {
+        try {
+            const blob = await fetchBinary(url, opts);
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+            reader.onerror = reject;
+        }
+        catch (e) {
+            reject(e);
+        }
+    });
+}
+/**
+ * convert to img Element to base64 string
+ * @param $img
+ */
+function convertImgToBase64($img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = $img.width;
+    canvas.height = $img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage($img, 0, 0, $img.width, $img.height);
+    const dataURL = canvas.toDataURL('image/png');
+    return dataURL;
+}
+
 const amazonUtils = {
     dealTitle(str) {
         str = str.trim().split('\n')[0].trim();
@@ -1954,6 +2146,9 @@ const amazonJpBookTools = {
                         newInfo = null;
                     }
                 }
+                else if (info.name === '播放时长') {
+                    newInfo.value = info.value.replace('時間', '小时').replace(/ /g, '');
+                }
                 else if (info.name === '价格') {
                     let val = (info.value || '').replace(/来自|より/, '').trim();
                     newInfo.value = val;
@@ -1961,6 +2156,43 @@ const amazonJpBookTools = {
                 if (newInfo) {
                     res.push(Object.assign({}, newInfo));
                 }
+            }
+            const $cover = document.querySelector('#imgTagWrapperId>img');
+            if ($cover && !res.find((obj) => obj.name === 'cover')) {
+                let url = '';
+                if ($cover.hasAttribute('data-old-hires')) {
+                    url = $cover.getAttribute('data-old-hires');
+                }
+                else if ($cover.hasAttribute('data-a-dynamic-image')) {
+                    try {
+                        const obj = JSON.parse($cover.getAttribute('data-a-dynamic-image'));
+                        const urlArr = Object.keys(obj).sort().reverse();
+                        if (urlArr && urlArr.length > 0) {
+                            url = urlArr[0];
+                        }
+                    }
+                    catch (error) { }
+                }
+                // 如果还是没有图片链接
+                if (!url) {
+                    url = $cover.src;
+                }
+                let dataUrl = url;
+                try {
+                    if (url) {
+                        dataUrl = await getImageDataByURL(url);
+                    }
+                }
+                catch (error) { }
+                const info = {
+                    category: 'cover',
+                    name: 'cover',
+                    value: {
+                        url,
+                        dataUrl,
+                    },
+                };
+                res.push(info);
             }
             return res;
         },
@@ -2032,58 +2264,6 @@ const dlsiteCharaTools = {
         },
     },
 };
-
-/**
- * convert base64/URLEncoded data component to raw binary data held in a string
- * https://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
- * @param dataURI
- */
-function dataURItoBlob(dataURI) {
-    var byteString;
-    if (dataURI.split(',')[0].indexOf('base64') >= 0)
-        byteString = atob(dataURI.split(',')[1]);
-    else
-        byteString = decodeURI(dataURI.split(',')[1]); // instead of unescape
-    // separate out the mime component
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    // write the bytes of the string to a typed array
-    var ia = new Uint8Array(byteString.length);
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ia], { type: mimeString });
-}
-function getImageDataByURL(url, opts = {}) {
-    if (!url)
-        return Promise.reject('invalid img url');
-    return new Promise(async (resolve, reject) => {
-        try {
-            const blob = await fetchBinary(url, opts);
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result);
-            };
-            reader.readAsDataURL(blob);
-            reader.onerror = reject;
-        }
-        catch (e) {
-            reject(e);
-        }
-    });
-}
-/**
- * convert to img Element to base64 string
- * @param $img
- */
-function convertImgToBase64($img) {
-    const canvas = document.createElement('canvas');
-    canvas.width = $img.width;
-    canvas.height = $img.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage($img, 0, 0, $img.width, $img.height);
-    const dataURL = canvas.toDataURL('image/png');
-    return dataURL;
-}
 
 async function getCover($d, site) {
     let url;
@@ -2723,6 +2903,35 @@ const steamdbTools = {
                 },
             };
         },
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let newInfo = Object.assign({}, info);
+                if (info.name === 'cover') {
+                    if (info.value.url) {
+                        const a = info.value.url;
+                        const h = a.lastIndexOf('?');
+                        const m = a.substring((h === -1 ? a.length : h) - 4);
+                        const scaleUrl = a.substring(0, a.length - m.length) + '_2x' + m;
+                        let dataUrl = '';
+                        try {
+                            dataUrl = await getImageDataByURL(scaleUrl);
+                        }
+                        catch (error) { }
+                        if (dataUrl) {
+                            newInfo.value = {
+                                url: scaleUrl,
+                                dataUrl,
+                            };
+                        }
+                    }
+                }
+                if (newInfo) {
+                    res.push(Object.assign({}, newInfo));
+                }
+            }
+            return res;
+        },
     },
     filters: [
         {
@@ -2735,6 +2944,108 @@ const steamdbTools = {
             },
         },
     ],
+};
+
+const vgmdbTools = {
+    hooks: {
+        async beforeCreate() {
+            const $t = document.querySelector('#innermain h1 > .albumtitle[lang=ja]');
+            if ($t && $t.style.display === 'none') {
+                const $div = document.createElement('div');
+                const $s = document.createElement('span');
+                $s.style.color = 'red';
+                $s.style.fontWeight = '600';
+                $s.innerHTML = '注意: ';
+                const $txt = document.createElement('span');
+                $txt.innerHTML =
+                    '请设置 Title / Name Language 为 Original。(辅助创建脚本)';
+                $div.appendChild($s);
+                $div.appendChild($txt);
+                $div.style.padding = '6px 0';
+                $t.parentElement.insertAdjacentElement('afterend', $div);
+            }
+            return true;
+        },
+        async afterGetWikiData(infos) {
+            var _a;
+            const res = [];
+            const $h1 = document.querySelector('#innermain > h1');
+            res.push({
+                name: '唱片名',
+                value: $h1.innerText,
+                category: 'subject_title',
+            });
+            for (const item of infos) {
+                if (item.name === '价格' && item.value.includes('Not for Sale')) {
+                    continue;
+                }
+                res.push(item);
+            }
+            /*
+            for (const $td of document.querySelectorAll(
+              '#album_infobit_large td:first-child'
+            )) {
+              const label = ($td as HTMLElement).innerText;
+              const links = $td.nextElementSibling.querySelectorAll('a');
+              let value = '';
+              if ($td.nextElementSibling.querySelector('.artistname[lang=ja]')) {
+                value = [...links]
+                  .map(
+                    (node) => node.querySelector('.artistname[lang=ja]').textContent
+                  )
+                  .join('、');
+              } else {
+                value = [...links].map((node) => node.innerText).join('、');
+              }
+              let name = '';
+              if (label.includes('Performer')) {
+                name = '艺术家';
+              } else if (label.includes('Composer')) {
+                name = '作曲';
+              } else if (label.includes('Arranger')) {
+                name = '编曲';
+              } else if (label.includes('Lyricist')) {
+                name = '作词';
+              }
+              if (name) {
+                res.push({
+                  name,
+                  value,
+                });
+              }
+            }
+            */
+            let url = (_a = document.querySelector('meta[property="og:image"]')) === null || _a === void 0 ? void 0 : _a.content;
+            if (!url) {
+                try {
+                    url = document.querySelector('#coverart').style.backgroundImage.match(/url\(["']?([^"']*)["']?\)/)[1];
+                }
+                catch (error) { }
+            }
+            if (url) {
+                let dataUrl = url;
+                try {
+                    if (url) {
+                        dataUrl = await getImageDataByURL(url, {
+                            headers: {
+                                Referer: url,
+                            },
+                        });
+                    }
+                }
+                catch (error) { }
+                res.push({
+                    category: 'cover',
+                    name: 'cover',
+                    value: {
+                        url,
+                        dataUrl,
+                    },
+                });
+            }
+            return res;
+        },
+    },
 };
 
 function trimParenthesis$1(str) {
@@ -2807,6 +3118,7 @@ const sitesFuncDict = {
     dmm_game: dmmTools,
     adultcomic: adultComicTools,
     moepedia: moepediaTools,
+    vgmdb: vgmdbTools,
 };
 // 存储新建角色的钩子函数和 filters
 const charaFuncDict = {
@@ -2835,6 +3147,7 @@ function dealItemText(str, category = '', keyWords = []) {
         .trim();
 }
 async function getWikiItem(infoConfig, site) {
+    var _a;
     if (!infoConfig)
         return;
     const sl = infoConfig.selector;
@@ -2862,6 +3175,9 @@ async function getWikiItem(infoConfig, site) {
     }
     let val;
     let txt = getText($d);
+    if ((_a = infoConfig.pipes) === null || _a === void 0 ? void 0 : _a.includes('ti')) {
+        txt = getInnerText($d);
+    }
     const pipeArgsDict = {
         k: [keyWords],
     };

@@ -1,0 +1,5 @@
+{
+	"groups": ["dev", "a", "fillgrids","boring", "latest"],
+ 	"max_page": 5,
+ 	"update": true
+}

@@ -2,7 +2,7 @@
 // @name        Bangumi-Relationship-Person-Synchronize
 // @namespace   org.binota.scripts.bangumi.brps
 // @include     /https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/subject\/\d+\/edit_detail/
-// @version     0.0.1
+// @version     0.1.0
 // @grant       none
 // ==/UserScript==
 "use strict";
@@ -38,7 +38,7 @@ var DecodeHtml = (function() {
 var Wcode = function(decodeHtml) {
   
   this.html2Json = function(html) {
-    const lis = html.match(/<li>(.+?)<\/li>/g);
+    const lis = html.match(/<li[^>]*>(.+?)<\/li>/g);
   
     var infobox = {};
 

@@ -139,6 +139,12 @@
 
 站内讨论https://bgm.tv/group/topic/362176
 
+## [Bangumi 旧帖提醒（“挖坟”警告！）](post_time_reminder.user.js?raw=true)
+
+对应组件https://bgm.tv/dev/app/2707
+
+站内讨论https://bgm.tv/group/topic/383912
+
 ## [小圣杯助手CedarVer](TinyGrail_Helper_CedarVer.user.js?raw=true) (停止维护)
 
 fork自君寻组件, 详见站内讨论.
