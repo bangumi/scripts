@@ -133,7 +133,11 @@ let componentInit = () => {
   // 检测本地数据
   if (!localStorage.getItem("bgm_user_detail_by_yonjar")) {
     robotWork("初次使用需初始化 请勿关闭本页面!", 3);
-    let user1 = new User({});
+    let user1 = new User({
+      uid: document
+        .querySelector("#headerNeue2 > div > div.idBadgerNeue > a")
+        .href.split("user/")[1],
+    });
     let todo = [];
     todo.push(user1.fetchChars());
     todo.push(user1.fetchPrns());
@@ -254,11 +258,7 @@ let componentInit = () => {
 
 class User {
   constructor(json) {
-    this.uid = json
-      ? json.uid
-      : document
-          .querySelector("#headerNeue2 > div > div.idBadgerNeue > a")
-          .href.split("user/")[1];
+    this.uid = json.uid;
     this.charactersList = json ? json.characters : [];
     this.personsList = json ? json.persons : [];
     this.friendsList = json ? json.friends : [];

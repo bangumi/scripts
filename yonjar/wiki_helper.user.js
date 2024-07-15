@@ -204,14 +204,14 @@
     title.value = data["TITLE"];
     summary.value = data["INFO"];
     infobox.value = `{{Infobox Album
-|中文名= 
+|中文名=
 |别名={
 }
 |艺术家= ${data["ARTIST"]}
-|作词=  ${data["LYRICIST"] ? data["LYRICIST"] : ""}
+|作词= ${data["LYRICIST"]}
 |版本特性= ${data["TYPE"]}
 |发售日期= ${data["DATE"]}
-|价格= ${data["PRICE"] ? data["PRICE"] : ""}
+|价格= ${data["PRICE"]}
 }}`;
   }
 
@@ -234,9 +234,9 @@
     // 章节首播日期默认为当天
     b.value = dayjs().format("YYYY-MM-DD");
 
-    c.value = 5;
+    c.value = "";
     // 间隔默认7天
-    d.value = 1;
+    d.value = 7;
 
     addBtn("添加新章节", "click", () => {
       let chap = parseInt(a.value);
@@ -280,6 +280,10 @@
     let parameters = [
       {
         regx: /\[\d+\]/g,
+        substitute: "",
+      },
+      {
+        regx: /\[(注 )?\d+\]/g,
         substitute: "",
       },
     ];
