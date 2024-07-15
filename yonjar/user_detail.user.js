@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         user detail
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.2.1
+// @version      0.2.2
 // @description  抓取用户数据
 // @author       Yonjar
 // @include      /https?:\/\/(chii\.in|bangumi\.tv|bgm\.tv)\/settings/
