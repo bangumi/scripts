@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.24
+// @version     0.4.25
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -20,9 +20,9 @@
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_getResourceText
-// @resource    NOTYF_CSS https://cdn.staticfile.org/notyf/3.10.0/notyf.min.css
-// @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
-// @require     https://cdn.staticfile.org/notyf/3.10.0/notyf.min.js
+// @resource    NOTYF_CSS https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css
+// @require     https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.0/fuse.min.js
+// @require     https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js
 // ==/UserScript==
 
 
