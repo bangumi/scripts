@@ -3,7 +3,7 @@
 // @namespace   org.binota.scripts.bangumi.bhc
 // @description Generate Github-like Homepage Calendar in Bangumi
 // @include     /^https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)/
-// @version     0.1.2
+// @version     0.1.3
 // @grant       none
 // ==/UserScript==
 /*jshint esnext: true*/
@@ -511,7 +511,7 @@ var Configure = function() {
   };
 
   configBtn.innerHTML = 'BHC 统计图设置';
-  $('.adminTools').insertBefore(configBtn, $('.adminTools .btnGraySmall'));
+  $(".network_service").appendChild(document.createElement('li')).appendChild(configBtn);
 
   var regenBtn = document.createElement('a');
   regenBtn.classList.add('btnGraySmall');
@@ -521,76 +521,148 @@ var Configure = function() {
   };
 
   regenBtn.innerHTML = '重绘 BHC 统计图';
-  $('.adminTools').insertBefore(regenBtn, $('.adminTools .btnGraySmall'));
+  $(".network_service").appendChild(document.createElement('li')).appendChild(regenBtn);
 
   var configInterface = document.createElement('div');
   configInterface.id = "bhc-config";
+  configInterface.classList.add('menu_inner');
   configInterface.style.cssText = "display:none;";
   configInterface.innerHTML = `
-    <label for="save_loc">保存位置</label>
-    <select class="form" name="save_loc">
-      <option${config.save_loc === LOC_BIO ? ' selected' : ''} value="${LOC_BIO}">保存在个人介绍里</option>
-      <option${config.save_loc === LOC_BLOG ? ' selected' : ''} value="${LOC_BLOG}">保存在日志里</option>
-    </select>
-    <br>
+    <div style="font-size: 16px; font-weight: bold;">BHC 统计图设置</div>
+    <table align="center" width="100%" cellspacing="0" cellpadding="5" style="border-collapse: separate; border-spacing: 10px;">
+      <tbody>
+        <tr>
+          <td valign="top" width="20%">
+            <label for="save_loc">保存位置</label>
+          </td>
+          <td>
+            <select class="form" name="save_loc">
+              <option${config.save_loc === LOC_BIO ? ' selected' : ''} value="${LOC_BIO}">保存在个人介绍里</option>
+              <option${config.save_loc === LOC_BLOG ? ' selected' : ''} value="${LOC_BLOG}">保存在日志里</option>
+            </select>
+          </td>
+        </tr>
 
-    <label for="blog_id">日志 ID <small>请填写 ${DOMAIN}/blog/ 后面的数字</small></label>
-    <input class="inputtext" type="number" name="blog_id" value="${config.blog_id}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="blog_id">日志 ID</label>
+          </td>
+          <td>
+            <input class="inputtext" type="number" name="blog_id" value="${config.blog_id}">
+            <p class="tip">请填写 ${DOMAIN}/blog/ 后面的数字</p>
+          </td>
+        </tr>
 
-    <label for="show_weekname">显示星期名称</label>
-    <select class="form" name="show_weekname">
-      <option${config.show_weekname === 'none' ? ' selected' : ''} value="none">不显示</option>
-      <option${config.show_weekname === 'chinese' ? ' selected' : ''} value="chinese">显示中文</option>
-      <option${config.show_weekname === 'japanese' ? ' selected' : ''} value="japanese">显示日文</option>
-    </select>
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="show_weekname">显示星期名称</label>
+          </td>
+          <td>
+            <select class="form" name="show_weekname">
+              <option${config.show_weekname === 'none' ? ' selected' : ''} value="none">不显示</option>
+              <option${config.show_weekname === 'chinese' ? ' selected' : ''} value="chinese">显示中文</option>
+              <option${config.show_weekname === 'japanese' ? ' selected' : ''} value="japanese">显示日文</option>
+            </select>
+          </td>
+        </tr>
 
-    <label for="show_wiki">显示 Wiki 统计图</label>
-    <select class="form" name="show_wiki">
-      <option${config.show_wiki === false ? ' selected' : ''} value="false">不显示</option>
-      <option${config.show_wiki === true ? ' selected' : ''} value="true">显示</option>
-    </select>
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="show_wiki">显示 Wiki 统计图</label>
+          </td>
+          <td>
+            <select class="form" name="show_wiki">
+              <option${config.show_wiki === false ? ' selected' : ''} value="false">不显示</option>
+              <option${config.show_wiki === true ? ' selected' : ''} value="true">显示</option>
+            </select>
+          </td>
+        </tr>
 
-    <label for="show_tml">显示时空管理局统计图</label>
-    <select class="form" name="show_tml">
-      <option${config.show_tml === false ? ' selected' : ''} value="false">不显示</option>
-      <option${config.show_tml === true ? ' selected' : ''} value="true">显示</option>
-    </select>
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="show_tml">显示时空管理局统计图</label>
+          </td>
+          <td>
+            <select class="form" name="show_tml">
+              <option${config.show_tml === false ? ' selected' : ''} value="false">不显示</option>
+              <option${config.show_tml === true ? ' selected' : ''} value="true">显示</option>
+            </select>
+          </td>
+        </tr>
 
-    <label for="shape">绘制图形</label>
-    <input class="inputtext" type="text" name="shape" value="${config.shape}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="shape">绘制图形</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="shape" value="${config.shape}">
+          </td>
+        </tr>
 
-    <label for="shape_size">图形大小</label>
-    <input class="inputtext" type="number" name="shape_size" value="${config.shape_size}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="shape_size">图形大小</label>
+          </td>
+          <td>
+            <input class="inputtext" type="number" name="shape_size" value="${config.shape_size}">
+          </td>
+        </tr>
 
-    <label for="font_colour">字体色彩</label>
-    <input class="inputtext" type="text" name="font_colour" value="${config.font_colour}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="font_colour">字体色彩</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="font_colour" value="${config.font_colour}">
+          </td>
+        </tr>
 
-    <label for="colour_0">图形色彩 0</label>
-    <input class="inputtext" type="text" name="colour_0" value="${config.colours[0]}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="colour_0">图形色彩 0</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="colour_0" value="${config.colours[0]}">
+          </td>
+        </tr>
 
-    <label for="colour_1">图形色彩 1</label>
-    <input class="inputtext" type="text" name="colour_1" value="${config.colours[1]}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="colour_1">图形色彩 1</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="colour_1" value="${config.colours[1]}">
+          </td>
+        </tr>
 
-    <label for="colour_2">图形色彩 2</label>
-    <input class="inputtext" type="text" name="colour_2" value="${config.colours[2]}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="colour_2">图形色彩 2</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="colour_2" value="${config.colours[2]}">
+          </td>
+        </tr>
 
-    <label for="colour_3">图形色彩 3</label>
-    <input class="inputtext" type="text" name="colour_3" value="${config.colours[3]}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="colour_3">图形色彩 3</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="colour_3" value="${config.colours[3]}">
+          </td>
+        </tr>
 
-    <label for="colour_4">图形色彩 4</label>
-    <input class="inputtext" type="text" name="colour_4" value="${config.colours[4]}">
-    <br>
+        <tr>
+          <td valign="top">
+            <label for="colour_4">图形色彩 4</label>
+          </td>
+          <td>
+            <input class="inputtext" type="text" name="colour_4" value="${config.colours[4]}">
+          </td>
+        </tr>
+      </tbody>
+    </table>
 `;
   var saveBtn = document.createElement('a');
   saveBtn.classList.add('chiiBtn');
@@ -628,10 +700,21 @@ var Configure = function() {
   resetBtn.innerHTML = '还原默认设置';
   resetBtn.onclick = function() {
     storage.remove('config');
+    chiiLib.ukagaka.presentSpeech('BHC 已还原默认设置。');
   };
   configInterface.appendChild(resetBtn);
+
+  var closeBtn = document.createElement('a');
+  closeBtn.classList.add('chiiBtn');
+  closeBtn.href = '#bhc_close';
+  closeBtn.id = 'bhc_config_close';
+  closeBtn.innerHTML = '关闭';
+  closeBtn.onclick = function() {
+    configInterface.style.cssText = 'display: none;';
+  };
+  configInterface.appendChild(closeBtn);
   
-  $('.adminTools').insertBefore(configInterface, $('.adminTools .btnGraySmall'));
+  $(".user_box").appendChild(configInterface);
   
   this.saveConfig = function(newConfig) {
     switch(newConfig.show_weekname) {
@@ -649,6 +732,7 @@ var Configure = function() {
     }
     storage.set('config', JSON.stringify(newConfig));
     config = newConfig;
+    chiiLib.ukagaka.presentSpeech('BHC 设置保存成功！');
   };
 
   this.showInterface = function() {
