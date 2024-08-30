@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.25
+// @version     0.4.26
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -20,9 +20,9 @@
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_getResourceText
-// @resource    NOTYF_CSS https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css
-// @require     https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.0/fuse.min.js
-// @require     https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js
+// @resource    NOTYF_CSS https://cdn.staticfile.org/notyf/3.10.0/notyf.min.css
+// @require     https://cdn.staticfile.org/fuse.js/6.4.0/fuse.min.js
+// @require     https://cdn.staticfile.org/notyf/3.10.0/notyf.min.js
 // ==/UserScript==
 
 
@@ -1326,14 +1326,6 @@ const arrDict$1 = [
         name: '剧本',
         key: ['シナリオ', '剧情'],
     },
-    // {
-    //   name: '声优',
-    //   key: ['声優', '声优'],
-    // },
-    // {
-    //   name: '音乐',
-    //   key: ['音乐', '音楽'],
-    // },
 ];
 const configArr$3 = arrDict$1.map((obj) => {
     const r = {
@@ -1448,16 +1440,6 @@ const dmmGameCharaModel = {
         {
             selector: '#title',
         },
-        // {
-        //   selector: '#if_view',
-        //   isIframe: true,
-        //   subSelector: 'body',
-        //   nextSelector: {
-        //     selector: '.guide-content',
-        //     subSelector: 'guide-capt',
-        //     keyWord: 'キャラクター',
-        //   },
-        // },
     ],
     itemList: [],
 };
@@ -1769,8 +1751,6 @@ const configs = {
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
     [dmmGameCharaModel.key]: dmmGameCharaModel,
-    // @TODO getchu chara
-    // [getchuCharaModel.key]: getchuCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -1850,7 +1830,7 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
         'm+': date.getMinutes(),
         's+': date.getSeconds(),
         'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(), //毫秒
+        S: date.getMilliseconds(),
     };
     if (/(y+)/i.test(fmt)) {
         fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
@@ -3741,15 +3721,19 @@ async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNu
     return result;
 }
 async function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
-    let searchResult = await searchSubject(subjectInfo, bgmHost, type, subjectInfo.isbn);
+    const numISBN = subjectInfo.isbn.replace(/-/g, '');
+    let searchResult = await searchSubject(subjectInfo, bgmHost, type, numISBN);
     console.info(`First: search book of bangumi: `, searchResult);
     if (searchResult && searchResult.url) {
         return searchResult;
     }
-    searchResult = await searchSubject(subjectInfo, bgmHost, type, subjectInfo.asin);
-    console.info(`Second: search book by ${subjectInfo.asin}: `, searchResult);
-    if (searchResult && searchResult.url) {
-        return searchResult;
+    // 判断一下是否重复
+    if (numISBN !== subjectInfo.isbn) {
+        searchResult = await searchSubject(subjectInfo, bgmHost, type, subjectInfo.isbn);
+        console.info(`Second: search book by ${subjectInfo.isbn}: `, searchResult);
+        if (searchResult && searchResult.url) {
+            return searchResult;
+        }
     }
     // 默认使用名称搜索
     searchResult = await searchSubject(subjectInfo, bgmHost, type);
@@ -4300,7 +4284,6 @@ const notyf = new Notyf({
     types: [
         {
             type: 'success',
-            // background: '#F09199',
         },
         {
             type: 'info',
