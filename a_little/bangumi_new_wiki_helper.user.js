@@ -10,7 +10,8 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.26
+// @version     0.4.27
+// @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
 // @grant       GM_addStyle
@@ -1702,6 +1703,12 @@ vgmdbModel.itemList.push(
             selector: '#tracklist',
             subSelector: 'span.smallfont',
             sibling: true,
+            keyWord: 'Total length',
+        },
+        {
+            selector: '#tracklist',
+            subSelector: 'span.smallfont',
+            sibling: true,
             keyWord: 'Disc length',
         },
     ],
@@ -1731,6 +1738,117 @@ vgmdbModel.itemList.push(
     pipes: ['ti'],
 });
 
+// ref links
+// https://www.amazon.co.jp/dp/B07FQ5WPM3/
+// https://www.amazon.co.jp/dp/B0D456FXL4
+// https://www.amazon.co.jp/dp/B07GQXDHLN
+const amazonJpMusicModel = {
+    key: 'amazon_jp_music',
+    description: 'amazon jp music',
+    host: ['amazon.co.jp', 'www.amazon.co.jp'],
+    type: SubjectTypeId.music,
+    pageSelectors: [
+        {
+            selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
+            subSelector: '.a-link-normal',
+            keyWord: ['ミュージック', 'Music', 'MUSIC', '音楽'],
+        },
+        {
+            selector: '#nav-subnav .nav-a:first-child img[alt="デジタルミュージック"]',
+        },
+        {
+            selector: '#detailBullets_feature_div + .a-unordered-list',
+            subSelector: '.a-list-item',
+            keyWord: ['ミュージック', '音楽'],
+        },
+    ],
+    controlSelector: {
+        selector: '#title',
+    },
+    itemList: [],
+};
+const commonSelectors$3 = [
+    // 2021-05 日亚改版
+    {
+        selector: '#richProductInformation_feature_div',
+        subSelector: 'ol.a-carousel li',
+    },
+    {
+        selector: '#detailBullets_feature_div .detail-bullet-list',
+        subSelector: 'li .a-list-item',
+    },
+    {
+        selector: '#detail_bullets_id .bucket .content',
+        subSelector: 'li',
+    },
+];
+amazonJpMusicModel.itemList.push({
+    name: '名称',
+    selector: {
+        selector: '#productTitle',
+    },
+    category: 'subject_title',
+}, {
+    name: '艺术家',
+    selector: [
+        {
+            selector: '#bylineInfo',
+            subSelector: '.author',
+            keyWord: '\\(アーティスト\\)',
+            nextSelector: [
+                {
+                    selector: '.contributorNameID',
+                },
+                {
+                    selector: 'a',
+                },
+            ],
+        },
+        {
+            selector: '#byline .author span.a-size-medium',
+        },
+        {
+            selector: '#bylineInfo .author > a',
+        },
+        {
+            selector: '#bylineInfo .contributorNameID',
+        },
+    ],
+    category: 'creator',
+}, {
+    name: '碟片数量',
+    selector: commonSelectors$3.map((s) => {
+        return Object.assign(Object.assign({}, s), { keyWord: ['ディスク枚数'] });
+    }),
+}, {
+    name: '内容简介',
+    selector: [
+        {
+            selector: '#productDescription',
+            subSelector: 'h3',
+            sibling: true,
+            keyWord: ['内容紹介', '内容'],
+        },
+        {
+            selector: '#productDescription',
+        },
+    ],
+    category: 'subject_summary',
+}, {
+    name: '价格',
+    selector: [
+        {
+            selector: '#corePrice_feature_div > div > div > span.a-price.aok-align-center > span.a-offscreen',
+        },
+        {
+            selector: '#corePriceDisplay_desktop_feature_div > div.a-section.a-spacing-none.aok-align-center.aok-relative > span.aok-offscreen',
+        },
+        {
+            selector: '#declarative_ > table > tbody > tr > td.a-text-right.dp-new-col > span > a > span',
+        },
+    ],
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1747,6 +1865,7 @@ const configs = {
     [adultComicModel.key]: adultComicModel,
     [moepedia.key]: moepedia,
     [vgmdbModel.key]: vgmdbModel,
+    [amazonJpMusicModel.key]: amazonJpMusicModel,
 };
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
@@ -2194,6 +2313,89 @@ const amazonJpBookTools = {
                     },
                 };
                 res.push(info);
+            }
+            return res;
+        },
+    },
+};
+async function getCoverInfo(res) {
+    const $cover = document.querySelector('#imgTagWrapperId>img');
+    if ($cover && !res.find((obj) => obj.name === 'cover')) {
+        let url = '';
+        if ($cover.hasAttribute('data-old-hires')) {
+            url = $cover.getAttribute('data-old-hires');
+        }
+        else if ($cover.hasAttribute('data-a-dynamic-image')) {
+            try {
+                const obj = JSON.parse($cover.getAttribute('data-a-dynamic-image'));
+                const urlArr = Object.keys(obj).sort().reverse();
+                if (urlArr && urlArr.length > 0) {
+                    url = urlArr[0];
+                }
+            }
+            catch (error) { }
+        }
+        // 如果还是没有图片链接
+        if (!url) {
+            url = $cover.src;
+        }
+        let dataUrl = url;
+        try {
+            if (url) {
+                dataUrl = await getImageDataByURL(url);
+            }
+        }
+        catch (error) { }
+        const info = {
+            category: 'cover',
+            name: 'cover',
+            value: {
+                url,
+                dataUrl,
+            },
+        };
+        return info;
+    }
+}
+const amazonJpMusicTools = {
+    hooks: {
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const item of infos) {
+                if (item.name === '艺术家') {
+                    item.value = item.value.replace(/\//g, '、');
+                }
+                res.push(item);
+            }
+            const date = document.querySelector('#declarative_ .title-text > span');
+            if (date) {
+                const m = date.innerHTML.trim().match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+                if (m) {
+                    res.push({
+                        name: '发售日期',
+                        value: `${m[1]}-${m[2]}-${m[3]}`,
+                    });
+                }
+            }
+            const coverInfo = await getCoverInfo(res);
+            if (coverInfo) {
+                res.push(coverInfo);
+            }
+            const $tracks = document.querySelector('#music-tracks');
+            if ($tracks) {
+                const discArr = [...$tracks.querySelectorAll('h4 + .a-row table')].map((table) => {
+                    return [...table.querySelectorAll('tr > td:nth-child(2)')].map((td) => {
+                        return {
+                            title: td.innerHTML.trim(),
+                        };
+                    });
+                });
+                res.push({
+                    category: 'ep',
+                    // 名字留空
+                    name: '',
+                    value: discArr,
+                });
             }
             return res;
         },
@@ -2968,7 +3170,7 @@ const vgmdbTools = {
             return true;
         },
         async afterGetWikiData(infos) {
-            var _a;
+            var _a, _b;
             const res = [];
             const $h1 = document.querySelector('#innermain > h1');
             res.push({
@@ -2978,6 +3180,11 @@ const vgmdbTools = {
             });
             for (const item of infos) {
                 if (item.name === '价格' && item.value.includes('Not for Sale')) {
+                    continue;
+                }
+                // 替换数字
+                if (item.name === '版本特性' && /\d+/.test(item.value)) {
+                    res.push(Object.assign(Object.assign({}, item), { value: item.value.replace(/\d+/, '').trim() }));
                     continue;
                 }
                 res.push(item);
@@ -3042,6 +3249,32 @@ const vgmdbTools = {
                         url,
                         dataUrl,
                     },
+                });
+            }
+            // 曲目列表
+            const tracklist = document.querySelector('#tracklist');
+            if (tracklist) {
+                let tableList = tracklist.querySelectorAll('.tl > table');
+                (_b = document.querySelectorAll('#tlnav > li > a')) === null || _b === void 0 ? void 0 : _b.forEach((item) => {
+                    if (item.innerHTML.includes('Japanese')) {
+                        const rel = item.getAttribute('rel');
+                        tableList = document.querySelectorAll(`#${rel} > table`);
+                    }
+                });
+                const discArr = [...tableList].map((table) => {
+                    return [...table.querySelectorAll('tr')].map((item) => {
+                        const $tds = item.querySelectorAll('td');
+                        return {
+                            title: $tds[1].innerText.trim(),
+                            duration: $tds[2].innerText.trim(),
+                        };
+                    });
+                });
+                res.push({
+                    category: 'ep',
+                    // 名字留空
+                    name: '',
+                    value: discArr
                 });
             }
             return res;
@@ -3120,6 +3353,7 @@ const sitesFuncDict = {
     adultcomic: adultComicTools,
     moepedia: moepediaTools,
     vgmdb: vgmdbTools,
+    amazon_jp_music: amazonJpMusicTools,
 };
 // 存储新建角色的钩子函数和 filters
 const charaFuncDict = {
@@ -3776,9 +4010,11 @@ async function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type, d
         case SubjectTypeId.game:
             result = await checkExist(subjectInfo, bgmHost, type, disableDate);
             break;
+        case SubjectTypeId.music:
+            result = await checkExist(subjectInfo, bgmHost, type, true);
+            break;
         case SubjectTypeId.anime:
         case SubjectTypeId.real:
-        case SubjectTypeId.music:
         default:
             console.info('not support type: ', type);
     }
@@ -5159,6 +5395,65 @@ async function uploadSubjectCover(subjectId, dataUrl, bgmHost = '') {
         await sendFormImg($form, dataUrl);
     }
 }
+async function addMusicEp(subjectId, wikiInfo, log = (str) => console.log(str)) {
+    if (location.pathname !== '/new_subject/3') {
+        return;
+    }
+    // 音乐条目，添加ep
+    const discInfo = wikiInfo.infos.find((item) => item.category === 'ep');
+    if (discInfo) {
+        for (let i = 0; i < discInfo.value.length; i++) {
+            const track = discInfo.value[i];
+            const songlist = track.map((obj) => obj.title).join('\n');
+            await addSonglist(subjectId, songlist, String(i + 1));
+            log(`Disc${i + 1}: 添加曲目成功`);
+            await sleep(500);
+        }
+    }
+}
+async function addSonglist(subjectId, songlist, disc = '1') {
+    const $hash = document.querySelector('form > input[name="formhash"]');
+    if ($hash) {
+        const fd = new FormData();
+        fd.set('formhash', $hash.value);
+        fd.set('songlist', songlist);
+        fd.set('disc', disc);
+        fd.set('submit', '加上去');
+        const res = await fetch(`/subject/${subjectId}/songlist/new`, {
+            body: fd,
+            method: 'post',
+        });
+        // if (res.status === 302) {
+        //   const location = res.headers.get('Location');
+        //   console.log('Redirected to:', location);
+        //   return await fetch(location);
+        // }
+        return res;
+    }
+    else {
+        const rawText = await fetchText(`/subject/${subjectId}/ep`);
+        const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+        const $form = $doc.querySelector('form[name=new_songlist');
+        if (!$form) {
+            console.error('获取封面表单失败');
+            return;
+        }
+        await sendForm($form, [
+            {
+                name: 'songlist',
+                value: songlist,
+            },
+            {
+                name: 'disc',
+                value: disc,
+            },
+            {
+                name: 'submit',
+                value: '加上去',
+            }
+        ]);
+    }
+}
 async function searchCVByName(name, charaId = '') {
     const bgmHost = getBgmHost();
     let url = `${bgmHost}/json/search-cv_person/${name.replace(/\s/g, '')}`;
@@ -5363,7 +5658,7 @@ async function fillInfoBox(wikiData) {
         }
         // 有名称并且category不在特定列表里面
         if (infos[i].name &&
-            ['cover', 'crt_cover'].indexOf(infos[i].category) === -1) {
+            ['cover', 'crt_cover', 'ep'].indexOf(infos[i].category) === -1) {
             const name = infos[i].name;
             if (dict.hasOwnProperty(name)) {
                 infoArray.push(Object.assign(Object.assign({}, infos[i]), { name: dict[name] }));
@@ -5456,6 +5751,10 @@ function initNewSubject(wikiInfo) {
                         if (subjectId) {
                             await uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
                         }
+                        await sleep(200);
+                        await addMusicEp(subjectId, wikiInfo, (str) => {
+                            insertLogInfo($el, str);
+                        });
                         $loading.remove();
                         $el.style.display = '';
                         $clonedInput.style.display = '';
