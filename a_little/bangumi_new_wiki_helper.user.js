@@ -1013,7 +1013,7 @@ const doubanGameModel = {
     itemList: [],
 };
 const gameAttr = {
-    selector: '#content .game-attr',
+    selector: '#content .thing-attr',
     subSelector: 'dt',
     sibling: true,
 };
@@ -1641,6 +1641,7 @@ moepedia.defaultInfos = [
 // ref links
 // https://vgmdb.net/album/9683
 // https://vgmdb.net/album/134285
+// https://vgmdb.net/album/122607
 const vgmdbModel = {
     key: 'vgmdb',
     description: 'vgmdb',
@@ -1680,6 +1681,25 @@ vgmdbModel.itemList.push(
     selector: [
         Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Organizations' }),
     ],
+}, 
+/*
+{
+  name: '目录编号',
+  selector: [
+    {
+      ...commonSelectors,
+      keyWord: 'Catalog Number',
+    },
+  ],
+  pipes: ['t']
+},
+*/
+{
+    name: '条形码',
+    selector: [
+        Object.assign(Object.assign({}, commonSelectors$2), { keyWord: 'Barcode' }),
+    ],
+    pipes: ['t']
 }, {
     name: '发售日期',
     selector: [
@@ -1815,6 +1835,7 @@ amazonJpMusicModel.itemList.push({
         },
     ],
     category: 'creator',
+    pipes: ['k'],
 }, {
     name: '碟片数量',
     selector: commonSelectors$3.map((s) => {
@@ -1849,6 +1870,108 @@ amazonJpMusicModel.itemList.push({
     ],
 });
 
+// ref links
+// https://music.douban.com/subject/36072428/
+// https://music.douban.com/subject/34956124/
+const doubanMusicModel = {
+    key: 'douban_music',
+    description: 'douban music',
+    host: ['music.douban.com'],
+    type: SubjectTypeId.music,
+    pageSelectors: [
+        {
+            selector: '#db-nav-music',
+        },
+    ],
+    controlSelector: {
+        selector: '#wrapper h1',
+    },
+    itemList: [],
+};
+doubanMusicModel.itemList.push({
+    name: '音乐名',
+    selector: {
+        selector: '#wrapper h1',
+    },
+    category: 'subject_title',
+}, 
+// textNode silbing 暂时不支持
+/*
+{
+  name: '发售日期',
+  selector: [
+    {
+      ...attr,
+      keyWord: '发行时间',
+    },
+  ],
+  category: 'date',
+},
+{
+  name: '艺术家',
+  selector: [
+    {
+      ...attr,
+      keyWord: '表演者',
+    }
+  ]
+},
+{
+  name: '流派',
+  selector: {
+    ...attr,
+    keyWord: '流派',
+  },
+},
+{
+  name: '别名',
+  selector: {
+    ...attr,
+    keyWord: '又名',
+  },
+  category: 'alias',
+},
+{
+  name: '版本特性',
+  selector: {
+    ...attr,
+    keyWord: '介质',
+  },
+},
+{
+  name: '碟片数量',
+  selector: {
+    ...attr,
+    keyWord: '唱片数',
+  },
+},
+{
+  name: '厂牌',
+  selector: {
+    ...attr,
+    keyWord: '出版者',
+  },
+},
+*/
+{
+    name: '音乐简介',
+    selector: [
+        {
+            selector: '.related_info',
+            subSelector: 'h2',
+            keyWord: '简介',
+            sibling: true,
+        },
+    ],
+    category: 'subject_summary',
+}, {
+    name: 'cover',
+    selector: {
+        selector: '#mainpic > span > a > img',
+    },
+    category: 'cover',
+});
+
 // 新增的 site model 需要在这里配置
 const configs = {
     [getchuGameModel.key]: getchuGameModel,
@@ -1866,6 +1989,7 @@ const configs = {
     [moepedia.key]: moepedia,
     [vgmdbModel.key]: vgmdbModel,
     [amazonJpMusicModel.key]: amazonJpMusicModel,
+    [doubanMusicModel.key]: doubanMusicModel,
 };
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
@@ -1942,7 +2066,7 @@ function genRandomStr(len) {
 }
 function formatDate(time, fmt = 'yyyy-MM-dd') {
     const date = new Date(time);
-    var o = {
+    const components = {
         'M+': date.getMonth() + 1,
         'd+': date.getDate(),
         'h+': date.getHours(),
@@ -1951,45 +2075,33 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
         'q+': Math.floor((date.getMonth() + 3) / 3),
         S: date.getMilliseconds(),
     };
-    if (/(y+)/i.test(fmt)) {
-        fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
-    }
-    for (var k in o) {
-        if (new RegExp('(' + k + ')', 'i').test(fmt)) {
-            fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
-        }
+    // Replace year
+    fmt = fmt.replace(/(y+)/i, (_, yearMatch) => (date.getFullYear() + '').slice(4 - yearMatch.length));
+    // Replace other components
+    for (const [key, value] of Object.entries(components)) {
+        fmt = fmt.replace(new RegExp(`(${key})`, 'i'), (_, match) => match.length === 1 ? value.toString() : String(value).padStart(match.length, '0'));
     }
     return fmt;
 }
-function dealDate(dataStr) {
-    // 2019年12月19
-    let l = [];
-    if (/\d{4}年\d{1,2}月(\d{1,2}日?)?/.test(dataStr)) {
-        l = dataStr
-            .replace(/日.*$/, '')
-            .split(/年|月/)
-            .filter((i) => i);
-    }
-    else if (/\d{4}\/\d{1,2}(\/\d{1,2})?/.test(dataStr)) {
-        l = dataStr.split('/');
-    }
-    else if (/\d{4}-\d{1,2}(-\d{1,2})?/.test(dataStr)) {
-        return dataStr;
-    }
-    else {
-        if (/[A-Za-z]+\s\d{1,2},?\s\d{4}$/.test(dataStr)) {
-            return formatDate(dataStr);
+function dealDate(input) {
+    // Regular expressions to match various date formats
+    const regexPatterns = [
+        { pattern: /(\d{4})年(\d{1,2})月(\d{1,2})日?/, format: '$1-$2-$3' },
+        { pattern: /(\d{4})年(\d{1,2})月/, format: '$1-$2' },
+        { pattern: /(\d{4})[/-](\d{1,2})$/, format: '$1-$2' },
+        { pattern: /.*?(\d{4})\/(\d{1,2})\/(\d{1,2}).*?/, format: '$1-$2-$3' },
+    ];
+    for (const { pattern, format } of regexPatterns) {
+        const match = input.replace(/\s/g, '').match(pattern);
+        if (match) {
+            return format.replace(/\$(\d+)/g, (_, number) => String(match[number]).padStart(2, '0'));
         }
-        return dataStr;
     }
-    return l
-        .map((i) => {
-        if (i.length === 1) {
-            return `0${i}`;
-        }
-        return i;
-    })
-        .join('-');
+    // input is not a valid date
+    if (isNaN(Date.parse(input))) {
+        return input;
+    }
+    return formatDate(input);
 }
 function isEqualDate(d1, d2) {
     const resultDate = new Date(d1);
@@ -2788,6 +2900,115 @@ const doubanGameEditTools = {
     },
     filters: [],
 };
+const doubanMusicTools = {
+    hooks: {
+        async afterGetWikiData(infos) {
+            var _a;
+            const res = [];
+            for (const item of infos) {
+                res.push(item);
+            }
+            const $info = document.querySelector('#info');
+            if ($info) {
+                const nameDict = {
+                    又名: {
+                        name: '别名',
+                        category: 'alias',
+                    },
+                    发行时间: {
+                        name: '发售日期',
+                        category: 'date',
+                    },
+                    介质: {
+                        name: '版本特性',
+                    },
+                    唱片数: {
+                        name: '碟片数量',
+                    },
+                    流派: {
+                        name: '流派',
+                    },
+                    出版者: {
+                        name: '厂牌',
+                    },
+                    表演者: {
+                        name: '艺术家',
+                    },
+                    条形码: {
+                        name: '条形码',
+                    }
+                };
+                $info.querySelectorAll('.pl').forEach((pl) => {
+                    let val = '';
+                    if (pl.nextSibling.TEXT_NODE === 3) {
+                        val = pl.nextSibling.textContent.trim();
+                    }
+                    let key = pl.textContent.trim().split(':')[0];
+                    const anchors = pl.querySelectorAll('a');
+                    if (anchors && anchors.length) {
+                        val = [...anchors].map((a) => a.textContent.trim()).join('、');
+                    }
+                    if (!val) {
+                        return;
+                    }
+                    if (key in nameDict) {
+                        const target = nameDict[key];
+                        res.push(Object.assign(Object.assign({}, target), { value: val }));
+                    }
+                });
+            }
+            const discNum = ((_a = res.find((item) => item.name === '碟片数量')) === null || _a === void 0 ? void 0 : _a.value) || 1;
+            const tracks = [
+                ...document.querySelectorAll('.track-list ul.track-items > li'),
+            ].map((item) => {
+                const order = item.getAttribute('data-track-order');
+                const orderNum = order ? parseInt(order) : 0;
+                const titleRaw = item.textContent.trim();
+                const durationReg = /\s*\d{1,2}:\d{1,2}$/;
+                if (durationReg.test(titleRaw)) {
+                    const m = titleRaw.match(durationReg);
+                    return {
+                        title: titleRaw.replace(durationReg, ''),
+                        duration: m[0].trim(),
+                        order: orderNum,
+                    };
+                }
+                return {
+                    title: item.textContent.trim(),
+                    order: orderNum,
+                };
+            });
+            const discArr = [];
+            let curDisc = [];
+            for (let i = 0; i < tracks.length; i++) {
+                const track = tracks[i];
+                if (track.order === 0) {
+                    if (curDisc.length) {
+                        discArr.push(curDisc);
+                        curDisc = [];
+                    }
+                    continue;
+                }
+                curDisc.push(track);
+            }
+            if (curDisc.length) {
+                discArr.push(curDisc);
+            }
+            if (discArr.length && discArr.length == discNum) {
+                res.push({
+                    category: 'ep',
+                    name: '',
+                    value: discArr,
+                });
+            }
+            else {
+                console.warn('碟片数量不匹配', discNum, discArr);
+            }
+            return res;
+        },
+    },
+    filters: [],
+};
 
 var ErogamescapeCategory;
 (function (ErogamescapeCategory) {
@@ -3187,6 +3408,10 @@ const vgmdbTools = {
                     res.push(Object.assign(Object.assign({}, item), { value: item.value.replace(/\d+/, '').trim() }));
                     continue;
                 }
+                if (item.name === '目录编号') {
+                    res.push(Object.assign(Object.assign({}, item), { value: item.value.trim().split(' ')[0].trim() }));
+                    continue;
+                }
                 res.push(item);
             }
             /*
@@ -3274,7 +3499,7 @@ const vgmdbTools = {
                     category: 'ep',
                     // 名字留空
                     name: '',
-                    value: discArr
+                    value: discArr,
                 });
             }
             return res;
@@ -3354,6 +3579,7 @@ const sitesFuncDict = {
     moepedia: moepediaTools,
     vgmdb: vgmdbTools,
     amazon_jp_music: amazonJpMusicTools,
+    douban_music: doubanMusicTools,
 };
 // 存储新建角色的钩子函数和 filters
 const charaFuncDict = {
@@ -5697,6 +5923,17 @@ function insertFillFormBtn($t, cb, cancelCb) {
     $cancel.addEventListener('click', cancelCb);
     $t.appendChild($cancel);
 }
+function getSubmitBtnText(wikiInfo) {
+    let text = '添加条目并上传封面';
+    if (location.pathname === '/new_subject/3') {
+        // 音乐条目，添加ep
+        const discInfo = wikiInfo.infos.find((item) => item.category === 'ep');
+        if (discInfo) {
+            text = '添加条目并上传封面、添加曲目';
+        }
+    }
+    return text;
+}
 function initNewSubject(wikiInfo) {
     var _a;
     const $t = $q('form[name=create_subject] [name=subject_title]').parentElement;
@@ -5730,7 +5967,7 @@ function initNewSubject(wikiInfo) {
             const $input = $q('.e-wiki-cover-container [name=submit]');
             const $clonedInput = $input.cloneNode(true);
             if ($clonedInput) {
-                $clonedInput.value = '添加条目并上传封面';
+                $clonedInput.value = getSubmitBtnText(wikiInfo);
             }
             $input.insertAdjacentElement('afterend', $clonedInput);
             $input.remove();
