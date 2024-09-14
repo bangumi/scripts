@@ -445,35 +445,17 @@ function create_subject_cell(subject_id) {
 }
 
 function show_subjects(subject_type) {
-  console.log(`change_tab, subject_type: ${subject_type}`);
-  switch (subject_type) {
-    case "0": //all
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').show();
-      break;
-    case "1": //book
-      $('.infoWrapper_tv').hide();
-      $('.infoWrapper_book').show();
-
-      $('.infoWrapper_book > div').hide();
-      $('.infoWrapper_book > div[subject_type="1"]').show();
-      break;
-    case "2": //anime
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').hide();
-      $('.infoWrapper_tv > div[subject_type="2"]').show();
-      break;
-    case "6": //real
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').hide();
-      $('.infoWrapper_tv > div[subject_type="6"]').show();
-      break;
-    default:
-      break;
+  if (subject_type == 0) {
+    $('div[subject_type="1"]').show();
+    $('div[subject_type="2"]').show();
+    $('div[subject_type="6"]').show();
+    reset_odd_even();
+    return;
   }
+  $('div[subject_type="1"]').hide();
+  $('div[subject_type="2"]').hide();
+  $('div[subject_type="6"]').hide();
+  $(`div[subject_type="${subject_type}"]`).show();
   reset_odd_even();
 }
 
