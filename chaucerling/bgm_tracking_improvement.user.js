@@ -154,7 +154,7 @@ function changeLayout() {
       })();
       if (!tips) {
         subject.sortId = 0;
-        oldDay.appendChild(subject);
+        oldDay.subjects.appendChild(subject);
         continue;
       }
 
@@ -165,7 +165,7 @@ function changeLayout() {
         if (isNaN(date.valueOf())) {
           subject.appendChild(document.createTextNode("Missing On Air Date"));
         }
-        oldDay.appendChild(subject);
+        oldDay.subjects.appendChild(subject);
       }
       else {
         subject.sortId = title.getPrefix();
@@ -222,6 +222,10 @@ function changeLayout() {
 GM_addStyle(`
 .day {
     overflow: auto;
+}
+day {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
 }
 .today {
     background: #ffffaa42;
