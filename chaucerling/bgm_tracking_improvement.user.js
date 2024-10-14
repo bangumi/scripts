@@ -5,7 +5,9 @@
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
 // @include      /https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
-// @grant        none
+// @grant        GM_deleteValue
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 /* jshint loopfunc:true */
@@ -59,6 +61,7 @@ function GM_addStyle(style) {
   $('head').append(`<style>${style}</style>`);
 }
 
+const tasks = [changeLayout, i18n];
 //#region [超合金组件]首页按星期分组/排序(https://bangumi.tv/dev/app/1083/gadget/851)
 function sortElements(childs, compareFunction) {
   if (!childs.length) {
@@ -260,6 +263,98 @@ a.epBtnAirNewDay2 {
     outline: 1px solid #90ee90 !important;
     color: #229100 !important;
 }`)
+//#endregion
+
+//#region
+function i18n() {
+  function gE(ele, mode, parent) { // 获取元素
+    if (typeof ele === 'object') {
+      return ele;
+    } if (mode === undefined && parent === undefined) {
+      return (isNaN(ele * 1)) ? document.querySelector(ele) : document.getElementById(ele);
+    } if (mode === 'all') {
+      return (parent === undefined) ? document.querySelectorAll(ele) : parent.querySelectorAll(ele);
+    } if (typeof mode === 'object' && parent === undefined) {
+      return mode.querySelector(ele);
+    }
+  }
+
+  function post(href, func, parm, type) { // post
+    let xhr = new window.XMLHttpRequest();
+    xhr.open(parm ? 'POST' : 'GET', href);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.responseType = type || 'document';
+    xhr.onerror = function () {
+      xhr = null;
+      post(href, func, parm, type);
+    };
+    xhr.onload = function (e) {
+      if (e.target.status >= 200 && e.target.status < 400 && typeof func === 'function') {
+        const data = e.target.response;
+        if (xhr.responseType === 'document' && gE('#messagebox', data)) {
+          if (gE('#messagebox')) {
+            gE('#csp').replaceChild(gE('#messagebox', data), gE('#messagebox'));
+          } else {
+            gE('#csp').appendChild(gE('#messagebox', data));
+          }
+        }
+        func(data, e);
+      }
+      xhr = null;
+    };
+    xhr.send(parm);
+  }
+
+  function setLocal(item, value) {
+    if (typeof GM_setValue === 'undefined') {
+      window.localStorage[`bgmTI-${item}`] = (typeof value === 'string') ? value : JSON.stringify(value);
+    } else {
+      GM_setValue(item, value);
+    }
+  }
+  function getLocal(item, toJSON) {
+    if (typeof GM_getValue === 'undefined' || !GM_getValue(item, null)) {
+      item = `bgmTI-${item}`;
+      return (item in window.localStorage) ? ((toJSON) ? JSON.parse(window.localStorage[item]) : window.localStorage[item]) : null;
+    }
+    return GM_getValue(item, null);
+  }
+
+  function trySetText(header, id, text, isSetLocal) {
+    if (!text) {
+      return false;
+    }
+    header.innerText = text;
+    if (isSetLocal) setLocal(id, text);
+    return true
+  }
+
+  console.log('Start i18n');
+  const headers = document.querySelectorAll('.tinyHeader>a')
+  for (let i = 0; i < headers.length; i++) {
+    let header = headers[i];
+    if ('javascript:void(0);' === header.href) {
+      continue;
+    }
+    let id = header.getAttribute('data-subject-id');
+    if (trySetText(header, id, getLocal(id), true)) continue;
+    if (trySetText(header, id, header.getAttribute('data-subject-name-cn'), true)) continue;
+    const keys = ['中文名: ', '别名: '];
+    post(`/subject/${id}`, data => {
+      for (let c of gE('#infobox', data).children) {
+        for (let key of keys) {
+          if (gE('span', c).innerText !== key) {
+            continue;
+          }
+          const text = c.innerText.replace(key, '').replace(/\n/g, '');
+          trySetText(header, id, text, key === '中文名: ');
+          return;
+        }
+      }
+    });
+  }
+  console.log('End i18n');
+}
 //#endregion
 
 GM_addStyle(`
@@ -592,7 +687,9 @@ function add_extra_subjects() {
     $('.infoWrapper_book').removeClass('disabled');
     refresh = false;
   }
-  changeLayout();
+  for (let i in tasks) {
+    tasks[i]();
+  }
 }
 
 // 构造首页条目格子
@@ -606,7 +703,7 @@ function create_subject_cell(subject_id) {
         </a>
         <div class='epGird'>
           <div class='tinyHeader'>
-            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <a href='/subject/${subject.id}' data-subject-id='${subject.id}' title='${subject.title}'>${subject.title}</a>
             <small class='progress_percent_text'>
               <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
                 title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
@@ -623,9 +720,10 @@ function create_subject_cell(subject_id) {
         <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
           <img src='${subject.thumb}' class='grid'>
         </a>
+        </div>
         <div class='epGird'>
           <div class='tinyHeader'>
-            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <a href='/subject/${subject.id}' data-subject-id='${subject.id}' title='${subject.title}'>${subject.title}</a>
             <small class='progress_percent_text'>
               <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
                 title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
