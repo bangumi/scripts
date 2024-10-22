@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.4.2
+// @version      0.4.2.1
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
-// @include      http://bangumi.tv/
-// @include      https://bgm.tv/
-// @include      http://bgm.tv/
-// @include      http://chii.in/
-// @grant        none
+// @include      /https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
+// @grant        GM_deleteValue
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 /* jshint loopfunc:true */
@@ -61,6 +60,302 @@ const LS_SCOPE = 'BTI.extra_subjects';
 function GM_addStyle(style) {
   $('head').append(`<style>${style}</style>`);
 }
+
+const tasks = [changeLayout, i18n];
+//#region [超合金组件]首页按星期分组/排序(https://bangumi.tv/dev/app/1083/gadget/851)
+function sortElements(childs, compareFunction) {
+  if (!childs.length) {
+    return;
+  }
+  var parent = childs[0].parentNode;
+  var sorting = [];
+  for (var i = childs.length - 1; i >= 0; --i) {
+    sorting.push(childs[i]);
+    parent.removeChild(childs[i]);
+  }
+  sorting.sort(compareFunction);
+  for (let child of sorting) {
+    parent.appendChild(child);
+  }
+}
+
+Number.prototype.zeroPad = function (length) {
+  var s = (this || "0").toString();
+  while (s.length < length) {
+    s = "0" + s;
+  }
+  return s;
+};
+
+String.prototype.trim = function () {
+  return this.replace(/^[ \t]+|[ \t]+$/g, "");
+};
+
+String.prototype.extractDate = function () {
+  return (this.match(/(20\d\d-\d{1,2}-\d{1,2})/) || [])[1] || NaN;
+};
+
+String.prototype.getPrefix = function () {
+  return ((this.match(/^([^(:]*)/) || [])[1] || "").trim();
+};
+
+function changeLayout() {
+  // wait for element to finish
+  var unsafeWindow = window.unsafeWindow || window;
+  if (!unsafeWindow.loadXML || !unsafeWindow.$ || !document.getElementById("subject_prg_content") || !document.getElementById("cluetip")) {
+    setTimeout(changeLayout, 1);
+    return;
+  }
+  var weekdayLabels = ['日', '一', '二', '三', '四', '五', '六', '??'];
+  console.log("Changing layout");
+  var $ = unsafeWindow.$;
+
+  var now = new Date();
+  var oldDate = now.valueOf() - 365 * 24 * 60 * 60 * 1000;
+  do {
+    // let subjects = $("#cloumnSubjectInfo > div:first > div").toArray();
+    let subjects = $("#cloumnSubjectInfo > div:last > div").toArray();
+    if (!subjects.length) {
+      break;
+    }
+
+    var container = subjects[0].parentNode;
+    for (let subject of subjects) {
+      container.removeChild(subject);
+    }
+    while (container.lastChild) {
+      container.removeChild(container.lastChild);
+    }
+    var days = [];
+    for (let i = 0; i < 8; ++i) {
+      let day = container.appendChild(document.createElement("div"));
+      day.className = "day";
+      day.style.overflow = "auto";
+      let caption = day.appendChild(document.createElement("div"));
+      caption.appendChild(document.createTextNode("周" + weekdayLabels[i]));
+      day.subjects = day.appendChild(document.createElement("div"));
+      day.subjects.style.cssText += "display:grid;grid-template-columns: 1fr 1fr;"
+      days.push(day);
+    }
+    let oldDay = days[7];
+    let today = days[new Date().getDay()];
+
+    today.className += " today";
+    for (let subject of subjects) {
+      let tips = (function () {
+        try {
+          for (let ep_info of $('.load-epinfo', subject).toArray()) {
+            if (!/epBtnDrop|epBtnWatched/.test(ep_info.className)) {
+              return $(".tip:first", $(ep_info.rel));
+            }
+          }
+          let ep_info = $('.load-epinfo:last', subject);
+          return $(".tip:first", $(ep_info[0].rel));
+        } catch (e) {
+          console.log(e, subject);
+        }
+      })();
+      if (!tips) {
+        subject.sortId = 0;
+        oldDay.subjects.appendChild(subject);
+        continue;
+      }
+
+      let date = new Date(tips.text().extractDate());
+      let title = $("> a:last", subject)[0].title;
+      if (/*date.valueOf() <= oldDate ||*/ isNaN(date.valueOf())) {
+        subject.sortId = title.getPrefix() + "-" + date.getYear().zeroPad(3) + date.getMonth().zeroPad(2) + "-" + title;
+        if (isNaN(date.valueOf())) {
+          subject.appendChild(document.createTextNode("Missing On Air Date"));
+        }
+        oldDay.subjects.appendChild(subject);
+      }
+      else {
+        subject.sortId = title.getPrefix();
+        days[date.getDay()].subjects.appendChild(subject);
+      }
+    }
+    for (let day of days) {
+      if (day == oldDay) {
+        continue;
+      }
+      let nodes = day.subjects.childNodes;
+      sortElements(nodes, function (a, b) {
+        return a.sortId.localeCompare(b.sortId);
+      });
+
+      for (var i = 0; i < nodes.length; ++i) {
+        var $obj = $(nodes[i]);
+        if (i % 2 === 0) {
+          $obj.removeClass('even');
+          $obj.addClass('odd');
+        }
+        else {
+          $obj.removeClass('odd');
+          $obj.addClass('even');
+        }
+      }
+    }
+  } while (0);
+
+  {
+    let subjects = $("#prgSubjectList > li").toArray();
+    for (let i in subjects) {
+      subjects[i].sortId = $('> a:last', subjects[i])[0].title;
+    }
+    sortElements(subjects, function localeCompare(a, b) {
+      return a.sortId.localeCompare(b.sortId);
+    });
+  }
+
+  var within_24hours = now.valueOf() - 60 * 60 * 24 * 1000;
+  var within_48hours = now.valueOf() - 60 * 60 * 48 * 1000;
+  $.each($(".epBtnAir"), function (i, o) {
+    var airDate = new Date($(".tip:first", $(o.rel)).text().extractDate()).valueOf();
+    if (isNaN(airDate)) {
+      $(o).removeClass("epBtnAir");
+      $(o).addClass("epBtnUnknown");
+    }
+    else if (airDate >= within_48hours) {
+      $(o).addClass(airDate >= within_24hours ? "epBtnAirNewDay1" : "epBtnAirNewDay2");
+    }
+  });
+}
+
+GM_addStyle(`
+.day {
+    overflow: auto;
+}
+day {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.today {
+    background: #ffffaa42;
+}
+
+a.epBtnUnknown {
+    background: #ecceffb0 !important;
+    color: #9932cdfc !important;
+    border-color: #9932cd75 !important;
+}
+
+a.epBtnAir {
+    background: #00ff007a !important;
+    color: #55ae55 !important;
+    border-color: #55ae55 !important;
+}
+
+html[data-theme="dark"] a.epBtnAir {
+    color: lightgreen !important;
+}
+
+html[data-theme="dark"] a.epBtnToday {
+    color: #229100 !important;
+}
+
+a.epBtnAirNewDay1 {
+    border-color: #90ee90 !important;
+    outline: 1px solid #90ee90 !important;
+    color: #229100 !important;
+}
+a.epBtnAirNewDay2 {
+    outline: 1px solid #90ee90 !important;
+    color: #229100 !important;
+}`)
+//#endregion
+
+//#region
+function i18n() {
+  function gE(ele, mode, parent) { // 获取元素
+    if (typeof ele === 'object') {
+      return ele;
+    } if (mode === undefined && parent === undefined) {
+      return (isNaN(ele * 1)) ? document.querySelector(ele) : document.getElementById(ele);
+    } if (mode === 'all') {
+      return (parent === undefined) ? document.querySelectorAll(ele) : parent.querySelectorAll(ele);
+    } if (typeof mode === 'object' && parent === undefined) {
+      return mode.querySelector(ele);
+    }
+  }
+
+  function post(href, func, parm, type) { // post
+    let xhr = new window.XMLHttpRequest();
+    xhr.open(parm ? 'POST' : 'GET', href);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.responseType = type || 'document';
+    xhr.onerror = function () {
+      xhr = null;
+      post(href, func, parm, type);
+    };
+    xhr.onload = function (e) {
+      if (e.target.status >= 200 && e.target.status < 400 && typeof func === 'function') {
+        const data = e.target.response;
+        if (xhr.responseType === 'document' && gE('#messagebox', data)) {
+          if (gE('#messagebox')) {
+            gE('#csp').replaceChild(gE('#messagebox', data), gE('#messagebox'));
+          } else {
+            gE('#csp').appendChild(gE('#messagebox', data));
+          }
+        }
+        func(data, e);
+      }
+      xhr = null;
+    };
+    xhr.send(parm);
+  }
+
+  function setLocal(item, value) {
+    if (typeof GM_setValue === 'undefined') {
+      window.localStorage[`bgmTI-${item}`] = (typeof value === 'string') ? value : JSON.stringify(value);
+    } else {
+      GM_setValue(item, value);
+    }
+  }
+  function getLocal(item, toJSON) {
+    if (typeof GM_getValue === 'undefined' || !GM_getValue(item, null)) {
+      item = `bgmTI-${item}`;
+      return (item in window.localStorage) ? ((toJSON) ? JSON.parse(window.localStorage[item]) : window.localStorage[item]) : null;
+    }
+    return GM_getValue(item, null);
+  }
+
+  function trySetText(header, id, text, isSetLocal) {
+    if (!text) {
+      return false;
+    }
+    header.innerText = text;
+    if (isSetLocal) setLocal(id, text);
+    return true
+  }
+
+  console.log('Start i18n');
+  const headers = document.querySelectorAll('.tinyHeader>a')
+  for (let i = 0; i < headers.length; i++) {
+    let header = headers[i];
+    if ('javascript:void(0);' === header.href) {
+      continue;
+    }
+    let id = header.getAttribute('data-subject-id');
+    if (trySetText(header, id, getLocal(id), true)) continue;
+    if (trySetText(header, id, header.getAttribute('data-subject-name-cn'), true)) continue;
+    const keys = ['中文名: ', '别名: '];
+    post(`/subject/${id}`, data => {
+      for (let c of gE('#infobox', data).children) {
+        for (let key of keys) {
+          if (gE('span', c).innerText !== key) {
+            continue;
+          }
+          const text = c.innerText.replace(key, '').replace(/\n/g, '');
+          trySetText(header, id, text, key === '中文名: ');
+          return;
+        }
+      }
+    });
+  }
+  console.log('End i18n');
+}
+//#endregion
 
 GM_addStyle(`
   #ti-alert {
@@ -392,6 +687,9 @@ function add_extra_subjects() {
     $('.infoWrapper_book').removeClass('disabled');
     refresh = false;
   }
+  for (let i in tasks) {
+    tasks[i]();
+  }
 }
 
 // 构造首页条目格子
@@ -405,7 +703,7 @@ function create_subject_cell(subject_id) {
         </a>
         <div class='epGird'>
           <div class='tinyHeader'>
-            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <a href='/subject/${subject.id}' data-subject-id='${subject.id}' title='${subject.title}'>${subject.title}</a>
             <small class='progress_percent_text'>
               <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
                 title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
@@ -422,9 +720,10 @@ function create_subject_cell(subject_id) {
         <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
           <img src='${subject.thumb}' class='grid'>
         </a>
+        </div>
         <div class='epGird'>
           <div class='tinyHeader'>
-            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <a href='/subject/${subject.id}' data-subject-id='${subject.id}' title='${subject.title}'>${subject.title}</a>
             <small class='progress_percent_text'>
               <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
                 title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
@@ -445,35 +744,17 @@ function create_subject_cell(subject_id) {
 }
 
 function show_subjects(subject_type) {
-  console.log(`change_tab, subject_type: ${subject_type}`);
-  switch (subject_type) {
-    case "0": //all
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').show();
-      break;
-    case "1": //book
-      $('.infoWrapper_tv').hide();
-      $('.infoWrapper_book').show();
-
-      $('.infoWrapper_book > div').hide();
-      $('.infoWrapper_book > div[subject_type="1"]').show();
-      break;
-    case "2": //anime
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').hide();
-      $('.infoWrapper_tv > div[subject_type="2"]').show();
-      break;
-    case "6": //real
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').hide();
-      $('.infoWrapper_tv > div[subject_type="6"]').show();
-      break;
-    default:
-      break;
+  if (subject_type == 0) {
+    $('div[subject_type="1"]').show();
+    $('div[subject_type="2"]').show();
+    $('div[subject_type="6"]').show();
+    reset_odd_even();
+    return;
   }
+  $('div[subject_type="1"]').hide();
+  $('div[subject_type="2"]').hide();
+  $('div[subject_type="6"]').hide();
+  $(`div[subject_type="${subject_type}"]`).show();
   reset_odd_even();
 }
 
