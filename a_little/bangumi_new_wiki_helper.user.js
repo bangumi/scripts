@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.29
+// @version     0.4.31
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -1238,7 +1238,7 @@ dlsiteGameModel.itemList.push({
     name: 'cover',
     selector: [
         {
-            selector: '.slider_body_inner.swiper-container-horizontal>ul.slider_items>li.slider_item:first-child>img',
+            selector: '#work_left  div.slider_body_inner.swiper-container-horizontal > ul > li.slider_item:first-child > picture > img',
         },
     ],
     category: 'cover',
@@ -2520,19 +2520,45 @@ const amazonJpMusicTools = {
 const dlsiteTools = {
     hooks: {
         async afterGetWikiData(infos) {
+            var _a;
             const res = [];
             for (const info of infos) {
                 let val = info.value;
                 if (val &&
                     typeof val === 'string' &&
                     !/http/.test(val) &&
-                    ['原画', '剧本', '音乐', '游戏类型', '声优'].includes(info.name)) {
+                    ['原画', '剧本', '音乐', '游戏类型', '声优', '作者'].includes(info.name)) {
                     const v = info.value.split('/');
                     if (v && v.length > 1) {
                         val = v.map((s) => s.trim()).join(', ');
                     }
                 }
                 res.push(Object.assign(Object.assign({}, info), { value: val }));
+            }
+            const cover = infos.find((obj) => obj.name === 'cover');
+            if (!cover) {
+                let url = (_a = document.querySelector('meta[property="og:image"]')) === null || _a === void 0 ? void 0 : _a.content;
+                if (url) {
+                    let dataUrl = url;
+                    try {
+                        if (url) {
+                            dataUrl = await getImageDataByURL(url, {
+                                headers: {
+                                    Referer: url,
+                                },
+                            });
+                        }
+                    }
+                    catch (error) { }
+                    res.push({
+                        category: 'cover',
+                        name: 'cover',
+                        value: {
+                            url,
+                            dataUrl,
+                        },
+                    });
+                }
             }
             return res;
         },
@@ -3842,6 +3868,10 @@ function insertControlBtnChara($t, cb) {
 function addCharaUI($t, names, cb) {
     if (!$t)
         return;
+    if (!names.length) {
+        console.warn('没有虚拟角色可用');
+        return;
+    }
     // @TODO 增加全部
     // <option value="all">全部</option>
     const btn = `<a class="e-wiki-new-character">添加新虚拟角色</a>`;
