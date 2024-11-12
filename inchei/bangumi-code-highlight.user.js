@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         班固米代码高亮
 // @namespace    https://bgm.tv/group/topic/409276
-// @version      1.0
+// @version      1.1
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
 // @include     /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/(group|subject)\/topic\/*/
 // @include     /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/(ep|person|character|blog)\/*/
 // @grant        none
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/516547/%E7%8F%AD%E5%9B%BA%E7%B1%B3%E4%BB%A3%E7%A0%81%E9%AB%98%E4%BA%AE.user.js
+// @updateURL https://update.greasyfork.org/scripts/516547/%E7%8F%AD%E5%9B%BA%E7%B1%B3%E4%BB%A3%E7%A0%81%E9%AB%98%E4%BA%AE.meta.js
 // ==/UserScript==
 
 (async function() {
@@ -36,7 +38,6 @@
                 border: 1px solid #ddd;
                 border-radius: 5px;
                 overflow: hidden;
-                margin-bottom: 20px;
             }
             html[data-theme="dark"] .codeHighlight {
                 border: 1px solid #444;
@@ -52,44 +53,38 @@
                 padding: 5px 10px;
                 font-size: 12px;
             }
-            .codeHighlight .top-bar-light {
-                background-color: #f7f7f7;
-            }
-            .codeHighlight .top-bar-dark {
-                background-color: #2d2d2d;
-                color: #fff;
-            }
-            .codeHighlight .top-bar button {
-                background-color: transparent;
-                font-size: 12px;
-                padding: 5px 10px;
-                cursor: pointer;
-                border: none;
-                border-radius: 5px;
-            }
-            .codeHighlight .top-bar button:hover {
-                background-color: #eee;
-            }
-            html[data-theme="dark"] .codeHighlight .top-bar button:hover {
-                background-color: #555;
-            }
             .codeHighlight pre {
                 counter-reset: line;
-            }
-            .codeHighlight pre code {
                 position: relative;
                 display: block;
             }
-            .codeHighlight pre code:before {
-                counter-increment: line;
-                content: counter(line);
-                display: inline-block;
-                border-right: 1px solid #ddd;
-                padding: 0 .5em;
-                margin-right: .5em;
-                color: #888;
-                text-align: right;
-                width: 2em;
+            .codeHighlight .copy-button {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                padding: 5px 10px;
+                cursor: pointer;
+                border: none;
+                background-color: #eee;
+                color: #444;
+                font-size: 12px;
+                border-radius: 2px;
+                z-index: 1;
+                opacity: 0;
+                transition: all .3s ease-in-out;
+            }
+            .codeHighlight:hover .copy-button {
+                opacity: 1;
+            }
+            .copy-button:hover {
+                background-color: #dedede;
+            }
+            html[data-theme="dark"] .copy-button {
+                background-color: #333;
+                color: #eee;
+            }
+            html[data-theme="dark"] .copy-button:hover {
+                background-color: #444;
             }
         `;
         document.head.appendChild(customStyles);
@@ -107,17 +102,6 @@
             dayLink.disabled = false;
             nightLink.disabled = true;
         }
-
-        document.querySelectorAll('.codeHighlight .top-bar').forEach(bar => {
-            console.log(theme)
-            if (theme === 'dark') {
-                bar.classList.remove('top-bar-light');
-                bar.classList.add('top-bar-dark');
-            } else {
-                bar.classList.remove('top-bar-dark');
-                bar.classList.add('top-bar-light');
-            }
-        });
     }
 
     // 加载 highlight.js
@@ -167,27 +151,18 @@
                 blockWrapper.innerHTML = blockWrapper.innerHTML.replace('<pre><br>', '<pre>');
                 const block = blockWrapper.querySelector('pre');
                 const result = hljs.highlightAuto(block.textContent);
-                const language = result.language || 'plaintext';
 
-                // 创建显示语言名称和复制按钮的横条
-                const topBar = document.createElement('div');
-                const theme = document.documentElement.getAttribute('data-theme') || 'light';
-                topBar.className = `top-bar top-bar-${theme}`;
-
-                const langDiv = document.createElement('div');
-                langDiv.textContent = `${language[0].toUpperCase() + language.slice(1)}`;
-
-                const copyButton = document.createElement('button');
-                copyButton.textContent = '复制代码';
-                copyButton.addEventListener('click', () => {
+                 // 创建复制按钮
+                 const copyButton = document.createElement('button');
+                 copyButton.className = 'copy-button';
+                 copyButton.textContent = '复制代码';
+                 copyButton.addEventListener('click', () => {
                     copyToClipboard(block.textContent, copyButton);
                 });
 
-                topBar.appendChild(langDiv);
-                topBar.appendChild(copyButton);
-                block.parentNode.insertBefore(topBar, block);
+                block.parentNode.insertBefore(copyButton, block);
 
-                block.classList.add(`language-${language}`);
+                block.classList.add(`language-${result.language}`);
                 hljs.highlightElement(block);
             });
             resolve(0);
