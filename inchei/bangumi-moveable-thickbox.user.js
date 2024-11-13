@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Moveable Thickbox
 // @namespace    https://github.com/bangumi/scripts/tree/master/inchei
-// @version      2.0.0
+// @version      2.0.2
 // @description  使 bangumi 的 thickbnox 可移動
 // @icon         https://bgm.tv/img/favicon.ico
 // @author       inchei
@@ -13,6 +13,7 @@
 
     let isDragging = false;
     let offsetX, offsetY;
+    let isWidthUnder640 = window.innerWidth < 640;
 
     // 为指定元素添加点击事件监听器
     document.querySelectorAll('a.thickbox').forEach(element => {
@@ -41,6 +42,8 @@
             windowElem.style.right = 'auto';
             windowElem.style.bottom = 'auto';
             windowElem.style.position = 'fixed';
+
+            checkWindowSize(true);
 
             title.style.cursor = 'move';
 
@@ -75,6 +78,28 @@
             isDragging = false;
             document.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
+        }
+    }
+
+    window.addEventListener('resize', () => checkWindowSize());
+
+    function checkWindowSize(init=false) {
+        const title = document.getElementById('TB_title');
+        const windowElem = document.getElementById('TB_window');
+
+        if (!title || !windowElem) return;
+
+        if (window.innerWidth < 640 && (!isWidthUnder640 || init)) {
+            if (!init) isWidthUnder640 = true;
+            title.style.pointerEvents = 'none';
+            document.getElementById('TB_closeWindowButton').style.pointerEvents = 'auto';
+            windowElem.style.setProperty('margin-left', '0', 'important');
+            windowElem.style.top = `${(window.innerHeight - windowElem.offsetHeight) / 2}px`;
+            windowElem.style.left = '0';
+        } else if (window.innerWidth >= 640 && (isWidthUnder640 || init)) {
+        if (!init) isWidthUnder640 = false;
+            title.style.pointerEvents = 'auto';
+            windowElem.style.left = `${(window.innerWidth - windowElem.offsetWidth) / 2}px`;
         }
     }
 
