@@ -49,15 +49,6 @@
 
 章节讨论中置顶显示自己的吐槽，高亮参与讨论过的格子
 
-## 进度条文字显示不清修复
-
-```css
-div.SidePanel .progress .inner {
-    word-break: keep-all;
-    background: #FFF url(/img/bangumi/bangumi_ui_1.png) repeat-x 0 -55px;
-}
-```
-
 ## <s>[bangumi thickbox 计数](https://greasyfork.org/zh-TW/scripts/371758-bangumi-thickbox-counter)</s>
 
 <s>讨论页：https://bgm.tv/group/topic/351358</s>
