@@ -1,15 +1,13 @@
 // ==UserScript==
 // @name         班固米代码高亮
 // @namespace    https://bgm.tv/group/topic/409276
-// @version      1.1
+// @version      1.3
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
 // @include     /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/(group|subject)\/topic\/*/
 // @include     /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/(ep|person|character|blog)\/*/
 // @grant        none
 // @license      MIT
-// @downloadURL https://update.greasyfork.org/scripts/516547/%E7%8F%AD%E5%9B%BA%E7%B1%B3%E4%BB%A3%E7%A0%81%E9%AB%98%E4%BA%AE.user.js
-// @updateURL https://update.greasyfork.org/scripts/516547/%E7%8F%AD%E5%9B%BA%E7%B1%B3%E4%BB%A3%E7%A0%81%E9%AB%98%E4%BA%AE.meta.js
 // ==/UserScript==
 
 (async function() {
@@ -43,7 +41,7 @@
                 border: 1px solid #444;
             }
             .codeHighlight pre {
-                line-height: unset !important;
+                line-height: 1.5 !important;
                 border-radius: 0 0 5px 5px;
             }
             .codeHighlight .top-bar {
@@ -57,11 +55,12 @@
                 counter-reset: line;
                 position: relative;
                 display: block;
+                max-height: 400px;
             }
             .codeHighlight .copy-button {
                 position: absolute;
                 top: 10px;
-                right: 10px;
+                right: 15px;
                 padding: 5px 10px;
                 cursor: pointer;
                 border: none;
@@ -105,7 +104,7 @@
     }
 
     // 加载 highlight.js
-    async function loadHighlightJS() {
+    function loadHighlightJS() {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js';
         script.onload = async () => {
@@ -162,7 +161,7 @@
 
                 block.parentNode.insertBefore(copyButton, block);
 
-                block.classList.add(`language-${result.language}`);
+                block.classList.add(`language-${result.language ?? 'plaintext'}`);
                 hljs.highlightElement(block);
             });
             resolve(0);
