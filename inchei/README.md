@@ -26,12 +26,6 @@
 - 兼容[目录批量编辑](https://bgm.tv/dev/app/1037)
 不能搜索人物/章节，因为 API 不能搜。
 
-## [展开所有回复](https://greasyfork.org/zh-CN/scripts/516186-%E5%B1%95%E5%BC%80%E6%89%80%E6%9C%89%E5%9B%9E%E5%A4%8D)
-
-讨论页：https://bgm.tv/group/topic/409116
-
-开启“[折叠长楼层](https://bgm.tv/dev/app/2214)”后，在标题旁增加点击可展开所有长楼层的按钮，便于搜索。
-
 ## [加入或修改收藏时标签功能加强](https://greasyfork.org/zh-CN/scripts/513954-%E5%8A%A0%E5%85%A5%E6%88%96%E4%BF%AE%E6%94%B9%E6%94%B6%E8%97%8F%E6%97%B6%E6%A0%87%E7%AD%BE%E5%8A%9F%E8%83%BD%E5%8A%A0%E5%BC%BA)
 
 讨论页：https://bgm.tv/group/topic/408232
@@ -47,7 +41,21 @@
 
 讨论页：https://bgm.tv/group/topic/408098
 
-章节讨论中置顶显示自己的吐槽，高亮参与讨论过的格子
+章节讨论中置顶显示自己的吐槽，高亮参与讨论过的格子。
+
+## [班固米右上角快速搜索](https://greasyfork.org/zh-CN/scripts/517607-%E7%8F%AD%E5%9B%BA%E7%B1%B3%E5%8F%B3%E4%B8%8A%E8%A7%92%E5%BF%AB%E9%80%9F%E6%90%9C%E7%B4%A2)
+
+讨论页：https://bgm.tv/group/topic/409735
+
+- ↑/↓ + ⏎ 快速进入搜索结果条目页
+- 根据选择类别不同搜索
+不能搜人物，因为 API 没有。
+
+## [展开所有回复](https://greasyfork.org/zh-CN/scripts/516186-%E5%B1%95%E5%BC%80%E6%89%80%E6%9C%89%E5%9B%9E%E5%A4%8D)
+
+讨论页：https://bgm.tv/group/topic/409116
+
+开启“[折叠长楼层](https://bgm.tv/dev/app/2214)”后，在标题旁增加点击可展开所有长楼层的按钮，便于搜索。
 
 ## <s>[bangumi thickbox 计数](https://greasyfork.org/zh-TW/scripts/371758-bangumi-thickbox-counter)</s>
 
@@ -59,4 +67,4 @@
 
 <s>讨论页：https://bgm.tv/group/topic/345086</s>
 
-<s>使繁体搜索页面跳转到简体搜索页面，避免搜索不到准确的内容。</s>网站功能已经修复，此脚本作废。
+<s>使繁体搜索页面跳转到简体搜索页面，避免搜索不到准确的内容。</s>网站功能仍未修复，但写太烂，此脚本作废。
