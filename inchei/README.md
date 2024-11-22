@@ -58,11 +58,11 @@
 将用户界面中“好友”相关的描述改为“关注”相关的描述。没有“粉丝”。
 
 兼容以下相关组件/脚本：
-- 在讨论帖子标记出楼主和好友（https://bgm.tv/dev/app/1075）
-- 确认是否添加为好友（https://bgm.tv/dev/app/783）
-- 班固米马赛克瓷砖（https://bgm.tv/group/topic/344198）
-- 显示/一键删除单向好友（https://bgm.tv/dev/app/1942）
-- 好友看？（https://bgm.tv/dev/app/20）
+- [在讨论帖子标记出楼主和好友](https://bgm.tv/dev/app/1075)
+- [确认是否添加为好友](https://bgm.tv/dev/app/783)
+- [班固米马赛克瓷砖](https://bgm.tv/group/topic/344198)
+- [显示/一键删除单向好友](https://bgm.tv/dev/app/1942)
+- [好友看？](https://bgm.tv/dev/app/20)
 
 ## [展开所有回复](https://greasyfork.org/zh-CN/scripts/516186-%E5%B1%95%E5%BC%80%E6%89%80%E6%9C%89%E5%9B%9E%E5%A4%8D)
 
