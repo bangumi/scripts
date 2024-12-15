@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.32
+// @version     0.4.33
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -687,6 +687,10 @@ const dictArr = [
         name: '发行',
         keyWord: 'Publisher',
     },
+    {
+        name: '游戏引擎',
+        keyWord: 'Technologies',
+    }
 ];
 const configArr$1 = dictArr.map((item) => {
     const r = {
@@ -730,14 +734,11 @@ steamdbModel.itemList.push({
     ],
     category: 'alias',
 }, {
-    name: '别名',
+    name: '游戏类型',
     selector: [
-        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'name_localized', nextSelector: Object.assign(Object.assign({}, subTableSelector), { keyWord: 'english' }) }),
-        {
-            selector: '.pagehead h1',
-        },
+        Object.assign(Object.assign({}, detailsTableSelector), { keyWord: 'Primary Genre' })
     ],
-    category: 'alias',
+    pipes: ['ta', 'p'],
 }, {
     name: 'cover',
     selector: [
@@ -768,12 +769,6 @@ steamdbModel.itemList.push({
         },
     ],
     category: 'subject_summary',
-}, {
-    name: 'website',
-    selector: {
-        selector: '.app-links a[aria-label^="Games homepage"]',
-    },
-    category: 'website',
 });
 steamdbModel.defaultInfos = [
     {
@@ -848,15 +843,7 @@ steamModel.itemList.push({
         },
     ],
     category: 'subject_summary',
-}
-// {
-//   name: 'cover',
-//   selector: {
-//     selector: '#soft_table .highslide',
-//   },
-//   category: 'cover',
-// }
-);
+});
 steamModel.defaultInfos = [
     {
         name: '平台',
@@ -1182,7 +1169,7 @@ const commonSelector$2 = {
 const arrDict = [
     {
         name: '发行日期',
-        key: ['販売日', '贩卖日'],
+        key: ['販売日', '贩卖日', '販賣日'],
         categrory: 'date',
     },
     // {
@@ -2538,6 +2525,13 @@ const dlsiteTools = {
                 }
                 res.push(Object.assign(Object.assign({}, info), { value: val }));
             }
+            if (location.hostname.includes('dlsite.com')) {
+                res.push({
+                    name: 'website',
+                    value: `DLsite|${location.origin + location.pathname}`,
+                    category: 'listItem',
+                });
+            }
             const cover = infos.find((obj) => obj.name === 'cover');
             if (!cover) {
                 let url = (_a = document.querySelector('meta[property="og:image"]')) === null || _a === void 0 ? void 0 : _a.content;
@@ -3296,46 +3290,38 @@ const moepediaTools = {
     },
 };
 
-function getSteamdbURL(href) {
-    var _a;
-    href = href || (location === null || location === void 0 ? void 0 : location.href);
-    const id = (_a = href.match(/store\.steampowered\.com\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
-    if (id) {
-        return `https://steamdb.info/app/${id}/info/`;
-    }
-    return '';
-}
-function getSteamURL(href) {
-    var _a;
-    href = href || (location === null || location === void 0 ? void 0 : location.href);
-    const id = (_a = href.match(/steamdb\.info\/app\/(\d+)\/?/)) === null || _a === void 0 ? void 0 : _a[1];
-    if (id) {
-        return `https://store.steampowered.com/app/${id}/_/`;
-    }
-    return '';
-}
 const steamTools = {
     hooks: {
         async beforeCreate() {
             return {
                 payload: {
                     disableDate: true,
-                    auxSite: {
-                        url: getSteamdbURL(window.location.href),
-                    },
                 },
             };
         },
+        async afterGetWikiData(infos) {
+            const res = [];
+            for (const info of infos) {
+                let newInfo = Object.assign({}, info);
+                if (info.name === 'website') {
+                    // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
+                    const arr = newInfo.value.split('?url=');
+                    newInfo.value = arr[1] || '';
+                    newInfo.category = 'website,listItem';
+                }
+                res.push(Object.assign({}, newInfo));
+            }
+            if (location.hostname === 'store.steampowered.com') {
+                res.push({
+                    name: 'website',
+                    value: `Steam|${location.origin + location.pathname}`,
+                    category: 'website,listItem',
+                });
+            }
+            return res;
+        }
     },
     filters: [
-        {
-            category: 'website',
-            dealFunc(str) {
-                // https://steamcommunity.com/linkfilter/?url=https://www.koeitecmoamerica.com/ryza/
-                const arr = str.split('?url=');
-                return arr[1] || '';
-            },
-        },
         {
             category: 'date',
             dealFunc(str) {
@@ -3353,16 +3339,20 @@ const steamdbTools = {
             return {
                 payload: {
                     disableDate: true,
-                    auxSite: {
-                        url: getSteamURL(window.location.href),
-                    },
                 },
             };
         },
         async afterGetWikiData(infos) {
+            var _a;
             const res = [];
             for (const info of infos) {
                 let newInfo = Object.assign({}, info);
+                if (info.name === '游戏引擎') {
+                    newInfo.value = info.value.replace(/^Engine\./g, '');
+                }
+                // if (info.name === '游戏类型') {
+                //   newInfo.value = info.value.split(',').map((s) => s.trim()).join('、');
+                // }
                 if (info.name === 'cover') {
                     if (info.value.url) {
                         const a = info.value.url;
@@ -3386,6 +3376,51 @@ const steamdbTools = {
                     res.push(Object.assign({}, newInfo));
                 }
             }
+            const $appInstall = document.querySelector('#js-app-install');
+            const appId = (_a = $appInstall === null || $appInstall === void 0 ? void 0 : $appInstall.href.match(/steam:\/\/launch\/(\d+)/)) === null || _a === void 0 ? void 0 : _a[1];
+            if (appId) {
+                res.push({
+                    name: 'website',
+                    value: `Steam|https://store.steampowered.com/app/${appId}`,
+                    category: 'listItem',
+                });
+            }
+            // 额外信息
+            [...document.querySelectorAll('#info > table > tbody > tr > td.span3')].forEach(item => {
+                const sibling = item.nextElementSibling;
+                if (sibling.innerHTML.includes('General Mature Content')) {
+                    res.push({
+                        name: 'subject_nsfw',
+                        value: '1',
+                        category: 'checkbox',
+                    });
+                    return;
+                }
+                if (item.innerHTML.includes('name_localized')) {
+                    const tds = sibling.querySelectorAll('table > tbody > tr > td');
+                    for (const td of tds) {
+                        // 默认使用的中文名
+                        if (td.textContent === 'tchinese') {
+                            res.push({
+                                name: '别名',
+                                value: `繁中|${td.nextElementSibling.innerHTML.trim()}`,
+                            });
+                        }
+                        // 默认使用的日文名。补上英文名
+                        if (td.textContent === 'japanese') {
+                            const name = td.nextElementSibling.innerHTML.trim();
+                            const gameName = res.find(info => info.name === '游戏名');
+                            if (gameName && gameName.value === name) {
+                                const titleName = document.querySelector('.pagehead h1').textContent.trim();
+                                res.push({
+                                    name: '别名',
+                                    value: `英文|${titleName}`,
+                                });
+                            }
+                        }
+                    }
+                }
+            });
             return res;
         },
     },
@@ -5789,16 +5824,58 @@ async function addPersonRelatedCV(subjectId, charaId, personIds, typeId) {
     ]);
 }
 
+function hasCategory(info, category) {
+    if (info.category === category) {
+        return true;
+    }
+    return info.category && info.category.includes(',') && info.category.split(',').includes(category);
+}
 /**
  * 转换 wiki 模式下 infobox 内容
  * @param originValue
  * @param infoArr
  */
 function convertInfoValue(originValue, infoArr) {
-    const arr = originValue
+    let arr = originValue
         .trim()
         .split('\n')
         .filter((v) => !!v);
+    // 处理多个.
+    const categories = ['website'];
+    for (const cat of categories) {
+        const infos = infoArr.filter((i) => i.name === cat);
+        if (infos.length > 1) {
+            const idx = arr.findIndex((v) => v.trim() === `|${cat}=`);
+            if (arr.find((v) => v.trim() === `|${cat}={`)) {
+                continue;
+            }
+            if (idx > -1) {
+                arr[idx] = `|${cat}={`;
+                // arr.splice(idx + 1, 0, '}')
+                arr = [...arr.slice(0, idx + 1), '}', ...arr.slice(idx + 1)];
+            }
+            else {
+                arr = [...arr.slice(0, -1), `|${cat}={`, '}', ...arr.slice(-1)];
+            }
+        }
+    }
+    //处理单个但是写成多个.写法有点绕，凑合用吧
+    for (const info of infoArr) {
+        if (hasCategory(info, 'listItem')) {
+            const name = info.name;
+            if (arr.find((v) => v.trim() === `|${name}={`)) {
+                continue;
+            }
+            const idx = arr.findIndex((v) => v.trim() === `|${name}=`);
+            if (idx > -1) {
+                arr[idx] = `|${name}={`;
+                arr = [...arr.slice(0, idx + 1), '}', ...arr.slice(idx + 1)];
+            }
+            else {
+                arr = [...arr.slice(0, -1), `|${name}={`, '}', ...arr.slice(-1)];
+            }
+        }
+    }
     const newArr = [];
     for (const info of infoArr) {
         let isDefault = false;
@@ -5824,8 +5901,11 @@ function convertInfoValue(originValue, infoArr) {
                     arr[i] = arr[i].replace(']', '') + d + ']';
                 }
                 else if (/\|.+={/.test(arr[i])) {
-                    // |平台={
-                    arr[i] = `${arr[i]}\n[${info.value}]`;
+                    // 避免重复
+                    if (!originValue.includes(`[${info.value}]`)) {
+                        // |平台={
+                        arr[i] = `${arr[i]}\n[${info.value}]`;
+                    }
                 }
                 else {
                     // 拼接： |发行日期=2020-01-01
