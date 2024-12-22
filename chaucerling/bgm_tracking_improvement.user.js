@@ -13,7 +13,7 @@
 /* jshint loopfunc:true */
 /* jshint esversion:6 */
 
-// var $ = unsafeWindow.jQuery; // use to access 'chiiLib.home' and '$.cluetip'
+var $ = unsafeWindow.jQuery; // use to access 'chiiLib.home' and '$.cluetip'
 var origin_tv_queue = []; // max size 50
 var origin_book_queue = []; // max size 50
 var extra_tv_queue = [];
@@ -21,8 +21,8 @@ var extra_book_queue = [];
 var watching_subjects = {};
 var extra_watching_subjects = {};
 var animes_size = 0,
-  reals_size = 0,
-  books_size = 0;
+    reals_size = 0,
+    books_size = 0;
 var auto_refresh = false; // 进入首页自动刷新extra项目进度
 
 var watching_list = [];
@@ -99,6 +99,107 @@ String.prototype.getPrefix = function () {
   return ((this.match(/^([^(:]*)/) || [])[1] || "").trim();
 };
 
+function sortByID (list) {
+  return sortElements(list, (a, b) => a.sortId.localeCompare(b.sortId));
+}
+
+function initDay (container,i){
+  var weekdayLabels = ['日七', '月一', '火二', '水三', '木四', '金五', '土六', '未知'];
+  let day = container.appendChild(document.createElement("div"));
+  day.className = "day";
+  day.style.overflow = "auto";
+  let caption = day.appendChild(document.createElement("div"));
+  caption.appendChild(document.createTextNode(weekdayLabels[i%8]));
+  day.subjects = day.appendChild(document.createElement("div"));
+  day.subjects.style.cssText += "display:grid;grid-template-columns: 1fr 1fr;"
+  return day;
+}
+
+function setDayLabels (container, now) {
+  var days = [];
+  const today = now.getDay();
+  for (let i = 0; i < 7; ++i) { // 周 日 ~ 周 六
+    days.push(initDay(container, (today+6+i)%7));
+  }
+  days.push(initDay(container, 7)); // 未知
+  days[1].className += " today";
+  return days;
+}
+
+function getTips (subject) {
+  try {
+    for (let ep_info of $('.load-epinfo', subject).toArray()) {
+      if (!/epBtnDrop|epBtnWatched/.test(ep_info.className)) {
+        return $(".tip:first", $(ep_info.rel));
+      }
+    }
+    let ep_info = $('.load-epinfo:last', subject);
+    return $(".tip:first", $(ep_info[0].rel));
+  } catch (e) {
+    console.log(e, subject);
+  }
+}
+
+function setSubjects (days, now, subjects) {
+  // set subjects to days
+  const today = now.getDay();
+  let oldDay = days[7];
+  var lastYear = now.valueOf() - 365 * 24 * 60 * 60 * 1000;
+
+  for (let subject of subjects) {
+    let tips = getTips(subject);
+    if (!tips) {
+      oldDay.subjects.appendChild(subject);
+      continue;
+    }
+
+    let date = new Date(tips.text().extractDate());
+    let title = $("> a:last", subject)[0].title;
+    if (date.valueOf() <= lastYear || isNaN(date.valueOf())) {
+      subject.sortId = title.getPrefix() + "-" + date.getYear().zeroPad(3) + date.getMonth().zeroPad(2) + "-" + title;
+      if (isNaN(date.valueOf())) {
+        subject.appendChild(document.createTextNode("Missing On Air Date"));
+      }
+      oldDay.subjects.appendChild(subject);
+      continue;
+    }
+    subject.sortId = title.getPrefix();
+    days[(date.getDay()-today+8)%7].subjects.appendChild(subject);
+  }
+}
+
+function loadDays(now) {
+  // get subjects and clear container
+  let subjects = $("#cloumnSubjectInfo > div:not(#ti-pages, #ti-alert) >div").toArray();
+  if (!subjects.length) return;
+
+  var container = subjects[0].parentNode;
+  while (container.lastChild) {
+    container.removeChild(container.lastChild);
+  }
+
+  // set day labels
+  const days = setDayLabels(container, now);
+  setSubjects(days, now, subjects);
+
+  // sort subjects in day and reset odd/even
+  for (let day of days) {
+    if (day == days[7]) continue;
+    let nodes = day.subjects.childNodes;
+    sortByID(nodes);
+
+    for (var i = 0; i < nodes.length; ++i) {
+      setOddEven($(nodes[i]), i);
+    }
+  }
+}
+
+function setOddEven(obj, n) {
+  const odd = n % 2;
+  obj.removeClass(!odd ? 'odd' : 'even');
+  obj.addClass(odd ? 'odd' : 'even');
+}
+
 function changeLayout() {
   // wait for element to finish
   var unsafeWindow = window.unsafeWindow || window;
@@ -106,107 +207,15 @@ function changeLayout() {
     setTimeout(changeLayout, 1);
     return;
   }
-  var weekdayLabels = ['日', '一', '二', '三', '四', '五', '六', '??'];
   console.log("Changing layout");
-  var $ = unsafeWindow.$;
-
   var now = new Date();
-  var oldDate = now.valueOf() - 365 * 24 * 60 * 60 * 1000;
-  do {
-    // let subjects = $("#cloumnSubjectInfo > div:first > div").toArray();
-    let subjects = $("#cloumnSubjectInfo > div:last > div").toArray();
-    if (!subjects.length) {
-      break;
-    }
+  loadDays(now);
 
-    var container = subjects[0].parentNode;
-    for (let subject of subjects) {
-      container.removeChild(subject);
-    }
-    while (container.lastChild) {
-      container.removeChild(container.lastChild);
-    }
-    var days = [];
-    for (let i = 0; i < 8; ++i) {
-      let day = container.appendChild(document.createElement("div"));
-      day.className = "day";
-      day.style.overflow = "auto";
-      let caption = day.appendChild(document.createElement("div"));
-      caption.appendChild(document.createTextNode("周" + weekdayLabels[i]));
-      day.subjects = day.appendChild(document.createElement("div"));
-      day.subjects.style.cssText += "display:grid;grid-template-columns: 1fr 1fr;"
-      days.push(day);
-    }
-    let oldDay = days[7];
-    let today = days[new Date().getDay()];
-
-    today.className += " today";
-    for (let subject of subjects) {
-      let tips = (function () {
-        try {
-          for (let ep_info of $('.load-epinfo', subject).toArray()) {
-            if (!/epBtnDrop|epBtnWatched/.test(ep_info.className)) {
-              return $(".tip:first", $(ep_info.rel));
-            }
-          }
-          let ep_info = $('.load-epinfo:last', subject);
-          return $(".tip:first", $(ep_info[0].rel));
-        } catch (e) {
-          console.log(e, subject);
-        }
-      })();
-      if (!tips) {
-        subject.sortId = 0;
-        oldDay.subjects.appendChild(subject);
-        continue;
-      }
-
-      let date = new Date(tips.text().extractDate());
-      let title = $("> a:last", subject)[0].title;
-      if (/*date.valueOf() <= oldDate ||*/ isNaN(date.valueOf())) {
-        subject.sortId = title.getPrefix() + "-" + date.getYear().zeroPad(3) + date.getMonth().zeroPad(2) + "-" + title;
-        if (isNaN(date.valueOf())) {
-          subject.appendChild(document.createTextNode("Missing On Air Date"));
-        }
-        oldDay.subjects.appendChild(subject);
-      }
-      else {
-        subject.sortId = title.getPrefix();
-        days[date.getDay()].subjects.appendChild(subject);
-      }
-    }
-    for (let day of days) {
-      if (day == oldDay) {
-        continue;
-      }
-      let nodes = day.subjects.childNodes;
-      sortElements(nodes, function (a, b) {
-        return a.sortId.localeCompare(b.sortId);
-      });
-
-      for (var i = 0; i < nodes.length; ++i) {
-        var $obj = $(nodes[i]);
-        if (i % 2 === 0) {
-          $obj.removeClass('even');
-          $obj.addClass('odd');
-        }
-        else {
-          $obj.removeClass('odd');
-          $obj.addClass('even');
-        }
-      }
-    }
-  } while (0);
-
-  {
-    let subjects = $("#prgSubjectList > li").toArray();
-    for (let i in subjects) {
-      subjects[i].sortId = $('> a:last', subjects[i])[0].title;
-    }
-    sortElements(subjects, function localeCompare(a, b) {
-      return a.sortId.localeCompare(b.sortId);
-    });
+  let subjects = $("#prgSubjectList > li").toArray();
+  for (let i in subjects) {
+    subjects[i].sortId = $('> a:last', subjects[i])[0].title;
   }
+  sortByID(subjects);
 
   var within_24hours = now.valueOf() - 60 * 60 * 24 * 1000;
   var within_48hours = now.valueOf() - 60 * 60 * 48 * 1000;
@@ -445,36 +454,36 @@ function get_path_and_size_of_all_type() {
   reals_size = -1;
   books_size = -1;
   return [{
-      value: 2,
-      path: $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href'),
-      size: function() {
-        return animes_size;
-      },
-      set_size: function(value) {
-        animes_size = value;
-      }
+    value: 2,
+    path: $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href'),
+    size: function() {
+      return animes_size;
     },
-    {
-      value: 6,
-      path: $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href'),
-      size: function() {
-        return reals_size;
-      },
-      set_size: function(value) {
-        reals_size = value;
-      }
-    },
-    {
-      value: 1,
-      path: $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href'),
-      size: function() {
-        return books_size;
-      },
-      set_size: function(value) {
-        books_size = value;
-      }
+    set_size: function(value) {
+      animes_size = value;
     }
-  ];
+  },
+          {
+            value: 6,
+            path: $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href'),
+            size: function() {
+              return reals_size;
+            },
+            set_size: function(value) {
+              reals_size = value;
+            }
+          },
+          {
+            value: 1,
+            path: $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href'),
+            size: function() {
+              return books_size;
+            },
+            set_size: function(value) {
+              books_size = value;
+            }
+          }
+         ];
 }
 
 function in_origin_queue(subject_id){
@@ -518,7 +527,7 @@ function check_get_all_pages_finished() {
   if (typeof this.counter1 === "undefined") this.counter1 = 0;
   this.counter1++;
   if (animes_size === -1 || reals_size === -1 || books_size === -1 ||
-    this.counter1 < parseInt(animes_size / 24) + parseInt(reals_size / 24) + parseInt(books_size / 24)) {
+      this.counter1 < parseInt(animes_size / 24) + parseInt(reals_size / 24) + parseInt(books_size / 24)) {
     console.log(`current_processing_watching_list_size: ${watching_list.length}`);
     return false;
   }
@@ -669,8 +678,8 @@ function add_extra_subjects() {
 
   $('.prgBatchManagerForm a.input_plus').off('click').on('click', function(e) {
     var input = $(this).closest('div.prgText').find('input'),
-      count = parseInt(input.val()),
-      form = $(this).closest('form.prgBatchManagerForm');
+        count = parseInt(input.val()),
+        form = $(this).closest('form.prgBatchManagerForm');
     $(input).val(count + 1);
     form.submit();
   });
@@ -686,9 +695,6 @@ function add_extra_subjects() {
     $('.infoWrapper_tv').removeClass('disabled');
     $('.infoWrapper_book').removeClass('disabled');
     refresh = false;
-  }
-  for (let i in tasks) {
-    tasks[i]();
   }
 }
 
@@ -800,6 +806,12 @@ function book_subjects_size_on_index() {
   return $('.infoWrapper_book > div').length;
 }
 
+function onAfterLoad() {
+  for (let i in tasks) {
+    tasks[i]();
+  }
+}
+
 // init
 $(document).ready(function() {
   if (location.pathname !== "/") return;
@@ -816,6 +828,7 @@ $(document).ready(function() {
     $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${size1} animes, ${size2} reals, ${size3} books.(click to close)`);
     localStorage.removeItem(LS_SCOPE);
+    onAfterLoad();
     return;
   }
 
@@ -857,6 +870,7 @@ $(document).ready(function() {
       get_watching_list();
     }, 10);
   }
+  onAfterLoad();
 });
 
 $('#prgManagerMain').on('click', '#ti-alert', function(e) {
