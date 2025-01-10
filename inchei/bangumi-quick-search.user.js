@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         班固米右上角快速搜索
 // @namespace    https://bgm.tv/group/topic/409735
-// @version      0.0.2
+// @version      0.1.2
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
 // @grant        none
+// @license      MIT
 // ==/UserScript==
 
 (function() {
@@ -15,12 +16,15 @@
     const debounceDelay = 800; // 防抖延迟时间
     let currentRequestId = 0; // 当前请求ID
     let selectedIndex = -1; // 当前选中的结果索引
+    let isComposing = false; // 是否正在输入法输入中
 
     const searchInput = document.querySelector('#search_text');
     const headerSearch = document.querySelector('#headerSearch');
     const siteSearchSelect = document.querySelector('#siteSearchSelect');
 
     if (!searchInput || !headerSearch || !siteSearchSelect) return;
+
+    const searchClass = headerSearch.querySelector('form').action.split('/').pop();
 
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
@@ -96,19 +100,32 @@
     overlay.id = 'searchOverlay';
     headerSearch.appendChild(overlay);
 
+    searchInput.addEventListener('compositionstart', function() {
+        isComposing = true;
+    });
+
+    searchInput.addEventListener('compositionend', function() {
+        isComposing = false;
+        handleInput(); // 输入法结束后立即处理输入
+    });
+
     searchInput.addEventListener('input', function() {
+        if (!isComposing) handleInput();
+    });
+
+    function handleInput() {
         clearTimeout(timeoutId);
 
         timeoutId = setTimeout(function() {
-            const query = searchInput.value.trim();
-            if (query) {
-                fetchSearchSuggestions(query, ++currentRequestId); // 发出新请求时增加请求ID
+            const keyword = searchInput.value.trim();
+            if (keyword) {
+                fetchSearchSuggestions(keyword, ++currentRequestId); // 发出新请求时增加请求ID
             } else {
                 suggestionBox.style.display = 'none';
                 overlay.style.display = 'none';
             }
         }, debounceDelay);
-    });
+    }
 
     siteSearchSelect.addEventListener('change', function() {
         const query = searchInput.value.trim();
@@ -169,62 +186,93 @@
         });
     }
 
-    function fetchSearchSuggestions(query, requestId) {
+    const createFetch = method => async (url, body) => {
+        const options = method === 'POST' ? { method, body: JSON.stringify(body) } : { method };
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return await response.json();
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    };
+
+    const fetchGet = createFetch('GET');
+    const fetchPost = createFetch('POST');
+
+    const postSearch = async (cat, keyword, filter) => {
+        const url = `https://api.bgm.tv/v0/search/${cat}`;
+        const body = { keyword, filter };
+        const result = await fetchPost(url, body);
+        return result?.data;
+    };
+
+    const searchSubject = async (keyword, type) => { // 旧API结果为空时发生CORS错误，但新API搜索结果不准确，仍用旧API
+        const url = `https://api.bgm.tv/search/subject/${encodeURIComponent(keyword)}?type=${type}`;
+        const result = await fetchGet(url);
+        return result?.list;
+    };
+    // const searchSubject = (keyword, type) => postSearch('subjects', keyword, { type: [+type].filter(a => a) });
+    const searchPrsn = keyword => postSearch('persons', keyword);
+    const searchCrt = keyword => postSearch('characters', keyword);
+    const searchPrsnCrt = async (keyword) => {
+        const [prsn, crt] = await Promise.all([searchPrsn(keyword), searchCrt(keyword)]);
+        return !prsn ? crt : !crt ? prsn : [...prsn, ...crt];
+    };
+
+    async function fetchSearchSuggestions(keyword, requestId) {
         if (requestId !== currentRequestId) return; // 如果请求ID不匹配，直接返回
         if (window.innerWidth < 640) return;
-
-        const searchType = siteSearchSelect.value;
-        if (searchType === 'person') {
-            suggestionBox.style.display = 'none';
-            overlay.style.display = 'none';
-            return;
-        }
-        const url = `https://api.bgm.tv/search/subject/${encodeURIComponent(query)}?type=${searchType}`;
 
         overlay.style.height = getComputedStyle(suggestionBox).getPropertyValue('height');
         overlay.style.display = 'block';
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                // 仅在请求ID匹配当前请求ID时更新DOM
-                if (requestId === currentRequestId) {
-                    renderList(data.list);
-                }
-            })
-            .catch(error => {
-                if (requestId === currentRequestId) {
-                    suggestionBox.innerHTML = '<div id="errorMessage">搜索失败</div>';
-                    suggestionBox.style.display = 'block';
-                }
-                console.error('搜索失败:', error);
-            })
-            .finally(() => {
-                overlay.style.display = 'none';
-            });
+        const type = siteSearchSelect.value;
+        const data = searchClass === 'subject_search'
+                   ? type === 'person' ? await searchPrsnCrt(keyword) : await searchSubject(keyword, type)
+                   : type === 'all' ? await searchPrsnCrt(keyword)
+                   : type === 'prsn' ? await searchPrsn(keyword) : await searchCrt(keyword);
+
+        if (requestId === currentRequestId) { // 如果请求ID不匹配，直接返回
+            if (data) {
+                const cat = searchClass === 'subject_search'
+                          ? type === 'person' ? 'person' : 'subject'
+                          : type === 'prsn' ? 'person' : 'character';
+                renderList(data, cat);
+            } else {
+                suggestionBox.innerHTML = '<div id="errorMessage">搜索失败</div>';
+                suggestionBox.style.display = 'block';
+            }
+        }
+        overlay.style.display = 'none';
     }
 
-    function renderList(data) {
+    function renderList(data, cat) {
         selectedIndex = -1; // 重置选中索引
 
-        if (data.length <= 0) {
+        if (data.length === 0) {
             suggestionBox.style.display = 'none';
             overlay.style.display = 'none';
             return;
         }
 
         const html = `<ul id="subjectList" class="subjectList ajaxSubjectList">
-        ${ data.reduce((m, { id, type, images, name, name_cn }) => {
-            type = ['书籍', '动画', '音乐', '游戏', '', '三次元'][type - 1];
+        ${ data.reduce((m, { id, type, images, name,
+                             name_cn, career, infobox }) => {
+            name_cn ??= infobox?.find(({ key }) => key === '简体中文名')?.value;
+            if (cat !== 'subject') cat = career ? 'person' : 'character';
+            type = cat === 'subject' ? ['书籍', '动画', '音乐', '游戏', '', '三次元'][type - 1] : null;
             const grid = images?.grid;
+            const exist = v => v ? v : '';
             m += `<li class="clearit">
-                    <a href="/subject/${id}" class="avatar h">
-                      ${grid ? `<img src="${grid}" class="avatar ll">` : ''}
+                    <a href="/${ cat }/${ id }" class="avatar h">
+                      ${ grid ? `<img src="${ grid }" class="avatar ll">` : ''}
                     </a>
                     <div class="inner">
-                      <small class="grey rr">${type}</small>
-                      <p><a href="/subject/${id}" class="avatar h">${name}</a></p>
-                      <small class="tip">${name_cn}</small>
+                      <small class="grey rr">${ exist(type) }</small>
+                      <p><a href="/${ cat }/${ id }" class="avatar h">${ name }</a></p>
+                      <small class="tip">${ exist(name_cn) }</small>
                     </div>
                   </li>`;
             return m;
@@ -233,4 +281,5 @@
         suggestionBox.innerHTML = html;
         suggestionBox.style.display = 'block';
     }
+
 })();
