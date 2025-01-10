@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
-// @version      1.1.0
+// @version      1.1.1
 // @description  也可以干别的
 // @author       mmv
 // @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(subject/topic|blog|ep|character|person|group/topic)/*
@@ -237,7 +237,7 @@
                     html += `<span class="ccf-status">${verb}到ep${ep_status}</span>`;
                 }
                 if (vol_status) {
-                    html += `<span class="ccf-status">${verb}到vol${ep_status}</span>`;
+                    html += `<span class="ccf-status">${ ep_status ? '' : `${verb}到` }vol${vol_status}</span>`;
                 }
                 if (comment) {
                     html += `<span class="ccf-comment" data-comment="${comment.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")}">💬</span>`;
