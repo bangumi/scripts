@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         加入或修改收藏时标签功能加强
-// @version      0.1.1
+// @version      0.2.1
 // @description  加入或修改收藏时高亮或自动填充自己与他人的共同标签，高亮其中的元标签，点击展开所有标签
 // @author       ooo
 // @include      http*://bgm.tv/*
@@ -8,10 +8,15 @@
 // @include      http*://bangumi.tv/*
 // @license      MIT
 // @grant        unsafeWindow
-// @namespace https://greasyfork.org/users/1337615
+// @namespace    https://greasyfork.org/users/1337615
 // ==/UserScript==
 
 (function() {
+    const user = document.querySelector('a.avatar')?.href.split('/').pop() ?? unsafeWindow.CHOBITS_UID;
+    const colTypes = ['anime', 'book', 'game', 'music', 'real'];
+    const colDoings = ['wish', 'collect', 'do', 'on_hold', 'dropped'];
+    const colPaths = colTypes.flatMap(type => colDoings.map(doing => `/${type}/list/${user}/${doing}`));
+
     const pink = '#F09199';
     const storage = JSON.parse(localStorage.getItem('incheijs')) || {
         'anime': [],
@@ -22,23 +27,28 @@
         'autofill': false,
     };
 
-    function updateStorage(key, value) {
+    function updStorage(key, value) {
         storage[key] = value;
         localStorage.setItem('incheijs', JSON.stringify(storage));
         return storage[key];
     }
-    function updateTagStorage(type, tags) {
-        return updateStorage(type, [...new Set(storage[type].concat(tags))]);
+    function addToStorage(type, tags) {
+        return updStorage(type, [...new Set(storage[type].concat(tags))]);
     }
-    const currentType = location.pathname.match(/(anime|book|game|music|real)(?=\/list.+(wish|collect|do|on_hold|dropped))/)?.[0];
-    if (currentType) {
-        const currentTags = [...document.querySelectorAll("#userTagList li")].map(tag => tag.innerText.split('\n')[1]);
-        updateTagStorage(currentType, currentTags);
+    function getTagsFromDOM(dom) {
+        const tags = [...dom.querySelectorAll("#userTagList a.l")].map(tag => tag.childNodes[1].textContent);
+        return tags;
+    }
+
+    const isColPage = colPaths.includes(location.pathname);
+    if (isColPage) {
+        const type = location.pathname.split('/')[1];
+        addToStorage(type, getTagsFromDOM(document));
     }
 
     // Microsoft Copilot start
     const cache = new Proxy({}, {
-        get(target, property) {
+        get(_, property) {
             const data = sessionStorage.getItem('incheijs');
             if (data) {
                 const jsonData = JSON.parse(data);
@@ -46,7 +56,7 @@
             }
             return undefined;
         },
-        set(target, property, value) {
+        set(_, property, value) {
             const data = sessionStorage.getItem('incheijs');
             let jsonData = {};
             if (data) {
@@ -61,54 +71,81 @@
 
     const currentID = location.pathname.match(/(?<=subject\/)\d+/)?.[0];
     if (currentID) {
-        const tagInput = document.querySelector('#tags');
-        const [commonList, myList] = document.querySelectorAll('.tagList');
-        markTags(currentID, tagInput, commonList, myList);
+        markTags(currentID);
     } else if (location.pathname == "/") {
         document.querySelectorAll('.progress_percent_text > a').forEach(x => x.addEventListener('click', iframeHandler))
     } else {
         document.querySelectorAll('a.thickbox').forEach(x => x.addEventListener('click', iframeHandler));
     }
 
-    async function markTags(subjectID, tagInput, othersList, myList) {
-        const [subjectType, subjectTags, metaTags] = (cache[subjectID] ??= await getSubject(subjectID));
+    async function markTags(subjectID, dom=document) {
+        const tagInput = dom.querySelector('#tags');
+        const [ othersList, myList ] = dom.querySelectorAll('.tagList');
+        const myListLabel = dom.querySelectorAll('.tip_j.ll')[1];
+
+        const [ subjectType, subjectTags, metaTags ] = (cache[subjectID] ??= await getSubject(subjectID));
         const myTags = [...myList.querySelectorAll('a')].map(tag => tag.textContent);
-        const storedTags = updateTagStorage(subjectType, myTags);
+        let storedTags = addToStorage(subjectType, myTags);
+        let commonTags = subjectTags.filter(tag => storedTags.includes(tag));
 
-        const commonTags = subjectTags.filter(tag => storedTags.includes(tag));
+        function renderLists() {
+            renderList(othersList, commonTags, metaTags, subjectTags);
+            renderList(myList, commonTags, metaTags, storedTags);
+        }
+        renderLists();
+
         if (storage.autofill) fillInput(tagInput, commonTags);
-        renderList(othersList, commonTags, metaTags, subjectTags);
-        renderList(myList, commonTags, metaTags, storedTags);
 
-        const fragment = document.createDocumentFragment();
-        const br = document.createElement('br');
+        const label = document.createElement('label');
+        label.for = 'autofill';
+        label.innerText = '自动填充';
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = 'autofill';
         checkbox.checked = storage.autofill;
         checkbox.onclick = () => {
-            updateStorage('autofill', !storage.autofill);
-            fillInput(tagInput, commonTags);
+            updStorage('autofill', !storage.autofill);
+            if (storage.autofill) fillInput(tagInput, commonTags);
         }
-        const label = document.createElement('label');
-        label.for = 'autofill';
-        label.innerText = '自动填充';
-        fragment.append(br, label);
         label.prepend(checkbox);
-        tagInput.after(fragment);
+        tagInput.after(document.createElement('br'), label);
+
+        const syncBtn = document.createElement('span');
+        syncBtn.textContent = '📡';
+        syncBtn.style.cursor = 'pointer';
+        syncBtn.style.float = 'right';
+        syncBtn.addEventListener('click', async function listener() {
+            syncBtn.textContent = '⏳';
+            syncBtn.style.cursor = 'wait';
+            try {
+                storedTags = await syncMyTags(subjectType);
+                commonTags = subjectTags.filter(tag => storedTags.includes(tag));
+                renderLists();
+                syncBtn.textContent = '✔️';
+                syncBtn.removeEventListener('click', listener);
+                syncBtn.style.cursor = 'default';
+            } catch {
+                syncBtn.textContent = '❌';
+                syncBtn.style.cursor = 'pointer';
+                setTimeout(() => syncBtn.textContent = '📡', 3000);
+            }
+        });
+        myListLabel.append(document.createElement('br'), syncBtn);
     }
 
     function fillInput(tagInput, tags) {
-        tagInput.value = tags.join(' ');
+        const beforeTags = tagInput.value.split(/\s+/);
+        const toAdd = tags.filter(tag => !beforeTags.includes(tag)).join(' ');
+        if (toAdd) tagInput.value += ` ${toAdd}`;
     }
 
     async function getSubject(ID) {
         let result = null;
         if (currentID) {
-            result = getInfoFromDOM(document);
+            result = getSubjectFromDOM(document);
         } else {
             result = await getSubjectByAPI(ID);
-            if (!result) result = await getSubjectByHTML(ID);
+            result ??= await getSubjectByHTML(ID);
         }
         return result;
     }
@@ -128,85 +165,111 @@
 
     async function getSubjectByHTML(ID) {
         try {
-            const response = await fetch(`/subject/${ID}`);
-            if (!response.ok) throw new Error('HTTP request failed');
-            const html = await response.text();
-            const dom = new DOMParser().parseFromString(html, 'text/html');
-
-            return getInfoFromDOM(dom);
+            const dom = await getDOM(`/subject/${ID}`)
+            return getSubjectFromDOM(dom);
         } catch (error) {
             console.error('标签功能增强: Error fetching and parsing page:', error);
         }
     }
 
-    function getInfoFromDOM(dom) {
-        const type = dom.querySelector('.focus').href.split('/')[3] ;
+    function getSubjectFromDOM(dom) {
+        const type = dom.querySelector('.focus').href.split('/').pop();
+        const toText = elem => elem.textContent.split(' ')[0];
         const tagElems = [...dom.querySelectorAll('.subject_tag_section a')];
-        const tags = tagElems.filter(elem => elem.id !== 'show_user_tags').map(elem => elem.textContent.split(' ')[0]);
-        const metaTags = tagElems.filter(elem => elem.classList.contains('meta')).map(elem => elem.textContent.split(' ')[0]);
+        const tags = tagElems.filter(elem => elem.id !== 'show_user_tags').map(toText);
+        const metaTags = tagElems.filter(elem => elem.classList.contains('meta')).map(toText);
 
         return [ type, tags, metaTags ];
     }
 
     function renderList(list, commonTags, metaTags, fullTags) {
-        const tagElms = [...list.querySelectorAll('a')];
-        const tagElmsMap = Object.fromEntries(tagElms.map(tagElm => [tagElm.textContent, tagElm]));
+        const tagElems = [...list.querySelectorAll('a')].map(elem => {
+            if (fullTags.includes(elem.textContent)) return elem;
+            elem.remove();
+        }).filter(elem => elem);
+        const elemMap = tagElems.reduce((map, elem) => {
+            map[elem.textContent] = elem;
+            return map;
+        }, {});
         list.style.maxHeight = 'unset';
+        const frag = document.createDocumentFragment();
 
-        for (const tag of commonTags) {
-            const tagElm = tagElmsMap[tag];
-            if (tagElm) {
-                tagElm.style.color = pink;
+        commonTags.forEach(tag => {
+            const tagElem = elemMap[tag];
+            if (tagElem) {
+                tagElem.style.color = pink;
             } else {
-                insertTag(list, tag, 'afterbegin', tag => tag.style.color = pink);
+                const toInsert = newTag(tag);
+                toInsert.style.color = pink;
+                frag.append(toInsert);
             }
+        });
+
+        metaTags.forEach(tag => {
+            const tagElem = elemMap[tag];
+            if (tagElem) tagElem.style.border = `1px solid ${pink}`;
+        });
+
+        if (tagElems.length !== fullTags.length) {
+            const rest = fullTags.filter(tag => !elemMap[tag]).map(text => newTag(text));
+            const more = newTagBase(' ... ', () => more.replaceWith(...rest));
+            frag.append(more);
         }
 
-        for (const tag of metaTags) {
-            const tagElm = tagElmsMap[tag];
-            if (tagElm) tagElm.style.border = `1px solid ${pink}`;
-        }
-
-        if (tagElms.length !== fullTags.length) {
-            insert(list, ' ... ', 'beforeend', function() {
-                for (const tag of fullTags.filter(tag => !tagElmsMap[tag])) insertTag(list, tag, 'beforeend');
-                this.remove();
-            });
-        }
+        list.querySelector('.inner').append(frag);
     }
 
-    function insert(list, text, position, onclick, handler) {
-        const elem = document.createElement('a');
-        const tagWrapper = list.querySelector('.inner');
-        tagWrapper.insertAdjacentElement(position, elem);
-        elem.classList.add('btnGray');
-        elem.href = '#;';
-        elem.innerText = text;
-        elem.onclick = onclick;
-        handler?.(elem);
+    function newTagBase(text, onclick) {
+        const tag = document.createElement('a');
+        tag.classList.add('btnGray');
+        tag.href = '#;';
+        tag.textContent = text;
+        tag.onclick = onclick;
+        return tag;
     }
 
-    function insertTag(list, tag, position, handler) {
-        insert(list, tag, position, () => unsafeWindow.chiiLib.subject.addTag(tag), handler);
+    function newTag(text) {
+        return newTagBase(text, () => unsafeWindow.chiiLib.subject.addTag(text));
     }
 
     async function iframeHandler() {
-        const TB = await waitForTB();
-        markTags(...TB);
+        const data = await getIframeData();
+        markTags(...data);
     }
 
-    function waitForTB() {
+    function getIframeData() {
         return new Promise(resolve => {
-            new MutationObserver((_, observer) => {
+            new MutationObserver((mutations, observer) => {
+                if (!mutations.some(({ removedNodes }) => [...removedNodes].some(node => node.id === 'TB_load'))) return;
                 const iframe = document.querySelector('#TB_iframeContent');
-                const subjectID = new URL(iframe.src).pathname.split('/')[2] ;
-                const tagInput = iframe?.contentDocument.body.querySelector('#tags');
-                const [othersList, myList] = iframe?.contentDocument.body.querySelectorAll('.tagList');
-                if (tagInput) {
-                    resolve([subjectID, tagInput, othersList, myList]);
-                    observer.disconnect();
-                }
-            }).observe(document.body, {'childList': true});
+                const subjectID = new URL(iframe.src).pathname.split('/')[2];
+                const iframeDOM = iframe.contentDocument;
+                resolve([ subjectID, iframeDOM ]);
+                observer.disconnect();
+            }).observe(document.body, { 'childList': true });
         });
     };
+
+    async function syncMyTags(type) {
+        const paths = colPaths.filter(path => path.startsWith(`/${type}`));
+        const tags = [...new Set(await paths.reduce(async (result, path) => {
+            const dom = await getDOM(path);
+            return (await result).concat(await getTagsFromDOM(dom));
+        }, []))];
+        return updStorage(type, tags);
+    }
+
+    async function getDOM(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP request failed');
+            const html = await response.text();
+            const dom = new DOMParser().parseFromString(html, 'text/html');
+
+            return dom;
+        } catch (error) {
+            console.error('标签功能增强: Error fetching and parsing page:', error);
+        }
+    }
+
 })();
