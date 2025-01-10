@@ -51,8 +51,6 @@
 - ↑/↓ + ⏎ 快速进入搜索结果条目页
 - 根据选择类别不同搜索
 
-不能搜人物，因为 API 没有。
-
 ## [条目相关页面显示用户评价](https://greasyfork.org/zh-CN/scripts/520506-%E6%9D%A1%E7%9B%AE%E8%AE%A8%E8%AE%BA%E9%A1%B5%E6%98%BE%E7%A4%BA%E7%94%A8%E6%88%B7%E8%AF%84%E4%BB%B7)
 
 讨论页：https://bgm.tv/group/topic/411796
