@@ -75,10 +75,12 @@
   - 🔄手动更新（默认720分钟更新）、📥导入/📤导出订阅ID列表（.json）
 - 首页时间线“全部”“收藏”类按时间穿插RSS订阅项
 - 首页时间线添加“RSS”类，只查看RSS订阅项
+
 兼容：
 - [将班固米首页的下一页改为加载更多](https://bgm.tv/dev/app/432)
 - [为首页动态添加分类筛选“简评”](https://bgm.tv/dev/app/2482)
 - [时间胶囊显示交换绝对时间与相对时间](https://bgm.tv/dev/app/3226)
+
 不完全兼容：
 - [Bangumi Unlimited Pages](https://bgm.tv/dev/app/17)，因为不知道为什么我这里不管开不开其他组件，都会点了“Auto Load Pages”就无限加载，不好测试。但是只是不能对新加载的内容穿插RSS项。
 
