@@ -68,6 +68,20 @@
 - 在他人时光机同步率下方增加查询特定条目评价的功能
 - 🔍或⏎搜索条目，点击结果标题，或输入作品ID，点击🆔
 
+## [首页RSS订阅班友收藏](https://greasyfork.org/zh-CN/scripts/524603)
+- 首页副栏增加“RSS订阅”
+  - 输入用户ID并⏎，添加订阅
+  - 点击用户ID，删除或访问主页
+  - 🔄手动更新（默认720分钟更新）、📥导入/📤导出订阅ID列表（.json）
+- 首页时间线“全部”“收藏”类按时间穿插RSS订阅项
+- 首页时间线添加“RSS”类，只查看RSS订阅项
+兼容：
+- [将班固米首页的下一页改为加载更多](https://bgm.tv/dev/app/432)
+- [为首页动态添加分类筛选“简评”](https://bgm.tv/dev/app/2482)
+- [时间胶囊显示交换绝对时间与相对时间](https://bgm.tv/dev/app/3226)
+不完全兼容：
+- [Bangumi Unlimited Pages](https://bgm.tv/dev/app/17)，因为不知道为什么我这里不管开不开其他组件，都会点了“Auto Load Pages”就无限加载，不好测试。但是只是不能对新加载的内容穿插RSS项。
+
 ## [“好友”改为“关注”](https://greasyfork.org/zh-CN/scripts/518358-%E5%A5%BD%E5%8F%8B-%E6%94%B9%E4%B8%BA-%E5%85%B3%E6%B3%A8)
 
 讨论页：https://bgm.tv/group/topic/410150
