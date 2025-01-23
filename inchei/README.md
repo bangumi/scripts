@@ -69,6 +69,9 @@
 - 🔍或⏎搜索条目，点击结果标题，或输入作品ID，点击🆔
 
 ## [首页RSS订阅班友收藏](https://greasyfork.org/zh-CN/scripts/524603)
+
+讨论页：https://bgm.tv/group/topic/414787
+
 - 首页副栏增加“RSS订阅”
   - 输入用户ID并⏎，添加订阅
   - 点击用户ID，删除或访问主页
