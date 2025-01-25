@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.7
+// @version      1.3.8
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/(user)\/.*/
@@ -13,6 +13,25 @@
     const STAR_PATH = 'M60.556381,172.206 C60.1080307,172.639 59.9043306,173.263 60.0093306,173.875 L60.6865811,177.791 C60.8976313,179.01 59.9211306,180 58.8133798,180 C58.5214796,180 58.2201294,179.931 57.9282291,179.779 L54.3844766,177.93 C54.1072764,177.786 53.8038262,177.714 53.499326,177.714 C53.1958758,177.714 52.8924256,177.786 52.6152254,177.93 L49.0714729,179.779 C48.7795727,179.931 48.4782224,180 48.1863222,180 C47.0785715,180 46.1020708,179.01 46.3131209,177.791 L46.9903714,173.875 C47.0953715,173.263 46.8916713,172.639 46.443321,172.206 L43.575769,169.433 C42.4480682,168.342 43.0707186,166.441 44.6289197,166.216 L48.5916225,165.645 C49.211123,165.556 49.7466233,165.17 50.0227735,164.613 L51.7951748,161.051 C52.143775,160.35 52.8220755,160 53.499326,160 C54.1776265,160 54.855927,160.35 55.2045272,161.051 L56.9769285,164.613 C57.2530787,165.17 57.7885791,165.556 58.4080795,165.645 L62.3707823,166.216 C63.9289834,166.441 64.5516338,168.342 63.423933,169.433 L60.556381,172.206 Z';
     const STAR_SVG = `<svg fill="#ffde20" width="800px" height="800px" viewBox="43 159.5 21 21" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="${STAR_PATH}"></path></svg>`;
     const STAR_URL = URL.createObjectURL(new Blob([STAR_SVG], { type: 'image/svg+xml' }));
+
+    class MEvent {
+        static #listeners = new Map();
+        static on(event, listener) {
+            if (!this.#listeners.has(event)) this.#listeners.set(event, new Set());
+            this.#listeners.get(event).add(listener);
+            return this;
+        }
+        static emit(event, ...args) {
+            if (!this.#listeners.has(event)) return;
+            for (const listener of this.#listeners.get(event).values()) listener(...args);
+            return this;
+        }
+        static off(event, listener) {
+            if (!this.#listeners.has(event)) return;
+            this.#listeners.get(event).delete(listener);
+            return this;
+        }
+    }
 
     const Types = {
         anime: { sort: 1, value: 'anime', name: '动画', action: '看', unit: '部' },
@@ -28,6 +47,13 @@
         on_hold: { sort: 4, value: 'on_hold', name: '搁置', checked: false },
         wish: { sort: 5, value: 'wish', name: '想$', checked: false },
     };
+    const AnimeTypeTimes = {
+        WEB: 23 * 60 + 40,
+        TV: 23 * 60 + 40,
+        OVA: 45 * 60,
+        OAD: 45 * 60,
+        剧场版: 90 * 60,
+    }
 
     function formatSubType(subType, type) {
         const action = Types[type].action;
@@ -52,8 +78,8 @@
      * 立刻调用一次函数并返回函数本体
      * @param {Function} fn
      */
-    async function callNow(fn) {
-        await fn();
+    function callNow(fn) {
+        fn();
         return fn;
     }
 
@@ -116,6 +142,7 @@
      */
     function create(name, props, ...childrens) {
         const element = document.createElement(name);
+        if (props === undefined) return element;
         if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
             return append(element, props, ...childrens);
         return append(setProps(element, props), ...childrens)
@@ -266,7 +293,7 @@
                 request.addEventListener('upgradeneeded', event => {
                     for (const c of this.#c.values()) {
                         const { collection, keyPath } = c;
-                        if (event.target.result.objectStoreNames.contains(collection)) return;
+                        if (event.target.result.objectStoreNames.contains(collection)) continue;
                         event.target.result.createObjectStore(collection, { keyPath });
                     }
                 });
@@ -331,9 +358,10 @@
     }
     await DB.initInstance({
         dbName: 'VReport',
-        version: 1,
+        version: 5,
         collections: [
             { collection: 'pages', keyPath: 'url' },
+            { collection: 'times', keyPath: 'id' }
         ]
     });
 
@@ -343,6 +371,14 @@
         return begin + (end - begin) * y;
     }
 
+    /**
+     * @template T
+     * @template U
+     * @param {Iterable<T>} list 数据列表
+     * @param {string|(item:T)=>U} group
+     * @param {Map<U,T>} defaultMap
+     * @returns {Map<U,T[]>}
+     */
     function groupBy(list, group) {
         const groups = new Map();
         for (const item of list) {
@@ -357,6 +393,14 @@
         return new Map(new Array(length).fill(0).map((_, i) => [i, 0]));
     }
 
+    /**
+     * @template T
+     * @template U
+     * @param {Iterable<T>} list 数据列表
+     * @param {string|(item:T)=>U} group
+     * @param {Map<U,number>} defaultMap
+     * @returns {Map<U,number>}
+     */
     function groupCount(list, group, defaultMap) {
         const groups = defaultMap || new Map();
         for (const item of list) {
@@ -372,6 +416,7 @@
      * @param {string} url 网址
     */
     async function f(url) {
+        MEvent.emit('process', { type: 'fetch', data: { url } });
         const html = await fetch(window.location.origin + '/' + url).then(res => res.text());
         if (html.includes('503 Service Temporarily Unavailable')) return null;
         const e = create('html');
@@ -407,6 +452,7 @@
      * @param {number} expire 过期时间
      */
     async function fl(type, subType, p = 1, expire = 30) {
+        MEvent.emit('process', { type: 'parse', data: { type, subType, p } });
         const url = `${type}/list/${uid}/${subType}?page=${p}`;
         /** @type {Result} */
         let data = await DB.i.get('pages', url);
@@ -464,21 +510,89 @@
      * @param {string} type 类型
      */
     async function ft(type) {
+        MEvent.emit('process', { type: 'tags', data: { type } });
         const { tags } = await fl(type, 'collect')
         return tags
+    }
+
+    // calc time
+    function calcTime(s) {
+        let m = /[时片]长:\s*(\d{2}):(\d{2}):(\d{2})/.exec(s);
+        if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
+        m = /[时片]长:\s*(\d{2}):(\d{2})/.exec(s);
+        if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
+        m = /[时片]长:\s*(\d+)\s*[m分]/.exec(s);
+        if (m) return parseInt(m[1]) * 60;
+        return 0;
+    };
+
+    async function ftime(id) {
+        let data = await DB.i.get('times', id);
+        if (data) {
+            if (data.time) return { type: 1, time: data.time, a: true };
+            else return { time: data.eps * AnimeTypeTimes[data.type] || 0, a: false }
+        }
+        const e = await f(`subject/${id}/ep`);
+        const c = l => Array.from(l).reduce((a, e) => a + calcTime(e.innerText), 0)
+        let time = c(e.querySelectorAll('ul.line_list > li > small.grey'));
+        if (time) {
+            data = { id, time };
+            await DB.i.put('times', data);
+            return { time, a: true };
+        }
+        const se = await f(`subject/${id}`);
+        time = c(se.querySelectorAll('ul#infobox > li'));
+        if (time) {
+            data = { id, time };
+            await DB.i.put('times', data);
+            return { time, a: true };
+        }
+        const type = se.querySelector('h1.nameSingle > small')?.textContent;
+        const eps = e.querySelectorAll('ul.line_list > li > h6').length;
+
+        data = { id, type, eps };
+        await DB.i.put('times', data);
+        return { time: eps * AnimeTypeTimes[type] || 0, a: false }
+    }
+
+    /**
+     * @param {Iterable<Item>} list
+    */
+    async function totalTime(list) {
+        const total = {
+            total: { name: '总计', time: 0, count: 0 },
+            normal: { name: '精确', time: 0, count: 0 },
+            guess: { name: '推测', time: 0, count: 0 },
+            unknown: { name: '未知', time: 0, count: 0 },
+        };
+        MEvent.emit('process', { type: 'totalTime', data: { total: list.length } });
+        for (const { id } of list) {
+            MEvent.emit('process', { type: 'totalTimeItem', data: { id, count: total.total.count + 1 } });
+            const { time, a } = await ftime(id);
+            if (a) {
+                total.normal.count++;
+                total.normal.time += time;
+            } else if (time) {
+                total.guess.count++;
+                total.guess.time += time;
+            } else {
+                total.unknown.count++;
+            }
+            total.total.count++;
+            total.total.time += time;
+        }
+        return total;
     }
 
     /**
      * 二分搜索年份页面范围
      * 使用尽可能减少请求次数的算法
      * @param {string} type 类型
-     * @param {string} subType 子类
+     * @param {string} subtype 子类
      * @param {string|number} year 年份
      */
-    async function bsycs(type, subType, year) {
-        const { max } = await fl(type, subType);
-        console.info('Total', type, subType, max, 'page');
-        console.info('BSearch by year', year);
+    async function bsycs(type, subtype, year) {
+        const { max } = await fl(type, subtype);
         let startL = 1;
         let startR = 1;
         let endL = max;
@@ -490,11 +604,11 @@
             const mid = startL < endL
                 ? Math.max(Math.min(Math.floor((startL + endL) / 2), endL), startL)
                 : Math.max(Math.min(Math.floor((startR + endR) / 2), endR), startR)
-            const { list } = await fl(type, subType, mid);
+            MEvent.emit('process', { type: 'bsycs', data: { type, subtype, p: mid } });
+            const { list } = await fl(type, subtype, mid);
             if (list.length == 0) return [1, 1];
             const first = list[0].year;
             const last = list[list.length - 1].year;
-            console.info(`\tBSearch page`, mid, ' ', '\t[', first, last, ']');
             if (first > year && last < year) return [mid, mid];
 
             if (last > year) {
@@ -538,10 +652,9 @@
      */
     async function cbtYear(type, subtype, year) {
         const [start, end] = await bsycs(type, subtype, year);
-        console.info('Collect pages [', start, end, ']');
+        MEvent.emit('process', { type: 'collZone', data: { zone: [start, end] } });
         const ret = [];
         for (let i = start; i <= end; i++) {
-            console.info('\tCollect page', i);
             const { list } = await fl(type, subtype, i);
             ret.push(list);
         }
@@ -555,10 +668,9 @@
      */
     async function cbtAll(type, subtype) {
         const { list, max } = await fl(type, subtype, 1);
-        console.info('Collect pages [', 1, max, ']');
+        MEvent.emit('process', { type: 'collZone', data: { zone: [1, max] } });
         const ret = [list];
         for (let i = 2; i <= max; i++) {
-            console.info('\tCollect page', i);
             const { list } = await fl(type, subtype, i);
             ret.push(list);
         }
@@ -579,6 +691,7 @@
     async function collects({ type, subTypes, tag, year }) {
         const ret = [];
         for (const subtype of subTypes) {
+            MEvent.emit('process', { type: 'collSubtype', data: { subtype } });
             const list = await cbt(type, subtype, year);
             ret.push(list);
         }
@@ -632,8 +745,34 @@
     // SAVE IMAGE END
 
     // REPORT START
+    function pad02(n) { return n.toString().padStart(2, '0') }
+    function timeFormat(time, day = false) {
+        const s = time % 60;
+        const m = (time - s) / 60 % 60;
+        if (!day) {
+            const h = (time - s - m * 60) / 3600;
+            return `${h}:${pad02(m)}:${pad02(s)}`;
+        }
+        const h = (time - s - m * 60) / 3600 % 24;
+        const d = (time - s - m * 60 - h * 3600) / 86400;
+        if (d) return `${d}天${pad02(h)}:${pad02(m)}:${pad02(s)}`;
+        return `${h}:${pad02(m)}:${pad02(s)}`;
+    };
+
     function pw(v, m) {
         return { style: { width: v * 100 / m + '%' } }
+    }
+
+    /**
+     * 生成题头时间统计
+     * @param {Awaited<ReturnType<typeof totalTime>>} param0
+     * @returns {AppendParams}
+    */
+    function buildTotalTime({ total, normal, guess, unknown }) {
+        const list = [total, normal, guess, unknown].sort((a, b) => b.time - a.time)
+        const format = ({ name, count, time }) => `${timeFormat(time, true)} (${count})${name}`
+        const buildItem = (item) => ['li', ['div', format(item)], ['div', ['div', pw(item.time, total.time)]]];
+        return ['ul', { class: ['total-time', 'bars', 'rb'] }, ...list.map(buildItem)]
     }
     /**
      * 生成题头统计数据
@@ -648,7 +787,7 @@
         list.sort((a, b) => b[1] - a[1])
         const format = (k, v) => k + ':' + (('' + v).padStart(5, ' ')) + Types[type].unit
         const buildItem = ([k, v]) => ['li', ['div', format(k, v)], ['div', ['div', pw(v, total)]]];
-        return ['ul', { class: 'includes' }, ...list.map(buildItem)];
+        return ['ul', { class: ['includes', 'bars', 'lb'] }, ...list.map(buildItem)];
     }
 
     /**
@@ -694,15 +833,17 @@
      *  tag?: string
      * }} param0
      */
-    async function buildLifeTimeReport({ type, tag, subTypes }) {
+    async function buildLifeTimeReport({ type, tag, subTypes, totalTime: ttt }) {
         const list = await collects({ type, subTypes, tag });
+        const time = ttt ? await totalTime(list) : null;
 
-        const buildYearCover = ([year, l]) => ['li', ['h2', {}, year + '年', ['span', {}, l.length]], buildCoverList(l, type)];
+        const buildYearCover = ([year, l]) => ['li', ['h2', year + '年', ['span', l.length]], buildCoverList(l, type)];
         const banner = ['div', { class: 'banner' },
             ['h1', `Bangumi ${Types[type].name}生涯总览`],
             ['span', { class: 'uid' }, '@' + uid],
             buildIncludes(groupCount(list, 'subType').entries(), type)
         ];
+        if (time) banner.push(buildTotalTime(time));
         const countList = buildBarList(groupCount(list, 'month', countMap(12)).entries().map(([k, v]) => [v, k + 1 + '月', k]));
         const starList = buildBarList(groupCount(list, 'star', countMap(11)).entries().map(([k, v]) => [v, k ? k + '星' : '未评分', k]));
         const barGroup = ['div', { class: 'bar-group' }, countList, starList];
@@ -721,14 +862,16 @@
      *  tag?: string
      * }} param0
      */
-    async function buildYearReport({ year, type, tag, subTypes }) {
+    async function buildYearReport({ year, type, tag, subTypes, totalTime: ttt }) {
         const list = await collects({ type, subTypes, tag, year });
+        const time = ttt ? await totalTime(list) : null;
 
         const banner = ['div', { class: 'banner' },
             ['h1', `${year}年 Bangumi ${Types[type].name}年鉴`],
             ['span', { class: 'uid' }, '@' + uid],
             buildIncludes(groupCount(list, 'subType').entries(), type)
         ];
+        if (time) banner.push(buildTotalTime(time));
         const countList = buildBarList(groupCount(list, 'month', countMap(12)).entries().map(([k, v]) => [v, k + 1 + '月', k]));
         const starList = buildBarList(groupCount(list, 'star', countMap(11)).entries().map(([k, v]) => [v, k ? k + '星' : '未评分', k]));
         const barGroup = ['div', { class: 'bar-group' }, countList, starList];
@@ -755,8 +898,9 @@
      * @returns {Promise<void>}
      */
     async function buildReport(options) {
+        MEvent.emit('process', { type: 'start', data: options });
         const content = await (options.isLifeTime ? buildLifeTimeReport(options) : buildYearReport(options));
-
+        MEvent.emit('process', { type: 'done' });
         const close = create('div', { class: 'close' });
         const scroll = create('div', { class: 'scroll' }, content);
         const save = create('div', { class: 'save' });
@@ -817,7 +961,7 @@
     /**
      * 生成菜单
      */
-    async function buildMenu() {
+    function buildMenu() {
         const year = new Date().getFullYear();
 
         const buildSubTypeCheck = ([_, { value, name, checked }]) => ['div', { value },
@@ -825,24 +969,80 @@
             ['label', { for: 'yst_' + value }, name]
         ];
         const lifeTimeCheck = create('input', { type: 'checkbox', id: 'lftc' });
+        const totalTimeCheck = create('input', { type: 'checkbox', id: 'tltc' });
         const yearSelect = create('select', ...new Array(year - 2007).fill(0).map((_, i) => ['option', { value: year - i }, year - i]));
         const typeSelect = create('select', ...Object.entries(Types).map(([_, { value, name }]) => ['option', { value }, name]));
         const tagSelect = create('select', ['option', { value: '' }, '不筛选']);
         const btnGo = create('div', { class: ['btn', 'primary'] }, '生成');
         const btnClr = create('div', { class: ['btn', 'warning'] }, '清理缓存');
         const btnGroup = ['div', { class: 'btn-group' }, btnGo, btnClr];
-        const ytField = ['fieldset', ['legend', '选择年份与类型'], ['div', lifeTimeCheck, ['label', { for: 'lftc' }, '生涯报告']], yearSelect, typeSelect];
+        const additionField = ['fieldset', ['legend', '附加选项'], ['div', lifeTimeCheck, ['label', { for: 'lftc' }, '生涯报告']], ['div', totalTimeCheck, ['label', { for: 'tltc' }, '看过时长(耗时)']]];
+        const ytField = ['fieldset', ['legend', '选择年份与类型'], yearSelect, typeSelect];
         const tagField = ['fieldset', ['legend', '选择过滤标签'], tagSelect];
         const subtypeField = create('fieldset', ['legend', '选择包括的状态'], ...Object.entries(SubTypes).map(buildSubTypeCheck))
-        const menu = create('ul', { id: 'kotori-report-menu' }, ['li', ytField], ['li', tagField], ['li', subtypeField], ['li', btnGroup]);
+        const eventInfo = create('li')
+        const menu = create('ul', { id: 'kotori-report-menu' }, ['li', additionField], ['li', ytField], ['li', tagField], ['li', subtypeField], ['li', btnGroup], eventInfo);
+
+        MEvent.on('process', (() => {
+            let type;
+            let zone = [0, 0];
+            let subtype;
+            let subtypes;
+            let pz = false;
+            let totalTimeCount = 0;
+
+            return ({ type: t, data }) => {
+                switch (t) {
+                    case 'start':
+                        type = data.type;
+                        subtypes = data.subTypes;
+                        eventInfo.innerText = '';
+                        pz = false;
+                        break;
+                    case 'collSubtype':
+                        subtype = data.subtype;
+                        pz = false;
+                        break;
+                    case 'bsycs':
+                        eventInfo.innerText = `二分搜索[${formatSubType(subtype, type)}] (${data.p})`;
+                        break;
+                    case 'collZone':
+                        zone = data.zone;
+                        pz = true;
+                        break;
+                    case 'parse':
+                        if (!pz) return;
+                        eventInfo.innerText = `正在解析[${formatSubType(subtype, type)}] (`
+                            + (data.p - zone[0] + 1) + '/' + (zone[1] - zone[0] + 1) + ')('
+                            + (subtypes.indexOf(subtype) + 1) + '/' + subtypes.length + ')'
+                        break;
+                    case 'done':
+                        eventInfo.innerText = '';
+                        pz = false;
+                        break;
+                    case 'tags':
+                        eventInfo.innerText = `获取标签 [${Types[data.type].name}]`;
+                        break;
+                    case 'totalTime':
+                        totalTimeCount = data.total;
+                        break;
+                    case 'totalTimeItem':
+                        eventInfo.innerText = `获取条目时长 (${data.count}/${totalTimeCount}) (id: ${data.id})`;
+                        break;
+                    default:
+                        return;
+                }
+            }
+        })());
 
         lifeTimeCheck.addEventListener('change', () => {
             if (lifeTimeCheck.checked) yearSelect.disabled = true;
             else yearSelect.disabled = false;
         })
-        typeSelect.addEventListener('change', await callNow(async () => {
+        typeSelect.addEventListener('change', callNow(async () => {
             const type = typeSelect.value;
             if (!type) return;
+            totalTimeCheck.disabled = type !== 'anime';
             subtypeField.querySelectorAll('div').forEach(e => {
                 const name = formatSubType(e.getAttribute('value'), type);
                 e.querySelector('input').setAttribute('name', name);
@@ -857,26 +1057,25 @@
             if (tags.includes(last)) tagSelect.value = last;
         }));
         btnGo.addEventListener('click', callWhenDone(async () => {
-            let i = 0;
-            const id = setInterval(() => btnGo.innerText = `抓取数据中[${PRG[i++ % 4]}]`, 50);
+            const type = typeSelect.value || 'anime';
             await buildReport({
+                type,
+                subTypes: Array.from(subtypeField.querySelectorAll('input:checked')).map(e => e.value),
                 isLifeTime: lifeTimeCheck.checked,
+                totalTime: type === 'anime' && totalTimeCheck.checked,
                 year: parseInt(yearSelect.value) || year,
-                type: typeSelect.value || 'anime',
                 tag: tagSelect.value,
-                subTypes: Array.from(subtypeField.querySelectorAll('input:checked')).map(e => e.value)
             });
             menuToggle();
-            clearInterval(id);
-            btnGo.innerText = '生成';
         }));
         btnClr.addEventListener('click', callWhenDone(async () => {
             let i = 0;
-            const id = setInterval(() => btnGo.innerText = `清理缓存中[${PRG[i++ % 4]}]`, 50);
-            await DB.i.clearAll();
+            const id = setInterval(() => btnClr.innerText = `清理缓存中[${PRG[i++ % 4]}]`, 50);
+            await DB.i.clear('pages');
             clearInterval(id);
             btnClr.innerText = '清理缓存';
         }))
+
         document.body.appendChild(menu);
         return menu;
     }
@@ -885,8 +1084,8 @@
     /**
      * 切换菜单显隐
      */
-    async function menuToggle() {
-        if (!menu) menu = await buildMenu();
+    function menuToggle() {
+        if (!menu) menu = buildMenu();
         menu.style.display = menu.style.display == 'block' ? 'none' : 'block';
     }
     // MENU END
@@ -927,7 +1126,8 @@
 #kotori-report-menu {
     color: #fff;
     position: fixed;
-    display: block;
+    display: flex;
+    flex-direction: column;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -963,6 +1163,9 @@
                 transition: all 0.3s;
             }
         }
+    }
+    > li:last-child {
+        height: 20px;
     }
 
     fieldset {
@@ -1059,26 +1262,17 @@
                     font-size: 20px;
                 }
 
-                ul.includes {
+                ul.bars {
+                    position: absolute;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-evenly;
-                    align-items: flex-end;
-                    position: absolute;
-                    top: 0;
-                    right: 0;
                     > li {
                         position: relative;
                         justify-content: center;
-                        >div:first-child {
-                            text-align: left;
-                            width: 80px;
-                            padding-left: 105px;
-                        }
                         > div:last-child {
                             position: absolute;
-                            width: 100px;
-                            left: 0;
+                            width: 60px;
                             top: 50%;
                             transform: translateY(-50%);
                             height: 3px;
@@ -1086,11 +1280,56 @@
                             > div {
                                 position: absolute;
                                 top: 0;
-                                right: 0;
                                 height: 100%;
                                 background: #fff;
                             }
                         }
+                    }
+                }
+
+                ul.lb {
+                    align-items: flex-end;
+                    > li {
+                        > div:first-child {
+                            text-align: left;
+                            padding-left: 65px;
+                        }
+                        > div:last-child {
+                            left: 0;
+                            > div { right: 0; }
+                        }
+                    }
+                }
+
+                ul.rb {
+                    align-items: flex-start;
+                    > li {
+                        > div:first-child {
+                            text-align: right;
+                            padding-right: 65px;
+                        }
+                        > div:last-child {
+                            right: 0;
+                            > div { left: 0; }
+                        }
+                    }
+                }
+
+
+                ul.total-time {
+                    font-family: consolas, 'courier new', monospace, courier;
+                    bottom: 0;
+                    left: 0;
+                    > li > div:first-child {
+                        width: 150px;
+                    }
+                }
+
+                ul.includes {
+                    top: 0;
+                    right: 0;
+                    > li > div:first-child {
+                        width: 80px;
                     }
                 }
             }

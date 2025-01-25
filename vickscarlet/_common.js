@@ -17,8 +17,8 @@ function callWhenDone(fn) {
  * 立刻调用一次函数并返回函数本体
  * @param {Function} fn
  */
-async function callNow(fn) {
-    await fn();
+function callNow(fn) {
+    fn();
     return fn;
 }
 
@@ -81,6 +81,7 @@ function setStyle(element, styles) {
  */
 function create(name, props, ...childrens) {
     const element = document.createElement(name);
+    if (props === undefined) return element;
     if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
         return append(element, props, ...childrens);
     return append(setProps(element, props), ...childrens)
@@ -231,7 +232,7 @@ class DB {
             request.addEventListener('upgradeneeded', event => {
                 for (const c of this.#c.values()) {
                     const { collection, keyPath } = c;
-                    if (event.target.result.objectStoreNames.contains(collection)) return;
+                    if (event.target.result.objectStoreNames.contains(collection)) continue;
                     event.target.result.createObjectStore(collection, { keyPath });
                 }
             });
