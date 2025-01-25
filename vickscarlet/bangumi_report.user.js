@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.6
+// @version      1.3.7
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/(user)\/.*/
@@ -34,6 +34,10 @@
         return SubTypes[subType].name.replace('$', action);
     }
 
+    /**
+     * 返回一个函数，该函数在调用时会等待上一个调用完成后再执行
+     * @param {Function} fn
+     */
     function callWhenDone(fn) {
         let done = true;
         return async () => {
@@ -43,14 +47,25 @@
             done = true;
         }
     }
+
+    /**
+     * 立刻调用一次函数并返回函数本体
+     * @param {Function} fn
+     */
     async function callNow(fn) {
         await fn();
         return fn;
     }
 
     // DOM API HELPERS START
+    /**
+     * 设置属性
+     * @typedef {Record<string, string | number | boolean | Styles>} Props
+     * @param {Element} element 元素
+     * @param {Props} props 属性
+     */
     function setProps(element, props) {
-        if (!props || typeof props !== 'object') return;
+        if (!props || typeof props !== 'object') return element;
 
         for (const [key, value] of Object.entries(props)) {
             if (typeof value === 'boolean') {
@@ -61,28 +76,55 @@
             else if (key === 'style' && typeof value === 'object') setStyle(element, value);
             else element.setAttribute(key, value);
         }
+        return element;
     }
 
+    /**
+     * 添加类名
+     * @param {Element} element 元素
+     * @param {string} value 类名
+     */
     function addClass(element, value) {
         element.classList.add(...[value].flat());
+        return element;
     }
 
+    /**
+     * 设置样式
+     * @typedef {Record<string, string | number>} Styles
+     * @param {Element} element 元素
+     * @param {Styles} styles
+     */
     function setStyle(element, styles) {
         for (let [k, v] of Object.entries(styles)) {
             if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k))
                 v += 'px';
             element.style[k] = v;
         }
+        return element;
     }
 
+    /**
+     * @typedef {[string, Props | AppendParams, ...AppendParams[]]} CreateParams
+     * @typedef {CreateParams | string | Element} AppendParams
+     */
+
+    /**
+     * @param {string} name HTML标签
+     * @param {Props | AppendParams} props 属性
+     * @param {...AppendParams} childrens 子元素
+     */
     function create(name, props, ...childrens) {
         const element = document.createElement(name);
         if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
             return append(element, props, ...childrens);
-        setProps(element, props);
-        return append(element, ...childrens)
+        return append(setProps(element, props), ...childrens)
     }
 
+    /**
+     * @param {Element} element 元素
+     * @param {...AppendParams} childrens 子元素
+     */
     function append(element, ...childrens) {
         for (const child of childrens) {
             if (Array.isArray(child)) element.append(create(...child));
@@ -92,23 +134,114 @@
         return element;
     }
 
+    /**
+     * @param {Element} element 元素
+     */
     function removeAllChildren(element) {
         while (element.firstChild) element.removeChild(element.firstChild);
+        return element;
     }
     // DOM API HELPERS END
 
+
     // indexedDB cache
+    class Collection {
+        constructor(master, collection, keyPath) {
+            this.#master = master;
+            this.#collection = collection;
+            this.#keyPath = keyPath;
+        }
+        /** @type {DB} */
+        #master;
+        #collection;
+        #keyPath;
+
+        get collection() { return this.#collection; }
+        get keyPath() { return this.#keyPath; }
+
+        /**
+         * @template T
+         * @param {(store:IDBObjectStore)=>Promise<IDBRequest>} handler
+         * @param {Parameters<typeof DB.prototype.transaction>[2]} mode
+         */
+        async transaction(handler, mode) {
+            const storeHandler = store => new Promise(async (resolve, reject) => {
+                const request = await handler(store);
+                request.addEventListener('error', e => reject(e));
+                request.addEventListener('success', _ => resolve(request.result));
+            })
+            return this.#master.transaction(this.#collection, storeHandler, mode);
+        }
+
+        /**
+         * @template T
+         * @param {string|number} key
+         * @param {string} index
+         * @returns {T}
+         */
+        async get(key, index = '') {
+            return this.transaction(store => (index ? store.index(index) : store).get(key));
+        }
+
+        /**
+         * @template T
+         * @param {T} data
+         * @returns {Promise<boolean>}
+         */
+        async put(data) {
+            return this.transaction(store => store.put(data), 'readwrite').then(_ => true);
+        }
+
+        /**
+         * @returns {Promise<boolean>}
+         */
+        async clear() {
+            return this.transaction(store => store.clear(), 'readwrite').then(_ => true);
+        }
+    }
     class DB {
-        #dbName = 'mcache';
-        #version = 1;
-        #collection = 'pages';
-        #keyPath = 'url';
+        /**
+         * @typedef {{
+         *      dbName: string,
+         *      version: number,
+         *      collections: {
+         *          collection: string,
+         *          keyPath: string | string[],
+         *      }[],
+         *  }} Options
+         * @param {Options} param0
+         */
+        constructor({
+            dbName,
+            version,
+            collections,
+        }) {
+            this.#dbName = dbName;
+            this.#version = version;
+
+            for (const { collection, keyPath } of collections) {
+                this.#c.set(collection, new Collection(this, collection, keyPath));
+            }
+            this.#collectionProxy = new Proxy(this.#c, { get: (target, prop) => target.get(prop) })
+        }
+
+
+        #dbName;
+        #version;
+        /** @type {Map<string,Collection>} */
+        #c = new Map();
+        /** @type {IDBDatabase}  */
         #db;
+        /** @type {Record<string, Collection>} */
+        #collectionProxy;
 
+        /** @type DB */
         static #gdb;
-
-        static async initInstance() {
-            if (!this.#gdb) this.#gdb = await new DB().init();
+        /**
+         * @param {Options} options
+         */
+        static async initInstance(options) {
+            if (!this.#gdb) this.#gdb = await new DB(options).init();
             return this.#gdb;
         }
 
@@ -117,61 +250,92 @@
             return this.#gdb;
         }
 
+        /**
+         * @return {DB}
+         */
+        static get i() { return this.instance() }
+
+        get collections() { return this.#collectionProxy }
+        get coll() { return this.#collectionProxy }
+
         async init() {
             this.#db = await new Promise((resolve, reject) => {
                 const request = window.indexedDB.open(this.#dbName, this.#version);
-                request.onerror = event => reject(event.target.error);
-                request.onsuccess = event => resolve(event.target.result);
-                request.onupgradeneeded = event => {
-                    if (event.target.result.objectStoreNames.contains(this.#collection)) return;
-                    event.target.result.createObjectStore(this.#collection, { keyPath: this.#keyPath });
-                };
+                request.addEventListener('error', event => reject(event.target.error));
+                request.addEventListener('success', event => resolve(event.target.result));
+                request.addEventListener('upgradeneeded', event => {
+                    for (const c of this.#c.values()) {
+                        const { collection, keyPath } = c;
+                        if (event.target.result.objectStoreNames.contains(collection)) return;
+                        event.target.result.createObjectStore(collection, { keyPath });
+                    }
+                });
             });
             return this;
         }
 
-        async #store(handle, mode = 'readonly') {
-            return new Promise((resolve, reject) => {
-                const transaction = this.#db.transaction(this.#collection, mode);
-                const store = transaction.objectStore(this.#collection);
-                let result;
-                new Promise((rs, rj) => handle(store, rs, rj))
-                    .then(ret => result = ret)
-                    .catch(reject);
-                transaction.onerror = () => reject(new Error('Transaction error'));
-                transaction.oncomplete = () => resolve(result);
+        /**
+         * @template T
+         * @param {string} collection
+         * @param {<T>(store:IDBObjectStore)=>T} handler
+         * @param {'readonly'|'readwrite'} mode
+         * @return {Promise<T>}
+         */
+        async transaction(collection, handler, mode = 'readonly') {
+            return new Promise(async (resolve, reject) => {
+                const transaction = this.#db.transaction(collection, mode);
+                const store = transaction.objectStore(collection);
+                const result = await handler(store);
+                transaction.addEventListener('error', e => reject(e));
+                transaction.addEventListener('complete', () => resolve(result));
             });
         }
 
-        async get(key, index) {
-            return this.#store((store, resolve, reject) => {
-                if (index) store = store.index(index);
-                const request = store.get(key);
-                request.onerror = reject;
-                request.onsuccess = () => resolve(request.result);
-            })
-                .catch(null);
+
+        /**
+         * @template T
+         * @param {string} collection
+         * @param {Parameters<typeof Collection.prototype.get>[0]} key
+         * @param {Parameters<typeof Collection.prototype.get>[1]} index
+         * @returns {ReturnType<typeof Collection.prototype.get<T>>}
+         */
+        async get(collection, key, index) {
+            return this.#c.get(collection).get(key, index);
         }
 
-        async put(data) {
-            return this.#store((store, resolve, reject) => {
-                const request = store.put(data);
-                request.onerror = reject;
-                request.onsuccess = () => resolve(true);
-            }, 'readwrite')
-                .catch(false);
+        /**
+         * @param {string} collection
+         * @param {Parameters<typeof Collection.prototype.put>[0]} data
+         * @returns {ReturnType<typeof Collection.prototype.put>}
+         */
+        async put(collection, data) {
+            return this.#c.get(collection).put(data);
         }
 
-        async clear() {
-            return this.#store((store, resolve, reject) => {
-                const request = store.clear();
-                request.onerror = reject;
-                request.onsuccess = () => resolve(true);
-            }, 'readwrite')
-                .catch(false);
+        /**
+         * @param {string} collection
+         * @returns {ReturnType<typeof Collection.prototype.clear>}
+         */
+        async clear(collection) {
+            return this.#c.get(collection).clear();
+        }
+
+        /**
+         * @returns {Promise<boolean>}
+         */
+        async clearAll() {
+            for (const c of this.#c.values())
+                await c.clear();
+            return true;
         }
     }
-    await DB.initInstance();
+    await DB.initInstance({
+        dbName: 'VReport',
+        version: 1,
+        collections: [
+            { collection: 'pages', keyPath: 'url' },
+        ]
+    });
 
     function easeOut(curtime, begin, end, duration) {
         let x = curtime / duration;
@@ -203,6 +367,10 @@
     }
 
     // LOAD DATA START
+    /**
+     * 获取页面Element
+     * @param {string} url 网址
+    */
     async function f(url) {
         const html = await fetch(window.location.origin + '/' + url).then(res => res.text());
         if (html.includes('503 Service Temporarily Unavailable')) return null;
@@ -211,12 +379,41 @@
         return e;
     };
 
+    /**
+     * 获取页面数据
+     * @typedef {{
+     *  id: string
+     *  name: string
+     *  title: string
+     *  jp_title: string
+     *  img: string
+     *  time: Date
+     *  year: number
+     *  month: number
+     *  star: number
+     *  tags: string[]
+     *  subType: string
+     * }} Item
+     * @typedef {{
+     *  url:string
+     *  list: Item[]
+     *  max: number
+     *  time: number
+     *  tags?: string[]
+     * }} Result
+     * @param {string} type 类型
+     * @param {string} subType 子类
+     * @param {number} p 页码
+     * @param {number} expire 过期时间
+     */
     async function fl(type, subType, p = 1, expire = 30) {
         const url = `${type}/list/${uid}/${subType}?page=${p}`;
-        let data = await DB.instance().get('0x1@' + url);
+        /** @type {Result} */
+        let data = await DB.i.get('pages', url);
         if (data && data.time + expire * 60000 > Date.now()) return data;
 
         const e = await f(url);
+        /** @type {Item[]} */
         const list = Array
             .from(e.querySelectorAll('#browserItemList > li'))
             .map(li => {
@@ -251,22 +448,33 @@
             }
         }
         const time = Date.now();
-        data = { url: '0x1@' + url, list, max, time };
+        data = { url, list, max, time };
         if (p == 1) {
             const tags = Array
                 .from(e.querySelectorAll('#userTagList > li > a.l'))
                 .map(l => l.childNodes[1].textContent);
             data.tags = tags;
         }
-        await DB.instance().put(data);
+        await DB.i.put('pages', data);
         return data;
     }
 
+    /**
+     * 根据类型获取tag列表
+     * @param {string} type 类型
+     */
     async function ft(type) {
         const { tags } = await fl(type, 'collect')
         return tags
     }
 
+    /**
+     * 二分搜索年份页面范围
+     * 使用尽可能减少请求次数的算法
+     * @param {string} type 类型
+     * @param {string} subType 子类
+     * @param {string|number} year 年份
+     */
     async function bsycs(type, subType, year) {
         const { max } = await fl(type, subType);
         console.info('Total', type, subType, max, 'page');
@@ -311,11 +519,23 @@
         }
     }
 
-    async function cbt(type, subtype, year) {
+    /**
+     * 获取指定类型的数据列表
+     * @param {string} type 类型
+     * @param {string} subtype 子类
+     * @param {string | number} year 年份 0为全部
+     */
+    async function cbt(type, subtype, year = 0) {
         if (!year) return cbtAll(type, subtype);
         return cbtYear(type, subtype, year);
     };
 
+    /**
+     * 获取指定类型与年份的数据列表
+     * @param {string} type 类型
+     * @param {string} subtype 子类
+     * @param {string | number} year 年份
+     */
     async function cbtYear(type, subtype, year) {
         const [start, end] = await bsycs(type, subtype, year);
         console.info('Collect pages [', start, end, ']');
@@ -328,6 +548,11 @@
         return ret.flat();
     }
 
+    /**
+     * 获取指定类型的数据列表
+     * @param {string} type 类型
+     * @param {string} subtype 子类
+     */
     async function cbtAll(type, subtype) {
         const { list, max } = await fl(type, subtype, 1);
         console.info('Collect pages [', 1, max, ']');
@@ -340,6 +565,17 @@
         return ret.flat();
     }
 
+    /**
+     * 根据参数获取数据列表
+     * 根据 tag 过滤数据
+     * 根据 time 进行排序
+     * @param {{
+     *  type: string
+     *  subType: string
+     *  tag?: string
+     *  year?: string | number
+     * }} param0
+     */
     async function collects({ type, subTypes, tag, year }) {
         const ret = [];
         for (const subtype of subTypes) {
@@ -361,9 +597,14 @@
 
     // SAVE IMAGE START
     const loaded = new Set();
+    /**
+     * 加载脚本
+     * @param {string} src 脚本链接
+     * @returns {Promise<void>}
+     */
     async function loadScript(src) {
         if (loaded.has(src)) return;
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             const script = create('script', { src, type: 'text/javascript' });
             script.onload = () => {
                 loaded.add(src);
@@ -373,6 +614,12 @@
         })
     }
 
+    /**
+     * 元素转为 canvas
+     * @param {Element} element 元素
+     * @param {Function} done 完成回调
+     * @returns {Promise<void>}
+     */
     async function element2Canvas(element, done) {
         await loadScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js');
         const canvas = await html2canvas(element, { allowTaint: true, logging: false, backgroundColor: '#1c1c1c' })
@@ -388,6 +635,12 @@
     function pw(v, m) {
         return { style: { width: v * 100 / m + '%' } }
     }
+    /**
+     * 生成题头统计数据
+     * @param {Iterable<[any,number]>} list
+     * @param {string} type 类型
+     * @returns {AppendParams}
+     */
     function buildIncludes(list, type) {
         list = Array.from(list).map(([k, v]) => [formatSubType(k, type), v]);
         const total = list.reduce((sum, [_, v]) => sum + v, 0)
@@ -398,6 +651,11 @@
         return ['ul', { class: 'includes' }, ...list.map(buildItem)];
     }
 
+    /**
+     * 生成条形图
+     * @param {Iterable<[number,string|number,number]>} list
+     * @returns {AppendParams}
+     */
     function buildBarList(list) {
         list = Array.from(list).sort(([, , a], [, , b]) => a - b);
         const m = Math.max(...list.map(([v]) => v));
@@ -405,6 +663,12 @@
         return ['ul', { class: 'bars' }, ...list.map(buildItem)];
     }
 
+    /**
+     * 生成封面列表
+     * @param {Iterable<Item>} list
+     * @param {string} type 类型
+     * @returns {AppendParams}
+     */
     function buildCoverList(list, type) {
         let last = -1;
         const covers = [];
@@ -421,6 +685,15 @@
         return ['ul', { class: 'covers', type }, ...covers]
     }
 
+    /**
+     * 根据参数生成生涯总览
+     * 根据 tag 过滤数据
+     * @param {{
+     *  type: string
+     *  subType: string
+     *  tag?: string
+     * }} param0
+     */
     async function buildLifeTimeReport({ type, tag, subTypes }) {
         const list = await collects({ type, subTypes, tag });
 
@@ -438,6 +711,16 @@
         return create('div', { class: 'content' }, banner, barGroup, yearCover);
     }
 
+    /**
+     * 根据参数生成年鉴
+     * 根据 tag 过滤数据
+     * @param {{
+     *  year: string | number
+     *  type: string
+     *  subType: string
+     *  tag?: string
+     * }} param0
+     */
     async function buildYearReport({ year, type, tag, subTypes }) {
         const list = await collects({ type, subTypes, tag, year });
 
@@ -453,6 +736,24 @@
         return create('div', { class: 'content' }, banner, barGroup, buildCoverList(list, type));
     }
 
+    /**
+     * 根据参数生成报告
+     * 根据 tag 过滤数据
+     * isLifeTime 为 true 时生成生涯报告否则生成年鉴
+     * @param {{
+     *  isLifeTime: false
+     *  year: string | number
+     *  type: string
+     *  subType: string
+     *  tag?: string
+     * } | {
+     *  isLifeTime: true
+     *  type: string
+     *  subType: string
+     *  tag?: string
+     * }} options
+     * @returns {Promise<void>}
+     */
     async function buildReport(options) {
         const content = await (options.isLifeTime ? buildLifeTimeReport(options) : buildYearReport(options));
 
@@ -513,6 +814,9 @@
     // REPORT END
 
     // MENU START
+    /**
+     * 生成菜单
+     */
     async function buildMenu() {
         const year = new Date().getFullYear();
 
@@ -569,7 +873,7 @@
         btnClr.addEventListener('click', callWhenDone(async () => {
             let i = 0;
             const id = setInterval(() => btnGo.innerText = `清理缓存中[${PRG[i++ % 4]}]`, 50);
-            await DB.instance().clear();
+            await DB.i.clearAll();
             clearInterval(id);
             btnClr.innerText = '清理缓存';
         }))
@@ -578,6 +882,9 @@
     }
 
     let menu = null;
+    /**
+     * 切换菜单显隐
+     */
     async function menuToggle() {
         if (!menu) menu = await buildMenu();
         menu.style.display = menu.style.display == 'block' ? 'none' : 'block';
