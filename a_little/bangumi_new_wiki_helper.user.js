@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.33
+// @version     0.4.34
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -239,7 +239,7 @@ function htmlToElement(html) {
  * @param src iframe URL
  * @param TIMEOUT time out
  */
-function loadIframe($iframe, src, TIMEOUT = 5000) {
+function loadIframe($iframe, src, TIMEOUT = 10000) {
     return new Promise((resolve, reject) => {
         $iframe.src = src;
         let timer = setTimeout(() => {
@@ -4368,7 +4368,7 @@ async function getFormByIframe(url, formSelector) {
         $iframe.id = iframeId;
         document.body.appendChild($iframe);
     }
-    await loadIframe($iframe, url);
+    await loadIframe($iframe, url, 20000);
     return $iframe.contentDocument.querySelector(formSelector);
 }
 
@@ -6056,6 +6056,10 @@ function initNewSubject(wikiInfo) {
     const defaultVal = $q('#subject_infobox').value;
     insertFillFormBtn($t, async (e) => {
         await fillInfoBox(wikiInfo);
+        const $editSummary = $q('#editSummary');
+        if ($editSummary) {
+            $editSummary.value = '新条目';
+        }
     }, () => {
         var _a;
         // 清除默认值
@@ -6072,6 +6076,10 @@ function initNewSubject(wikiInfo) {
         $q('#subject_summary').value = '';
         // 移除上传图片
         (_a = $q('.e-wiki-cover-container')) === null || _a === void 0 ? void 0 : _a.remove();
+        const $editSummary = $q('#editSummary');
+        if ($editSummary) {
+            $editSummary.value = '';
+        }
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
     const dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
