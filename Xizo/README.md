@@ -1,7 +1,5 @@
 # [Xizo](https://bgm.tv/user/746725)
 
-## [脚本1](脚本1.user.js?raw=true)
+## [bgm_animation_seasons_list](bgm_animation_seasons_list.user.js?raw=true)
 
-脚本介绍，介绍一下脚本的功能和用法。如果有配图的话：
-
-![屏幕截图](images/图片.png)
+在动画条目页面下添加系列索引，通过系列内作品在bgm上的前传续作关系排序，方便跳转和查看整个系列的顺序关系
