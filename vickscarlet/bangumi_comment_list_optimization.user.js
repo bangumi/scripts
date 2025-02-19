@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 高楼优化
 // @version      1.0.0
+// @namespace    b38.dev
 // @description  优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
