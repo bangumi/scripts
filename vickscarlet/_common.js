@@ -80,6 +80,7 @@ function setStyle(element, styles) {
  * @param {...AppendParams} childrens 子元素
  */
 function create(name, props, ...childrens) {
+    if (name === 'svg') return createSVG(name, props, ...childrens);
     const element = document.createElement(name);
     if (props === undefined) return element;
     if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
@@ -92,8 +93,36 @@ function create(name, props, ...childrens) {
  * @param {...AppendParams} childrens 子元素
  */
 function append(element, ...childrens) {
+    if (element.name === 'svg') return appendSVG(element, ...childrens);
     for (const child of childrens) {
         if (Array.isArray(child)) element.append(create(...child));
+        else if (child instanceof Node) element.appendChild(child);
+        else element.append(document.createTextNode(child));
+    }
+    return element;
+}
+
+/**
+ * @param {string} name HTML标签
+ * @param {Props | AppendParams} props 属性
+ * @param {...AppendParams} childrens 子元素
+ */
+function createSVG(name, props, ...childrens) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+    if (name === 'svg') element.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    if (props === undefined) return element;
+    if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
+        return append(element, props, ...childrens);
+    return appendSVG(setProps(element, props), ...childrens)
+}
+
+/**
+ * @param {Element} element 元素
+ * @param {...AppendParams} childrens 子元素
+ */
+function appendSVG(element, ...childrens) {
+    for (const child of childrens) {
+        if (Array.isArray(child)) element.append(createSVG(...child));
         else if (child instanceof Node) element.appendChild(child);
         else element.append(document.createTextNode(child));
     }
@@ -295,3 +324,311 @@ class DB {
         return true;
     }
 }
+
+const ElementHelper = new Proxy(class ElementHelper {
+    /**
+     * @typedef {string | number} Style
+     * @typedef {Record<string, Style>} Styles
+     * @typedef {string | number | boolean | Styles} Prop
+     * @typedef {Record<string, Prop>} Props
+     * @typedef {(e: Event)=>void} EventHandler
+     * @typedef {Record<string, EventHandler>} Events
+     * @param {string} name
+     * @param {Props} props
+     * @param {Styles} styles
+     * @param {Events} events
+     */
+    constructor(name, props = {}, styles = {}, events = {}) {
+        this.#name = name;
+        this.#props = ElementHelper.#merge(this.#props, props);
+        this.#styles = ElementHelper.#merge(this.#styles, styles);
+        this.#events = ElementHelper.#merge(this.#events, events);
+        return this.#proxy;
+    };
+    /** */
+    #proxy = new Proxy(this, {
+        get: (target, prop) => {
+            if (prop in target) return target[prop].bind(target);
+            if (typeof prop !== 'string') return;
+            if (prop.startsWith('set')) {
+                prop = prop.charAt(3).toLowerCase() + prop.slice(4);
+                return target.prop.bind(target, prop);
+            }
+            if (prop.startsWith('on')) {
+                prop = prop.charAt(2).toLowerCase() + prop.slice(3);
+                return target.event.bind(target, prop);
+            }
+            if (prop.startsWith('remove')) {
+                prop = prop.charAt(6).toLowerCase() + prop.slice(7);
+                return () => {
+                    if (this.#props[prop])
+                        delete this.#props[prop];
+                    return this.#proxy;
+                }
+            }
+            return (props, styles, events) => {
+                const child = new ElementHelper(prop, props, styles, events)
+                this.#childrens.push(child);
+                return this.#proxy;
+            };
+        }
+    });
+    #name;
+    #into = null;
+    #props = {};
+    #styles = {};
+    #events = {};
+    #childrens = [];
+    #classes = [];
+    /** @type {Element} */
+    #node;
+    #id;
+
+    class(value) {
+        this.#classes.push(value);
+        return this.#proxy;
+    }
+    id(id) {
+        this.#props.id = id;
+        return this.#proxy;
+    }
+
+    #create() {
+        if (this.#name === 'svg') {
+            this.#node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            this.#node.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            this.#node.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+        } else {
+            this.#node = document.createElement(this.#name);
+        }
+        return this;
+    }
+
+    #setProps() {
+        const props = this.#props;
+        if (!props || typeof props !== 'object') return this;
+        for (const [key, value] of Object.entries(props)) {
+            if (typeof value === 'boolean') {
+                this.#node[key] = value;
+                continue;
+            }
+            if (key === 'class')
+                this.#classes.push(value);
+            else if (key === 'id')
+                this.#id = value;
+            else if (key === 'style' && typeof value === 'object')
+                this.#styles = ElementHelper.#merge(this.#styles, value);
+            else this.#node.setAttribute(key, value);
+        }
+        return this;
+    }
+
+    #setStyles() {
+        if (!this.#styles) return this;
+        for (let [k, v] of Object.entries(this.#styles)) {
+            if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k))
+                v += 'px';
+            this.#node.style[k] = v;
+        }
+        return this;
+    }
+
+    #setEvents() {
+        if (!this.#events) return this;
+        for (let [k, v] of Object.entries(this.#events)) {
+            this.#node.addEventListener(k, v);
+        }
+        return this;
+    }
+
+    #setClass() {
+        for (let c of this.#classes.flat()) {
+            this.#node.classList.add(c);
+        }
+        return this;
+    }
+
+    #setId() {
+        if (this.#id) this.#node.id = this.id;
+        return this;
+    }
+
+    #createChildrens() {
+        for (let child of this.#childrens) {
+            if (child instanceof ElementHelper)
+                this.#node.append(child.create(this.#node));
+            else
+                this.#node.append(child);
+        }
+        return this;
+    }
+
+    static #merge(a, b) {
+        if (!a) a = {};
+        if (!b) return null;
+        return Object.assign(a, b);
+    }
+
+    /**
+     * @param {string} key
+     * @param {Style} value
+     */
+    style(key, value) {
+        if (!this.#styles) this.#styles = {};
+        this.#styles[key] = value;
+        return this.#proxy;
+    }
+    /**
+     * @param {Styles} styles
+     */
+    styles(styles) {
+        this.#styles = ElementHelper.#merge(this.#styles, styles);
+        return this.#proxy;
+    }
+    /**
+     * @param {string} key
+     * @param {Prop} value
+     */
+    prop(key, value) {
+        if (!this.#props) this.#props = {};
+        this.#props[key] = value;
+        return this.#proxy;
+    }
+    /**
+     * @param {Props} styles
+     */
+    props(props) {
+        this.#props = ElementHelper.#merge(this.#props, props);
+        return this.#proxy;
+    }
+    /**
+     * @param {string} key
+     * @param {EventHandler} value
+     */
+    event(key, value) {
+        if (!this.#events) this.#events = {};
+        this.#events[key] = value;
+        return this.#proxy;
+    }
+    /**
+     * @param {Events} value
+     */
+    events(events) {
+        this.#events = ElementHelper.#merge(this.#events, events);
+        return this.#proxy;
+    }
+
+    /**
+     * @param {this} into
+     * @returns {this}
+     */
+    into(into) {
+        if (into) {
+            this.#into = into;
+            return this.#proxy;
+        }
+        if (this.#childrens.length == 0) return this.#proxy;
+        return this.#childrens[this.#childrens.length - 1].into(this.#proxy);
+    }
+    /**
+     * @returns {this | null}
+     */
+    out() {
+        const into = this.#into;
+        this.#into = null;
+        return into;
+    }
+    /**
+     * @param {this | Element | Node} child
+     */
+    append(child) {
+        this.#childrens.push(child);
+        return this.#proxy;
+    }
+
+    /**
+     * @template T
+     * @param {ArrayLike<T>} data
+     * @param {(item: T, helper: ElementHelper, index: number, data: ArrayLike<T>) => ElementHelper} fn
+     */
+    dataEach(data, fn) {
+        let i = 0;
+        for (let item of data) {
+            const child = fn(item, this, i, data);
+            i++;
+        }
+        return this.#proxy;
+    }
+
+    create() {
+        if (!this.#node) this.#create();
+        this.#setProps()
+            .#setStyles()
+            .#setEvents()
+            .#setClass()
+            .#setId()
+            .#createChildrens();
+        return this.#node;
+    }
+
+    /**
+     * @param {string} data
+     */
+    text(data) {
+        this.#childrens.push(document.createTextNode(data));
+        return this.#proxy;
+    }
+    /**
+     * @param {string} data
+     */
+    static text(data) {
+        return document.createTextNode(data);
+    }
+    /**
+     * @param {string} type
+     * @param {Props?} props
+     * @param {Style?} styles
+     * @param {Events?} events
+     */
+    static #spacialInput(type, props, styles, events) {
+        props = this.#merge({ type }, props);
+        return new ElementHelper('input', props, styles, events);
+    }
+    /**
+     * @param {Props?} props
+     * @param {Style?} styles
+     * @param {Events?} events
+     */
+    static password(props, styles, events) {
+        return this.#spacialInput('password', props, styles, events);
+    }
+    /**
+     * @param {Props?} props
+     * @param {Style?} styles
+     * @param {Events?} events
+     */
+    static checkbox(props, styles, events) {
+        return this.#spacialInput('checkbox', props, styles, events);
+    }
+    /**
+     * @param {Props?} props
+     * @param {Style?} styles
+     * @param {Events?} events
+     */
+    static radio(props, styles, events) {
+        return this.#spacialInput('radio', props, styles, events);
+    }
+
+    /**
+     * @param {Element} element 元素
+     */
+    static removeAllChildren(element) {
+        while (element.firstChild) element.removeChild(element.firstChild);
+        return element;
+    }
+}, {
+    get: (target, prop) => {
+        if (prop in target) return target[prop];
+        return (props, styles, events) => new target(prop, props, styles, events);
+    }
+})
