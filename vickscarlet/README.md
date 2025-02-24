@@ -1,29 +1,69 @@
 # [vickscarlet](https://bgm.tv/user/vickscarlet)
 
-## [Bangumi 用户备注与屏蔽](kotorichan-remark.user.js?raw=true)
+## Common
 
-给用户添加备注或者屏蔽用户, 增加好友曾用名
+※ [组件bug与建议](https://bgm.tv/blog/342007)
 
-`Dock菜单`, 点击菜单可以快速跳转到`管理窗口`对应的标签页
+颜色|释义
+---|---
+<span style="color:#8888ff;">`#8888ff`蓝色</span>|`[Preview]` 预览版，功能不完善，BUG 较多
+<span style="color:#88ff88;">`#88ff88`绿色</span>|`[Stable]` 正式版，功能开发完成，BUG 较少
+<span style="color:#ff8888;">`#ff8888`红色</span>|`[Deprecated]` 已弃用，功能不再维护，BUG 随时间越来越多
 
-![Dock菜单](images/remark/01.png)
 
-`管理窗口`, 要取消屏蔽某个用户主要通过这里
+## 脚本
 
-![管理窗口](images/remark/02.png)
+### <span style="color:#8888ff;">Bangumi 社区助手 preview</span>
 
-`鼠标悬停信息语好友标识`, 鼠标悬停在用户的头像上(如果没有头像就是悬停在名字上)会显示出对该用户的备注(或添加备注按钮), 备注点击可修改, 如果是好友, 则悬停信息中会有曾用名, 界面中如果是好友会用橙色标识出来。
+源|链接
+---|---
+GitHub|[`bangumi_community.user.js`](bangumi_community.user.js?raw=true)
+GreasyFork|[`Bangumi 社区助手 preview`](https://greasyfork.org/zh-CN/scripts/527566-bangumi-%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B-preview)
 
-![鼠标悬停信息语好友标识](images/remark/03.png)
-![鼠标悬停信息语好友标识](images/remark/04.png)
+### <span style="color:#88ff88;">Bangumi 高楼优化</span>
 
-`被屏蔽用户`, 访问被屏蔽用户主页会设置一个蒙版, 可以关闭这个蒙版, 也可以取消屏蔽这个用户, 另一个取消屏蔽用户的方式是到`管理窗口`中的`屏蔽列表`标签页, 鼠标悬停在用户头像上会有取消屏蔽按钮
+源|链接
+---|---
+超合金组件|[`app/3603`](https://bgm.tv/dev/app/3603) ※ 暂时不建议使用超合金组件版本
+GitHub|[`bangumi_comment_list_optimization.user.js`](bangumi_comment_list_optimization.user.js?raw=true)
+GreasyFork|[`Bangumi 高楼优化`](https://greasyfork.org/zh-CN/scripts/527434-bangumi-%E9%AB%98%E6%A5%BC%E4%BC%98%E5%8C%96)
 
-![被屏蔽用户](images/remark/05.png)
-![被屏蔽用户](images/remark/06.png)
+### <span style="color:#88ff88;">Bangumi 年鉴</span>
 
-## [Bangumi 加密通信翻译](kotorichan-encode_translate.user.js?raw=true)
+源|链接
+---|---
+GitHub|[`bangumi_report.user.js`](bangumi_report.user.js?raw=true)
+GreasyFork|[`Bangumi 年鉴`](https://greasyfork.org/zh-CN/scripts/456969-bangumi-%E5%B9%B4%E9%89%B4)
 
-## [Bangumi 年鉴](bangumi_report.user.js?raw=true)
+### <span style="color:#88ff88;">Bangumi 挖坟人探测器</span>
 
-## [Bangumi 看过番剧时长统计](bgagumi_timer.user.js?raw=true)
+源|链接
+---|---
+超合金组件|[`app/3201`](https://bgm.tv/dev/app/3201)
+GitHub|[`bangumi_necrobumping_detector.user.js`](bangumi_necrobumping_detector.user.js?raw=true)
+GreasyFork|[`Bangumi 挖坟人探测器`](https://greasyfork.org/zh-CN/scripts/490941-bangumi-%E6%8C%96%E5%9D%9F%E4%BA%BA%E6%8E%A2%E6%B5%8B%E5%99%A8)
+
+### <span style="color:#88ff88;">Bangumi 收藏快速评分</span>
+
+源|链接
+---|---
+超合金组件|[`app/1925`](https://bgm.tv/dev/app/1925)
+GitHub|[`bangumi_quick_rating.user.js`](bangumi_quick_rating.user.js?raw=true)
+GreasyFork|[`Bangumi 收藏快速评分`](https://greasyfork.org/zh-CN/scripts/527943-bangumi-%E6%94%B6%E8%97%8F%E5%BF%AB%E9%80%9F%E8%AF%84%E5%88%86)
+
+### <span style="color:#ff8888;">`[Deprecated]` Bangumi 用户备注与屏蔽</span>
+
+<span style="color:#ff8888;">※ 即将替换为Bangumi 社区助手</span>
+
+源|链接
+---|---
+超合金组件|[`app/661`](https://bgm.tv/dev/app/661)
+GitHub|[`kotorichan-remark.user.js`](kotorichan-remark.user.js?raw=true)
+
+
+### <span style="color:#ff8888;">`[Deprecated]` Bangumi 加密通信翻译</span>
+
+源|链接
+---|---
+超合金组件|[`app/1523`](https://bgm.tv/dev/app/1523)
+GitHub|[`kotorichan-encode_translate.user.js`](kotorichan-encode_translate.user.js?raw=true)
