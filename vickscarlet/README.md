@@ -1,7 +1,7 @@
 # [vickscarlet](https://bgm.tv/user/vickscarlet)
 
-> [!IMPORTANT] 
-> [组件bug与建议](https://bgm.tv/blog/342007) 
+> [!IMPORTANT]  
+> [组件bug与建议](https://bgm.tv/blog/342007)  
 > 标签|释义
 > ---|---
 > `Preview`|预览版，功能不完善，BUG 较多
@@ -10,9 +10,9 @@
 
 ## `Preview` Bangumi 社区助手 preview
 
-> [!TIP] 
-> 用于替换 `Bangumi 用户备注与屏蔽` 
-> 正在开发中 
+> [!TIP]  
+> 用于替换 `Bangumi 用户备注与屏蔽`  
+> 正在开发中  
 
 源|链接
 ---|---
@@ -32,10 +32,10 @@ GreasyFork|[`Bangumi 高楼优化`](https://greasyfork.org/zh-CN/scripts/527434-
 
 ## `Stable` Bangumi 年鉴
 
-> [!TIP] 
-> 个人自制的年鉴 
-> 可以按年份统计，也可以统计生涯 
-> 可以统计看过的时长（部分无 wiki 时长为推测） 
+> [!TIP]  
+> 个人自制的年鉴  
+> 可以按年份统计，也可以统计生涯  
+> 可以统计看过的时长（部分无 wiki 时长为推测）  
 
 源|链接
 ---|---
@@ -44,10 +44,10 @@ GreasyFork|[`Bangumi 年鉴`](https://greasyfork.org/zh-CN/scripts/456969-bangum
 
 ## `Stable` Bangumi 挖坟人探测器
 
-> [!TIP] 
-> 看看谁挖了这个帖子 
-> 在小组和日志中生效 
-> 与上一个人回复间隔相差 1 个月被归为挖坟 
+> [!TIP]  
+> 看看谁挖了这个帖子  
+> 在小组和日志中生效  
+> 与上一个人回复间隔相差 1 个月被归为挖坟  
 
 源|链接
 ---|---
@@ -57,8 +57,8 @@ GreasyFork|[`Bangumi 挖坟人探测器`](https://greasyfork.org/zh-CN/scripts/4
 
 ## `Stable` Bangumi 收藏快速评分
 
-> [!TIP] 
-> 在想要快速修改自己的收藏评分吗，试试这个吧 
+> [!TIP]  
+> 在想要快速修改自己的收藏评分吗，试试这个吧  
 
 源|链接
 ---|---
@@ -68,8 +68,8 @@ GreasyFork|[`Bangumi 收藏快速评分`](https://greasyfork.org/zh-CN/scripts/5
 
 ## `Deprecated` Bangumi 用户备注与屏蔽
 
-> [!WARNING] 
-> 即将替换为Bangumi 社区助手 
+> [!WARNING]  
+> 即将替换为Bangumi 社区助手  
 
 源|链接
 ---|---
@@ -79,8 +79,8 @@ GitHub|[`kotorichan-remark.user.js`](kotorichan-remark.user.js?raw=true)
 
 ## `Deprecated` Bangumi 加密通信翻译
 
-> [!WARNING] 
-> 一时兴起的脚本，不建议使用
+> [!WARNING]  
+> 一时兴起的脚本，不建议使用 
 
 源|链接
 ---|---
