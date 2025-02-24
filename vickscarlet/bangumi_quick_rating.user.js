@@ -82,16 +82,16 @@
         const starRatingElement = document.createElement('ul');
         starRatingElement.innerHTML = (`
             <li class="cancel" data-value="0"><span>取消评分</span></li>
-            <li class="star" data-value="1"><span>1 不忍直视</a></li>
-            <li class="star" data-value="2"><span>2 很差</a></li>
-            <li class="star" data-value="3"><span>3 差</a></li>
-            <li class="star" data-value="4"><span>4 较差</a></li>
-            <li class="star" data-value="5"><span>5 不过不失</a></li>
-            <li class="star" data-value="6"><span>6 还行</a></li>
-            <li class="star" data-value="7"><span>7 推荐</a></li>
-            <li class="star" data-value="8"><span>8 力荐</a></li>
-            <li class="star" data-value="9"><span>9 神作</a></li>
-            <li class="star" data-value="10"><span>10 超神作(请谨慎评价)</a></li>
+            <li class="star" data-value="1"><span>1 不忍直视</span></li>
+            <li class="star" data-value="2"><span>2 很差</span></li>
+            <li class="star" data-value="3"><span>3 差</span></li>
+            <li class="star" data-value="4"><span>4 较差</span></li>
+            <li class="star" data-value="5"><span>5 不过不失</span></li>
+            <li class="star" data-value="6"><span>6 还行</span></li>
+            <li class="star" data-value="7"><span>7 推荐</span></li>
+            <li class="star" data-value="8"><span>8 力荐</span></li>
+            <li class="star" data-value="9"><span>9 神作</span></li>
+            <li class="star" data-value="10"><span>10 超神作(请谨慎评价)</span></li>
         `);
         starRatingElement.classList.add('quick-rating');
         starRatingElement.classList.add(lastStartClass);
