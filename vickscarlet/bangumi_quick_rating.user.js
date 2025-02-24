@@ -2,7 +2,7 @@
 // @name         Bangumi 收藏快速评分
 // @namespace    b38.dev
 // @version      1.0.0
-// @description  Bangumi 收藏快速评分
+// @description  Bangumi 收藏快速评分, 仅自己收藏页面生效
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm.tv|bangumi.tv|chii.in)/(anime|book|game|music|real)/list/[0-9a-zA-Z_-]*/(collect|do|dropped|on_hold|wish)
@@ -99,10 +99,8 @@
             const target = event.target;
             if (target.nodeName != 'LI') return;
             const rate = parseInt(target.getAttribute('data-value')) || 0;
-            console.log(`rating: ${rating}`);
             const body = rate ? new URLSearchParams({ rate }) : null;
             const response = await fetch(`/subject/${id}/rate.chii?gh=${gh}`, { method: "POST", body });
-            console.log(response);
             if (response.status == 200) {
                 starRatingElement.classList.remove(lastStartClass);
                 lastStartClass = 'default-star-' + rating;
