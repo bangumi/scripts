@@ -4,8 +4,8 @@
 // @version      1.0.0
 // @description  Bangumi 收藏快速评分
 // @author       神戸小鳥 @vickscarlet
+// @license      MIT
 // @include      /^https?://(bgm.tv|bangumi.tv|chii.in)/(anime|book|game|music|real)/list/[0-9a-zA-Z_-]*/(collect|do|dropped|on_hold|wish)
-// @grant        none
 // ==/UserScript==
 (() => {
     const user = location.pathname.split('/').at(-2);
