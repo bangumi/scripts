@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Bangumi 高楼优化
-// @version      2.0.1
+// @version      2.0.2
 // @namespace    b38.dev
 // @description  优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/*
+// @icon         https://bgm.tv/img/favicon.ico
 // @run-at       document-start
 // ==/UserScript==
 (async () => {
@@ -24,14 +25,14 @@
         if (items.length < 30) return style.remove();
 
         let width = container.offsetWidth;
-        window.addEventListener('resize',()=>{ width = container.offsetWidth })
+        window.addEventListener('resize', () => { width = container.offsetWidth })
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const item = entry.target;
                 if (entry.isIntersecting) {
                     item.classList.remove('v-hd')
                 } else {
-                    if(width!=item._lastWidth) {
+                    if (width != item._lastWidth) {
                         const placeholder = item.querySelector(':scope>.v-ph');
                         const style = getComputedStyle(item);
                         const height = item.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)

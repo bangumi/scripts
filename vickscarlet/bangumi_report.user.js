@@ -2,10 +2,11 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.8
+// @version      1.3.9
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/(user)\/.*/
+// @icon         https://bgm.tv/img/favicon.ico
 // ==/UserScript==
 (async () => {
     const uid = /\/user\/(.+)?(\/.*)?/.exec(window.location.href)?.[1];

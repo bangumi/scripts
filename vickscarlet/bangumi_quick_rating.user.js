@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Bangumi 收藏快速评分
 // @namespace    b38.dev
-// @version      1.0.0
+// @version      1.0.1
 // @description  Bangumi 收藏快速评分, 仅自己收藏页面生效
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm.tv|bangumi.tv|chii.in)/(anime|book|game|music|real)/list/[0-9a-zA-Z_-]*/(collect|do|dropped|on_hold|wish)
+// @icon         https://bgm.tv/img/favicon.ico
 // ==/UserScript==
 (() => {
     const user = location.pathname.split('/').at(-2);

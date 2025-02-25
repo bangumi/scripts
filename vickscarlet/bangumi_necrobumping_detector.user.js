@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Bangumi 挖坟人探测器
-// @version      1.0.2
+// @version      1.0.3
 // @namespace    b38.dev
 // @description  Bangumi 挖坟人探测器, 看看是谁在挖坟，在日志和小组里生效
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/*
+// @icon         https://bgm.tv/img/favicon.ico
 // ==/UserScript==
 (() => {
     const column = document.querySelector('#columnInSubjectA');

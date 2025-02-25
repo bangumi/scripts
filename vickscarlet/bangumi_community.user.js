@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.0.2
+// @version      0.0.5
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/*
+// @icon         https://bgm.tv/img/favicon.ico
 // @run-at       document-start
 // ==/UserScript==
 (async () => {
@@ -863,7 +864,6 @@
                     .topic_sub_reply > .clearit:hover {
                         position: relative;
                         z-index: 1;
-                        backdrop-filter: blur(5px);
                     }
 
                     > .clearit:not(:has(.topic_sub_reply > .clearit:hover)):hover,
@@ -1015,11 +1015,9 @@
                         textarea {
                             background-color: var(--color-sicky-textarea);
                         }
-                        opacity: 0.6;
                     }
                     .sicky-reply:has(:focus),
                     .sicky-reply:hover {
-                        opacity: 1;
                         grid-template-rows: 1fr;
                         background-color: var(--color-sicky-hover-bg);
                         border: 1px solid var(--color-sicky-hover-border);
@@ -1037,6 +1035,9 @@
                             position: absolute;
                             right: 10px;
                             top: 10px;
+                        }
+                        .tip.rr + .switch {
+                            top: 35px;
                         }
                     }
                     .sicky-reply {
