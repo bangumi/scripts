@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 高楼优化
-// @version      2.0.2
+// @version      2.0.3
 // @namespace    b38.dev
 // @description  优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用
 // @author       神戸小鳥 @vickscarlet
@@ -13,12 +13,11 @@
 // @run-at       document-start
 // ==/UserScript==
 (async () => {
-    const style = document.createElement('style');
-    style.appendChild(document.createTextNode(`html { #sliderContainer, #comment_list > * > * { display: none; } }`));
-    document.head.append(style);
-    const style2 = document.createElement('style');
-    style2.appendChild(document.createTextNode(`html { #comment_list .v-hd { >*:not(.v-ph){ display: none; } >.v-ph {display: block;} } .v-ph { display: none; } }`));
-    document.head.append(style2);
+    /**merge:js=_common.dom.style.js**/
+    function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
+    /**merge**/
+    addStyle(/**merge:css=bangumi_comment_list_optimization.user.1.css**/`html {#comment_list .v-hd {>*:not(.v-ph) {display: none;}>.v-ph {display: block;}}.v-ph {display: none;}}`/**merge**/);
+    const style = addStyle(/**merge:css=bangumi_comment_list_optimization.user.2.css**/`html {#sliderContainer,#comment_list > * > * {display: none;}}`/**merge**/);
 
     document.addEventListener('readystatechange', () => {
         if (document.readyState !== 'complete') return;

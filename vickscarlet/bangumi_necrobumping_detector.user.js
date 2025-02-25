@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 挖坟人探测器
-// @version      1.0.3
+// @version      1.0.4
 // @namespace    b38.dev
 // @description  Bangumi 挖坟人探测器, 看看是谁在挖坟，在日志和小组里生效
 // @author       神戸小鳥 @vickscarlet
@@ -16,47 +16,10 @@
     if (!column) return;
     const nodes = column.querySelectorAll('.clearit');
     if (!nodes) return;
-    const style = document.createElement('style');
-    style.appendChild(document.createTextNode(`
-        .flexColumn {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .menuSticky {
-            position: sticky;
-            top: 0;
-            align-self: flex-start;
-        }
-
-        .necrobumpingTip {
-            background: #6fe5cc;
-            padding: 8px;
-            color: #444;
-            border-radius: 4px 4px 0 0;
-        }
-
-        .necrobumpingList {
-            position: relative;
-            gap: 5px;
-            padding: 8px;
-            border-radius: 4px;
-            li {
-                display: inline-block;
-                color: #444;
-                span {
-                color:#6fe5cc
-                }
-            }
-        }
-
-        @media(max-width:640px) {
-            .menuSticky {
-                align-self: auto;
-            }
-        }
-    `));
-    document.head.append(style);
+    /**merge:js=_common.dom.style.js**/
+    function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
+    /**merge**/
+    addStyle(/**merge:css=bangumi_necrobumping_detector.user.css**/`.flexColumn {display: flex;flex-direction: column;}.menuSticky {position: sticky;top: 0;align-self: flex-start;}.necrobumpingTip {background: #6fe5cc;padding: 8px;color: #444;border-radius: 4px 4px 0 0;}.necrobumpingList {position: relative;gap: 5px;padding: 8px;border-radius: 4px;li {display: inline-block;color: #444;span {color:#6fe5cc}}}@media(max-width:640px) {.menuSticky {align-self: auto;}}`/**merge**/)
     const posts = [];
     nodes.forEach(node => {
         const id = node.id;

@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Scripts with bangumi",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "merge": "node _merge.cjs"
+  },
   "keywords": [
     "javascript",
     "bangumi"

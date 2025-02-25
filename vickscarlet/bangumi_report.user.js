@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.9
+// @version      1.3.10
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
@@ -12,30 +12,37 @@
 // @match        *://bangumi.tv/user/*
 // ==/UserScript==
 (async () => {
+    /**merge:js=_common.dom.style.js**/ 
+    function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
+    /**merge**/
+    /**merge:js=_common.dom.js**/ 
+    function setProps(element, props) { if (!props || typeof props !== 'object') return element; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'class') addClass(element, value); else if (key === 'style' && typeof value === 'object') setStyle(element, value); else element.setAttribute(key, value); } return element; } 
+    function addClass(element, value) { element.classList.add(...[value].flat()); return element; } 
+    function setStyle(element, styles) { for (let [k, v] of Object.entries(styles)) { if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k)) v += 'px'; element.style[k] = v; } return element; } 
+    function create(name, props, ...childrens) { if (name === 'svg') return createSVG(name, props, ...childrens); const element = document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); } 
+    function append(element, ...childrens) { if (element.name === 'svg') return appendSVG(element, ...childrens); for (const child of childrens) { if (Array.isArray(child)) element.append(create(...child)); else if (child instanceof Node) element.appendChild(child); else element.append(document.createTextNode(child)); } return element; } 
+    function createSVG(name, props, ...childrens) { const element = document.createElementNS('http://www.w3.org/2000/svg', name); if (name === 'svg') element.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink'); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return appendSVG(setProps(element, props), ...childrens) } 
+    function appendSVG(element, ...childrens) { for (const child of childrens) { if (Array.isArray(child)) element.append(createSVG(...child)); else if (child instanceof Node) element.appendChild(child); else element.append(document.createTextNode(child)); } return element; } 
+    function removeAllChildren(element) { while (element.firstChild) element.removeChild(element.firstChild); return element; }
+    /**merge**/
+    /**merge:js=_common.util.js**/ 
+    function callWhenDone(fn) { let done = true; return async () => { if (!done) return; done = false; await fn(); done = true; } } 
+    function callNow(fn) { fn(); return fn; }
+    /**merge**/
+    /**merge:js=_common.database.js**/ 
+    class Collection { constructor(master, { collection, options, indexes }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; } #master; #collection; #options; #indexes; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction( this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result) ); }) }, mode ) } async get(key, index = '') { return this.transaction(store => (index ? store.index(index) : store).get(key)); } async put(data) { return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async clear() { return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } } 
+    class Database { constructor({ dbName, version, collections }) { this.#dbName = dbName; this.#version = version; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', event => reject(event.target.error)); request.addEventListener('success', event => resolve(event.target.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } } 
+    /**merge**/
+    /**merge:js=_common.event.js**/ 
+    class Event { static #listeners = new Map(); static on(event, listener) { if (!this.#listeners.has(event)) this.#listeners.set(event, new Set()); this.#listeners.get(event).add(listener); } static emit(event, ...args) { if (!this.#listeners.has(event)) return; for (const listener of this.#listeners.get(event).values()) listener(...args); } static off(event, listener) { if (!this.#listeners.has(event)) return; this.#listeners.get(event).delete(listener); } }
+    /**merge**/
+    addStyle(/**merge:css=bangumi_report.user.css**/`.btn { user-select: none; cursor: pointer; }.btn.primary { background: #fc899488; }.btn.primary:hover { background: #fc8994; }.btn.danger { background: #fc222288; }.btn.danger:hover { background: #fc2222; }.btn.success { background: #22fc2288; }.btn.success:hover { background: #22fc22; }.btn.warning { background: #fcb12288; }.btn.warning:hover { background: #fcb122; }#kotori-report-canvas::-webkit-scrollbar, #kotori-report .scroll::-webkit-scrollbar { display: none; }#kotori-report-menu::before {position: absolute;content: "菜单";padding: 0 20px;top: -1px;right: -1px;left: -1px;height: 30px;line-height: 30px;background: #fc8994;backdrop-filter: blur(4px);border-radius: 10px 10px 0 0;}#kotori-report-menu {color: #fff;position: fixed;display: flex;flex-direction: column;top: 50%;left: 50%;transform: translate(-50%, -50%);padding: 20px;padding-top: 50px;background: #0d111788;backdrop-filter: blur(4px);border-radius: 10px;box-shadow: 2px 2px 10px #00000088;border: 1px solid #fc899422;min-width: 150px;> li:first-child { margin-top: 0; }> li {margin-top: 10px;> .btn-group {display: flex;gap: 10px;> .btn {width: 100%;padding: 10px 0;text-align: center;border-radius: 5px;transition: all 0.3s;font-size: 16px;font-weight: bold;}> .btn:hover {width: 100%;padding: 10px 0;text-align: center;border-radius: 5px;transition: all 0.3s;}}}> li:last-child {height: 20px;}fieldset {display: flex;gap: 5px;min-inline-size: min-content;margin-inline: 1px;border-width: 1px;border-style: groove;border-color: threedface;border-image: initial;padding-block: 0.35em 0.625em;padding-inline: 0.75em;> div {display: flex;gap: 2px;justify-content: center;}}}#kotori-report {color: #fff;position: fixed;top: 0;left: 0;right: 0;bottom: 0;> .close {position: absolute;top: 0;right: 0;left: 0;bottom: 0;background: rgba(0,0,0,0.3);backdrop-filter: blur(2px);}> .save {position: absolute;top: 10px;right: 10px;width: 40px;height: 40px;background: #fc8994;border-radius: 40px;border: 4px solid #fc8994;cursor: pointer;box-shadow: 2px 2px 10px #00000088;user-select: none;line-height: 40px;background-size: 40px;background-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMzMwIDMzMCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE2NSwwQzc0LjAxOSwwLDAsNzQuMDE4LDAsMTY1YzAsOTAuOTgsNzQuMDE5LDE2NSwxNjUsMTY1czE2NS03NC4wMiwxNjUtMTY1QzMzMCw3NC4wMTgsMjU1Ljk4MSwwLDE2NSwweiBNMTY1LDMwMGMtNzQuNDM5LDAtMTM1LTYwLjU2MS0xMzUtMTM1UzkwLjU2MSwzMCwxNjUsMzBzMTM1LDYwLjU2MSwxMzUsMTM1UzIzOS40MzksMzAwLDE2NSwzMDB6Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTIxMS42NjcsMTI3LjEyMWwtMzEuNjY5LDMxLjY2NlY3NWMwLTguMjg1LTYuNzE2LTE1LTE1LTE1Yy04LjI4NCwwLTE1LDYuNzE1LTE1LDE1djgzLjc4N2wtMzEuNjY1LTMxLjY2NmMtNS44NTctNS44NTctMTUuMzU1LTUuODU3LTIxLjIxMywwYy01Ljg1OCw1Ljg1OS01Ljg1OCwxNS4zNTUsMCwyMS4yMTNsNTcuMjcxLDU3LjI3MWMyLjkyOSwyLjkzLDYuNzY4LDQuMzk1LDEwLjYwNiw0LjM5NWMzLjgzOCwwLDcuNjc4LTEuNDY1LDEwLjYwNy00LjM5M2w1Ny4yNzUtNTcuMjcxYzUuODU3LTUuODU3LDUuODU4LTE1LjM1NSwwLjAwMS0yMS4yMTVDMjI3LjAyMSwxMjEuMjY0LDIxNy41MjQsMTIxLjI2NCwyMTEuNjY3LDEyNy4xMjF6Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE5NSwyNDBoLTYwYy04LjI4NCwwLTE1LDYuNzE1LTE1LDE1YzAsOC4yODMsNi43MTYsMTUsMTUsMTVoNjBjOC4yODQsMCwxNS02LjcxNywxNS0xNUMyMTAsMjQ2LjcxNSwyMDMuMjg0LDI0MCwxOTUsMjQweiIvPjwvc3ZnPg==);opacity: 0.8;z-index: 9999999999999;}> .scroll {position: absolute;top: 0;bottom: 0;left: 50%;transform: translateX(-50%);overflow: scroll;> .content {display: flex;flex-direction: column;gap: 5px;width: 1078px;margin: 0 auto;.banner {height: 110px;background: #fc899488;backdrop-filter: blur(2px);color: #fff;text-shadow: 0 0 5px #000;h1 {position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 36px;line-height: 36px;text-align: center;}.uid {position: absolute;top: 5px;left: 5px;font-size: 20px;}ul.bars {position: absolute;display: flex;flex-direction: column;justify-content: space-evenly;> li {position: relative;justify-content: center;> div:last-child {position: absolute;width: 60px;top: 50%;transform: translateY(-50%);height: 3px;transition: all 0.3s;> div {position: absolute;top: 0;height: 100%;background: #fff;}}}}ul.lb {align-items: flex-end;> li {> div:first-child {text-align: left;padding-left: 65px;}> div:last-child {left: 0;> div { right: 0; }}}}ul.rb {align-items: flex-start;> li {> div:first-child {text-align: right;padding-right: 65px;}> div:last-child {right: 0;> div { left: 0; }}}}ul.total-time {font-family: consolas, 'courier new', monospace, courier;bottom: 0;left: 0;> li > div:first-child {width: 150px;}}ul.includes {top: 0;right: 0;> li > div:first-child {width: 80px;}}}ul.year-cover {display: flex;flex-direction: column;gap: 5px;> li {position: relative;> h2 {position: relative;padding: 2px;text-align: center;background: #fc899488;backdrop-filter: blur(2px);color: #fff;font-weight: bold;text-shadow: 0 0 4px #000;> span {position: absolute;top: 50%;right: 10px;transform: translateY(-50%);font-size: 14px;color: #ffde20;}}}> li:before {content: "";display: block;position: absolute;top: 0;right: 0;bottom: 0;left: 0;border: 1px solid #fc8994;box-sizing: border-box;}}> .bar-group {display: flex;justify-content: space-between;align-items: flex-end;ul.bars {display: flex;flex-direction: column;gap: 2px;position: relative;width: calc(50% - 1px);> li {display: block;position: relative;width: 100%;height: 20px;background: #0008;margin: 0;line-height: 20px;backdrop-filter: blur(2px);> span {position: absolute;left: 5px;text-shadow: 0 0 2px #000;}> span:nth-child(2) {position: absolute;left: 50%;transform: translateX(-50%);}> div {display: inline-block;height: 100%;background: #fc8994aa;margin: 0;}}}}ul.covers[type="music"] > li { height: 150px; }ul.covers {line-height: 0;> li {display: inline-block;position: relative;width: 150px;height: 220px;margin: 2px;overflow: hidden;border-width: 1px;border-style: solid;border-color: #fc8994;box-sizing: border-box;img {max-height: 100%;position: absolute;top: 0;left: 50%;transform: translateX(-50%);}> span {width: 50px;height: 30px;position: absolute;top: 0;left: 0;line-height: 30px;text-align: center;font-size: 18px;background: #8c49548c;backdrop-filter: blur(2px);}.star {display: block;position: absolute;bottom: 3px;right: 3px;width: 20px;height: 20px;padding: 5px;background: none;> img {opacity: 0.85;}> span {position: absolute;top: 50%;left: 50%;color: #f4a;font-family: consolas, 'courier new', monospace, courier;font-size: 18px;font-weight: bold;text-shadow: 0 0 2px #fff;transform: translate(-50%, -50%);}}}}}}}#kotori-report-canvas {color: #fff;position: fixed;top: 0;left: 0;right: 0;bottom: 0;background: rgba(0,0,0,0.3);backdrop-filter: blur(2px);overflow: scroll;padding: 30px;scrollbar-width: none;-ms-overflow-style: none;> div {position: absolute;top: 0;right: 0;left: 0;bottom: 0;background: rgba(0,0,0,0.3);backdrop-filter: blur(2px);}> canvas {position: absolute;top: 0;left: 50%;transform: translateX(-50%);}}@media screen and (min-width: 616px) { #kotori-report .content { width: 616px !important; } }@media screen and (min-width: 830px) { #kotori-report .content { width: 770px !important; } }@media screen and (min-width: 924px) { #kotori-report .content { width: 924px !important; } }@media screen and (min-width: 1138px) { #kotori-report .content { width: 1078px !important; } }`/**merge**/)
+
     const uid = /\/user\/(.+)?(\/.*)?/.exec(window.location.href)?.[1];
     const PRG = ['|', '/', '-', '\\'];
     const STAR_PATH = 'M60.556381,172.206 C60.1080307,172.639 59.9043306,173.263 60.0093306,173.875 L60.6865811,177.791 C60.8976313,179.01 59.9211306,180 58.8133798,180 C58.5214796,180 58.2201294,179.931 57.9282291,179.779 L54.3844766,177.93 C54.1072764,177.786 53.8038262,177.714 53.499326,177.714 C53.1958758,177.714 52.8924256,177.786 52.6152254,177.93 L49.0714729,179.779 C48.7795727,179.931 48.4782224,180 48.1863222,180 C47.0785715,180 46.1020708,179.01 46.3131209,177.791 L46.9903714,173.875 C47.0953715,173.263 46.8916713,172.639 46.443321,172.206 L43.575769,169.433 C42.4480682,168.342 43.0707186,166.441 44.6289197,166.216 L48.5916225,165.645 C49.211123,165.556 49.7466233,165.17 50.0227735,164.613 L51.7951748,161.051 C52.143775,160.35 52.8220755,160 53.499326,160 C54.1776265,160 54.855927,160.35 55.2045272,161.051 L56.9769285,164.613 C57.2530787,165.17 57.7885791,165.556 58.4080795,165.645 L62.3707823,166.216 C63.9289834,166.441 64.5516338,168.342 63.423933,169.433 L60.556381,172.206 Z';
     const STAR_SVG = `<svg fill="#ffde20" width="800px" height="800px" viewBox="43 159.5 21 21" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="${STAR_PATH}"></path></svg>`;
     const STAR_URL = URL.createObjectURL(new Blob([STAR_SVG], { type: 'image/svg+xml' }));
-
-    class MEvent {
-        static #listeners = new Map();
-        static on(event, listener) {
-            if (!this.#listeners.has(event)) this.#listeners.set(event, new Set());
-            this.#listeners.get(event).add(listener);
-            return this;
-        }
-        static emit(event, ...args) {
-            if (!this.#listeners.has(event)) return;
-            for (const listener of this.#listeners.get(event).values()) listener(...args);
-            return this;
-        }
-        static off(event, listener) {
-            if (!this.#listeners.has(event)) return;
-            this.#listeners.get(event).delete(listener);
-            return this;
-        }
-    }
 
     const Types = {
         anime: { sort: 1, value: 'anime', name: '动画', action: '看', unit: '部' },
@@ -63,309 +70,12 @@
         const action = Types[type].action;
         return SubTypes[subType].name.replace('$', action);
     }
-
-    /**
-     * 返回一个函数，该函数在调用时会等待上一个调用完成后再执行
-     * @param {Function} fn
-     */
-    function callWhenDone(fn) {
-        let done = true;
-        return async () => {
-            if (!done) return;
-            done = false;
-            await fn();
-            done = true;
-        }
-    }
-
-    /**
-     * 立刻调用一次函数并返回函数本体
-     * @param {Function} fn
-     */
-    function callNow(fn) {
-        fn();
-        return fn;
-    }
-
-    // DOM API HELPERS START
-    /**
-     * 设置属性
-     * @typedef {Record<string, string | number | boolean | Styles>} Props
-     * @param {Element} element 元素
-     * @param {Props} props 属性
-     */
-    function setProps(element, props) {
-        if (!props || typeof props !== 'object') return element;
-
-        for (const [key, value] of Object.entries(props)) {
-            if (typeof value === 'boolean') {
-                element[key] = value;
-                continue;
-            }
-            if (key === 'class') addClass(element, value);
-            else if (key === 'style' && typeof value === 'object') setStyle(element, value);
-            else element.setAttribute(key, value);
-        }
-        return element;
-    }
-
-    /**
-     * 添加类名
-     * @param {Element} element 元素
-     * @param {string} value 类名
-     */
-    function addClass(element, value) {
-        element.classList.add(...[value].flat());
-        return element;
-    }
-
-    /**
-     * 设置样式
-     * @typedef {Record<string, string | number>} Styles
-     * @param {Element} element 元素
-     * @param {Styles} styles
-     */
-    function setStyle(element, styles) {
-        for (let [k, v] of Object.entries(styles)) {
-            if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k))
-                v += 'px';
-            element.style[k] = v;
-        }
-        return element;
-    }
-
-    /**
-     * @typedef {[string, Props | AppendParams, ...AppendParams[]]} CreateParams
-     * @typedef {CreateParams | string | Element} AppendParams
-     */
-
-    /**
-     * @param {string} name HTML标签
-     * @param {Props | AppendParams} props 属性
-     * @param {...AppendParams} childrens 子元素
-     */
-    function create(name, props, ...childrens) {
-        const element = document.createElement(name);
-        if (props === undefined) return element;
-        if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
-            return append(element, props, ...childrens);
-        return append(setProps(element, props), ...childrens)
-    }
-
-    /**
-     * @param {Element} element 元素
-     * @param {...AppendParams} childrens 子元素
-     */
-    function append(element, ...childrens) {
-        for (const child of childrens) {
-            if (Array.isArray(child)) element.append(create(...child));
-            else if (child instanceof Node) element.appendChild(child);
-            else element.append(document.createTextNode(child));
-        }
-        return element;
-    }
-
-    /**
-     * @param {Element} element 元素
-     */
-    function removeAllChildren(element) {
-        while (element.firstChild) element.removeChild(element.firstChild);
-        return element;
-    }
-    // DOM API HELPERS END
-
-
-    // indexedDB cache
-    class Collection {
-        constructor(master, collection, keyPath) {
-            this.#master = master;
-            this.#collection = collection;
-            this.#keyPath = keyPath;
-        }
-        /** @type {DB} */
-        #master;
-        #collection;
-        #keyPath;
-
-        get collection() { return this.#collection; }
-        get keyPath() { return this.#keyPath; }
-
-        /**
-         * @template T
-         * @param {(store:IDBObjectStore)=>Promise<IDBRequest>} handler
-         * @param {Parameters<typeof DB.prototype.transaction>[2]} mode
-         */
-        async transaction(handler, mode) {
-            const storeHandler = store => new Promise(async (resolve, reject) => {
-                const request = await handler(store);
-                request.addEventListener('error', e => reject(e));
-                request.addEventListener('success', _ => resolve(request.result));
-            })
-            return this.#master.transaction(this.#collection, storeHandler, mode);
-        }
-
-        /**
-         * @template T
-         * @param {string|number} key
-         * @param {string} index
-         * @returns {T}
-         */
-        async get(key, index = '') {
-            return this.transaction(store => (index ? store.index(index) : store).get(key));
-        }
-
-        /**
-         * @template T
-         * @param {T} data
-         * @returns {Promise<boolean>}
-         */
-        async put(data) {
-            return this.transaction(store => store.put(data), 'readwrite').then(_ => true);
-        }
-
-        /**
-         * @returns {Promise<boolean>}
-         */
-        async clear() {
-            return this.transaction(store => store.clear(), 'readwrite').then(_ => true);
-        }
-    }
-    class DB {
-        /**
-         * @typedef {{
-         *      dbName: string,
-         *      version: number,
-         *      collections: {
-         *          collection: string,
-         *          keyPath: string | string[],
-         *      }[],
-         *  }} Options
-         * @param {Options} param0
-         */
-        constructor({
-            dbName,
-            version,
-            collections,
-        }) {
-            this.#dbName = dbName;
-            this.#version = version;
-
-            for (const { collection, keyPath } of collections) {
-                this.#c.set(collection, new Collection(this, collection, keyPath));
-            }
-            this.#collectionProxy = new Proxy(this.#c, { get: (target, prop) => target.get(prop) })
-        }
-
-
-        #dbName;
-        #version;
-        /** @type {Map<string,Collection>} */
-        #c = new Map();
-        /** @type {IDBDatabase}  */
-        #db;
-        /** @type {Record<string, Collection>} */
-        #collectionProxy;
-
-        /** @type DB */
-        static #gdb;
-        /**
-         * @param {Options} options
-         */
-        static async initInstance(options) {
-            if (!this.#gdb) this.#gdb = await new DB(options).init();
-            return this.#gdb;
-        }
-
-        static instance() {
-            if (!this.#gdb) throw new Error('DB not initInstance');
-            return this.#gdb;
-        }
-
-        /**
-         * @return {DB}
-         */
-        static get i() { return this.instance() }
-
-        get collections() { return this.#collectionProxy }
-        get coll() { return this.#collectionProxy }
-
-        async init() {
-            this.#db = await new Promise((resolve, reject) => {
-                const request = window.indexedDB.open(this.#dbName, this.#version);
-                request.addEventListener('error', event => reject(event.target.error));
-                request.addEventListener('success', event => resolve(event.target.result));
-                request.addEventListener('upgradeneeded', event => {
-                    for (const c of this.#c.values()) {
-                        const { collection, keyPath } = c;
-                        if (event.target.result.objectStoreNames.contains(collection)) continue;
-                        event.target.result.createObjectStore(collection, { keyPath });
-                    }
-                });
-            });
-            return this;
-        }
-
-        /**
-         * @template T
-         * @param {string} collection
-         * @param {<T>(store:IDBObjectStore)=>T} handler
-         * @param {'readonly'|'readwrite'} mode
-         * @return {Promise<T>}
-         */
-        async transaction(collection, handler, mode = 'readonly') {
-            return new Promise(async (resolve, reject) => {
-                const transaction = this.#db.transaction(collection, mode);
-                const store = transaction.objectStore(collection);
-                const result = await handler(store);
-                transaction.addEventListener('error', e => reject(e));
-                transaction.addEventListener('complete', () => resolve(result));
-            });
-        }
-
-
-        /**
-         * @template T
-         * @param {string} collection
-         * @param {Parameters<typeof Collection.prototype.get>[0]} key
-         * @param {Parameters<typeof Collection.prototype.get>[1]} index
-         * @returns {ReturnType<typeof Collection.prototype.get<T>>}
-         */
-        async get(collection, key, index) {
-            return this.#c.get(collection).get(key, index);
-        }
-
-        /**
-         * @param {string} collection
-         * @param {Parameters<typeof Collection.prototype.put>[0]} data
-         * @returns {ReturnType<typeof Collection.prototype.put>}
-         */
-        async put(collection, data) {
-            return this.#c.get(collection).put(data);
-        }
-
-        /**
-         * @param {string} collection
-         * @returns {ReturnType<typeof Collection.prototype.clear>}
-         */
-        async clear(collection) {
-            return this.#c.get(collection).clear();
-        }
-
-        /**
-         * @returns {Promise<boolean>}
-         */
-        async clearAll() {
-            for (const c of this.#c.values())
-                await c.clear();
-            return true;
-        }
-    }
-    await DB.initInstance({
+    const db = new Database({
         dbName: 'VReport',
-        version: 5,
+        version: 6,
         collections: [
-            { collection: 'pages', keyPath: 'url' },
-            { collection: 'times', keyPath: 'id' }
+            { collection: 'pages', options: { keyPath: 'url' }, indexes: [{ name: 'url', keyPath: 'url', unique: true }] },
+            { collection: 'times', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }] }
         ]
     });
 
@@ -420,7 +130,7 @@
      * @param {string} url 网址
     */
     async function f(url) {
-        MEvent.emit('process', { type: 'fetch', data: { url } });
+        Event.emit('process', { type: 'fetch', data: { url } });
         const html = await fetch(window.location.origin + '/' + url).then(res => res.text());
         if (html.includes('503 Service Temporarily Unavailable')) return null;
         const e = create('html');
@@ -456,10 +166,10 @@
      * @param {number} expire 过期时间
      */
     async function fl(type, subType, p = 1, expire = 30) {
-        MEvent.emit('process', { type: 'parse', data: { type, subType, p } });
+        Event.emit('process', { type: 'parse', data: { type, subType, p } });
         const url = `${type}/list/${uid}/${subType}?page=${p}`;
         /** @type {Result} */
-        let data = await DB.i.get('pages', url);
+        let data = await db.get('pages', url);
         if (data && data.time + expire * 60000 > Date.now()) return data;
 
         const e = await f(url);
@@ -505,7 +215,7 @@
                 .map(l => l.childNodes[1].textContent);
             data.tags = tags;
         }
-        await DB.i.put('pages', data);
+        await db.put('pages', data);
         return data;
     }
 
@@ -514,7 +224,7 @@
      * @param {string} type 类型
      */
     async function ft(type) {
-        MEvent.emit('process', { type: 'tags', data: { type } });
+        Event.emit('process', { type: 'tags', data: { type } });
         const { tags } = await fl(type, 'collect')
         return tags
     }
@@ -531,7 +241,7 @@
     };
 
     async function ftime(id) {
-        let data = await DB.i.get('times', id);
+        let data = await db.get('times', id);
         if (data) {
             if (data.time) return { type: 1, time: data.time, a: true };
             else return { time: data.eps * AnimeTypeTimes[data.type] || 0, a: false }
@@ -541,21 +251,21 @@
         let time = c(e.querySelectorAll('ul.line_list > li > small.grey'));
         if (time) {
             data = { id, time };
-            await DB.i.put('times', data);
+            await db.put('times', data);
             return { time, a: true };
         }
         const se = await f(`subject/${id}`);
         time = c(se.querySelectorAll('ul#infobox > li'));
         if (time) {
             data = { id, time };
-            await DB.i.put('times', data);
+            await db.put('times', data);
             return { time, a: true };
         }
         const type = se.querySelector('h1.nameSingle > small')?.textContent;
         const eps = e.querySelectorAll('ul.line_list > li > h6').length;
 
         data = { id, type, eps };
-        await DB.i.put('times', data);
+        await db.put('times', data);
         return { time: eps * AnimeTypeTimes[type] || 0, a: false }
     }
 
@@ -569,9 +279,9 @@
             guess: { name: '推测', time: 0, count: 0 },
             unknown: { name: '未知', time: 0, count: 0 },
         };
-        MEvent.emit('process', { type: 'totalTime', data: { total: list.length } });
+        Event.emit('process', { type: 'totalTime', data: { total: list.length } });
         for (const { id } of list) {
-            MEvent.emit('process', { type: 'totalTimeItem', data: { id, count: total.total.count + 1 } });
+            Event.emit('process', { type: 'totalTimeItem', data: { id, count: total.total.count + 1 } });
             const { time, a } = await ftime(id);
             if (a) {
                 total.normal.count++;
@@ -608,7 +318,7 @@
             const mid = startL < endL
                 ? Math.max(Math.min(Math.floor((startL + endL) / 2), endL), startL)
                 : Math.max(Math.min(Math.floor((startR + endR) / 2), endR), startR)
-            MEvent.emit('process', { type: 'bsycs', data: { type, subtype, p: mid } });
+            Event.emit('process', { type: 'bsycs', data: { type, subtype, p: mid } });
             const { list } = await fl(type, subtype, mid);
             if (list.length == 0) return [1, 1];
             const first = list[0].year;
@@ -656,7 +366,7 @@
      */
     async function cbtYear(type, subtype, year) {
         const [start, end] = await bsycs(type, subtype, year);
-        MEvent.emit('process', { type: 'collZone', data: { zone: [start, end] } });
+        Event.emit('process', { type: 'collZone', data: { zone: [start, end] } });
         const ret = [];
         for (let i = start; i <= end; i++) {
             const { list } = await fl(type, subtype, i);
@@ -672,7 +382,7 @@
      */
     async function cbtAll(type, subtype) {
         const { list, max } = await fl(type, subtype, 1);
-        MEvent.emit('process', { type: 'collZone', data: { zone: [1, max] } });
+        Event.emit('process', { type: 'collZone', data: { zone: [1, max] } });
         const ret = [list];
         for (let i = 2; i <= max; i++) {
             const { list } = await fl(type, subtype, i);
@@ -695,7 +405,7 @@
     async function collects({ type, subTypes, tag, year }) {
         const ret = [];
         for (const subtype of subTypes) {
-            MEvent.emit('process', { type: 'collSubtype', data: { subtype } });
+            Event.emit('process', { type: 'collSubtype', data: { subtype } });
             const list = await cbt(type, subtype, year);
             ret.push(list);
         }
@@ -902,9 +612,9 @@
      * @returns {Promise<void>}
      */
     async function buildReport(options) {
-        MEvent.emit('process', { type: 'start', data: options });
+        Event.emit('process', { type: 'start', data: options });
         const content = await (options.isLifeTime ? buildLifeTimeReport(options) : buildYearReport(options));
-        MEvent.emit('process', { type: 'done' });
+        Event.emit('process', { type: 'done' });
         const close = create('div', { class: 'close' });
         const scroll = create('div', { class: 'scroll' }, content);
         const save = create('div', { class: 'save' });
@@ -987,7 +697,7 @@
         const eventInfo = create('li')
         const menu = create('ul', { id: 'kotori-report-menu' }, ['li', additionField], ['li', ytField], ['li', tagField], ['li', subtypeField], ['li', btnGroup], eventInfo);
 
-        MEvent.on('process', (() => {
+        Event.on('process', (() => {
             let type;
             let zone = [0, 0];
             let subtype;
@@ -1075,7 +785,7 @@
         btnClr.addEventListener('click', callWhenDone(async () => {
             let i = 0;
             const id = setInterval(() => btnClr.innerText = `清理缓存中[${PRG[i++ % 4]}]`, 50);
-            await DB.i.clear('pages');
+            await db.clear('pages');
             clearInterval(id);
             btnClr.innerText = '清理缓存';
         }))
@@ -1093,432 +803,10 @@
         menu.style.display = menu.style.display == 'block' ? 'none' : 'block';
     }
     // MENU END
-
-    const btn = create('a', { class: 'chiiBtn', href: 'javascript:void(0)', title: '生成年鉴' }, ['span', '生成年鉴']);
-    btn.addEventListener('click', menuToggle);
-    document.querySelector('#headerProfile .actions').append(btn);
-
-    // style
-    document.head.appendChild(create('style', `
-.btn { user-select: none; cursor: pointer; }
-
-.btn.primary { background: #fc899488; }
-.btn.primary:hover { background: #fc8994; }
-.btn.danger { background: #fc222288; }
-.btn.danger:hover { background: #fc2222; }
-.btn.success { background: #22fc2288; }
-.btn.success:hover { background: #22fc22; }
-.btn.warning { background: #fcb12288; }
-.btn.warning:hover { background: #fcb122; }
-
-#kotori-report-canvas::-webkit-scrollbar, #kotori-report .scroll::-webkit-scrollbar { display: none; }
-
-#kotori-report-menu::before {
-    position: absolute;
-    content: "菜单";
-    padding: 0 20px;
-    top: -1px;
-    right: -1px;
-    left: -1px;
-    height: 30px;
-    line-height: 30px;
-    background: #fc8994;
-    backdrop-filter: blur(4px);
-    border-radius: 10px 10px 0 0;
-}
-
-#kotori-report-menu {
-    color: #fff;
-    position: fixed;
-    display: flex;
-    flex-direction: column;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 20px;
-    padding-top: 50px;
-    background: #0d111788;
-    backdrop-filter: blur(4px);
-    border-radius: 10px;
-    box-shadow: 2px 2px 10px #00000088;
-    border: 1px solid #fc899422;
-    min-width: 150px;
-
-    > li:first-child { margin-top: 0; }
-    > li {
-        margin-top: 10px;
-        > .btn-group {
-            display: flex;
-            gap: 10px;
-            > .btn {
-                width: 100%;
-                padding: 10px 0;
-                text-align: center;
-                border-radius: 5px;
-                transition: all 0.3s;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            > .btn:hover {
-                width: 100%;
-                padding: 10px 0;
-                text-align: center;
-                border-radius: 5px;
-                transition: all 0.3s;
-            }
-        }
-    }
-    > li:last-child {
-        height: 20px;
-    }
-
-    fieldset {
-        display: flex;
-        gap: 5px;
-        min-inline-size: min-content;
-        margin-inline: 1px;
-        border-width: 1px;
-        border-style: groove;
-        border-color: threedface;
-        border-image: initial;
-        padding-block: 0.35em 0.625em;
-        padding-inline: 0.75em;
-
-        > div {
-            display: flex;
-            gap: 2px;
-            justify-content: center;
-        }
-    }
-}
-
-#kotori-report {
-    color: #fff;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-
-    > .close {
-        position: absolute;
-        top: 0;
-        right: 0;
-        left: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.3);
-        backdrop-filter: blur(2px);
-    }
-
-    > .save {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 40px;
-        height: 40px;
-        background: #fc8994;
-        border-radius: 40px;
-        border: 4px solid #fc8994;
-        cursor: pointer;
-        box-shadow: 2px 2px 10px #00000088;
-        user-select: none;
-        line-height: 40px;
-        background-size: 40px;
-        background-image: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMzMwIDMzMCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE2NSwwQzc0LjAxOSwwLDAsNzQuMDE4LDAsMTY1YzAsOTAuOTgsNzQuMDE5LDE2NSwxNjUsMTY1czE2NS03NC4wMiwxNjUtMTY1QzMzMCw3NC4wMTgsMjU1Ljk4MSwwLDE2NSwweiBNMTY1LDMwMGMtNzQuNDM5LDAtMTM1LTYwLjU2MS0xMzUtMTM1UzkwLjU2MSwzMCwxNjUsMzBzMTM1LDYwLjU2MSwxMzUsMTM1UzIzOS40MzksMzAwLDE2NSwzMDB6Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTIxMS42NjcsMTI3LjEyMWwtMzEuNjY5LDMxLjY2NlY3NWMwLTguMjg1LTYuNzE2LTE1LTE1LTE1Yy04LjI4NCwwLTE1LDYuNzE1LTE1LDE1djgzLjc4N2wtMzEuNjY1LTMxLjY2NmMtNS44NTctNS44NTctMTUuMzU1LTUuODU3LTIxLjIxMywwYy01Ljg1OCw1Ljg1OS01Ljg1OCwxNS4zNTUsMCwyMS4yMTNsNTcuMjcxLDU3LjI3MWMyLjkyOSwyLjkzLDYuNzY4LDQuMzk1LDEwLjYwNiw0LjM5NWMzLjgzOCwwLDcuNjc4LTEuNDY1LDEwLjYwNy00LjM5M2w1Ny4yNzUtNTcuMjcxYzUuODU3LTUuODU3LDUuODU4LTE1LjM1NSwwLjAwMS0yMS4yMTVDMjI3LjAyMSwxMjEuMjY0LDIxNy41MjQsMTIxLjI2NCwyMTEuNjY3LDEyNy4xMjF6Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE5NSwyNDBoLTYwYy04LjI4NCwwLTE1LDYuNzE1LTE1LDE1YzAsOC4yODMsNi43MTYsMTUsMTUsMTVoNjBjOC4yODQsMCwxNS02LjcxNywxNS0xNUMyMTAsMjQ2LjcxNSwyMDMuMjg0LDI0MCwxOTUsMjQweiIvPjwvc3ZnPg==);
-        opacity: 0.8;
-        z-index: 9999999999999;
-    }
-    > .scroll {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        overflow: scroll;
-
-        > .content {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            width: 1078px;
-            margin: 0 auto;
-
-            .banner {
-                height: 110px;
-                background: #fc899488;
-                backdrop-filter: blur(2px);
-                color: #fff;
-                text-shadow: 0 0 5px #000;
-                h1 {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    font-size: 36px;
-                    line-height: 36px;
-                    text-align: center;
-                }
-
-                .uid {
-                    position: absolute;
-                    top: 5px;
-                    left: 5px;
-                    font-size: 20px;
-                }
-
-                ul.bars {
-                    position: absolute;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-evenly;
-                    > li {
-                        position: relative;
-                        justify-content: center;
-                        > div:last-child {
-                            position: absolute;
-                            width: 60px;
-                            top: 50%;
-                            transform: translateY(-50%);
-                            height: 3px;
-                            transition: all 0.3s;
-                            > div {
-                                position: absolute;
-                                top: 0;
-                                height: 100%;
-                                background: #fff;
-                            }
-                        }
-                    }
-                }
-
-                ul.lb {
-                    align-items: flex-end;
-                    > li {
-                        > div:first-child {
-                            text-align: left;
-                            padding-left: 65px;
-                        }
-                        > div:last-child {
-                            left: 0;
-                            > div { right: 0; }
-                        }
-                    }
-                }
-
-                ul.rb {
-                    align-items: flex-start;
-                    > li {
-                        > div:first-child {
-                            text-align: right;
-                            padding-right: 65px;
-                        }
-                        > div:last-child {
-                            right: 0;
-                            > div { left: 0; }
-                        }
-                    }
-                }
-
-
-                ul.total-time {
-                    font-family: consolas, 'courier new', monospace, courier;
-                    bottom: 0;
-                    left: 0;
-                    > li > div:first-child {
-                        width: 150px;
-                    }
-                }
-
-                ul.includes {
-                    top: 0;
-                    right: 0;
-                    > li > div:first-child {
-                        width: 80px;
-                    }
-                }
-            }
-
-            ul.year-cover {
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-                > li {
-                    position: relative;
-                    > h2 {
-                        position: relative;
-                        padding: 2px;
-                        text-align: center;
-                        background: #fc899488;
-                        backdrop-filter: blur(2px);
-                        color: #fff;
-                        font-weight: bold;
-                        text-shadow: 0 0 4px #000;
-                        > span {
-                            position: absolute;
-                            top: 50%;
-                            right: 10px;
-                            transform: translateY(-50%);
-                            font-size: 14px;
-                            color: #ffde20;
-                        }
-                    }
-                }
-                > li:before {
-                    content: "";
-                    display: block;
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    bottom: 0;
-                    left: 0;
-                    border: 1px solid #fc8994;
-                    box-sizing: border-box;
-                }
-            }
-            > .bar-group {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
-
-                ul.bars {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                    position: relative;
-                    width: calc(50% - 1px);
-
-                    > li {
-                        display: block;
-                        position: relative;
-                        width: 100%;
-                        height: 20px;
-                        background: #0008;
-                        margin: 0;
-                        line-height: 20px;
-                        backdrop-filter: blur(2px);
-
-                        > span {
-                            position: absolute;
-                            left: 5px;
-                            text-shadow: 0 0 2px #000;
-                        }
-
-                        > span:nth-child(2) {
-                            position: absolute;
-                            left: 50%;
-                            transform: translateX(-50%);
-                        }
-
-                        > div {
-                            display: inline-block;
-                            height: 100%;
-                            background: #fc8994aa;
-                            margin: 0;
-                        }
-                    }
-                }
-            }
-
-            ul.covers[type="music"] > li { height: 150px; }
-            ul.covers {
-                line-height: 0;
-                > li {
-                    display: inline-block;
-                    position: relative;
-                    width: 150px;
-                    height: 220px;
-                    margin: 2px;
-                    overflow: hidden;
-                    border-width: 1px;
-                    border-style: solid;
-                    border-color: #fc8994;
-                    box-sizing: border-box;
-
-                    img {
-                        max-height: 100%;
-                        position: absolute;
-                        top: 0;
-                        left: 50%;
-                        transform: translateX(-50%);
-                    }
-
-                    > span {
-                        width: 50px;
-                        height: 30px;
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        line-height: 30px;
-                        text-align: center;
-                        font-size: 18px;
-                        background: #8c49548c;
-                        backdrop-filter: blur(2px);
-                    }
-
-                    .star {
-                        display: block;
-                        position: absolute;
-                        bottom: 3px;
-                        right: 3px;
-                        width: 20px;
-                        height: 20px;
-                        padding: 5px;
-                        background: none;
-                        > img {
-                            opacity: 0.85;
-                        }
-                        > span {
-                            position: absolute;
-                            top: 50%;
-                            left: 50%;
-                            color: #f4a;
-                            font-family: consolas, 'courier new', monospace, courier;
-                            font-size: 18px;
-                            font-weight: bold;
-                            text-shadow: 0 0 2px #fff;
-                            transform: translate(-50%, -50%);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-#kotori-report-canvas {
-    color: #fff;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(2px);
-    overflow: scroll;
-    padding: 30px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    > div {
-        position: absolute;
-        top: 0;
-        right: 0;
-        left: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.3);
-        backdrop-filter: blur(2px);
-    }
-    > canvas {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-}
-
-@media screen and (min-width: 616px) { #kotori-report .content { width: 616px !important; } }
-@media screen and (min-width: 830px) { #kotori-report .content { width: 770px !important; } }
-@media screen and (min-width: 924px) { #kotori-report .content { width: 924px !important; } }
-@media screen and (min-width: 1138px) { #kotori-report .content { width: 1078px !important; } }
-`));
-
+    (async () => {
+        await db.init();
+        const btn = create('a', { class: 'chiiBtn', href: 'javascript:void(0)', title: '生成年鉴' }, ['span', '生成年鉴']);
+        btn.addEventListener('click', menuToggle);
+        document.querySelector('#headerProfile .actions').append(btn);
+    })();
 })();

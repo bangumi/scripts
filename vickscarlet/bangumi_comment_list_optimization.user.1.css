@@ -1,0 +1,13 @@
+html { 
+    #comment_list .v-hd { 
+        >*:not(.v-ph) { 
+            display: none; 
+        } 
+        >.v-ph {
+            display: block;
+        } 
+    } 
+    .v-ph { 
+        display: none; 
+    } 
+}
