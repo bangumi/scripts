@@ -165,57 +165,79 @@
         return element;
     }
 
-    function unDisplayAllChildren(element) {
-        for (const child of element.children)
-            child.style.display = 'none';
-
-        return element;
-    }
-
     // DOM API HELPERS END
 
     // indexedDB cache
+    /**
+     * @typedef {{
+     *  name: string
+     *  keyPath: string | string[]
+     *  unique?: boolean
+     * }} Index
+     * @typedef {{
+     *  collection: string
+     *  options?: IDBObjectStoreParameters
+     *  indexes?: Index[]
+     * }} CollectionOptions
+     * @typedef {{
+     *  dbName: string
+     *  version: number
+     *  collections: CollectionOptions[]
+     * }} Options
+     */
     class Collection {
-        constructor(master, collection, keyPath) {
+        /**
+         * @param {Database} master 
+         * @param {CollectionOptions} param1
+         */
+        constructor(master, { collection, options, indexes }) {
             this.#master = master;
             this.#collection = collection;
-            this.#keyPath = keyPath;
+            this.#options = options
+            this.#indexes = indexes
         }
-        /** @type {DB} */
+        /** @type {Database} */
         #master;
         #collection;
-        #keyPath;
+        #options
+        #indexes
 
-        get collection() { return this.#collection; }
-        get keyPath() { return this.#keyPath; }
+        get collection() { return this.#collection }
+        get options() { return this.#options }
+        get indexes() { return this.#indexes }
 
         /**
-         * @template T
-         * @param {(store:IDBObjectStore)=>Promise<IDBRequest>} handler
-         * @param {Parameters<typeof DB.prototype.transaction>[2]} mode
+         * @param {<T=unknown>(store:IDBObjectStore)=>Promise<IDBRequest<T>>} handler
+         * @param {Parameters<typeof Database.prototype.transaction>[2]} [mode=null]
+         * @returns {ReturnType<typeof handler>}
          */
         async transaction(handler, mode) {
-            const storeHandler = store => new Promise(async (resolve, reject) => {
-                const request = await handler(store);
-                request.addEventListener('error', e => reject(e));
-                request.addEventListener('success', _ => resolve(request.result));
-            })
-            return this.#master.transaction(this.#collection, storeHandler, mode);
+            return this.#master.transaction(
+                this.#collection,
+                async store => {
+                    const request = await handler(store)
+                    return new Promise((resolve, reject) => {
+                        request.addEventListener('error', e => reject(e))
+                        request.addEventListener('success', () =>
+                            resolve(request.result)
+                        )
+                    })
+                },
+                mode
+            )
         }
 
         /**
          * @template T
-         * @param {string|number} key
-         * @param {string} index
-         * @returns {T}
+         * @param {IDBValidKey | IDBKeyRange} key
+         * @param {string} [index='']
+         * @returns {Promise<T|null>}
          */
         async get(key, index = '') {
             return this.transaction(store => (index ? store.index(index) : store).get(key));
         }
 
         /**
-         * @template T
-         * @param {T} data
          * @returns {Promise<boolean>}
          */
         async put(data) {
@@ -229,64 +251,25 @@
             return this.transaction(store => store.clear(), 'readwrite').then(_ => true);
         }
     }
-    class DB {
+    class Database {
         /**
-         * @typedef {{
-         *      dbName: string,
-         *      version: number,
-         *      collections: {
-         *          collection: string,
-         *          keyPath: string | string[],
-         *      }[],
-         *  }} Options
          * @param {Options} param0
          */
-        constructor({
-            dbName,
-            version,
-            collections,
-        }) {
+        constructor({ dbName, version, collections }) {
             this.#dbName = dbName;
             this.#version = version;
 
-            for (const { collection, keyPath } of collections) {
-                this.#c.set(collection, new Collection(this, collection, keyPath));
+            for (const options of collections) {
+                this.#collections.set(options.collection, new Collection(this, options));
             }
-            this.#collectionProxy = new Proxy(this.#c, { get: (target, prop) => target.get(prop) })
         }
-
 
         #dbName;
         #version;
         /** @type {Map<string,Collection>} */
-        #c = new Map();
+        #collections = new Map();
         /** @type {IDBDatabase}  */
         #db;
-        /** @type {Record<string, Collection>} */
-        #collectionProxy;
-
-        /** @type DB */
-        static #gdb;
-        /**
-         * @param {Options} options
-         */
-        static async initInstance(options) {
-            if (!this.#gdb) this.#gdb = await new DB(options).init();
-            return this.#gdb;
-        }
-
-        static instance() {
-            if (!this.#gdb) throw new Error('DB not initInstance');
-            return this.#gdb;
-        }
-
-        /**
-         * @return {DB}
-         */
-        static get i() { return this.instance() }
-
-        get collections() { return this.#collectionProxy }
-        get coll() { return this.#collectionProxy }
 
         async init() {
             this.#db = await new Promise((resolve, reject) => {
@@ -294,10 +277,17 @@
                 request.addEventListener('error', event => reject(event.target.error));
                 request.addEventListener('success', event => resolve(event.target.result));
                 request.addEventListener('upgradeneeded', event => {
-                    for (const c of this.#c.values()) {
-                        const { collection, keyPath } = c;
-                        if (event.target.result.objectStoreNames.contains(collection)) continue;
-                        event.target.result.createObjectStore(collection, { keyPath });
+                    for (const c of this.#collections.values()) {
+                        const { collection, options, indexes } = c
+                        let store
+                        if (!request.result.objectStoreNames.contains(collection))
+                            store = request.result.createObjectStore(collection, options)
+                        else store = request.transaction.objectStore(collection)
+                        if (!indexes) continue
+                        for (const { name, keyPath, unique } of indexes) {
+                            if (store.indexNames.contains(name)) continue
+                            store.createIndex(name, keyPath, { unique })
+                        }
                     }
                 });
             });
@@ -305,11 +295,10 @@
         }
 
         /**
-         * @template T
          * @param {string} collection
-         * @param {<T>(store:IDBObjectStore)=>T} handler
+         * @param {<T=unknown>(store:IDBObjectStore)=>Promise<T>} handler
          * @param {'readonly'|'readwrite'} mode
-         * @return {Promise<T>}
+         * @returns {ReturnType<typeof handler>}
          */
         async transaction(collection, handler, mode = 'readonly') {
             return new Promise(async (resolve, reject) => {
@@ -321,7 +310,6 @@
             });
         }
 
-
         /**
          * @template T
          * @param {string} collection
@@ -330,16 +318,15 @@
          * @returns {ReturnType<typeof Collection.prototype.get<T>>}
          */
         async get(collection, key, index) {
-            return this.#c.get(collection).get(key, index);
+            return this.#collections.get(collection).get(key, index);
         }
 
         /**
          * @param {string} collection
-         * @param {Parameters<typeof Collection.prototype.put>[0]} data
          * @returns {ReturnType<typeof Collection.prototype.put>}
          */
         async put(collection, data) {
-            return this.#c.get(collection).put(data);
+            return this.#collections.get(collection).put(data);
         }
 
         /**
@@ -347,24 +334,37 @@
          * @returns {ReturnType<typeof Collection.prototype.clear>}
          */
         async clear(collection) {
-            return this.#c.get(collection).clear();
+            return this.#collections.get(collection).clear();
         }
 
         /**
          * @returns {Promise<boolean>}
          */
         async clearAll() {
-            for (const c of this.#c.values())
+            for (const c of this.#collections.values())
                 await c.clear();
             return true;
         }
     }
-    await DB.initInstance({
+    const db = new Database({
         dbName: 'VCommunity',
-        version: 1,
+        version: 3,
         collections: [
-            { collection: 'values', keyPath: 'id' },
-            { collection: 'users', keyPath: 'id' },
+            {
+                collection: 'values',
+                options: { keyPath: 'id' },
+                indexes: [{ name: 'id', keyPath: 'id', unique: true }]
+            },
+            {
+                collection: 'users',
+                options: { keyPath: 'id' },
+                indexes: [{ name: 'id', keyPath: 'id', unique: true }]
+            },
+            {
+                collection: 'images',
+                options: { keyPath: 'uri' },
+                indexes: [{ name: 'uri', keyPath: 'uri', unique: true }]
+            }
         ]
     });
 
@@ -375,213 +375,181 @@
      *  names: Set<string>,
      * }} User
      */
-    class App {
-        static async inject() {
-            console.log(document.readyState)
-            append(document.head, ['style', this.#styles.join('\n')],)
-            this.#userSeek();
-            document.addEventListener('readystatechange', async () => {
-                if (document.readyState !== 'complete') return;
-                this.#dockInject();
-                this.#hoverUserListener();
-                this.#parseHasCommentList();
-            })
-            return this;
+    /** @type {User} */
+    let user;
+    // Events
+    const listeners = new Map();
+    function on(event, listener) {
+        if (!listeners.has(event)) listeners.set(event, new Set());
+        listeners.get(event).add(listener);
+    }
+    function emit(event, ...args) {
+        if (!listeners.has(event)) return;
+        for (const listener of listeners.get(event).values()) listener(...args);
+    }
+    function off(event, listener) {
+        if (!listeners.has(event)) return;
+        listeners.get(event).delete(listener);
+    }
+
+    const menu = new class {
+        constructor() {
+            const blockBtn = create('li', ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言'])
+            const editBtn = create('li', ['a', { href: 'javascript:void(0)' }, svg('edit'), '编辑'])
+            const usednameBtn = create('li', ['a', { href: 'javascript:void(0)' }, svg('clock'), '曾用名'])
+            this.#element = create('ul', blockBtn, usednameBtn, editBtn);
+            blockBtn.addEventListener('click', () => this.#block());
+            editBtn.addEventListener('click', () => this.#edit());
+            usednameBtn.addEventListener('click', () => this.#usedname());
+        }
+        #element;
+        #id;
+
+        id(id) {
+            this.#id = id;
+            return this.#element;
         }
 
-        static #user;
-        static #listeners = new Map();
-        static #on(event, listener) {
-            if (!this.#listeners.has(event)) this.#listeners.set(event, new Set());
-            this.#listeners.get(event).add(listener);
-            return this;
+        async #block() {
+            const id = this.#id;
+            if (!confirm('确定要屏蔽吗？')) return;
+            const data = await db.get('users', id) || { id };
+            data.block = true;
+            await db.put('users', data);
         }
 
-        static #emit(event, ...args) {
-            if (!this.#listeners.has(event)) return;
-            for (const listener of this.#listeners.get(event).values()) listener(...args);
-            return this;
+        async #edit() {
+            console.debug('edit', this.#id)
         }
 
-        static #off(event, listener) {
-            if (!this.#listeners.has(event)) return;
-            this.#listeners.get(event).delete(listener);
-            return this;
+        async #usedname() {
+            const id = this.#id
+            const names = await this.#getUsedNames(id);
+            const data = await db.get('users', id) || { id };
+            data.names = data.names.union(new Set(names));
+            await db.put('users', data);
         }
 
-        static #menu = new class {
-            constructor() {
-                const blockBtn = create('li', { class: 'icon-btn' }, ['span', '🚫'])
-                const editBtn = create('li', { class: 'icon-btn' }, ['span', '✏️'])
-                const usednameBtn = create('li', { class: 'icon-btn' }, ['span', '🔍'])
-                this.#element = create('ul', blockBtn, editBtn, usednameBtn);
-                blockBtn.addEventListener('click', () => this.#block());
-                editBtn.addEventListener('click', () => this.#edit());
-                usednameBtn.addEventListener('click', () => this.#usedname());
-            }
-            #element;
-            #id;
+        async #getUsedNames(id, ret = [], page = 1) {
+            const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`);
+            const html = await res.text();
+            const names = Array.from(html.matchAll(/从 \<strong\>(?<from>.*?)\<\/strong\> 改名为/g), m => m.groups.from);
+            ret.push(...names);
+            if (!html.includes('>下一页 &rsaquo;&rsaquo;</a>'))
+                return ret;
+            return this.#getUsedNames(id, ret, page + 1);
+        }
+    }
 
-            id(id) {
-                this.#id = id;
-                return this.#element;
-            }
-
-            async #block() {
-                if (!confirm('确定要屏蔽吗？')) return;
-                const data = await DB.i.get('users', this.#id) || { id };
-                data.block = true;
-                await DB.i.put('users', data);
-            }
-
-            async #edit() {
-                console.debug('edit', this.#id)
-            }
-
-            async #usedname() {
-                const names = await this.#getUsedNames(this.#id);
-                const data = await DB.i.get('users', this.#id) || { id };
-                data.names = data.names.union(new Set(names));
-                await DB.i.put('users', data);
-            }
-
-            async #getUsedNames(id, ret = [], page = 1) {
-                const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`);
-                const html = await res.text();
-                const names = Array.from(html.matchAll(/从 \<strong\>(?<from>.*?)\<\/strong\> 改名为/g), m => m.groups.from);
-                ret.push(...names);
-                if (!html.includes('>下一页 &rsaquo;&rsaquo;</a>'))
-                    return ret;
-                return this.#getUsedNames(id, ret, page + 1);
+    function hoverUserListener() {
+        const helper = create('div', { id: 'community-helper', class: 'borderNeue' });
+        const title = create('div', { class: 'title' }, 'Bangumi 社区助手');
+        const container = create('div', { class: 'user-info' })
+        append(helper, title, container);
+        let last;
+        const showUser = async (id, currentName) => {
+            if (last === id) return;
+            last = id;
+            /** @type {User} */
+            const data = await db.get('users', id);
+            if (!data || last !== id) return;
+            removeAllChildren(container);
+            append(container, ['fieldset', ['legend', '用户名'], ['ul', ['li', currentName]]]);
+            data.names.delete(currentName);
+            if (data.names.size) {
+                const used = ['ul', ...map(data.names, name => ['li', name])]
+                append(container, ['fieldset', ['legend', '曾用名'], used]);
             }
         }
+        let timeout;
+        on('hover', async ({ id, currentName }) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => showUser(id, currentName), 50);
+        });
+        on('leave', () => {
+            clearTimeout(timeout)
+        });
+        window.addEventListener('resize', callNow(() => {
+            const r = document.querySelector('#robot_balloon > .inner')
+            const c = document.querySelector('.columns > .column:not(#columnSubjectHomeB,#columnHomeB):last-child')
+            let inner;
+            if (window.innerWidth < 640) inner = r;
+            else inner = c || r;
+            inner.append(helper);
+        }))
+    }
 
-        static #panel = new class {
-            constructor() { };
-            #element;
-            static inject() {
+    function dockInject() {
+        const dock = document.querySelector('#dock');
+        if (!dock) return;
+        let n, o;
 
+        o = dock.querySelector('#showrobot');
+        o.style.display = 'none';
+        n = create('a', { class: ['showrobot', 'svg-icon'], href: 'javascript:void(0)' }, svg('robot'), ['span', '春菜']);
+        n.addEventListener('click', () => chiiLib.ukagaka.toggleDisplay());
+        o.parentElement.append(n);
+
+        o = dock.querySelector('#toggleTheme');
+        o.style.display = 'none';
+        n = create('a', { class: ['toggleTheme', 'svg-icon'], href: 'javascript:void(0)' }, svg('light'), ['span', '开关灯']);
+        n.addEventListener('click', () => chiiLib.ukagaka.toggleTheme());
+        o.parentElement.append(n);
+        o.parentElement.classList.remove('last');
+
+        o = null;
+        dock.querySelectorAll('li').forEach(e => {
+            if (!o || o.children.length < e.children.length) o = e;
+        });
+        o.querySelectorAll('a').forEach(a => {
+            let icon;
+            switch (a.innerText) {
+                case '提醒': icon = 'notify'; break;
+                case '短信': icon = 'message'; break;
+                case '设置': icon = 'setting'; break;
+                case '登出': icon = 'logout'; break;
             }
-
-
-        }
-
-        static #hoverUserListener() {
-            const helper = create('div', { id: 'community-helper', class: 'borderNeue' });
-            const title = create('div', { class: 'title' }, 'Bangumi 社区助手');
-            const container = create('div', { class: 'user-info' })
-            append(helper, title, container);
-            let last;
-            const showUser = async (id, currentName) => {
-                if (last === id) return;
-                last = id;
-                /** @type {User} */
-                const data = await DB.i.get('users', id);
-                if (!data || last !== id) return;
-                removeAllChildren(container);
-                append(container, ['fieldset', ['legend', '用户名'], ['ul', ['li', currentName]]]);
-                data.names.delete(currentName);
-                if (data.names.size) {
-                    const used = ['ul', ...map(data.names, name => ['li', name])]
-                    append(container, ['fieldset', ['legend', '曾用名'], used]);
-                }
+            if (icon) {
+                const title = a.innerText
+                removeAllChildren(a);
+                a.classList.add('svg-icon');
+                append(a, svg(icon), ['span', title]);
             }
-            let timeout;
-            this.#on('hover', async ({ id, currentName }) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => showUser(id, currentName), 50);
-            });
-            this.#on('leave', () => {
-                clearTimeout(timeout)
-            });
-            window.addEventListener('resize', callNow(() => {
-                const r = document.querySelector('#robot_balloon > .inner')
-                const c = document.querySelector('.columns > .column:not(#columnSubjectHomeB,#columnHomeB):last-child')
-                let inner;
-                if (window.innerWidth < 640) inner = r;
-                else inner = c || r;
-                inner.append(helper);
-            }))
-        }
+            o.parentElement.insertBefore(create('li', a), o);
+        })
+        o.remove();
+    }
 
-        static #dockInject() {
-            const dock = document.querySelector('#dock');
-            if (!dock) return;
-            let n, o;
-
-            o = dock.querySelector('#showrobot');
-            o.style.display = 'none';
-            n = create('a', { class: ['showrobot', 'svg-icon'], href: 'javascript:void(0)' }, this.#svg('robot'), ['span', '春菜']);
-            n.addEventListener('click', () => chiiLib.ukagaka.toggleDisplay());
-            o.parentElement.append(n);
-
-            o = dock.querySelector('#toggleTheme');
-            o.style.display = 'none';
-            n = create('a', { class: ['toggleTheme', 'svg-icon'], href: 'javascript:void(0)' }, this.#svg('light'), ['span', '开关灯']);
-            n.addEventListener('click', () => chiiLib.ukagaka.toggleTheme());
-            o.parentElement.append(n);
-            o.parentElement.classList.remove('last');
-
-            o = null;
-            dock.querySelectorAll('li').forEach(e => {
-                if (!o || o.children.length < e.children.length) o = e;
-            });
-            o.querySelectorAll('a').forEach(a => {
-                let svg;
-                switch (a.innerText) {
-                    case '提醒': svg = 'notify'; break;
-                    case '短信': svg = 'message'; break;
-                    case '设置': svg = 'setting'; break;
-                    case '登出': svg = 'logout'; break;
-                }
-                if (svg) {
-                    const title = a.innerText
-                    removeAllChildren(a);
-                    a.classList.add('svg-icon');
-                    append(a, this.#svg(svg), ['span', title]);
-                }
-                o.parentElement.insertBefore(create('li', a), o);
-            })
-            o.remove();
-        }
-
-        static #userNid() {
-            try {
-                return CHOBITS_UID
-            } catch (e) {
-                console.error('获取 CHOITS_UID 失败', e);
-                return null;
-            }
-        }
-
-        static #userSeek() {
-            const dockA = document.querySelector('#dock li.first a');
-            if (dockA) {
-                const nid = this.#userNid();
-                const name = dockA.innerText;
-                const id = dockA.href.split('/').pop();
-                this.#user = { nid, id, name };
-                return true;
-            }
-            return false;
-        }
-
-        static #selector(selectors) {
-            for (const selector of selectors) {
-                const e = document.querySelector(selector);
-                if (e) return e;
-            }
+    function userNid() {
+        try {
+            return CHOBITS_UID
+        } catch (e) {
+            console.error('获取 CHOITS_UID 失败', e);
             return null;
         }
+    }
 
-        static #parseHasCommentList() {
-            const commentList = document.querySelector('#comment_list')
-            if (!commentList) return this;
-            const e = commentList.parentElement;
-            if (!e) return this;
-            e.classList.add('topic-box');
-            const first = e.querySelector(':scope>.clearit')
-            const replyWrapper = e.querySelector('#reply_wrapper');
+    function userSeek() {
+        const dockA = document.querySelector('#dock li.first a');
+        if (dockA) {
+            const nid = userNid();
+            const name = dockA.innerText;
+            const id = dockA.href.split('/').pop();
+            user = { nid, id, name };
+            return true;
+        }
+        return false;
+    }
+
+    function parseHasCommentList() {
+        const commentList = document.querySelector('#comment_list')
+        if (!commentList) return;
+        const e = commentList.parentElement;
+        if (!e) return;
+        e.classList.add('topic-box');
+        const first = e.querySelector(':scope>.clearit')
+        const replyWrapper = e.querySelector('#reply_wrapper');
+        if (replyWrapper) {
             e.querySelector('#sliderContainer')?.style.setProperty('display', 'none', 'important');
             const getSwitch = () => {
                 const raw = localStorage.getItem('sickyReplySwitch')
@@ -613,76 +581,116 @@
                 return s;
             }));
             append(replyWrapper, swBtn);
+        }
 
-            const handlerClearit = async clearit => {
-                const id = clearit.getAttribute('data-item-user')
-                if (!id) return;
-                const data = await DB.i.get('users', id) || { id, names: new Set() };
-                const inner = clearit.querySelector('.inner');
-                const icon = create('a', { class: ['icon', 'svg-icon'], href: 'javascript:void(0)' }, this.#svg('mark'));
-                const action = create('div', { class: ['action', 'dropdown', 'vcomm'] }, icon);
-                icon.addEventListener('mouseenter', () => append(action, this.#menu.id(id)));
-                const actionBox = clearit.querySelector('.post_actions');
-                actionBox.insertBefore(action, actionBox.lastElementChild);
-                if (!data.names) data.names = new Set();
-                const currentName = inner.querySelector('strong > a').innerText;
-                if (!data.names.has(currentName)) {
-                    data.names.add(currentName);
-                    await DB.i.put('users', data);
-                }
-                clearit.addEventListener('mouseenter', e => {
-                    this.#emit('hover', { id, currentName })
-                    e.stopPropagation();
-                });
-                clearit.addEventListener('mouseleave', () => this.#emit('leave', { id, currentName }));
-                if (data.block) {
-                    const btn = create('div', { class: ['icon-btn', 'svg-box'] }, App.#svg('expand'))
-                    const tip = create('span', { class: 'svg-box' }, App.#svg('collapse'), '已折叠')
-                    const tips = create('div', { class: ['inner', 'tips'] }, tip, btn);
-                    btn.addEventListener('click', () => tips.replaceWith(inner));
-                    inner.replaceWith(tips);
-                }
+        const handlerClearit = async clearit => {
+            const id = clearit.getAttribute('data-item-user')
+            if (!id) return;
+            const data = await db.get('users', id) || { id, names: new Set() };
+            const inner = clearit.querySelector('.inner');
+            const icon = create('a', { class: ['icon', 'svg-icon'], href: 'javascript:void(0)' }, svg('mark'));
+            const action = create('div', { class: ['action', 'dropdown', 'vcomm'] }, icon);
+            icon.addEventListener('mouseenter', () => append(action, menu.id(id)));
+            const actionBox = clearit.querySelector('.post_actions');
+            actionBox.insertBefore(action, actionBox.lastElementChild);
+            if (!data.names) data.names = new Set();
+            const currentName = inner.querySelector('strong > a').innerText;
+            if (!data.names.has(currentName)) {
+                data.names.add(currentName);
+                await db.put('users', data);
             }
-            if (first) handlerClearit(first);
-            const owner = e.querySelector('.postTopic')?.getAttribute('data-item-user');
-            for (const comment of Array.from(commentList.children)) {
-                const floor = comment.getAttribute('data-item-user')
-                if (floor === owner) comment.classList.add('owner');
-                handlerClearit(comment)
-                comment.querySelectorAll('.clearit').forEach(clearit => {
-                    const user = clearit.getAttribute('data-item-user');
-                    if (user === owner) clearit.classList.add('owner');
-                    else if (user === floor) clearit.classList.add('floor');
-                    handlerClearit(clearit);
-                });
+            clearit.addEventListener('mouseenter', e => {
+                emit('hover', { id, currentName })
+                e.stopPropagation();
+            });
+            clearit.addEventListener('mouseleave', () => emit('leave', { id, currentName }));
+            if (data.block) {
+                const btn = create('div', { class: 'svg-box' }, svg('expand'))
+                const tip = create('span', { class: 'svg-box' }, svg('collapse'), '已折叠')
+                const tips = create('div', { class: ['inner', 'tips'] }, tip, btn);
+                btn.addEventListener('click', () => tips.replaceWith(inner));
+                inner.replaceWith(tips);
             }
-
-            return this;
         }
-
-        static #svg(type, size = 14) {
-            return ['svg', { viewBox: '0 0 16 16', width: size, height: size, fill: 'currentColor', },
-                ...[this.#d[type]].flat().map(d => ['path', { d }])
-            ]
+        if (first) handlerClearit(first);
+        const owner = e.querySelector('.postTopic')?.getAttribute('data-item-user');
+        for (const comment of Array.from(commentList.children)) {
+            const floor = comment.getAttribute('data-item-user')
+            if (floor === owner) comment.classList.add('owner');
+            handlerClearit(comment)
+            comment.querySelectorAll('.clearit').forEach(clearit => {
+                const user = clearit.getAttribute('data-item-user');
+                if (user === owner) clearit.classList.add('owner');
+                else if (user === floor) clearit.classList.add('floor');
+                handlerClearit(clearit);
+            });
         }
+    }
 
-        static #d = {
-            collapse: 'M10.896 2H8.75V.75a.75.75 0 0 0-1.5 0V2H5.104a.25.25 0 0 0-.177.427l2.896 2.896a.25.25 0 0 0 .354 0l2.896-2.896A.25.25 0 0 0 10.896 2ZM8.75 15.25a.75.75 0 0 1-1.5 0V14H5.104a.25.25 0 0 1-.177-.427l2.896-2.896a.25.25 0 0 1 .354 0l2.896 2.896a.25.25 0 0 1-.177.427H8.75v1.25Zm-6.5-6.5a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM6 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 6 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM12 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 12 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5Z',
-            expand: 'm8.177.677 2.896 2.896a.25.25 0 0 1-.177.427H8.75v1.25a.75.75 0 0 1-1.5 0V4H5.104a.25.25 0 0 1-.177-.427L7.823.677a.25.25 0 0 1 .354 0ZM7.25 10.75a.75.75 0 0 1 1.5 0V12h2.146a.25.25 0 0 1 .177.427l-2.896 2.896a.25.25 0 0 1-.354 0l-2.896-2.896A.25.25 0 0 1 5.104 12H7.25v-1.25Zm-5-2a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM6 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 6 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM12 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 12 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5Z',
-            logout: 'M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 0 1 0 1.5h-2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 0 1 0 1.5h-2.5A1.75 1.75 0 0 1 2 13.25Zm10.44 4.5-1.97-1.97a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l1.97-1.97H6.75a.75.75 0 0 1 0-1.5Z',
-            setting: 'M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.173.086-.34.183-.5.29-.417.278-.97.423-1.529.27l-1.103-.303c-.109-.03-.175.016-.195.045-.22.312-.412.644-.573.99-.014.031-.021.11.059.19l.815.806c.411.406.562.957.53 1.456a4.709 4.709 0 0 0 0 .582c.032.499-.119 1.05-.53 1.456l-.815.806c-.081.08-.073.159-.059.19.162.346.353.677.573.989.02.03.085.076.195.046l1.102-.303c.56-.153 1.113-.008 1.53.27.161.107.328.204.501.29.447.222.85.629.997 1.189l.289 1.105c.029.109.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.173-.086.34-.183.5-.29.417-.278.97-.423 1.529-.27l1.103.303c.109.029.175-.016.195-.045.22-.313.411-.644.573-.99.014-.031.021-.11-.059-.19l-.815-.806c-.411-.406-.562-.957-.53-1.456a4.709 4.709 0 0 0 0-.582c-.032-.499.119-1.05.53-1.456l.815-.806c.081-.08.073-.159.059-.19a6.464 6.464 0 0 0-.573-.989c-.02-.03-.085-.076-.195-.046l-1.102.303c-.56.153-1.113.008-1.53-.27a4.44 4.44 0 0 0-.501-.29c-.447-.222-.85-.629-.997-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z',
-            message: 'M1.75 1h8.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 10.25 10H7.061l-2.574 2.573A1.458 1.458 0 0 1 2 11.543V10h-.25A1.75 1.75 0 0 1 0 8.25v-5.5C0 1.784.784 1 1.75 1ZM1.5 2.75v5.5c0 .138.112.25.25.25h1a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h3.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Zm13 2a.25.25 0 0 0-.25-.25h-.5a.75.75 0 0 1 0-1.5h.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 14.25 12H14v1.543a1.458 1.458 0 0 1-2.487 1.03L9.22 12.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l2.22 2.22v-2.19a.75.75 0 0 1 .75-.75h1a.25.25 0 0 0 .25-.25Z',
-            light: 'M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z',
-            notify: 'M8 16a2 2 0 0 0 1.985-1.75c.017-.137-.097-.25-.235-.25h-3.5c-.138 0-.252.113-.235.25A2 2 0 0 0 8 16ZM3 5a5 5 0 0 1 10 0v2.947c0 .05.015.098.042.139l1.703 2.555A1.519 1.519 0 0 1 13.482 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947Zm5-3.5A3.5 3.5 0 0 0 4.5 5v2.947c0 .346-.102.683-.294.97l-1.703 2.556a.017.017 0 0 0-.003.01l.001.006c0 .002.002.004.004.006l.006.004.007.001h10.964l.007-.001.006-.004.004-.006.001-.007a.017.017 0 0 0-.003-.01l-1.703-2.554a1.745 1.745 0 0 1-.294-.97V5A3.5 3.5 0 0 0 8 1.5Z',
-            info: 'M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z',
-            unnotify: 'm4.182 4.31.016.011 10.104 7.316.013.01 1.375.996a.75.75 0 1 1-.88 1.214L13.626 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947V5.305L.31 3.357a.75.75 0 1 1 .88-1.214Zm7.373 7.19L4.5 6.391v1.556c0 .346-.102.683-.294.97l-1.703 2.556a.017.017 0 0 0-.003.01c0 .005.002.009.005.012l.006.004.007.001ZM8 1.5c-.997 0-1.895.416-2.534 1.086A.75.75 0 1 1 4.38 1.55 5 5 0 0 1 13 5v2.373a.75.75 0 0 1-1.5 0V5A3.5 3.5 0 0 0 8 1.5ZM8 16a2 2 0 0 1-1.985-1.75c-.017-.137.097-.25.235-.25h3.5c.138 0 .252.113.235.25A2 2 0 0 1 8 16Z',
-            robot: ['M5.75 7.5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75Zm5.25.75a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 1.5 0v-1.5Z', 'M6.25 0h2A.75.75 0 0 1 9 .75V3.5h3.25a2.25 2.25 0 0 1 2.25 2.25V8h.75a.75.75 0 0 1 0 1.5h-.75v2.75a2.25 2.25 0 0 1-2.25 2.25h-8.5a2.25 2.25 0 0 1-2.25-2.25V9.5H.75a.75.75 0 0 1 0-1.5h.75V5.75A2.25 2.25 0 0 1 3.75 3.5H7.5v-2H6.25a.75.75 0 0 1 0-1.5ZM3 5.75v6.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-6.5a.75.75 0 0 0-.75-.75h-8.5a.75.75 0 0 0-.75.75Z'],
-            mark: 'M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z',
-            edit: 'M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z',
-            link: 'm7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z',
+    function svg(type, size = 14) {
+        const fill = 'currentColor';
+        const stroke = fill;
+        const viewBox = '0 0 16 16'
+        const baseParams = { width: size, height: size }
+        switch (type) {
+            case 'collapse': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M10.896 2H8.75V.75a.75.75 0 0 0-1.5 0V2H5.104a.25.25 0 0 0-.177.427l2.896 2.896a.25.25 0 0 0 .354 0l2.896-2.896A.25.25 0 0 0 10.896 2ZM8.75 15.25a.75.75 0 0 1-1.5 0V14H5.104a.25.25 0 0 1-.177-.427l2.896-2.896a.25.25 0 0 1 .354 0l2.896 2.896a.25.25 0 0 1-.177.427H8.75v1.25Zm-6.5-6.5a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM6 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 6 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM12 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 12 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5Z' }]
+            ];
+            case 'expand': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'm8.177.677 2.896 2.896a.25.25 0 0 1-.177.427H8.75v1.25a.75.75 0 0 1-1.5 0V4H5.104a.25.25 0 0 1-.177-.427L7.823.677a.25.25 0 0 1 .354 0ZM7.25 10.75a.75.75 0 0 1 1.5 0V12h2.146a.25.25 0 0 1 .177.427l-2.896 2.896a.25.25 0 0 1-.354 0l-2.896-2.896A.25.25 0 0 1 5.104 12H7.25v-1.25Zm-5-2a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM6 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 6 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5ZM12 8a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1 0-1.5h.5A.75.75 0 0 1 12 8Zm2.25.75a.75.75 0 0 0 0-1.5h-.5a.75.75 0 0 0 0 1.5h.5Z' }]
+            ];
+            case 'logout': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 0 1 0 1.5h-2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 0 1 0 1.5h-2.5A1.75 1.75 0 0 1 2 13.25Zm10.44 4.5-1.97-1.97a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l1.97-1.97H6.75a.75.75 0 0 1 0-1.5Z' }]
+            ];
+            case 'setting': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.173.086-.34.183-.5.29-.417.278-.97.423-1.529.27l-1.103-.303c-.109-.03-.175.016-.195.045-.22.312-.412.644-.573.99-.014.031-.021.11.059.19l.815.806c.411.406.562.957.53 1.456a4.709 4.709 0 0 0 0 .582c.032.499-.119 1.05-.53 1.456l-.815.806c-.081.08-.073.159-.059.19.162.346.353.677.573.989.02.03.085.076.195.046l1.102-.303c.56-.153 1.113-.008 1.53.27.161.107.328.204.501.29.447.222.85.629.997 1.189l.289 1.105c.029.109.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.173-.086.34-.183.5-.29.417-.278.97-.423 1.529-.27l1.103.303c.109.029.175-.016.195-.045.22-.313.411-.644.573-.99.014-.031.021-.11-.059-.19l-.815-.806c-.411-.406-.562-.957-.53-1.456a4.709 4.709 0 0 0 0-.582c-.032-.499.119-1.05.53-1.456l.815-.806c.081-.08.073-.159.059-.19a6.464 6.464 0 0 0-.573-.989c-.02-.03-.085-.076-.195-.046l-1.102.303c-.56.153-1.113.008-1.53-.27a4.44 4.44 0 0 0-.501-.29c-.447-.222-.85-.629-.997-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z' }]
+            ];
+            case 'message': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M1.75 1h8.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 10.25 10H7.061l-2.574 2.573A1.458 1.458 0 0 1 2 11.543V10h-.25A1.75 1.75 0 0 1 0 8.25v-5.5C0 1.784.784 1 1.75 1ZM1.5 2.75v5.5c0 .138.112.25.25.25h1a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h3.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Zm13 2a.25.25 0 0 0-.25-.25h-.5a.75.75 0 0 1 0-1.5h.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 14.25 12H14v1.543a1.458 1.458 0 0 1-2.487 1.03L9.22 12.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l2.22 2.22v-2.19a.75.75 0 0 1 .75-.75h1a.25.25 0 0 0 .25-.25Z' }]
+            ];
+            case 'light': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z' }]
+            ];
+            case 'notify': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M8 16a2 2 0 0 0 1.985-1.75c.017-.137-.097-.25-.235-.25h-3.5c-.138 0-.252.113-.235.25A2 2 0 0 0 8 16ZM3 5a5 5 0 0 1 10 0v2.947c0 .05.015.098.042.139l1.703 2.555A1.519 1.519 0 0 1 13.482 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947Zm5-3.5A3.5 3.5 0 0 0 4.5 5v2.947c0 .346-.102.683-.294.97l-1.703 2.556a.017.017 0 0 0-.003.01l.001.006c0 .002.002.004.004.006l.006.004.007.001h10.964l.007-.001.006-.004.004-.006.001-.007a.017.017 0 0 0-.003-.01l-1.703-2.554a1.745 1.745 0 0 1-.294-.97V5A3.5 3.5 0 0 0 8 1.5Z' }]
+            ];
+            case 'info': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z' }]
+            ];
+            case 'unnotify': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'm4.182 4.31.016.011 10.104 7.316.013.01 1.375.996a.75.75 0 1 1-.88 1.214L13.626 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947V5.305L.31 3.357a.75.75 0 1 1 .88-1.214Zm7.373 7.19L4.5 6.391v1.556c0 .346-.102.683-.294.97l-1.703 2.556a.017.017 0 0 0-.003.01c0 .005.002.009.005.012l.006.004.007.001ZM8 1.5c-.997 0-1.895.416-2.534 1.086A.75.75 0 1 1 4.38 1.55 5 5 0 0 1 13 5v2.373a.75.75 0 0 1-1.5 0V5A3.5 3.5 0 0 0 8 1.5ZM8 16a2 2 0 0 1-1.985-1.75c-.017-.137.097-.25.235-.25h3.5c.138 0 .252.113.235.25A2 2 0 0 1 8 16Z' }]
+            ];
+            case 'robot': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M5.75 7.5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75Zm5.25.75a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 1.5 0v-1.5Z' }],
+                ['path', { d: 'M6.25 0h2A.75.75 0 0 1 9 .75V3.5h3.25a2.25 2.25 0 0 1 2.25 2.25V8h.75a.75.75 0 0 1 0 1.5h-.75v2.75a2.25 2.25 0 0 1-2.25 2.25h-8.5a2.25 2.25 0 0 1-2.25-2.25V9.5H.75a.75.75 0 0 1 0-1.5h.75V5.75A2.25 2.25 0 0 1 3.75 3.5H7.5v-2H6.25a.75.75 0 0 1 0-1.5ZM3 5.75v6.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-6.5a.75.75 0 0 0-.75-.75h-8.5a.75.75 0 0 0-.75.75Z' }]
+            ];
+            case 'mark': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z' }]
+            ];
+            case 'edit': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z' }]
+            ];
+            case 'link': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'm7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z' }]
+            ];
+            case 'star': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694Z' }]
+            ];
+            case 'clock': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.751.751 0 0 1 7 8.25v-3.5a.75.75 0 0 1 1.5 0Z' }]
+            ];
+            case 'block': return ['svg', { viewBox: '1 1 22 22', fill: 'none', stroke, ...baseParams },
+                ['path', { 'stroke-width': 2, 'stroke-linecap': "round", 'stroke-linejoin': "round", d: 'M5.63605 5.63603L18.364 18.364M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z' }]
+            ];
+            case 'edit': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z' }]
+            ];
+            default: return null;
         }
+    };
 
-        static #styles = [
+    (async () => {
+        append(document.head, ['style', [
             `html {
                 --color-bangumi: #fd8a96;
                 --color-bangumi-a20: #fd8a9620;
@@ -1050,26 +1058,6 @@
                             max-width: 100%;
                         }
                     }
-                    .icon-btn {
-                        cursor: pointer;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        width: 30px;
-                        height: 24px;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        display: flex;
-                        backdrop-filter: blur(5px);
-                        border-radius: 22px;
-                        transition: all 0.3s ease;
-                        background-color: var(--color-icon-btn-bg);
-                        color: var(--color-icon-btn-color);
-                    }
-                    .icon-btn:hover {
-                        background-color: var(--color-hover);
-                    }
                     .svg-box {
                         display: flex;
                         justify-content: center;
@@ -1079,18 +1067,14 @@
 
                 .vcomm {
                     ul {
-                        width: auto;
-                        min-width: auto;
-                        height: auto;
-                        display: flex;
-                        gap: 8px;
+                        white-space: nowrap;
                         justify-content: center;
-                        padding: 4px;
+                        align-items: center;
                     }
-                }
-                .vcomm:hover {
-                    ul {
+                    a {
                         display: flex;
+                        align-items: center;
+                        gap: 0.5em;
                     }
                 }
                 #community-helper {
@@ -1194,9 +1178,14 @@
                     }
                 }
             }`
-        ];
-    }
-
-    App.inject();
-
+        ].join('\n')])
+        document.addEventListener('readystatechange', callNow(async () => {
+            if (document.readyState !== 'complete') return;
+            await db.init();
+            userSeek();
+            dockInject();
+            hoverUserListener();
+            parseHasCommentList();
+        }))
+    })()
 })();
