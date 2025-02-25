@@ -15,19 +15,20 @@ const merge = async (file) => {
     const result = await replaceAsync(content, /\/\*\*merge:(.+?)=(.+?)\*\*\/[\s\S]*?\/\*\*merge\*\*\//g, async (match, type, path) => {
         if (!type || !path) return match;
         const content = await readFile(path, 'utf-8');
+        const lf = content.includes('\r\n') ? '\r\n' : '\n';
         switch (type) {
             case 'css': return `/**merge:${type}=${path}**/\`${content.replace(/\s*\n\s*/g, '')}\`/**merge**/`
             case 'js': return `/**merge:${type}=${path}**/${content
                 .replace(/\/\*[\s\S]+?\*\//g, '')
                 .replace(/[^:]\/{2}[\s\S]*?\n/g, '')
                 .replace(/\s*\n\s*/g, ' ')
-                .replace(/ (function|class[^:])/g, '\n    $1')
+                .replace(/ (function|class[^:])/g, lf + '    $1')
                 .replace(/ ([\)\]])/g, '$1')
                 .replace(/([\(\[]) /g, '$1')
                 .replace(/,\s/g, ', ')
                 .replace(/\s$/, '')
-                }\n    /**merge**/`
-            case 'jsmin': return `/**merge:${type}=${path}**/\n    ${content
+                }${lf}    /**merge**/`
+            case 'jsmin': return `/**merge:${type}=${path}**/${lf}    ${content
                 .replace(/\/\*[\s\S]+?\*\//g, '')
                 .replace(/[^:]\/{2}[\s\S]*?\n/g, '')
                 .replace(/\s*\n\s*/g, ' ')
@@ -35,7 +36,7 @@ const merge = async (file) => {
                 .replace(/([\(\[]) /g, '$1')
                 .replace(/,\s/g, ', ')
                 .replace(/\s$/, '')
-                }\n    /**merge**/`
+                }${lf}    /**merge**/`
         }
     })
     if (result !== content) {
