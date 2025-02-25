@@ -1,0 +1,20 @@
+html {
+    --color-base: #ffffff;
+    --color-base-a0f: #ffffff0f;
+    --color-base-a20: #ffffff20;
+    --color-base-a40: #ffffff40;
+    --color-base-a80: #ffffff80;
+    --color-base-ad0: #ffffffd0;
+
+    --color-gray-1: #e8e8e8;
+    --color-gray-2: #cccccc;
+    --color-gray-3: #aaaaaa;
+    --color-gray-4: #969696;
+
+    --color-gray-11: #cccccc;
+
+    --color-bangumi-2: #AB515D;
+    --color-bangumi-2-a20: #AB515D20;
+    --color-bangumi-2-a40: #AB515D40;
+    --color-bangumi-2-a80: #AB515D80;
+}

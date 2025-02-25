@@ -1,0 +1,70 @@
+html {
+    --color-bangumi: #fd8a96;
+    --color-bangumi-a20: #fd8a9620;
+    --color-bangumi-a40: #fd8a9640;
+    --color-bangumi-a80: #fd8a9680;
+
+    --color-white: #ffffff;
+    --color-white-ad0: #ffffffd0;
+    --color-black: #000000;
+    --color-black-a0f: #0000000f;
+    --color-black-a20: #00000020;
+    --color-black-a60: #00000060;
+    --color-black-ad0: #000000d0;
+
+    --color-yellow: #f9c74c;
+    --color-yellow-a20: #f9c74c20;
+    --color-yellow-a40: #f9c74c40;
+    --color-yellow-a80: #f9c74c80;
+
+    --color-purple: #a54cf9;
+    --color-purple-a20: #a54cf920;
+    --color-purple-a40: #a54cf940;
+    --color-purple-a80: #a54cf980;
+
+    --color-blue: #02a3fb;
+    --color-blue-a20: #02a3fb20;
+    --color-blue-a40: #02a3fb40;
+    --color-blue-a80: #02a3fb80;
+
+    --color-green: #95eb89;
+    --color-green-a20: #95eb8920;
+    --color-green-a40: #95eb8940;
+    --color-green-a80: #95eb8980;
+
+    --color-dock-sp: var(--color-gray-2);
+    
+    --color-switch-border: var(--color-gray-2);
+    --color-switch-on: var(--color-green);
+    --color-switch-off: var(--color-gray-4);
+    --color-switch-bar-border: var(--color-white);
+    --color-switch-bar-inner: var(--color-gray-11);
+
+    --color-hover: var(--color-blue);
+    --color-icon-btn-bg: var(--color-bangumi-a40);
+    --color-icon-btn-color: var(--color-white);
+
+    --color-reply-sp: var(--color-gray-1);
+    --color-reply-tips: var(--color-gray-3);
+
+    --color-reply-normal-top: var(--color-bangumi);
+    --color-reply-normal-bg: var(--color-bangumi-a20);
+    --color-reply-normal-shadow: var(--color-bangumi-a80);
+
+    --color-reply-owner-top: var(--color-yellow);
+    --color-reply-owner-bg: var(--color-yellow-a20);
+    --color-reply-owner-shadow: var(--color-yellow-a80);
+
+    --color-reply-floor-top: var(--color-purple);
+    --color-reply-floor-bg: var(--color-purple-a20);
+    --color-reply-floor-shadow: var(--color-purple-a80);
+
+    --color-sicky-bg: var(--color-base-a20);
+    --color-sicky-border: var(--color-bangumi-a40);
+    --color-sicky-shadow: var(--color-base-a0f);
+    --color-sicky-textarea: var(--color-base-ad0);
+
+    --color-sicky-hover-bg: var(--color-bangumi-a20);
+    --color-sicky-hover-border: var(--color-bangumi);
+    --color-sicky-hover-shadow: var(--color-bangumi);
+}
