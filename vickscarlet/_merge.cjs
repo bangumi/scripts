@@ -21,12 +21,20 @@ const merge = async (file) => {
                 .replace(/\/\*[\s\S]+?\*\//g, '')
                 .replace(/[^:]\/{2}[\s\S]*?\n/g, '')
                 .replace(/\s*\n\s*/g, ' ')
-                .replace(/(function |class )/g, '\n    $1')
+                .replace(/ (function|class[^:])/g, '\n    $1')
+                .replace(/ ([\)\]])/g, '$1')
+                .replace(/([\(\[]) /g, '$1')
+                .replace(/,\s/g, ', ')
+                .replace(/\s$/, '')
                 }\n    /**merge**/`
             case 'jsmin': return `/**merge:${type}=${path}**/\n    ${content
                 .replace(/\/\*[\s\S]+?\*\//g, '')
                 .replace(/[^:]\/{2}[\s\S]*?\n/g, '')
                 .replace(/\s*\n\s*/g, ' ')
+                .replace(/ ([\)\}\]])/g, '$1')
+                .replace(/([\(\[]) /g, '$1')
+                .replace(/,\s/g, ', ')
+                .replace(/\s$/, '')
                 }\n    /**merge**/`
         }
     })
