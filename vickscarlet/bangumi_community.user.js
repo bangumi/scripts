@@ -5,8 +5,11 @@
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/*
 // @icon         https://bgm.tv/img/favicon.ico
+// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/bangumi_community.user.js
+// @match        *://bgm.tv/*
+// @match        *://chii.in/*
+// @match        *://bangumi.tv/*
 // @run-at       document-start
 // ==/UserScript==
 (async () => {

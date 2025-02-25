@@ -5,8 +5,11 @@
 // @description  Bangumi 挖坟人探测器, 看看是谁在挖坟，在日志和小组里生效
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/*
 // @icon         https://bgm.tv/img/favicon.ico
+// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/bangumi_necrobumping_detector.user.js
+// @match        *://bgm.tv/*
+// @match        *://chii.in/*
+// @match        *://bangumi.tv/*
 // ==/UserScript==
 (() => {
     const column = document.querySelector('#columnInSubjectA');

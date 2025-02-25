@@ -5,8 +5,11 @@
 // @description  优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/*
 // @icon         https://bgm.tv/img/favicon.ico
+// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/bangumi_comment_list_optimization.user.js
+// @match        *://bgm.tv/*
+// @match        *://chii.in/*
+// @match        *://bangumi.tv/*
 // @run-at       document-start
 // ==/UserScript==
 (async () => {

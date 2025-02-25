@@ -5,8 +5,11 @@
 // @version      1.3.9
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
-// @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)\/(user)\/.*/
 // @icon         https://bgm.tv/img/favicon.ico
+// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/bangumi_report.user.js
+// @match        *://bgm.tv/user/*
+// @match        *://chii.in/user/*
+// @match        *://bangumi.tv/user/*
 // ==/UserScript==
 (async () => {
     const uid = /\/user\/(.+)?(\/.*)?/.exec(window.location.href)?.[1];

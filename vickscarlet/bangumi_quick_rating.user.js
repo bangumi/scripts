@@ -5,8 +5,23 @@
 // @description  Bangumi 收藏快速评分, 仅自己收藏页面生效
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
-// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)/(anime|book|game|music|real)/list/[0-9a-zA-Z_-]*/(collect|do|dropped|on_hold|wish)
 // @icon         https://bgm.tv/img/favicon.ico
+// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/bangumi_quick_rating.user.js
+// @match        *://bgm.tv/anime/list/*/*
+// @match        *://bgm.tv/book/list/*/*
+// @match        *://bgm.tv/game/list/*/*
+// @match        *://bgm.tv/music/list/*/*
+// @match        *://bgm.tv/real/list/*/*
+// @match        *://chii.in/anime/list/*/*
+// @match        *://chii.in/book/list/*/*
+// @match        *://chii.in/game/list/*/*
+// @match        *://chii.in/music/list/*/*
+// @match        *://chii.in/real/list/*/*
+// @match        *://bangumi.tv/anime/list/*/*
+// @match        *://bangumi.tv/book/list/*/*
+// @match        *://bangumi.tv/game/list/*/*
+// @match        *://bangumi.tv/music/list/*/*
+// @match        *://bangumi.tv/real/list/*/*
 // ==/UserScript==
 (() => {
     const user = location.pathname.split('/').at(-2);
