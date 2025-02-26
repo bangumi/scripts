@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.10
+// @version      1.3.11
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
@@ -16,7 +16,8 @@
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
     /**merge**/
     /**merge:js=_common.dom.js**/
-    function setProps(element, props) { if (!props || typeof props !== 'object') return element; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'class') addClass(element, value); else if (key === 'style' && typeof value === 'object') setStyle(element, value); else element.setAttribute(key, value); } return element; }
+    function setEvents(element, events) { for (const [event, listener] of events) { element.addEventListener(event, listener); } return element; }
+    function setProps(element, props) { if (!props || typeof props !== 'object') return element; const events = []; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'events') { if (Array.isArray(value)) { events.push(...value); } else { for (const event in value) { events.push([event, value[event]]); } } } else if (key === 'class') { addClass(element, value); } else if (key === 'style' && typeof value === 'object') { setStyle(element, value); } else if (key.startsWith('on')) { events.push([key.slice(2).toLowerCase(), value]); } else { element.setAttribute(key, value); } } setEvents(element, events); return element; }
     function addClass(element, value) { element.classList.add(...[value].flat()); return element; }
     function setStyle(element, styles) { for (let [k, v] of Object.entries(styles)) { if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k)) v += 'px'; element.style[k] = v; } return element; }
     function create(name, props, ...childrens) { if (name === 'svg') return createSVG(name, props, ...childrens); const element = document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); }
@@ -28,6 +29,7 @@
     /**merge:js=_common.util.js**/
     function callWhenDone(fn) { let done = true; return async () => { if (!done) return; done = false; await fn(); done = true; } }
     function callNow(fn) { fn(); return fn; }
+    function map(list, fn, ret = []) { let i = 0; for (const item of list) { const result = fn(item, i, list); ret.push(result); i++; } return ret }
     /**merge**/
     /**merge:js=_common.database.js**/
     class Collection { constructor(master, { collection, options, indexes }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; } #master; #collection; #options; #indexes; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction(this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result)); }) }, mode) } async get(key, index = '') { return this.transaction(store => (index ? store.index(index) : store).get(key)); } async put(data) { return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async clear() { return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } }

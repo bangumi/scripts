@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.0.6
+// @version      0.0.7
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -17,7 +17,8 @@
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
     /**merge**/
     /**merge:js=_common.dom.js**/
-    function setProps(element, props) { if (!props || typeof props !== 'object') return element; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'class') addClass(element, value); else if (key === 'style' && typeof value === 'object') setStyle(element, value); else element.setAttribute(key, value); } return element; }
+    function setEvents(element, events) { for (const [event, listener] of events) { element.addEventListener(event, listener); } return element; }
+    function setProps(element, props) { if (!props || typeof props !== 'object') return element; const events = []; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'events') { if (Array.isArray(value)) { events.push(...value); } else { for (const event in value) { events.push([event, value[event]]); } } } else if (key === 'class') { addClass(element, value); } else if (key === 'style' && typeof value === 'object') { setStyle(element, value); } else if (key.startsWith('on')) { events.push([key.slice(2).toLowerCase(), value]); } else { element.setAttribute(key, value); } } setEvents(element, events); return element; }
     function addClass(element, value) { element.classList.add(...[value].flat()); return element; }
     function setStyle(element, styles) { for (let [k, v] of Object.entries(styles)) { if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k)) v += 'px'; element.style[k] = v; } return element; }
     function create(name, props, ...childrens) { if (name === 'svg') return createSVG(name, props, ...childrens); const element = document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); }
@@ -29,6 +30,7 @@
     /**merge:js=_common.util.js**/
     function callWhenDone(fn) { let done = true; return async () => { if (!done) return; done = false; await fn(); done = true; } }
     function callNow(fn) { fn(); return fn; }
+    function map(list, fn, ret = []) { let i = 0; for (const item of list) { const result = fn(item, i, list); ret.push(result); i++; } return ret }
     /**merge**/
     /**merge:js=_common.database.js**/
     class Collection { constructor(master, { collection, options, indexes }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; } #master; #collection; #options; #indexes; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction(this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result)); }) }, mode) } async get(key, index = '') { return this.transaction(store => (index ? store.index(index) : store).get(key)); } async put(data) { return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async clear() { return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } }
@@ -37,38 +39,44 @@
     /**merge:js=_common.event.js**/
     class Event { static #listeners = new Map(); static on(event, listener) { if (!this.#listeners.has(event)) this.#listeners.set(event, new Set()); this.#listeners.get(event).add(listener); } static emit(event, ...args) { if (!this.#listeners.has(event)) return; for (const listener of this.#listeners.get(event).values()) listener(...args); } static off(event, listener) { if (!this.#listeners.has(event)) return; this.#listeners.get(event).delete(listener); } }
     /**merge**/
+    /**merge:js=_common.bangumi.js**/
+    function whoami() { const nid = window.parent.CHOBITS_UID ?? 0; const dockA = window.parent.document.querySelector('#dock li.first a'); if (dockA) { const id = dockA.href.split('/').pop(); return { id, nid }; } const bannerAvatar = window.parent.document.querySelector('.idBadgerNeue> .avatar'); if (bannerAvatar) { const id = bannerAvatar.href.split('/').pop(); return { id, nid }; } return null; }
+    /**merge**/
     addStyle(
-        /**merge:css=bangumi_community.user.colors.light.css**/`html {--color-base: #ffffff;--color-base-a0f: #ffffff0f;--color-base-a20: #ffffff20;--color-base-a40: #ffffff40;--color-base-a80: #ffffff80;--color-base-ad0: #ffffffd0;--color-gray-1: #e8e8e8;--color-gray-2: #cccccc;--color-gray-3: #aaaaaa;--color-gray-4: #969696;--color-gray-11: #cccccc;--color-bangumi-2: #AB515D;--color-bangumi-2-a20: #AB515D20;--color-bangumi-2-a40: #AB515D40;--color-bangumi-2-a80: #AB515D80;}`/**merge**/,
-        /**merge:css=bangumi_community.user.colors.dark.css**/`html[data-theme='dark'] {--color-base: #000000;--color-base-a0f: #0000000f;--color-base-a20: #00000020;--color-base-a40: #00000040;--color-base-a80: #00000080;--color-base-ad0: #000000d0;--color-gray-1: #444444;--color-gray-2: #555555;--color-gray-3: #6a6a6a;--color-gray-4: #888888;--color-gray-11: #cccccc;--color-bangumi-2: #ffb6bd;--color-bangumi-2-a20: #ffb6bd20;--color-bangumi-2-a40: #ffb6bd40;--color-bangumi-2-a80: #ffb6bd80;}`/**merge**/,
-        /**merge:css=bangumi_community.user.colors.css**/`html {--color-bangumi: #fd8a96;--color-bangumi-a20: #fd8a9620;--color-bangumi-a40: #fd8a9640;--color-bangumi-a80: #fd8a9680;--color-white: #ffffff;--color-white-ad0: #ffffffd0;--color-black: #000000;--color-black-a0f: #0000000f;--color-black-a20: #00000020;--color-black-a60: #00000060;--color-black-ad0: #000000d0;--color-yellow: #f9c74c;--color-yellow-a20: #f9c74c20;--color-yellow-a40: #f9c74c40;--color-yellow-a80: #f9c74c80;--color-purple: #a54cf9;--color-purple-a20: #a54cf920;--color-purple-a40: #a54cf940;--color-purple-a80: #a54cf980;--color-blue: #02a3fb;--color-blue-a20: #02a3fb20;--color-blue-a40: #02a3fb40;--color-blue-a80: #02a3fb80;--color-green: #95eb89;--color-green-a20: #95eb8920;--color-green-a40: #95eb8940;--color-green-a80: #95eb8980;--color-dock-sp: var(--color-gray-2);--color-switch-border: var(--color-gray-2);--color-switch-on: var(--color-green);--color-switch-off: var(--color-gray-4);--color-switch-bar-border: var(--color-white);--color-switch-bar-inner: var(--color-gray-11);--color-hover: var(--color-blue);--color-icon-btn-bg: var(--color-bangumi-a40);--color-icon-btn-color: var(--color-white);--color-reply-sp: var(--color-gray-1);--color-reply-tips: var(--color-gray-3);--color-reply-normal-top: var(--color-bangumi);--color-reply-normal-bg: var(--color-bangumi-a20);--color-reply-normal-shadow: var(--color-bangumi-a80);--color-reply-owner-top: var(--color-yellow);--color-reply-owner-bg: var(--color-yellow-a20);--color-reply-owner-shadow: var(--color-yellow-a80);--color-reply-floor-top: var(--color-purple);--color-reply-floor-bg: var(--color-purple-a20);--color-reply-floor-shadow: var(--color-purple-a80);--color-sicky-bg: var(--color-base-a20);--color-sicky-border: var(--color-bangumi-a40);--color-sicky-shadow: var(--color-base-a0f);--color-sicky-textarea: var(--color-base-ad0);--color-sicky-hover-bg: var(--color-bangumi-a20);--color-sicky-hover-border: var(--color-bangumi);--color-sicky-hover-shadow: var(--color-bangumi);}`/**merge**/,
-        /**merge:css=bangumi_community.user.1.css**/`html {.columns {> .column:not(#columnSubjectHomeB,#columnHomeB):last-child {> * { margin: 0; }display: flex;gap: 10px;flex-direction: column;position: sticky;top: 0;align-self: flex-start;max-height: 100vh;overflow-y: auto;}}.avatar:not(.tinyCover) {img,.avatarNeue {border-radius: 50% !important;}}.postTopic {border-bottom: none;.inner.tips {display: flex;height: 40px;align-items: center;gap: 8px;color: var(--color-reply-tips);}}#comment_list {box-sizing: border-box;.row:nth-child(odd),.row:nth-child(even) {background: transparent;}> .clearit:first-child {border-top: 1px solid transparent;}> .clearit,.topic_sub_reply > .clearit {box-sizing: border-box;border-bottom: none !important;border-top: 1px dashed var(--color-reply-sp);.inner.tips {display: flex;height: 40px;align-items: center;gap: 8px;color: var(--color-reply-tips);}.sub_reply_collapse .inner.tips {height: auto;}}> .clearit:not(:has(.topic_sub_reply > .clearit:hover)):hover,.topic_sub_reply > .clearit:hover {position: relative;z-index: 1;}> .clearit:not(:has(.topic_sub_reply > .clearit:hover)):hover,.topic_sub_reply > .clearit:hover {border-top: 1px solid var(--color-reply-normal-top) !important;background: linear-gradient(var(--color-reply-normal-bg) 1px, #00000000 60px) !important;box-shadow: 0 0 4px var(--color-reply-normal-shadow);}.clearit.owner {border-top: 1px solid var(--color-reply-owner-top) !important;background: linear-gradient(var(--color-reply-owner-bg) 1px, #00000000 60px) !important;}.clearit.owner:not(:has(.clearit:hover)):hover {border-top: 1px solid var(--color-reply-owner-top) !important;background: linear-gradient(var(--color-reply-owner-bg) 1px, #00000000 60px) !important;box-shadow: 0 0 4px var(--color-reply-owner-shadow);}.clearit.floor {border-top: 1px solid var(--color-reply-floor-top) !important;background: linear-gradient(var(--color-reply-floor-bg) 1px, #00000000 60px) !important;}.clearit.floor:not(:has(.clearit:hover)):hover {border-top: 1px solid var(--color-reply-floor-top) !important;background: linear-gradient(var(--color-reply-floor-bg) 1px, #00000000 60px) !important;box-shadow: 0 0 4px var(--color-reply-floor-shadow);}div.reply_collapse {padding: 5px 10px;}}@media (max-width: 640px) {.columns {> .column:last-child {align-self: auto !important;}}}}`/**merge**/,
-        /**merge:css=bangumi_community.user.2.css**/`html, html[data-theme='dark'] {#dock {li {position: relative;height: 18px;display: flex;align-items: center;justify-content: center;}li:not(:last-child) {border-right: 1px solid var(--color-dock-sp);}}.svg-icon {display: flex !important;align-items: center !important;justify-content: center !important;span {visibility: hidden;position: absolute;top: 0;left: 50%;transform: translate(-50%, calc(-100% - 10px));padding: 2px 5px;border-radius: 5px;background: rgba(0, 0, 0, 0.6);white-space: nowrap;color: #fff;}span::after {content: '';position: absolute !important;bottom: 0;left: 50%;border-top: 5px solid rgba(0, 0, 0, 0.6);border-right: 5px solid transparent;border-left: 5px solid transparent;backdrop-filter: blur(5px);transform: translate(-50%, 100%);}}.svg-icon:hover {span {visibility: visible;}}.switch {display: inline-block;position: relative;cursor: pointer;border-radius: 50px;height: 12px;width: 40px;border: 1px solid var(--color-switch-border);}.switch::before {content: '';display: block;position: absolute;pointer-events: none;height: 12px;width: 40px;top: 0px;border-radius: 24px;background-color: var(--color-switch-off);}.switch::after {content: '';display: block;position: absolute;pointer-events: none;top: 0;left: 0;height: 12px;width: 24px;border-radius: 24px;box-sizing: border-box;background-color: var(--color-switch-bar-inner);border: 5px solid var(--color-switch-bar-border);}.switch[switch="1"]::before {background-color: var(--color-switch-on);}.switch[switch="1"]::after {left: 16px;}.clearit {transition: all 0.3s ease;}.topic-box {#comment_list {.icon {color: var(--color-gray-11);}}.block {display: none;}.sicky-reply {background-color: var(--color-sicky-bg);border: 1px solid var(--color-sicky-border);box-shadow: 0px 0px 0px 2px var(--color-sicky-shadow);textarea {background-color: var(--color-sicky-textarea);}}.sicky-reply:has(:focus),.sicky-reply:hover {grid-template-rows: 1fr;background-color: var(--color-sicky-hover-bg);border: 1px solid var(--color-sicky-hover-border);box-shadow: 0 0 4px var(--color-sicky-hover-shadow);}#reply_wrapper {position: relative;padding: 5px;min-height: 50px;margin: 0;textarea.reply {width: 100% !important;}.switch {position: absolute;right: 10px;top: 10px;}.tip.rr + .switch {top: 35px;}}.sicky-reply {position: sticky;top: 0;z-index: 2;display: grid;height: auto;grid-template-rows: 0fr;border-radius: 4px;backdrop-filter: blur(5px);transition: all 0.3s ease;width: calc(100% - 1px);overflow: hidden;#slider {position: absolute;right: 5px;top: 13px;max-width: 100%;}}.svg-box {display: flex;justify-content: center;align-items: center;}}.vcomm {ul {white-space: nowrap;justify-content: center;align-items: center;}a {display: flex;align-items: center;gap: 0.5em;}}#community-helper {border-radius: 5px;display: flex;flex-direction: column;> .title {background: var(--color-bangumi);padding: 8px;color: var(--color-base-ad0);border-radius: 4px 4px 0 0;}> .user-info {padding: 10px;color: var(--color-bangumi-2);fieldset {padding-left: 10px;legend {font-weight: bold;margin-left: -10px;}legend::after {content: ':';}}ul {display: flex;flex-wrap: wrap;gap: 4px;li {padding: 0 5px;border-radius: 50px;background: var(--color-bangumi-a40);border: 1px solid var(--color-bangumi);box-sizing: border-box;}}}}#community-helper:has(.user-info:empty) {visibility: hidden;}#robot_balloon {padding: 10px;.speech {ul {display: flex;flex-wrap: wrap;}}> .inner {padding: 0;max-height: 318px;background: none;overflow-y: scroll;scrollbar-width: none;::-webkit-scrollbar {display: none;}}#community-helper {padding: 0;box-shadow: none;> .title {display: none;}> .user-info {padding: 0;color: unset;}}}#robot_balloon::before {content: '';position: absolute;top: 0;left: 0;right: 0;bottom: 10px;background: url(/img/ukagaka/balloon_pink.png) no-repeat top left;background-size: 100% auto;z-index: -1;}.ukagaka_balloon_pink_bottom {position: absolute;height: 10px;left: 0;right: 0;bottom: 0;width: 100% !important;background-size: 100% auto;z-index: -1;}@media (max-width: 640px) {.columns {> .column:last-child {align-self: auto !important;}}#robot_balloon > .inner {max-height: 125px;}}}`/**merge**/,
+        /**merge:css=bangumi_community.user.colors.light.css**/`html {--color-base: #ffffff;--color-base-2: #e8e8e8;--color-base-bg: #eaeffba0;--color-gray-1: #e8e8e8;--color-gray-2: #cccccc;--color-gray-3: #aaaaaa;--color-gray-4: #969696;--color-gray-11: #cccccc;--color-bangumi-2: #AB515D;}`/**merge**/,
+        /**merge:css=bangumi_community.user.colors.dark.css**/`html[data-theme='dark'] {--color-base: #000000;--color-base-2: #1f1f1f;--color-base-bg: #23262ba0;--color-gray-1: #444444;--color-gray-2: #555555;--color-gray-3: #6a6a6a;--color-gray-4: #888888;--color-gray-11: #cccccc;--color-bangumi-2: #ffb6bd;}`/**merge**/,
+        /**merge:css=bangumi_community.user.colors.css**/`html {--color-bangumi: #fd8a96;--color-white: #ffffff;--color-black: #000000;--color-yellow: #f9c74c;--color-purple: #a54cf9;--color-blue: #02a3fb;--color-green: #95eb89;--color-red: #f94144;--color-dock-sp: var(--color-gray-2);--color-switch-border: var(--color-gray-2);--color-switch-on: var(--color-green);--color-switch-off: var(--color-gray-4);--color-switch-bar-border: var(--color-white);--color-switch-bar-inner: var(--color-gray-11);--color-hover: var(--color-blue);--color-icon-btn-bg: rgb(from var(--color-bangumi) r g b / .25);--color-icon-btn-color: var(--color-white);--color-reply-sp: var(--color-gray-1);--color-reply-tips: var(--color-gray-3);--color-reply-normal: var(--color-bangumi);--color-reply-owner: var(--color-yellow);--color-reply-floor: var(--color-purple);--color-reply-friend: var(--color-green);--color-reply-self: var(--color-blue);--color-sicky-bg: rgb(from var(--color-base) r g b / .125);--color-sicky-border: rgb(from var(--color-bangumi) r g b / .25);--color-sicky-shadow: rgb(from var(--color-base) r g b / .05);--color-sicky-textarea: rgb(from var(--color-base) r g b / .8);--color-sicky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);--color-sicky-hover-border: var(--color-bangumi);--color-sicky-hover-shadow: var(--color-bangumi);--color-primary: var(--color-bangumi);--color-secondary: var(--color-blue);--color-success: var(--color-green);--color-info: var(--color-blue);--color-important: var(--color-purple);--color-warning: var(--color-yellow);--color-danger: var(--color-red);}`/**merge**/,
+        /**merge:css=bangumi_community.user.1.css**/`html, html[data-theme='dark'] {#dock {li {position: relative;height: 18px;display: flex;align-items: center;justify-content: center;}li:not(:last-child) {border-right: 1px solid var(--color-dock-sp);}}.columns {> #columnInSubjectB {> * { margin: 0; }display: flex;gap: 10px;flex-direction: column;position: sticky;top: 0;align-self: flex-start;max-height: 100vh;overflow-y: auto;}}*:has(>#comment_list) {.postTopic {border-bottom: none;.inner.tips {display: flex;height: 40px;align-items: center;gap: 8px;color: var(--color-reply-tips);}}.avatar:not(.tinyCover) {img,.avatarNeue {border-radius: 50% !important;}}.clearit:not(.message) {transition: all 0.3s ease;box-sizing: border-box;border-bottom: none !important;border-top: 1px dashed var(--color-reply-sp);.inner.tips {display: flex;height: 40px;align-items: center;gap: 8px;color: var(--color-reply-tips);}.sub_reply_collapse .inner.tips { height: auto; }--color-reply: var(--color-bangumi);}.clearit.friend { --color-reply: var(--color-green); }.clearit.owner { --color-reply: var(--color-yellow); }.clearit.floor { --color-reply: var(--color-purple); }.clearit.self { --color-reply: var(--color-blue); }.clearit.friend, .clearit.owner, .clearit.floor, .clearit.self {border-top: 1px solid var(--color-reply) !important;background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;> .inner > :first-child > strong::before, > .inner > strong::before {padding: 1px 4px;margin-right: 4px;border-radius: 2px;background: rgb(from var(--color-bangumi) r g b /.5);}}.clearit:not(:has(.clearit:not(.message):hover), .message):hover {border-top: 1px solid var(--color-reply) !important;background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;box-shadow: 0 0 4px rgb(from var(--color-reply) r g b / .5);}.clearit.self { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自'; } }.clearit.friend { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友'; } }.clearit.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼'; } }.clearit.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '层'; } }.clearit.friend.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼'; } }.clearit.friend.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 层'; } }.clearit.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼 层'; } }.clearit.self.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼'; } }.clearit.self.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 层'; } }.clearit.friend.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼 层'; } }.clearit.self.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼 层'; } }}#comment_list {box-sizing: border-box;.row:nth-child(odd), .row:nth-child(even) { background: transparent; }> .clearit:first-child { border-top: 1px solid transparent; }div.reply_collapse { padding: 5px 10px; }}@media (max-width: 640px) {.columns { > .column:last-child { align-self: auto !important; } }}}`/**merge**/,
+        /**merge:css=bangumi_community.user.2.css**/`html, html[data-theme='dark'] {.vc-btn {cursor: pointer;padding: 0.5em 1em;font-size: 18px;font-weight: 900;text-shadow: 0 0 4px rgb(from var(--color-black) r g b /.8);background: var(--color-primary);box-shadow: 0 0 4px rgb(from var(--color-black) r g b / .375);color: var(--color-white);border-radius: 4px;}.vc-btn.primary { background: var(--color-primary); }.vc-btn.secondary { background: var(--color-secondary); }.vc-btn.success { background: var(--color-success); }.vc-btn.info { background: var(--color-info); }.vc-btn.important { background: var(--color-important); }.vc-btn.warning { background: var(--color-warning); }.vc-btn.danger { background: var(--color-danger); }.svg-icon {display: flex !important;align-items: center !important;justify-content: center !important;span {visibility: hidden;position: absolute;top: 0;left: 50%;transform: translate(-50%, calc(-100% - 10px));padding: 2px 5px;border-radius: 5px;background: hexa(0, 0, 0, 0.6);white-space: nowrap;color: #fff;}span::after {content: '';position: absolute !important;bottom: 0;left: 50%;border-top: 5px solid hexa(0, 0, 0, 0.6);border-right: 5px solid transparent;border-left: 5px solid transparent;backdrop-filter: blur(5px);transform: translate(-50%, 100%);}}.svg-icon:hover {span {visibility: visible;}}.switch {display: inline-block;position: relative;cursor: pointer;border-radius: 50px;height: 12px;width: 40px;border: 1px solid var(--color-switch-border);}.switch::before {content: '';display: block;position: absolute;pointer-events: none;height: 12px;width: 40px;top: 0px;border-radius: 24px;background-color: var(--color-switch-off);}.switch::after {content: '';display: block;position: absolute;pointer-events: none;top: 0;left: 0;height: 12px;width: 24px;border-radius: 24px;box-sizing: border-box;background-color: var(--color-switch-bar-inner);border: 5px solid var(--color-switch-bar-border);}.switch[switch="1"]::before {background-color: var(--color-switch-on);}.switch[switch="1"]::after {left: 16px;}.topic-box {#comment_list {.icon {color: var(--color-gray-11);}}.block {display: none;}.sicky-reply {background-color: var(--color-sicky-bg);border: 1px solid var(--color-sicky-border);box-shadow: 0px 0px 0px 2px var(--color-sicky-shadow);textarea {background-color: var(--color-sicky-textarea);}}.sicky-reply:has(:focus),.sicky-reply:hover {grid-template-rows: 1fr;background-color: var(--color-sicky-hover-bg);border: 1px solid var(--color-sicky-hover-border);box-shadow: 0 0 4px var(--color-sicky-hover-shadow);}#reply_wrapper {position: relative;padding: 5px;min-height: 50px;margin: 0;textarea.reply {width: 100% !important;}.switch {position: absolute;right: 10px;top: 10px;}.tip.rr + .switch {top: 35px;}}.sicky-reply {position: sticky;top: 0;z-index: 2;display: grid;height: auto;grid-template-rows: 0fr;border-radius: 4px;backdrop-filter: blur(5px);transition: all 0.3s ease;width: calc(100% - 1px);overflow: hidden;#slider {position: absolute;right: 5px;top: 13px;max-width: 100%;}}.svg-box {display: flex;justify-content: center;align-items: center;}}.vcomm {ul {white-space: nowrap;justify-content: center;align-items: center;}a {display: flex;align-items: center;gap: 0.5em;}}fieldset.tags {padding-left: 10px;legend {font-weight: bold;margin-left: -10px;display: flex;align-items: center;gap: 0.5em;}legend::after {content: ':';margin-left: -0.5em;}ul {display: flex;flex-wrap: wrap;gap: 4px;li {padding: 0 5px;border-radius: 50px;background: rgb(from var(--color-bangumi) r g b / .25);border: 1px solid var(--color-bangumi);box-sizing: border-box;}}}#community-helper {border-radius: 5px;display: flex;flex-direction: column;> .title {background: var(--color-bangumi);padding: 8px;color: rgb(from var(--color-base) r g b / .8);border-radius: 4px 4px 0 0;}> .user-info {padding: 10px;color: var(--color-bangumi-2);}}#community-helper:has(.user-info:empty) {visibility: hidden;}#robot_balloon {padding: 10px;.speech {ul {display: flex;flex-wrap: wrap;}}> .inner {padding: 0;max-height: 318px;background: none;overflow-y: scroll;scrollbar-width: none;::-webkit-scrollbar {display: none;}}#community-helper {padding: 0;box-shadow: none;> .title {display: none;}> .user-info {padding: 0;color: unset;}}}#robot_balloon::before {content: '';position: absolute;top: 0;left: 0;right: 0;bottom: 10px;background: url(/img/ukagaka/balloon_pink.png) no-repeat top left;background-size: 100% auto;z-index: -1;}.ukagaka_balloon_pink_bottom {position: absolute;height: 10px;left: 0;right: 0;bottom: 0;width: 100% !important;background-size: 100% auto;z-index: -1;}#community-helper-user-panel {position: fixed !important;z-index: 9999;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;> .close-mask {position: absolute;z-index: -1;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;background: rgb(from var(--color-base) r g b / 0.5);cursor: pointer;backdrop-filter: blur(5px);}> .container {max-width: 1024px;max-height: 580px;width: calc(100% - 60px);height: calc(100vh - 60px);display: grid;grid-template-columns: auto auto 1fr 2fr;grid-template-rows: auto auto 3fr;gap: 5px 5px;grid-template-areas:"avatar note note bio""addition note note bio""usedname usedname tags bio";> * {padding: 10px;position: relative;border-radius: 4px;}> *::after,> *::before {content: '';position: absolute;border-radius: 4px;top: 0;left: 0;right: 0;bottom: 0;background-size: cover;z-index: -1;}> *::before {opacity: 0.2;}> *::after {background: rgb(from var(--color-base-2) r g b / .25);/* border: 1px solid rgb(from var(--color-bangumi) r g b /.5); */box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter: blur(10px);}> .avatar::after {background: linear-gradient(150deg, rgb(from var(--color-bangumi) r g b / .25), rgb(from var(--color-base-2) r g b / .25) 75%);}> .avatar {max-height: 160px;min-width: 120px;max-width: 200px;grid-area: avatar;display: flex;flex-direction: column;justify-content: center;align-items: center;gap: 5px;color: var(--color-bangumi);img {width: 100px;height: 100px;border-radius: 100px;object-fit: cover;}svg {width: 100%;height: 50px;text {transform: translate(50%, 0.1em);text-anchor: middle;dominant-baseline: hanging;}}}> .addition {grid-area: addition;}> .tags {grid-area: tags;}> .note {grid-area: note;}> .usedname {grid-area: usedname;max-width: 400px;}> .bio {grid-area: bio;max-width: 480px;min-width: 300px;max-height: 560px;height: calc(100vh - 80px);> div {height: 100%;overflow: auto;}}}}#community-helper-user-panel.loading {> .container {display: none;}> .close-mask::before {content: '';display: block;width: 100px;height: 100px;aspect-ratio: 1;border-radius: 50%;border: 8px solid;box-sizing: border-box;border-color: var(--color-bangumi) transparent;animation: loading-spine 1s infinite;}}@media (max-width: 640px) {#robot_balloon > .inner {max-height: 125px;}}}@keyframes loading-spine {to{transform: rotate(.5turn)}}`/**merge**/,
     )
 
     const db = new Database({
-        dbName: 'VCommunity', version: 3, collections: [
+        dbName: 'VCommunity', version: 4, collections: [
             { collection: 'values', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }] },
+            { collection: 'friends', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }] },
             { collection: 'users', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }] },
             { collection: 'images', options: { keyPath: 'uri' }, indexes: [{ name: 'uri', keyPath: 'uri', unique: true }] }
         ]
     });
-    let user;
     const menu = new class {
-        constructor() {
-            const blockBtn = create('li', ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言'])
-            const editBtn = create('li', ['a', { href: 'javascript:void(0)' }, svg('edit'), '编辑'])
-            const usednameBtn = create('li', ['a', { href: 'javascript:void(0)' }, svg('clock'), '曾用名'])
-            this.#element = create('ul', blockBtn, usednameBtn, editBtn);
-            blockBtn.addEventListener('click', () => this.#block());
-            editBtn.addEventListener('click', () => this.#edit());
-            usednameBtn.addEventListener('click', () => this.#usedname());
-        }
-        #element;
-        #id;
+        constructor() { }
+        #menu = create('ul',
+            ['li', { onClick: () => this.#block() }, ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言']],
+            ['li', { onClick: () => this.#show() }, ['a', { href: 'javascript:void(0)' }, svg('detail'), '详细信息']]
+        );
+        #panel = create('div', { id: 'community-helper-user-panel' },
+            ['div', { class: 'close-mask', onClick: () => this.#close() }],
+            // ['div', { class: 'container' },
+            //     ['li', { onClick: () => this.#usedname() }, ['a', { href: 'javascript:void(0)' }, svg('clock'), '曾用名']],
+            // ],
+        );
 
+        #id;
+        #isShow = false;
+        #style;
         id(id) {
             this.#id = id;
-            return this.#element;
+            return this.#menu;
         }
 
         async #block() {
@@ -77,10 +85,6 @@
             const data = await db.get('users', id) || { id };
             data.block = true;
             await db.put('users', data);
-        }
-
-        async #edit() {
-            console.debug('edit', this.#id)
         }
 
         async #usedname() {
@@ -100,6 +104,70 @@
                 return ret;
             return this.#getUsedNames(id, ret, page + 1);
         }
+
+        #close() {
+            this.#isShow = false;
+            this.#panel.remove();
+            this.#panel.lastElementChild.remove();
+        }
+
+        async #show() {
+            this.#isShow = true;
+            const id = this.#id;
+            this.#panel.classList.add('loading');
+            append(document.body, this.#panel);
+            const data = await db.get('users', id);
+            if (!this.#isShow || id != this.#id) return;
+            const friends = await getFriends();
+            if (!this.#isShow || id != this.#id) return;
+            const res = await fetch('/user/' + id);
+            if (!this.#isShow || id != this.#id) return;
+            if (!res.ok) {
+                append(this.#panel, ['div', {
+                    class: ['vc-btn', 'warning'],
+                    onClick: () => {
+                        this.#panel.lastElementChild.remove();
+                        this.#show()
+                    }
+                }, '重新加载']);
+                this.#panel.classList.remove('loading');
+                return;
+            }
+            const html = await res.text();
+            if (!this.#isShow || id != this.#id) return;
+            const element = document.createElement('html');
+            element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
+            const nameSingle = element.querySelector('#headerProfile .nameSingle');
+            const bioRaw = element.querySelector('.bio');
+            const name = nameSingle.querySelector('.name a').innerText;
+            const avatarSrc = nameSingle.querySelector('.headerAvatar .avatar span').style.backgroundImage.replace('url("', '').replace('")', '');
+            if (this.#style) this.#style.remove();
+            const randomClass = 'v-rand-' + Math.floor(Math.random() * 100000 + 100000).toString(16);
+            this.#style = addStyle(`.${randomClass}::before {background-image: url("${avatarSrc}");}`)
+            const test = create('span', { style: { fontSize: '1px', position: 'absolute', opacity: 0 } }, name)
+            append(this.#panel, test);
+            const width = test.offsetWidth + 0.4;
+            test.remove();
+            const avatar = create('div', { class: 'avatar' },
+                ['img', { src: avatarSrc }],
+                ['svg', { fill: 'currentColor', viewBox: `0 0 ${width} 1` }, ['text', { 'font-size': 1 }, name]]
+            );
+            const bio = create('div', { class: 'bio' }, bioRaw ?? '');
+            if (bioRaw) bioRaw.classList.remove('bio');
+            bio.classList.add(randomClass);
+            data.names.delete(name);
+            const usedname = create('div', { class: 'usedname' },
+                ['fieldset', { class: 'tags' },
+                    ['legend', svg('history'), ['span', '曾用名']],
+                    ['ul', ...map(data.names, name => ['li', name])]
+                ]
+            );
+            const tags = create('div', { class: 'tags' });
+            const note = create('div', { class: 'note' });
+            const addition = create('div', { class: 'addition' });
+            append(this.#panel, ['div', { class: 'container' }, avatar, tags, note, usedname, bio, addition]);
+            this.#panel.classList.remove('loading');
+        }
     }
 
     function hoverUserListener() {
@@ -111,15 +179,14 @@
         const showUser = async (id, currentName) => {
             if (last === id) return;
             last = id;
-            /** @type {User} */
             const data = await db.get('users', id);
             if (!data || last !== id) return;
             removeAllChildren(container);
-            append(container, ['fieldset', ['legend', '用户名'], ['ul', ['li', currentName]]]);
+            append(container, ['fieldset', { class: 'tags' }, ['legend', '用户名'], ['ul', ['li', currentName]]]);
             data.names.delete(currentName);
             if (data.names.size) {
                 const used = ['ul', ...map(data.names, name => ['li', name])]
-                append(container, ['fieldset', ['legend', '曾用名'], used]);
+                append(container, ['fieldset', { class: 'tags' }, ['legend', '曾用名'], used]);
             }
         }
         let timeout;
@@ -181,28 +248,7 @@
         o.remove();
     }
 
-    function userNid() {
-        try {
-            return CHOBITS_UID
-        } catch (e) {
-            console.error('获取 CHOITS_UID 失败', e);
-            return null;
-        }
-    }
-
-    function userSeek() {
-        const dockA = document.querySelector('#dock li.first a');
-        if (dockA) {
-            const nid = userNid();
-            const name = dockA.innerText;
-            const id = dockA.href.split('/').pop();
-            user = { nid, id, name };
-            return true;
-        }
-        return false;
-    }
-
-    function parseHasCommentList() {
+    async function parseHasCommentList() {
         const commentList = document.querySelector('#comment_list')
         if (!commentList) return;
         const e = commentList.parentElement;
@@ -275,17 +321,45 @@
         }
         if (first) handlerClearit(first);
         const owner = e.querySelector('.postTopic')?.getAttribute('data-item-user');
+        const self = whoami()?.id;
+        const friends = await getFriends();
+        if (friends.has(owner)) first.classList.add('friend');
+        if (owner == self) first.classList.add('self');
         for (const comment of Array.from(commentList.children)) {
             const floor = comment.getAttribute('data-item-user')
+            if (friends.has(floor)) comment.classList.add('friend');
             if (floor === owner) comment.classList.add('owner');
+            if (floor === self) comment.classList.add('self');
             handlerClearit(comment)
             comment.querySelectorAll('.clearit').forEach(clearit => {
                 const user = clearit.getAttribute('data-item-user');
+                if (friends.has(user)) clearit.classList.add('friend');
                 if (user === owner) clearit.classList.add('owner');
-                else if (user === floor) clearit.classList.add('floor');
+                if (user === floor) clearit.classList.add('floor');
+                if (user === self) clearit.classList.add('self');
                 handlerClearit(clearit);
             });
         }
+    }
+
+    async function getFriends() {
+        const user = whoami();
+        if (!user) return new Set();
+        const id = user.id;
+        const cache = await db.get('friends', id);
+        if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
+        const res = await fetch(`/user/${id}/friends`);
+        if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
+        const html = await res.text();
+        const element = document.createElement('html')
+        element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
+        const friends = new Set();
+        for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
+            const id = a.href.split('/').pop();
+            friends.add(id);
+        }
+        await db.put('friends', { id, friends, timestamp: Date.now() });
+        return friends;
     }
 
     function svg(type, size = 14) {
@@ -346,6 +420,12 @@
             case 'edit': return ['svg', { viewBox, fill, ...baseParams },
                 ['path', { d: 'M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z' }]
             ];
+            case 'history': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'm.427 1.927 1.215 1.215a8.002 8.002 0 1 1-1.6 5.685.75.75 0 1 1 1.493-.154 6.5 6.5 0 1 0 1.18-4.458l1.358 1.358A.25.25 0 0 1 3.896 6H.25A.25.25 0 0 1 0 5.75V2.104a.25.25 0 0 1 .427-.177ZM7.75 4a.75.75 0 0 1 .75.75v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.751.751 0 0 1 7 8.25v-3.5A.75.75 0 0 1 7.75 4Z' }]
+            ];
+            case 'detail': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25Zm7.47 3.97a.75.75 0 0 1 1.06 0l2 2a.75.75 0 0 1 0 1.06l-2 2a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734L10.69 8 9.22 6.53a.75.75 0 0 1 0-1.06ZM6.78 6.53 5.31 8l1.47 1.47a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215l-2-2a.75.75 0 0 1 0-1.06l2-2a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z' }]
+            ];
             default: return null;
         }
     };
@@ -353,7 +433,6 @@
     document.addEventListener('readystatechange', callNow(async () => {
         if (document.readyState !== 'complete') return;
         await db.init();
-        userSeek();
         dockInject();
         hoverUserListener();
         parseHasCommentList();

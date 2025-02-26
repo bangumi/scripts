@@ -21,3 +21,21 @@ function callNow(fn) {
     fn();
     return fn;
 }
+
+/**
+ * @template T
+ * @template R
+ * @param {Iterable<T>} list
+ * @param {(item: T, index: number, list: Iterable<T>) => R} fn
+ * @param {R[]} ret
+ * @return {R[]}
+ */
+function map(list, fn, ret = []) {
+    let i = 0;
+    for (const item of list) {
+        const result = fn(item, i, list);
+        ret.push(result);
+        i++;
+    }
+    return ret
+}

@@ -1,10 +1,8 @@
 html[data-theme='dark'] {
     --color-base: #000000;
-    --color-base-a0f: #0000000f;
-    --color-base-a20: #00000020;
-    --color-base-a40: #00000040;
-    --color-base-a80: #00000080;
-    --color-base-ad0: #000000d0;
+    --color-base-2: #1f1f1f;
+
+    --color-base-bg: #23262ba0;
 
     --color-gray-1: #444444;
     --color-gray-2: #555555;
@@ -14,7 +12,4 @@ html[data-theme='dark'] {
     --color-gray-11: #cccccc;
 
     --color-bangumi-2: #ffb6bd;
-    --color-bangumi-2-a20: #ffb6bd20;
-    --color-bangumi-2-a40: #ffb6bd40;
-    --color-bangumi-2-a80: #ffb6bd80;
 }

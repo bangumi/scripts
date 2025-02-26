@@ -1,6 +1,18 @@
-html {
+html, html[data-theme='dark'] {
+    #dock {
+        li {
+            position: relative;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        li:not(:last-child) {
+            border-right: 1px solid var(--color-dock-sp);
+        }
+    }
     .columns {
-        > .column:not(#columnSubjectHomeB,#columnHomeB):last-child {
+        > #columnInSubjectB {
             > * { margin: 0; }
             display: flex;
             gap: 10px;
@@ -12,34 +24,25 @@ html {
             overflow-y: auto;
         }
     }
-    .avatar:not(.tinyCover) {
-        img,
-        .avatarNeue {
-            border-radius: 50% !important;
+    *:has(>#comment_list) {
+        .postTopic {
+            border-bottom: none;
+            .inner.tips {
+                display: flex;
+                height: 40px;
+                align-items: center;
+                gap: 8px;
+                color: var(--color-reply-tips);
+            }
         }
-    }
-    .postTopic {
-        border-bottom: none;
-        .inner.tips {
-            display: flex;
-            height: 40px;
-            align-items: center;
-            gap: 8px;
-            color: var(--color-reply-tips);
+        .avatar:not(.tinyCover) {
+            img,
+            .avatarNeue {
+                border-radius: 50% !important;
+            }
         }
-    }
-    #comment_list {
-        box-sizing: border-box;
-
-        .row:nth-child(odd),
-        .row:nth-child(even) {
-            background: transparent;
-        }
-        > .clearit:first-child {
-            border-top: 1px solid transparent;
-        }
-        > .clearit,
-        .topic_sub_reply > .clearit {
+        .clearit:not(.message) {
+            transition: all 0.3s ease;
             box-sizing: border-box;
             border-bottom: none !important;
             border-top: 1px dashed var(--color-reply-sp);
@@ -50,51 +53,48 @@ html {
                 gap: 8px;
                 color: var(--color-reply-tips);
             }
-            .sub_reply_collapse .inner.tips {
-                height: auto;
+            .sub_reply_collapse .inner.tips { height: auto; }
+            --color-reply: var(--color-bangumi);
+        }
+        .clearit.friend { --color-reply: var(--color-green); }
+        .clearit.owner { --color-reply: var(--color-yellow); }
+        .clearit.floor { --color-reply: var(--color-purple); }
+        .clearit.self { --color-reply: var(--color-blue); }
+        .clearit.friend, .clearit.owner, .clearit.floor, .clearit.self {
+            border-top: 1px solid var(--color-reply) !important;
+            background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;
+            > .inner > :first-child > strong::before, > .inner > strong::before {
+                padding: 1px 4px;
+                margin-right: 4px;
+                border-radius: 2px;
+                background: rgb(from var(--color-bangumi) r g b /.5);
             }
         }
+        .clearit:not(:has(.clearit:not(.message):hover), .message):hover {
+            border-top: 1px solid var(--color-reply) !important;
+            background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;
+            box-shadow: 0 0 4px rgb(from var(--color-reply) r g b / .5);
+        }
+        .clearit.self { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自'; } }
+        .clearit.friend { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友'; } }
+        .clearit.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼'; } }
+        .clearit.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '层'; } }
+        .clearit.friend.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼'; } } 
+        .clearit.friend.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 层'; } }
+        .clearit.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼 层'; } }
+        .clearit.self.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼'; } } 
+        .clearit.self.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 层'; } }
+        .clearit.friend.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼 层'; } }
+        .clearit.self.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼 层'; } }
+    }
 
-        > .clearit:not(:has(.topic_sub_reply > .clearit:hover)):hover,
-        .topic_sub_reply > .clearit:hover {
-            position: relative;
-            z-index: 1;
-        }
-
-        > .clearit:not(:has(.topic_sub_reply > .clearit:hover)):hover,
-        .topic_sub_reply > .clearit:hover {
-            border-top: 1px solid var(--color-reply-normal-top) !important;
-            background: linear-gradient(var(--color-reply-normal-bg) 1px, #00000000 60px) !important;
-            box-shadow: 0 0 4px var(--color-reply-normal-shadow);
-        }
-        .clearit.owner {
-            border-top: 1px solid var(--color-reply-owner-top) !important;
-            background: linear-gradient(var(--color-reply-owner-bg) 1px, #00000000 60px) !important;
-        }
-        .clearit.owner:not(:has(.clearit:hover)):hover {
-            border-top: 1px solid var(--color-reply-owner-top) !important;
-            background: linear-gradient(var(--color-reply-owner-bg) 1px, #00000000 60px) !important;
-            box-shadow: 0 0 4px var(--color-reply-owner-shadow);
-        }
-        .clearit.floor {
-            border-top: 1px solid var(--color-reply-floor-top) !important;
-            background: linear-gradient(var(--color-reply-floor-bg) 1px, #00000000 60px) !important;
-        }
-        .clearit.floor:not(:has(.clearit:hover)):hover {
-            border-top: 1px solid var(--color-reply-floor-top) !important;
-            background: linear-gradient(var(--color-reply-floor-bg) 1px, #00000000 60px) !important;
-            box-shadow: 0 0 4px var(--color-reply-floor-shadow);
-        }
-
-        div.reply_collapse {
-            padding: 5px 10px;
-        }
+    #comment_list {
+        box-sizing: border-box;
+        .row:nth-child(odd), .row:nth-child(even) { background: transparent; }
+        > .clearit:first-child { border-top: 1px solid transparent; }
+        div.reply_collapse { padding: 5px 10px; }
     }
     @media (max-width: 640px) {
-        .columns {
-            > .column:last-child {
-                align-self: auto !important;
-            }
-        }
+        .columns { > .column:last-child { align-self: auto !important; } }
     }
 }

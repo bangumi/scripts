@@ -1,4 +1,18 @@
 /**merge:js=_common.dom.js**//**merge**/
+
+/**
+ * 设置事件监听
+ * @typedef {[string, (e:Event)=>void]} Event
+ * @param {Element} element 元素
+ * @param {Event[]} events 属性
+ */
+function setEvents(element, events) {
+    for (const [event, listener] of events) {
+        element.addEventListener(event, listener);
+    }
+    return element;
+}
+
 /**
  * 设置属性
  * @typedef {Record<string, string | number | boolean | Styles>} Props
@@ -7,16 +21,31 @@
  */
 function setProps(element, props) {
     if (!props || typeof props !== 'object') return element;
-
+    const events = [];
     for (const [key, value] of Object.entries(props)) {
         if (typeof value === 'boolean') {
             element[key] = value;
             continue;
         }
-        if (key === 'class') addClass(element, value);
-        else if (key === 'style' && typeof value === 'object') setStyle(element, value);
-        else element.setAttribute(key, value);
+        if (key === 'events') {
+            if (Array.isArray(value)) {
+                events.push(...value);
+            } else {
+                for (const event in value) {
+                    events.push([event, value[event]]);
+                }
+            }
+        } else if (key === 'class') {
+            addClass(element, value);
+        } else if (key === 'style' && typeof value === 'object') {
+            setStyle(element, value);
+        } else if (key.startsWith('on')) {
+            events.push([key.slice(2).toLowerCase(), value]);
+        } else {
+            element.setAttribute(key, value);
+        }
     }
+    setEvents(element, events);
     return element;
 }
 
