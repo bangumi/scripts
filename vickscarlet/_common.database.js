@@ -106,8 +106,9 @@ class Database {
     async init() {
         this.#db = await new Promise((resolve, reject) => {
             const request = window.indexedDB.open(this.#dbName, this.#version);
-            request.addEventListener('error', event => reject(event.target.error));
-            request.addEventListener('success', event => resolve(event.target.result));
+            request.addEventListener('error', () => reject({ type: 'error', message: request.error }));
+            request.addEventListener('blocked', () => reject({ type: 'blocked' }));
+            request.addEventListener('success', () => resolve(request.result));
             request.addEventListener('upgradeneeded', () => {
                 for (const c of this.#collections.values()) {
                     const { collection, options, indexes } = c;
