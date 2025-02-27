@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.11
+// @version      1.3.12
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
@@ -12,6 +12,9 @@
 // @match        *://bangumi.tv/user/*
 // ==/UserScript==
 (async () => {
+    /**merge:js=_common.dom.script.js**/
+    async function loadScript(src) { if (!this._loaded) this._loaded = new Set(); if (this._loaded.has(src)) return; return new Promise(resolve => { const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this._loaded.add(src); resolve(); }; document.body.appendChild(script); }) }
+    /**merge**/
     /**merge:js=_common.dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
     /**merge**/
@@ -20,11 +23,13 @@
     function setProps(element, props) { if (!props || typeof props !== 'object') return element; const events = []; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'events') { if (Array.isArray(value)) { events.push(...value); } else { for (const event in value) { events.push([event, value[event]]); } } } else if (key === 'class') { addClass(element, value); } else if (key === 'style' && typeof value === 'object') { setStyle(element, value); } else if (key.startsWith('on')) { events.push([key.slice(2).toLowerCase(), value]); } else { element.setAttribute(key, value); } } setEvents(element, events); return element; }
     function addClass(element, value) { element.classList.add(...[value].flat()); return element; }
     function setStyle(element, styles) { for (let [k, v] of Object.entries(styles)) { if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k)) v += 'px'; element.style[k] = v; } return element; }
-    function create(name, props, ...childrens) { if (name === 'svg') return createSVG(name, props, ...childrens); const element = document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); }
+    function create(name, props, ...childrens) { if (name === 'svg') return createSVG(name, props, ...childrens); const element = name instanceof Element ? name : document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); }
     function append(element, ...childrens) { if (element.name === 'svg') return appendSVG(element, ...childrens); for (const child of childrens) { if (Array.isArray(child)) element.append(create(...child)); else if (child instanceof Node) element.appendChild(child); else element.append(document.createTextNode(child)); } return element; }
     function createSVG(name, props, ...childrens) { const element = document.createElementNS('http://www.w3.org/2000/svg', name); if (name === 'svg') element.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink'); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return appendSVG(setProps(element, props), ...childrens) }
     function appendSVG(element, ...childrens) { for (const child of childrens) { if (Array.isArray(child)) element.append(createSVG(...child)); else if (child instanceof Node) element.appendChild(child); else element.append(document.createTextNode(child)); } return element; }
     function removeAllChildren(element) { while (element.firstChild) element.removeChild(element.firstChild); return element; }
+    function createTextSVG(text, fontClass) { const testWidthElement = create('span', { class: fontClass, style: { fontSize: '10px', position: 'absolute', opacity: 0 } }, text); append(document.body, testWidthElement); const w = testWidthElement.offsetWidth; testWidthElement.remove(); return createSVG('svg', { class: fontClass, fill: 'currentColor', viewBox: `0 0 ${w} 10` }, ['text', { 'font-size': 10 }, text]); }
+    async function newTab(href) { create('a', { href, target: '_blank' }).click(); }
     /**merge**/
     /**merge:js=_common.util.js**/
     function callWhenDone(fn) { let done = true; return async () => { if (!done) return; done = false; await fn(); done = true; } }
@@ -33,7 +38,7 @@
     /**merge**/
     /**merge:js=_common.database.js**/
     class Collection { constructor(master, { collection, options, indexes }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; } #master; #collection; #options; #indexes; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction(this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result)); }) }, mode) } async get(key, index = '') { return this.transaction(store => (index ? store.index(index) : store).get(key)); } async put(data) { return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async clear() { return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } }
-    class Database { constructor({ dbName, version, collections }) { this.#dbName = dbName; this.#version = version; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', event => reject(event.target.error)); request.addEventListener('success', event => resolve(event.target.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } }
+    class Database { constructor({ dbName, version, collections }) { this.#dbName = dbName; this.#version = version; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', () => reject({ type: 'error', message: request.error })); request.addEventListener('blocked', () => reject({ type: 'blocked' })); request.addEventListener('success', () => resolve(request.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } }
     /**merge**/
     /**merge:js=_common.event.js**/
     class Event { static #listeners = new Map(); static on(event, listener) { if (!this.#listeners.has(event)) this.#listeners.set(event, new Set()); this.#listeners.get(event).add(listener); } static emit(event, ...args) { if (!this.#listeners.has(event)) return; for (const listener of this.#listeners.get(event).values()) listener(...args); } static off(event, listener) { if (!this.#listeners.has(event)) return; this.#listeners.get(event).delete(listener); } }
@@ -425,24 +430,6 @@
     // LOAD DATA END
 
     // SAVE IMAGE START
-    const loaded = new Set();
-    /**
-     * 加载脚本
-     * @param {string} src 脚本链接
-     * @returns {Promise<void>}
-     */
-    async function loadScript(src) {
-        if (loaded.has(src)) return;
-        return new Promise(resolve => {
-            const script = create('script', { src, type: 'text/javascript' });
-            script.onload = () => {
-                loaded.add(src);
-                resolve();
-            };
-            document.body.appendChild(script);
-        })
-    }
-
     /**
      * 元素转为 canvas
      * @param {Element} element 元素

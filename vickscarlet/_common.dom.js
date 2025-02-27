@@ -86,7 +86,7 @@ function setStyle(element, styles) {
  */
 function create(name, props, ...childrens) {
     if (name === 'svg') return createSVG(name, props, ...childrens);
-    const element = document.createElement(name);
+    const element = name instanceof Element ? name : document.createElement(name);
     if (props === undefined) return element;
     if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
         return append(element, props, ...childrens);
@@ -140,4 +140,20 @@ function appendSVG(element, ...childrens) {
 function removeAllChildren(element) {
     while (element.firstChild) element.removeChild(element.firstChild);
     return element;
+}
+
+/**
+ * 创建文本为SVG
+ * SVG文本支持自动缩放
+ * @param {string|number} text 文本
+ */
+function createTextSVG(text, fontClass) {
+    const testWidthElement = create('span', { class: fontClass, style: { fontSize: '10px', position: 'absolute', opacity: 0 } }, text);
+    append(document.body, testWidthElement);
+    const w = testWidthElement.offsetWidth;
+    testWidthElement.remove();
+    return createSVG('svg', { class: fontClass, fill: 'currentColor', viewBox: `0 0 ${w} 10` }, ['text', { 'font-size': 10 }, text]);
+}
+async function newTab(href) {
+    create('a', { href, target: '_blank' }).click();
 }

@@ -22,7 +22,7 @@ const merge = async (file) => {
                 .replace(/\/\*[\s\S]+?\*\//g, '')
                 .replace(/[^:]\/{2}[\s\S]*?\n/g, '')
                 .replace(/\s*\n\s*/g, ' ')
-                .replace(/ (function|class[^:])/g, lf + '    $1')
+                .replace(/ ((async )?function|class[^:])/g, lf + '    $1')
                 .replace(/ ([\)\]])/g, '$1')
                 .replace(/([\(\[]) /g, '$1')
                 .replace(/,\s/g, ', ')
