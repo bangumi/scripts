@@ -4,6 +4,9 @@
 #  by here we use team name @bangumi
 *    @bangumi
 
+/.idea/ @trim21
+/.vscode/ @trim21
+
 /a_little/ @22earth
 /binota/ @binotaliu
 /cedar/ @XDcedar
