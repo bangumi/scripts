@@ -54,7 +54,7 @@
         /**merge:css=bangumi_community.user.colors.css**/`html {--color-bangumi: #fd8a96;--color-white: #ffffff;--color-black: #000000;--color-yellow: #f9c74c;--color-purple: #a54cf9;--color-blue: #02a3fb;--color-green: #95eb89;--color-red: #f94144;--color-skyblue: #7ed2ff;--color-dock-sp: var(--color-gray-2);--color-switch-border: var(--color-gray-2);--color-switch-on: var(--color-green);--color-switch-off: var(--color-gray-4);--color-switch-bar-border: var(--color-white);--color-switch-bar-inner: var(--color-gray-11);--color-hover: var(--color-blue);--color-icon-btn-bg: rgb(from var(--color-bangumi) r g b / .25);--color-icon-btn-color: var(--color-white);--color-reply-sp: var(--color-gray-1);--color-reply-tips: var(--color-gray-3);--color-reply-normal: var(--color-bangumi);--color-reply-owner: var(--color-yellow);--color-reply-floor: var(--color-purple);--color-reply-friend: var(--color-green);--color-reply-self: var(--color-blue);--color-sicky-bg: rgb(from var(--color-base) r g b / .125);--color-sicky-border: rgb(from var(--color-bangumi) r g b / .25);--color-sicky-shadow: rgb(from var(--color-base) r g b / .05);--color-sicky-textarea: rgb(from var(--color-base) r g b / .8);--color-sicky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);--color-sicky-hover-border: var(--color-bangumi);--color-sicky-hover-shadow: var(--color-bangumi);--color-primary: var(--color-bangumi);--color-secondary: var(--color-blue);--color-success: var(--color-green);--color-info: var(--color-blue);--color-important: var(--color-purple);--color-warning: var(--color-yellow);--color-danger: var(--color-red);}`/**merge**/,
         /**merge:css=bangumi_community.user.1.css**/`html, html[data-theme='dark'] {#dock {li {position: relative;height: 18px;display: flex;align-items: center;justify-content: center;}li:not(:last-child) {border-right: 1px solid var(--color-dock-sp);}}.columns {> #columnInSubjectB {> * { margin: 0; }display: flex;gap: 10px;flex-direction: column;position: sticky;top: 0;align-self: flex-start;max-height: 100vh;overflow-y: auto;}}*:has(>#comment_list) {.postTopic {border-bottom: none;.inner.tips {display: flex;height: 40px;align-items: center;gap: 8px;color: var(--color-reply-tips);}}.avatar:not(.tinyCover) {img,.avatarNeue {border-radius: 50% !important;}}.clearit:not(.message) {transition: all 0.3s ease;box-sizing: border-box;border-bottom: none !important;border-top: 1px dashed var(--color-reply-sp);.inner.tips {display: flex;height: 40px;align-items: center;gap: 8px;color: var(--color-reply-tips);}.sub_reply_collapse .inner.tips { height: auto; }--color-reply: var(--color-bangumi);}.clearit.friend { --color-reply: var(--color-green); }.clearit.owner { --color-reply: var(--color-yellow); }.clearit.floor { --color-reply: var(--color-purple); }.clearit.self { --color-reply: var(--color-blue); }.clearit.friend, .clearit.owner, .clearit.floor, .clearit.self {border-top: 1px solid var(--color-reply) !important;background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;> .inner > :first-child > strong::before, > .inner > strong::before {padding: 1px 4px;margin-right: 4px;border-radius: 2px;background: rgb(from var(--color-bangumi) r g b /.5);}}.clearit:not(:has(.clearit:not(.message):hover), .message):hover {border-top: 1px solid var(--color-reply) !important;background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;box-shadow: 0 0 4px rgb(from var(--color-reply) r g b / .5);}.clearit.self { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自'; } }.clearit.friend { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友'; } }.clearit.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼'; } }.clearit.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '层'; } }.clearit.friend.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼'; } }.clearit.friend.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 层'; } }.clearit.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼 层'; } }.clearit.self.owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼'; } }.clearit.self.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 层'; } }.clearit.friend.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼 层'; } }.clearit.self.owner.floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼 层'; } }}#comment_list {box-sizing: border-box;.row:nth-child(odd), .row:nth-child(even) { background: transparent; }> .clearit:first-child { border-top: 1px solid transparent; }div.reply_collapse { padding: 5px 10px; }}@media (max-width: 640px) {.columns { > .column:last-child { align-self: auto !important; } }}}`/**merge**/,
         /**merge:css=bangumi_community.user.2.css**/`html, html[data-theme='dark'] {.tip-item,.svg-icon {position: relative;display: flex !important;align-items: center !important;justify-content: center !important;cursor: pointer;.tip, span {visibility: hidden;position: absolute;top: 0;left: 50%;transform: translate(-50%, calc(-100% - 10px));padding: 2px 5px;border-radius: 5px;background: rgb(from var(--color-black) r g b / 0.6);white-space: nowrap;color: var(--color-white);}.tip::after, span::after {content: '';position: absolute !important;bottom: 0;left: 50%;border-top: 5px solid rgb(from var(--color-black) r g b / 0.6);border-right: 5px solid transparent;border-left: 5px solid transparent;backdrop-filter: blur(5px);transform: translate(-50%, 100%);}}.tip-item:hover, .svg-icon:hover { .tip, span { visibility: visible; } }.switch {display: inline-block;position: relative;cursor: pointer;border-radius: 50px;height: 12px;width: 40px;border: 1px solid var(--color-switch-border);}.switch::before {content: '';display: block;position: absolute;pointer-events: none;height: 12px;width: 40px;top: 0px;border-radius: 24px;background-color: var(--color-switch-off);}.switch::after {content: '';display: block;position: absolute;pointer-events: none;top: 0;left: 0;height: 12px;width: 24px;border-radius: 24px;box-sizing: border-box;background-color: var(--color-switch-bar-inner);border: 5px solid var(--color-switch-bar-border);}.switch[switch="1"]::before {background-color: var(--color-switch-on);}.switch[switch="1"]::after {left: 16px;}.topic-box {#comment_list {.icon {color: var(--color-gray-11);}}.block {display: none;}.sicky-reply {background-color: var(--color-sicky-bg);border: 1px solid var(--color-sicky-border);box-shadow: 0px 0px 0px 2px var(--color-sicky-shadow);textarea {background-color: var(--color-sicky-textarea);}}.sicky-reply:has(:focus),.sicky-reply:hover {grid-template-rows: 1fr;background-color: var(--color-sicky-hover-bg);border: 1px solid var(--color-sicky-hover-border);box-shadow: 0 0 4px var(--color-sicky-hover-shadow);}#reply_wrapper {position: relative;padding: 5px;min-height: 50px;margin: 0;textarea.reply {width: 100% !important;}.switch {position: absolute;right: 10px;top: 10px;}.tip.rr + .switch {top: 35px;}}.sicky-reply {position: sticky;top: 0;z-index: 2;display: grid;height: auto;grid-template-rows: 0fr;border-radius: 4px;backdrop-filter: blur(5px);transition: all 0.3s ease;width: calc(100% - 1px);overflow: hidden;#slider {position: absolute;right: 5px;top: 13px;max-width: 100%;}}.svg-box {display: flex;justify-content: center;align-items: center;}}.vcomm {ul {white-space: nowrap;justify-content: center;align-items: center;}a {display: flex;align-items: center;gap: 0.5em;}}}`/**merge**/,
-        /**merge:css=bangumi_community.user.3.css**/`html, html[data-theme='dark'] {.vc-serif {font-family: source-han-serif-sc, source-han-serif-japanese, 宋体, 新宋体;font-weight: 900;}#community-helper-user-panel {position: fixed !important;z-index: 9999;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;> .close-mask {position: absolute;z-index: -100;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;background: rgb(from var(--color-base) r g b / 0.5);cursor: pointer;backdrop-filter: blur(5px);}> .container {max-width: 1280px;max-height: 580px;width: calc(100% - 60px);height: calc(100vh - 60px);> fieldset {padding-top: 24px;legend {position: absolute;font-weight: bold;top: 5px;left: 5px;padding: 0;line-height: 12px;font-size: 12px;display: flex;align-items: center;gap: 0.5em;color: var(--color-bangumi-font);> svg {width: 14px;height: 14px;}}}> .tags-field {> ul {display: flex;flex-wrap: wrap;gap: 4px;overflow: auto;li {padding: 0 5px;border-radius: 50px;background: rgb(from var(--color-font) r g b / .25);border: 1px solid var(--color-font);box-sizing: border-box;white-space: pre;}}}display: grid;grid-template-columns: auto auto 1fr 2fr;grid-template-rows: 180px auto auto auto 3fr;gap: 5px 5px;grid-template-areas:"avatar note note bio""actions note note bio""stats note note bio""chart note note bio""usedname usedname tags bio";> * {--color-font: var(--color-bangumi-font);--color-from: var(--color-base-2);--color-to: var(--color-base-2);--color-alpha: 0.05;color: var(--color-font);padding: 10px;position: relative;border-radius: 4px;> .action {color: var(--color-base-font);position: absolute;top: 5px;right: 5px;cursor: pointer;}}> *::after,> *::before {content: '';position: absolute;border-radius: 4px;top: 0;left: 0;right: 0;bottom: 0;background-size: cover;z-index: -10;}> *::before { opacity: 0.2; }> .failed,> .loading::before,> *::after {opacity: 1;background: linear-gradient(150deg, rgb(from var(--color-from) r g b / var(--color-alpha)), rgb(from var(--color-to) r g b / var(--color-alpha)) 75%);box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter: blur(10px);}> .loading::after,> .failed::before,> .failed::after {background: none !important;box-shadow: none !important;backdrop-filter: none !important;}> .loading::after {width: 50px;height: 50px;top: calc(50% - 25px);left: calc(50% - 25px);aspect-ratio: 1;border-radius: 50%;border: 8px solid;box-sizing: border-box;border-color: var(--color-bangumi) transparent;animation: loading-spine 1s infinite;}> .failed::before,> .failed::after {width: 50px;height: 8px;top: calc(50% - 25px);left: calc(50% - 4px);}> .failed::after { transform: rotate(45deg); }> .failed::before { transform: rotate(-45deg); }> .avatar {grid-area: avatar;--color-font: var(--color-bangumi);--color-from: var(--color-bangumi);--color-alpha: .25;min-width: 120px;max-width: 280px;display: flex;flex-direction: column;justify-content: center;align-items: center;gap: 5px;img {width: 100px;height: 100px;border-radius: 100px;object-fit: cover;}span {position: absolute;top: 5px;right: 0;transform: translate(100%) rotate(90deg);transform-origin: 0% 0%;}span::before {content: '@';}svg {width: 100%;height: 50px;text {transform: translate(50%, 0.18em);text-anchor: middle;dominant-baseline: hanging;}}}> .actions {grid-area: actions;--color-from: var(--color-yellow);--color-font: var(--color-yellow-font);display: grid;padding: 0;grid-template-columns: repeat(4, 1fr);grid-template-areas: "one two three four";> * {position: relative;display: grid;place-items: center;width: 100%;padding: 10px 0;}> .home { grid-area: one; }> .pm { grid-area: two; }> .friend { grid-area: three; }> .block { grid-area: four; }> *:not(.block)::after {position: absolute;content: '';width: 1px;height: calc(100% - 10px);top: 5px;right: -0.5px;background: rgb(from var(--color-from) r g b / var(--color-alpha));}}> .stats {grid-area: stats;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-columns: repeat(3, 1fr);grid-template-rows: repeat(2, 1fr);> .stat {line-height: 14px;font-size: 14px;font-weight: bold;padding: 2px 5px;background: rgb(from var(--color-stat) r g b / .25);}> .stat:hover { background: rgb(from var(--color-stat) r g b / .5); }> .stat:first-child {border-radius: 4px 0 0 0;}> .stat:nth-child(3) {border-radius: 0 4px 0 0;}> .stat:last-child {border-radius: 0 0 4px 0;}> .stat:nth-child(4) {border-radius: 0 0 0 4px;}> .coll {--color-stat: var(--color-bangumi);}> .done {--color-stat: var(--color-green);}> .rate {--color-stat: var(--color-skyblue);}> .avg  {--color-stat: var(--color-yellow);}> .std  {--color-stat: var(--color-purple);}> .cnt  {--color-stat: var(--color-blue);}}> .chart {grid-area: chart;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-rows: repeat(10, 4px);> * {display: flex;justify-content: flex-start !important;width: 100%;.bar {height: 2px;background: rgb(from var(--color-bangumi) r g b / .65);transition: all 0.3s ease;}}> *:first-child::before, *:first-child>.bar { border-radius: 4px 4px 0 0; }> *:last-child::before, *:last-child>.bar { border-radius: 0 0 4px 4px; }> *::before {content: '';position: absolute;top: 1px;left: 0;width: 100%;height: 2px;background: rgb(from var(--color-bangumi) r g b / .15);z-index: -1;transition: all 0.3s ease;}> *:hover::before { background: rgb(from var(--color-bangumi) r g b / .3); }> *:hover > .bar { background: rgb(from var(--color-bangumi) r g b / 1); }}> .tags {grid-area: tags;min-width: 200px;--color-from: var(--color-blue);--color-font: var(--color-blue-font);}> .note {grid-area: note;min-width: 200px;--color-from: var(--color-green);--color-font: var(--color-green-font);}> .usedname {grid-area: usedname;--color-from: var(--color-purple);--color-font: var(--color-purple-font);max-width: 400px;min-width: 200px;> ul {max-height: 336px;}}> .bio {grid-area: bio;--color-from: var(--color-bangumi);--color-font: var(--color-base-font);max-width: 505px;min-width: 300px;max-height: 560px;height: calc(100vh - 80px);> div {height: 100%;overflow: auto;}}}}}`/**merge**/,
+        /**merge:css=bangumi_community.user.3.css**/`html, html[data-theme='dark'] {.vc-serif {font-family: source-han-serif-sc, source-han-serif-japanese, 宋体, 新宋体;font-weight: 900;}#community-helper-user-panel {position: fixed !important;z-index: 9999;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;> .close-mask {position: absolute;z-index: -100;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;background: rgb(from var(--color-base) r g b / 0.5);cursor: pointer;backdrop-filter: blur(5px);}> .container {max-width: 1280px;max-height: 580px;width: calc(100% - 60px);height: calc(100vh - 60px);> fieldset {padding-top: 24px;legend {position: absolute;font-weight: bold;top: 5px;left: 5px;padding: 0;line-height: 12px;font-size: 12px;display: flex;align-items: center;gap: 0.5em;color: var(--color-bangumi-font);> svg {width: 14px;height: 14px;}}}> .tags-field {> ul {display: flex;flex-wrap: wrap;gap: 4px;overflow: auto;li {padding: 0 5px;border-radius: 50px;background: rgb(from var(--color-font) r g b / .25);border: 1px solid var(--color-font);box-sizing: border-box;white-space: pre;}}}display: grid;grid-template-columns: auto auto 1fr 2fr;grid-template-rows: 180px auto auto auto 3fr;gap: 5px 5px;grid-template-areas:"avatar note note bio""actions note note bio""stats note note bio""chart note note bio""usedname usedname tags bio";> * {--color-font: var(--color-bangumi-font);--color-from: var(--color-base-2);--color-to: var(--color-base-2);--color-alpha: 0.05;color: var(--color-font);padding: 10px;position: relative;border-radius: 4px;overscroll-behavior: contain;> * { overscroll-behavior: contain; }> .actions,> .action {color: var(--color-base-font);position: absolute;top: 5px;right: 5px;cursor: pointer;}> .actions{cursor: none;display: flex;gap: 8px;> .action { cursor: pointer; }}}> *::after,> *::before {content: '';position: absolute;border-radius: 4px;top: 0;left: 0;right: 0;bottom: 0;background-size: cover;z-index: -10;}> *::before { opacity: 0.2; }> .failed,> .loading::before,> *::after {opacity: 1;background: linear-gradient(150deg, rgb(from var(--color-from) r g b / var(--color-alpha)), rgb(from var(--color-to) r g b / var(--color-alpha)) 75%);box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter: blur(10px);}> .loading::after,> .failed::before,> .failed::after {background: none !important;box-shadow: none !important;backdrop-filter: none !important;}> .loading::after {width: 50px;height: 50px;top: calc(50% - 25px);left: calc(50% - 25px);aspect-ratio: 1;border-radius: 50%;border: 8px solid;box-sizing: border-box;border-color: var(--color-bangumi) transparent;animation: loading-spine 1s infinite;}> .failed::before,> .failed::after {width: 50px;height: 8px;top: calc(50% - 25px);left: calc(50% - 4px);}> .failed::after { transform: rotate(45deg); }> .failed::before { transform: rotate(-45deg); }> .edit {textarea {width: 100%;height: 100%;resize: none;border: none;padding: 0;box-sizing: border-box;background: rgb(from var(--color-base) r g b / .1);border-radius: 4px;font-size: 12px;line-height: 18px;color: var(--color-font);overscroll-behavior: contain;}textarea:focus, textarea:hover {border: none;box-shadow: 0 0 1px rgb(from var(--color-bangumi) r g b / .5);}}> .avatar {grid-area: avatar;--color-font: var(--color-bangumi);--color-from: var(--color-bangumi);--color-alpha: .25;min-width: 120px;max-width: 280px;display: flex;flex-direction: column;justify-content: center;align-items: center;gap: 5px;img {width: 100px;height: 100px;border-radius: 100px;object-fit: cover;}span {position: absolute;top: 5px;right: 0;transform: translate(100%) rotate(90deg);transform-origin: 0% 0%;}span::before {content: '@';}svg {width: 100%;height: 50px;text {transform: translate(50%, 0.18em);text-anchor: middle;dominant-baseline: hanging;}}}> .actions {grid-area: actions;--color-from: var(--color-yellow);--color-font: var(--color-yellow-font);display: grid;padding: 0;grid-template-columns: repeat(4, 1fr);grid-template-areas: "one two three four";> * {position: relative;display: grid;place-items: center;width: 100%;padding: 10px 0;}> .home { grid-area: one; }> .pm { grid-area: two; }> .friend { grid-area: three; }> .block { grid-area: four; }> *:not(.block)::after {position: absolute;content: '';width: 1px;height: calc(100% - 10px);top: 5px;right: -0.5px;background: rgb(from var(--color-from) r g b / var(--color-alpha));}}> .stats {grid-area: stats;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-columns: repeat(3, 1fr);grid-template-rows: repeat(2, 1fr);> .stat {line-height: 14px;font-size: 14px;font-weight: bold;padding: 2px 5px;background: rgb(from var(--color-stat) r g b / .25);}> .stat:hover { background: rgb(from var(--color-stat) r g b / .5); }> .stat:first-child {border-radius: 4px 0 0 0;}> .stat:nth-child(3) {border-radius: 0 4px 0 0;}> .stat:last-child {border-radius: 0 0 4px 0;}> .stat:nth-child(4) {border-radius: 0 0 0 4px;}> .coll {--color-stat: var(--color-bangumi);}> .done {--color-stat: var(--color-green);}> .rate {--color-stat: var(--color-skyblue);}> .avg  {--color-stat: var(--color-yellow);}> .std  {--color-stat: var(--color-purple);}> .cnt  {--color-stat: var(--color-blue);}}> .chart {grid-area: chart;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-rows: repeat(10, 4px);> * {display: flex;justify-content: flex-start !important;width: 100%;.bar {height: 2px;background: rgb(from var(--color-bangumi) r g b / .65);transition: all 0.3s ease;}}> *:first-child::before, *:first-child>.bar { border-radius: 4px 4px 0 0; }> *:last-child::before, *:last-child>.bar { border-radius: 0 0 4px 4px; }> *::before {content: '';position: absolute;top: 1px;left: 0;width: 100%;height: 2px;background: rgb(from var(--color-bangumi) r g b / .15);z-index: -1;transition: all 0.3s ease;}> *:hover::before { background: rgb(from var(--color-bangumi) r g b / .3); }> *:hover > .bar { background: rgb(from var(--color-bangumi) r g b / 1); }}> .tags {grid-area: tags;min-width: 200px;--color-from: var(--color-blue);--color-font: var(--color-blue-font);}> .note {grid-area: note;min-width: 200px;--color-from: var(--color-green);--color-font: var(--color-green-font);white-space: pre-wrap;> .wrapper { max-height: 270px; }}> .usedname {grid-area: usedname;--color-from: var(--color-purple);--color-font: var(--color-purple-font);max-width: 400px;min-width: 200px;> ul {max-height: 336px;}}> .bio {grid-area: bio;--color-from: var(--color-bangumi);--color-font: var(--color-base-font);max-width: 505px;min-width: 300px;max-height: 560px;height: calc(100vh - 80px);> div {height: 100%;overflow: auto;}}}}}`/**merge**/,
     )
 
     const db = new Database({
@@ -66,12 +66,16 @@
         ]
     });
     const menu = new class {
-        constructor() { }
         #menu = create('ul',
             ['li', { onClick: () => this.#block() }, ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言']],
             ['li', { onClick: () => this.#show() }, ['a', { href: 'javascript:void(0)' }, svg('detail'), '详细信息']]
         );
-        #panel = create('div', { id: 'community-helper-user-panel' },
+        #panel = create('div',
+            {
+                id: 'community-helper-user-panel',
+                onScroll: e => e.preventDefault(),
+                onWheel: e => e.preventDefault(),
+            },
             ['div', { class: 'close-mask', onClick: () => this.#close() }],
         );
         #style = addStyle()
@@ -206,8 +210,8 @@
             const avatar = create('div', { class: ['avatar', 'loading'] });
             const bio = create('fieldset', { class: ['bio', 'loading'] }, ['legend', svg('user'), 'Bio']);
             const usedname = create('fieldset', { class: ['usedname', 'tags-field', 'loading'] }, ['legend', svg('history'), '曾用名']);
-            const tags = create('fieldset', { class: ['tags', 'tags-field', 'loading'] }, ['legend', svg('tag'), '标签']);
-            const note = create('fieldset', { class: ['note', 'loading'] }, ['legend', svg('note'), '备注']);
+            const tags = create('fieldset', { class: ['tags', 'edit', 'tags-field', 'loading'] }, ['legend', svg('tag'), '标签']);
+            const note = create('fieldset', { class: ['note', 'edit', 'loading'] }, ['legend', svg('note'), '备注']);
             const stats = create('ul', { class: 'stats' });
             const chart = create('ul', { class: 'chart' });
 
@@ -222,11 +226,11 @@
 
             append(document.body, [this.#panel, ['div', { class: 'container' }, avatar, actions, stats, bio, usedname, tags, note, chart]]);
 
-            const nicescroll = { cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)", cursorwidth: "8px", cursorborder: "none" };
+            const nicescroll = { cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)", cursorwidth: "4px", cursorborder: "none" };
             await loadScript('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
             await Promise.all([
                 async () => {
-                    // 加载 用户主页内容 头像、昵称、简介、统计、图表、数字id、好友状态
+                    // 头像、昵称、简介、统计、图表、PM
                     const homepage = await this.#loadHomepage(id);
                     if (!this.#isShow || id != this.#id) return;
                     avatar.classList.remove('loading');
@@ -255,27 +259,18 @@
                     ]));
                 },
                 async () => {
-                    // 加载 曾用名
-                    await loadScript('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
+                    // 曾用名
                     const names = await this.#loadUsedname(id);
                     if (!this.#isShow || id != this.#id) return;
                     usedname.classList.remove('loading');
-                    const usednameUl = this.#ul(names);
+                    const usednameUl = create('ul', ...map(names, v => ['li', v]));;
                     append(usedname, usednameUl);
                     $(usednameUl).niceScroll(nicescroll);
                 },
                 async () => {
-                    // 加载 标签 备注
-                    await loadScript('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
+                    // 屏蔽按钮
                     const user = await this.#loadUserData(id);
                     if (!this.#isShow || id != this.#id) return;
-                    tags.classList.remove('loading');
-                    note.classList.remove('loading');
-                    const editTags = create('div', { class: ['svg-icon', 'action'] }, svg('edit'), ['span', '编辑']);
-                    const editNote = create('div', { class: ['svg-icon', 'action'] }, svg('edit'), ['span', '编辑']);
-                    const tagsUl = this.#ul(user.tags);
-                    append(tags, tagsUl, editTags);
-                    append(note, user.note ?? '', editNote);
                     if (user.block) unblockBtn.replaceWith(blockedBtn)
                     blockedBtn.addEventListener('click', async () => {
                         if (await this.#unblock()) blockedBtn.replaceWith(unblockBtn);
@@ -283,11 +278,77 @@
                     unblockBtn.addEventListener('click', async () => {
                         if (await this.#block()) unblockBtn.replaceWith(blockedBtn);
                     });
-                    $(tagsUl).niceScroll(nicescroll);
+                },
+                async () => {
+                    // 标签
+                    const e = tags;
+                    const edit = create('div', { class: ['svg-icon', 'action'] }, svg('edit'), ['span', '编辑']);
+                    const ok = create('div', { class: ['svg-icon', 'action'] }, svg('ok'), ['span', '保存']);
+                    const close = create('div', { class: ['svg-icon', 'action'] }, svg('close'), ['span', '取消']);
+                    const ul = create('ul');
+                    append(e, ul, edit);
+                    const renderList = async () => {
+                        e.classList.add('loading');
+                        removeAllChildren(ul);
+                        const { tags } = await this.#loadUserData(id);
+                        if (!this.#isShow || id != this.#id) return;
+                        e.classList.remove('loading');
+                        append(ul, ...map(tags ?? [], v => ['li', v]))
+                        $(ul).niceScroll(nicescroll);
+                    }
+
+                    edit.addEventListener('click', async () => {
+                    });
+                    await renderList();
+                },
+                async () => {
+                    // 备注
+                    const e = note;
+                    const edit = create('div', { class: ['svg-icon', 'action'] }, svg('edit'), ['span', '编辑']);
+                    const ok = create('div', { class: ['svg-icon', 'action'] }, svg('ok'), ['span', '保存']);
+                    const close = create('div', { class: ['svg-icon', 'action'] }, svg('close'), ['span', '取消']);
+                    const normalActions = create('div', { class: ['actions'] }, edit);
+                    const editActions = create('div', { class: ['actions'] }, ok, close);
+                    const contentWrapper = create('div', { class: 'wrapper' }, ['span']);
+                    const editWrapper = create('textarea', { class: 'wrapper' });
+                    append(e, contentWrapper, editWrapper, normalActions);
+                    $(contentWrapper).niceScroll(nicescroll);
+                    $(editWrapper).niceScroll(nicescroll);
+                    const renderList = async (save = false, content = '') => {
+                        e.classList.add('loading');
+                        editWrapper.style.display = 'none';
+                        contentWrapper.style.display = 'block';
+                        const data = await this.#loadUserData(id);
+                        if (save) {
+                            data.note = content;
+                            await db.put('users', data);
+                        }
+                        if (!this.#isShow || id != this.#id) return;
+                        e.classList.remove('loading');
+                        contentWrapper.firstElementChild.replaceWith(create('span', data.note ?? ''))
+                    }
+                    edit.addEventListener('click', () => {
+                        contentWrapper.style.display = 'none';
+                        editWrapper.style.display = 'block';
+                        editWrapper.value = contentWrapper.innerText;
+                        editWrapper.focus();
+                        editWrapper.setSelectionRange(0, 0);
+                        $(editWrapper).getNiceScroll(0).doScrollLeft(0, 0);
+                        $(editWrapper).getNiceScroll(0).doScrollTop(0, 0);
+                        normalActions.replaceWith(editActions)
+                    });
+                    ok.addEventListener('click', async () => {
+                        editActions.replaceWith(normalActions);
+                        await renderList(true, editWrapper.value);
+                    })
+                    close.addEventListener('click', async () => {
+                        editActions.replaceWith(normalActions)
+                        await renderList();
+                    })
+                    await renderList();
                 },
             ].map(fn => fn()));
         }
-        #ul(list) { return create('ul', ...map(list ?? [], v => ['li', v])); }
     }
 
     function dockInject() {
@@ -378,7 +439,7 @@
             if (!id) return;
             const data = await db.get('users', id) || { id, names: new Set() };
             const inner = clearit.querySelector('.inner');
-            const icon = create('a', { class: ['icon', 'svg-icon'], href: 'javascript:void(0)' }, svg('tag'));
+            const icon = create('a', { class: ['icon', 'svg-icon'], href: 'javascript:void(0)' }, svg('mark'));
             const action = create('div', { class: ['action', 'dropdown', 'vcomm'] }, icon);
             icon.addEventListener('mouseenter', () => append(action, menu.id(id)));
             const actionBox = clearit.querySelector('.post_actions');
@@ -522,6 +583,15 @@
             ];
             case 'connect': return ['svg', { viewBox: '0 0 32 32', fill, ...baseParams },
                 ['path', { d: 'M2.002 27.959c0-0.795 0.597-1.044 0.835-1.154l8.783-4.145c0.63-0.289 1.064-0.885 1.149-1.573s-0.193-1.37-0.733-1.803c-2.078-1.668-3.046-5.334-3.046-7.287v-4.997c0-2.090 3.638-4.995 7.004-4.995 3.396 0 6.997 2.861 6.997 4.995v4.998c0 1.924-0.8 5.604-2.945 7.292-0.547 0.43-0.831 1.115-0.749 1.807 0.082 0.692 0.518 1.291 1.151 1.582l2.997 1.422 0.494-1.996-2.657-1.243c2.771-2.18 3.708-6.463 3.708-8.864v-4.997c0-3.31-4.582-6.995-8.998-6.995s-9.004 3.686-9.004 6.995v4.997c0 2.184 0.997 6.602 3.793 8.846l-8.783 4.145s-1.998 0.89-1.998 1.999v3.001c0 1.105 0.895 1.999 1.998 1.999h21.997v-2l-21.996 0.001v-2.029zM30.998 25.996h-3v-3c0-0.552-0.448-1-1-1s-1 0.448-1 1v3h-3c-0.552 0-1 0.448-1 1s0.448 1 1 1h3v3c0 0.552 0.448 1 1 1s1-0.448 1-1v-3h3c0.552 0 1-0.448 1-1s-0.448-1-1-1z' }],
+            ];
+            case 'ok': return ['svg', { viewBox: '3 3 18 18', fill, ...baseParams },
+                ['path', { d: 'M19.3,5.3L9,15.6l-4.3-4.3l-1.4,1.4l5,5L9,18.4l0.7-0.7l11-11L19.3,5.3z' }],
+            ];
+            case 'close': return ['svg', { viewBox: '4 4 16 16', fill, ...baseParams },
+                ['path', { d: 'M5.6,4.2L4.2,5.6l6.4,6.4l-6.4,6.4l1.4,1.4l6.4-6.4l6.4,6.4l1.4-1.4L13.4,12l6.4-6.4l-1.4-1.4L12,10.6L5.6,4.2z' }],
+            ];
+            case 'mark': return ['svg', { viewBox, fill, ...baseParams },
+                ['path', { d: 'M3 2.75C3 1.784 3.784 1 4.75 1h6.5c.966 0 1.75.784 1.75 1.75v11.5a.75.75 0 0 1-1.227.579L8 11.722l-3.773 3.107A.751.751 0 0 1 3 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.91l3.023-2.489a.75.75 0 0 1 .954 0l3.023 2.49V2.75a.25.25 0 0 0-.25-.25Z' }]
             ];
 
             default: return null;

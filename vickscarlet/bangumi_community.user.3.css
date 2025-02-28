@@ -88,12 +88,21 @@ html, html[data-theme='dark'] {
                 padding: 10px;
                 position: relative;
                 border-radius: 4px;
+                overscroll-behavior: contain;
+                > * { overscroll-behavior: contain; }
+                > .actions,
                 > .action {
                     color: var(--color-base-font);
                     position: absolute;
                     top: 5px;
                     right: 5px;
                     cursor: pointer;
+                }
+                > .actions{
+                    cursor: none;
+                    display: flex;
+                    gap: 8px;
+                    > .action { cursor: pointer; }
                 }
             }
             > *::after, 
@@ -146,6 +155,27 @@ html, html[data-theme='dark'] {
             }
             > .failed::after { transform: rotate(45deg); }
             > .failed::before { transform: rotate(-45deg); }
+
+            > .edit {
+                textarea {
+                    width: 100%;
+                    height: 100%;
+                    resize: none;
+                    border: none;
+                    padding: 0;
+                    box-sizing: border-box;
+                    background: rgb(from var(--color-base) r g b / .1);
+                    border-radius: 4px;
+                    font-size: 12px;
+                    line-height: 18px;
+                    color: var(--color-font);
+                    overscroll-behavior: contain;
+                }
+                textarea:focus, textarea:hover {
+                    border: none;
+                    box-shadow: 0 0 1px rgb(from var(--color-bangumi) r g b / .5);
+                }
+            }
 
             > .avatar {
                 grid-area: avatar;
@@ -281,6 +311,8 @@ html, html[data-theme='dark'] {
                 min-width: 200px;
                 --color-from: var(--color-green);
                 --color-font: var(--color-green-font);
+                white-space: pre-wrap;
+                > .wrapper { max-height: 270px; }
             }
             > .usedname {
                 grid-area: usedname;
