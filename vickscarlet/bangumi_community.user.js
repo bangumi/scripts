@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.0.9
+// @version      0.0.10
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
