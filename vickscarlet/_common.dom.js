@@ -85,6 +85,7 @@ function setStyle(element, styles) {
  * @param {...AppendParams} childrens 子元素
  */
 function create(name, props, ...childrens) {
+    if (name == null) return null;
     if (name === 'svg') return createSVG(name, props, ...childrens);
     const element = name instanceof Element ? name : document.createElement(name);
     if (props === undefined) return element;

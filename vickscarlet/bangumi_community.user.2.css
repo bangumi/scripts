@@ -1,10 +1,12 @@
 html, html[data-theme='dark'] {
+    .tip-item,
     .svg-icon {
+        position: relative;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         cursor: pointer;
-        span {
+        .tip, span {
             visibility: hidden;
             position: absolute;
             top: 0;
@@ -16,7 +18,7 @@ html, html[data-theme='dark'] {
             white-space: nowrap;
             color: var(--color-white);
         }
-        span::after {
+        .tip::after, span::after {
             content: '';
             position: absolute !important;
             bottom: 0;
@@ -28,11 +30,7 @@ html, html[data-theme='dark'] {
             transform: translate(-50%, 100%);
         }
     }
-    .svg-icon:hover {
-        span {
-            visibility: visible;
-        }
-    }
+    .tip-item:hover, .svg-icon:hover { .tip, span { visibility: visible; } }
     .switch {
         display: inline-block;
         position: relative;

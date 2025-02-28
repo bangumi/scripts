@@ -7,12 +7,17 @@
 async function loadScript(src) {
     if (!this._loaded) this._loaded = new Set();
     if (this._loaded.has(src)) return;
-    return new Promise(resolve => {
+    if (!this._pedding) this._pedding = new Map();
+    const list = this._pedding.get(src) ?? [];
+    const pedding = new Promise(resolve => list.push(resolve));
+    if (!this._pedding.has(src)) {
+        this._pedding.set(src, list);
         const script = create('script', { src, type: 'text/javascript' });
         script.onload = () => {
             this._loaded.add(src);
-            resolve();
+            list.forEach(resolve => resolve());
         };
         document.body.appendChild(script);
-    })
+    }
+    return pedding
 }

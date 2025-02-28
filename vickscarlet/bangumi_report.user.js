@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.12
+// @version      1.3.13
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
@@ -13,7 +13,7 @@
 // ==/UserScript==
 (async () => {
     /**merge:js=_common.dom.script.js**/
-    async function loadScript(src) { if (!this._loaded) this._loaded = new Set(); if (this._loaded.has(src)) return; return new Promise(resolve => { const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this._loaded.add(src); resolve(); }; document.body.appendChild(script); }) }
+    async function loadScript(src) { if (!this._loaded) this._loaded = new Set(); if (this._loaded.has(src)) return; if (!this._pedding) this._pedding = new Map(); const list = this._pedding.get(src) ?? []; const pedding = new Promise(resolve => list.push(resolve)); if (!this._pedding.has(src)) { this._pedding.set(src, list); const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this._loaded.add(src); list.forEach(resolve => resolve()); }; document.body.appendChild(script); } return pedding }
     /**merge**/
     /**merge:js=_common.dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
@@ -23,7 +23,7 @@
     function setProps(element, props) { if (!props || typeof props !== 'object') return element; const events = []; for (const [key, value] of Object.entries(props)) { if (typeof value === 'boolean') { element[key] = value; continue; } if (key === 'events') { if (Array.isArray(value)) { events.push(...value); } else { for (const event in value) { events.push([event, value[event]]); } } } else if (key === 'class') { addClass(element, value); } else if (key === 'style' && typeof value === 'object') { setStyle(element, value); } else if (key.startsWith('on')) { events.push([key.slice(2).toLowerCase(), value]); } else { element.setAttribute(key, value); } } setEvents(element, events); return element; }
     function addClass(element, value) { element.classList.add(...[value].flat()); return element; }
     function setStyle(element, styles) { for (let [k, v] of Object.entries(styles)) { if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k)) v += 'px'; element.style[k] = v; } return element; }
-    function create(name, props, ...childrens) { if (name === 'svg') return createSVG(name, props, ...childrens); const element = name instanceof Element ? name : document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); }
+    function create(name, props, ...childrens) { if (name == null) return null; if (name === 'svg') return createSVG(name, props, ...childrens); const element = name instanceof Element ? name : document.createElement(name); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return append(setProps(element, props), ...childrens); }
     function append(element, ...childrens) { if (element.name === 'svg') return appendSVG(element, ...childrens); for (const child of childrens) { if (Array.isArray(child)) element.append(create(...child)); else if (child instanceof Node) element.appendChild(child); else element.append(document.createTextNode(child)); } return element; }
     function createSVG(name, props, ...childrens) { const element = document.createElementNS('http://www.w3.org/2000/svg', name); if (name === 'svg') element.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink'); if (props === undefined) return element; if (Array.isArray(props) || props instanceof Node || typeof props !== 'object') return append(element, props, ...childrens); return appendSVG(setProps(element, props), ...childrens) }
     function appendSVG(element, ...childrens) { for (const child of childrens) { if (Array.isArray(child)) element.append(createSVG(...child)); else if (child instanceof Node) element.appendChild(child); else element.append(document.createTextNode(child)); } return element; }
