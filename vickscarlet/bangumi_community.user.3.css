@@ -142,7 +142,7 @@ html, html[data-theme='dark'] {
                 left: calc(50% - calc(var(--loading-size) / 2));
                 aspect-ratio: 1;
                 border-radius: 50%;
-                border: 8px solid;
+                border: calc(var(--loading-size) / 6.25) solid;
                 box-sizing: border-box;
                 border-color: var(--color-bangumi) transparent;
                 animation: loading-spine 1s infinite;
