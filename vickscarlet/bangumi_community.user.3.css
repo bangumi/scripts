@@ -28,11 +28,12 @@ html, html[data-theme='dark'] {
         }
         > .container {
             max-width: 1280px;
-            max-height: 580px;
+            min-height: 390px;
+            max-height: 600px;
             width: calc(100% - 60px);
             height: calc(100vh - 60px);
             
-            > fieldset {
+            > fieldset.board {
                 padding-top: 24px;
                 legend {
                     position: absolute;
@@ -70,16 +71,18 @@ html, html[data-theme='dark'] {
             }
 
             display: grid;
-            grid-template-columns: auto auto 1fr 2fr;
-            grid-template-rows: 180px auto auto auto 3fr;
+            grid-template-columns: auto auto auto 1fr auto;
+            grid-template-rows: 180px 34px 36px 40px calc(100% - 310px);
             gap: 5px 5px;
+            padding: 5px;
             grid-template-areas:
-                "avatar note note bio"
-                "actions note note bio"
-                "stats note note bio"
-                "chart note note bio"
-                "usedname usedname tags bio"; 
-            > * {
+                "avatar note note note bio"
+                "actions note note note bio"
+                "stats note note note bio"
+                "chart note note note bio"
+                "usedname usedname tags tags bio";
+            > .board {
+                --loading-size: 50px;
                 --color-font: var(--color-bangumi-font);
                 --color-from: var(--color-base-2);
                 --color-to: var(--color-base-2);
@@ -88,8 +91,6 @@ html, html[data-theme='dark'] {
                 padding: 10px;
                 position: relative;
                 border-radius: 4px;
-                overscroll-behavior: contain;
-                > * { overscroll-behavior: contain; }
                 > .actions,
                 > .action {
                     color: var(--color-base-font);
@@ -105,8 +106,8 @@ html, html[data-theme='dark'] {
                     > .action { cursor: pointer; }
                 }
             }
-            > *::after, 
-            > *::before {
+            > .board::after, 
+            > .board::before {
                 content: '';
                 position: absolute;
                 border-radius: 4px;
@@ -117,10 +118,10 @@ html, html[data-theme='dark'] {
                 background-size: cover;
                 z-index: -10;
             }
-            > *::before { opacity: 0.2; }
+            > .board::before { opacity: 0.2; }
             > .failed,
             > .loading::before,
-            > *::after {
+            > .board::after {
                 opacity: 1;
                 background: linear-gradient(150deg, rgb(from var(--color-from) r g b / var(--color-alpha)), rgb(from var(--color-to) r g b / var(--color-alpha)) 75%);
                 box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);
@@ -135,10 +136,10 @@ html, html[data-theme='dark'] {
                 backdrop-filter: none !important;
             }
             > .loading::after {
-                width: 50px;
-                height: 50px;
-                top: calc(50% - 25px);
-                left: calc(50% - 25px);
+                width: var(--loading-size);
+                height: var(--loading-size);
+                top: calc(50% - calc(var(--loading-size) / 2));
+                left: calc(50% - calc(var(--loading-size) / 2));
                 aspect-ratio: 1;
                 border-radius: 50%;
                 border: 8px solid;
@@ -148,10 +149,10 @@ html, html[data-theme='dark'] {
             }
             > .failed::before,
             > .failed::after {
-                width: 50px;
-                height: 8px;
-                top: calc(50% - 25px);
-                left: calc(50% - 4px);
+                width: var(--loading-size);;
+                height: calc(var(--loading-size) / 6.25);
+                top: calc(50% - calc(var(--loading-size) / 2));
+                left: calc(50% - calc(var(--loading-size) / 12.5));
             }
             > .failed::after { transform: rotate(45deg); }
             > .failed::before { transform: rotate(-45deg); }
@@ -215,6 +216,7 @@ html, html[data-theme='dark'] {
             }
             > .actions {
                 grid-area: actions;
+                --loading-size: 24px;
                 --color-from: var(--color-yellow);
                 --color-font: var(--color-yellow-font);
                 display: grid;
@@ -244,6 +246,7 @@ html, html[data-theme='dark'] {
             }
             > .stats {
                 grid-area: stats;
+                --loading-size: 24px;
                 --color-font: var(--color-base-font);
                 padding: 0;
                 display: grid;
@@ -270,6 +273,7 @@ html, html[data-theme='dark'] {
             }
             > .chart {
                 grid-area: chart;
+                --loading-size: 24px;
                 --color-font: var(--color-base-font);
                 padding: 0;
                 display: grid;
@@ -312,7 +316,7 @@ html, html[data-theme='dark'] {
                 --color-from: var(--color-green);
                 --color-font: var(--color-green-font);
                 white-space: pre-wrap;
-                > .wrapper { max-height: 270px; }
+                > .wrapper { height: 100%; }
             }
             > .usedname {
                 grid-area: usedname;
@@ -320,9 +324,7 @@ html, html[data-theme='dark'] {
                 --color-font: var(--color-purple-font);
                 max-width: 400px;
                 min-width: 200px;
-                > ul {
-                    max-height: 336px;
-                }
+                > ul { max-height: 100%; }
             }
             > .bio {
                 grid-area: bio;
@@ -330,13 +332,58 @@ html, html[data-theme='dark'] {
                 --color-font: var(--color-base-font);
                 max-width: 505px;
                 min-width: 300px;
-                max-height: 560px;
-                height: calc(100vh - 80px);
-                > div {
-                    height: 100%;
-                    overflow: auto;
-                }
+                max-height: calc(100% - 34px);
+                > div { height: calc(100% + 2px); }
             }
+        }
+    }
+    
+    @media (max-width: 850px) {
+        #community-helper-user-panel > .container {
+            grid-template-columns: auto auto auto 1fr;
+            grid-template-rows: 180px 34px 36px 40px auto auto;
+            gap: 5px 5px;
+            padding: 5px;
+            max-height: 900px;
+            grid-template-areas:
+                "avatar note note note"
+                "actions note note note"
+                "stats note note note"
+                "chart note note note"
+                "usedname usedname tags tags"
+                "bio bio bio bio";
+            > .tags,
+            > .usedname { 
+                max-height: 300px;
+            }
+            > .bio { 
+                max-width: 100%; 
+                max-height: 100%;
+            }
+        }
+    }
+
+    @media (max-width: 520px) {
+        #community-helper-user-panel > .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: 180px 34px 36px 40px auto auto auto auto;
+            gap: 5px 5px;
+            padding: 5px;
+            max-height: 1100px;
+            grid-template-areas:
+                "avatar"
+                "actions"
+                "stats"
+                "chart"
+                "note"
+                "usedname"
+                "tags"
+                "bio";
+            > .board { min-width: 130px; width: calc(100% - 20px); max-width: calc(100% - 20px); }
+            > .actions, > .stats, > .chart { width: 100%; max-width: 100%; }
+            > .note { max-height: 200px; }
+            > .tags, > .usedname { max-height: 150px; }
+            > .bio { max-height: 100%; }
         }
     }
 }
