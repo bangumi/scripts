@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.0
+// @version      0.1.1
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -45,7 +45,7 @@
     class Event { static #listeners = new Map(); static on(event, listener) { if (!this.#listeners.has(event)) this.#listeners.set(event, new Set()); this.#listeners.get(event).add(listener); } static emit(event, ...args) { if (!this.#listeners.has(event)) return; for (const listener of this.#listeners.get(event).values()) listener(...args); } static off(event, listener) { if (!this.#listeners.has(event)) return; this.#listeners.get(event).delete(listener); } }
     /**merge**/
     /**merge:js=_common.bangumi.js**/
-    function whoami() { const nid = window.parent.CHOBITS_UID ?? 0; const dockA = window.parent.document.querySelector('#dock li.first a'); if (dockA) { const id = dockA.href.split('/').pop(); return { id, nid }; } const bannerAvatar = window.parent.document.querySelector('.idBadgerNeue> .avatar'); if (bannerAvatar) { const id = bannerAvatar.href.split('/').pop(); return { id, nid }; } return null; }
+    function whoami() { let nid; try { nid = window.CHOBITS_UID ?? window.parent.CHOBITS_UID ?? CHOBITS_UID ?? 0; } catch (e) { nid = 0; } const dockA = window.parent.document.querySelector('#dock li.first a'); if (dockA) { const id = dockA.href.split('/').pop(); return { id, nid }; } const bannerAvatar = window.parent.document.querySelector('.idBadgerNeue> .avatar'); if (bannerAvatar) { const id = bannerAvatar.href.split('/').pop(); return { id, nid }; } return null; }
     /**merge**/
     addStyle(
         /**merge:css=bangumi_community.user.keyframes.css**/`@keyframes loading-spine {to{transform: rotate(.5turn)}}`/**merge**/,
@@ -163,6 +163,7 @@
 
         async #loadHomepage(id) {
             const res = await fetch('/user/' + id);
+            const me = whoami();
             if (!res.ok) return null;
             const html = await res.text();
             const element = document.createElement('html');
@@ -171,13 +172,6 @@
             const bio = element.querySelector('.bio') ?? '';
             const name = nameSingle.querySelector('.name a').innerText;
             const src = nameSingle.querySelector('.headerAvatar .avatar span').style.backgroundImage.replace('url("', '').replace('")', '');
-            const actions = nameSingle.querySelectorAll('#headerProfile .actions a.chiiBtn');
-            const nid = actions[1].href.split('/').pop().replace('.chii', '')
-            const friend = actions[0].innerText == '解除好友';
-            const gh = friend
-                ? actions[0].getAttribute('onclick').split(',').pop().split(/['"]/)[1]
-                : actions[0].href.split('gh=').pop();
-            if (bio) bio.classList.remove('bio');
             const pinnedLayout = element.querySelector('#pinnedLayout');
             const stats = Array.from(pinnedLayout.querySelectorAll('.gridStats > .item'), e => {
                 const name = e.lastElementChild.innerText;
@@ -198,8 +192,17 @@
                     value: parseInt(e.lastElementChild.innerText.replace(/[\(\)]/g, '')),
                 }
             })
-
-            return { name, src, bio, nid, gh, friend, stats, chart }
+            if (me.nid == 0) return { type: 'guest', name, src, bio, stats, chart };
+            if (me.id == id) return { type: 'self', name, src, bio, stats, chart };
+            const actions = nameSingle.querySelectorAll('#headerProfile .actions a.chiiBtn');
+            const nid = actions[1].href.split('/').pop().replace('.chii', '')
+            const friend = actions[0].innerText == '解除好友';
+            const gh = friend
+                ? actions[0].getAttribute('onclick').split(',').pop().split(/['"]/)[1]
+                : actions[0].href.split('gh=').pop();
+            if (bio) bio.classList.remove('bio');
+            const type = friend ? 'friend' : 'normal';
+            return { type, name, src, bio, nid, gh, stats, chart }
         }
 
         async #niceIt(element) {
@@ -263,18 +266,10 @@
                         avatar.classList.add('failed');
                         bio.classList.add('failed');
                     }
-                    const { name, src, friend, nid, gh, bio: rbio, stats: sts, chart: cht } = homepage;
+                    const { type, name, src, friend, nid, gh, bio: rbio, stats: sts, chart: cht } = homepage;
                     bio.classList.add(this.#bfbgi(src))
                     append(avatar, ['img', { src }], createTextSVG(name, 'vc-serif'), ['span', id]);
                     append(bio, rbio);
-                    pmBtn.addEventListener('click', () => newTab('/pm/compose/' + nid + '.chii'));
-                    if (friend) connectBtn.replaceWith(disconnectBtn)
-                    connectBtn.addEventListener('click', async () => {
-                        if (await this.#connect(nid, gh)) connectBtn.replaceWith(disconnectBtn);
-                    });
-                    disconnectBtn.addEventListener('click', async () => {
-                        if (await this.#disconnect(nid, gh)) disconnectBtn.replaceWith(connectBtn);
-                    });
                     if (rbio) this.#niceIt(rbio);
                     append(stats, ...map(sts, v => ['li', { class: ['stat', 'tip-item', v.type] }, ['div', v.value], ['span', v.name]]));
                     const max = Math.max(...cht.map(v => v.value));
@@ -282,6 +277,31 @@
                         ['div', { class: 'bar', style: { width: (v.value / max * 100).toFixed(2) + '%' } }],
                     ]));
                     this.#resize();
+                    switch (type) {
+                        case 'guest': {
+                            const act = () => confirm('暂未登录，是否打开登录页面') && newTab('/login');
+                            pmBtn.addEventListener('click', act);
+                            connectBtn.addEventListener('click', act);
+                            break;
+                        }
+                        case 'self': {
+                            const act = () => alert('这是自己');
+                            pmBtn.addEventListener('click', act);
+                            connectBtn.addEventListener('click', act);
+                            break;
+                        }
+                        case 'friend':
+                            connectBtn.replaceWith(disconnectBtn)
+                        default:
+                            pmBtn.addEventListener('click', () => newTab('/pm/compose/' + nid + '.chii'));
+                            if (friend) connectBtn.replaceWith(disconnectBtn)
+                            connectBtn.addEventListener('click', async () => {
+                                if (await this.#connect(nid, gh)) connectBtn.replaceWith(disconnectBtn);
+                            });
+                            disconnectBtn.addEventListener('click', async () => {
+                                if (await this.#disconnect(nid, gh)) disconnectBtn.replaceWith(connectBtn);
+                            });
+                    }
                 },
                 async () => {
                     // 曾用名
