@@ -6,9 +6,15 @@
  *  unique?: boolean
  * }} Index
  * @typedef {{
+ *  enabled?: boolean,
+ *  hot?: number,
+ *  last?: number,
+ * }} Cache
+ * @typedef {{
  *  collection: string
  *  options?: IDBObjectStoreParameters
  *  indexes?: Index[]
+ *  cache?: Cache
  * }} CollectionOptions
  * @typedef {{
  *  dbName: string
@@ -16,22 +22,130 @@
  *  collections: CollectionOptions[]
  * }} Options
  */
+
+class Cache {
+    constructor({ hot, last }) {
+        this.#hotLimit = hot ?? 0;
+        this.#lastLimit = last ?? 0;
+        this.#cacheLimit = this.#hotLimit + this.#lastLimit;
+    }
+    #hotLimit;
+    #lastLimit;
+    #cacheLimit;
+
+    #hotList = [];
+    #hot = new Set();
+    #last = new Set();
+    #pedding = new Set();
+    #cache = new Map();
+    #times = new Map();
+
+    #cHot(key) {
+        if (!this.#hotLimit) return false;
+        const counter = this.#times.get(key) || { key, cnt: 0 };
+        counter.cnt++;
+        this.#times.set(key, counter);
+        // 热点为空
+        if (this.#hot.size == 0) {
+            this.#hotList.push(counter);
+            this.#hot.add(key);
+            this.#pedding.delete(key);
+            return true;
+        }
+        const i = this.#hotList.indexOf(counter);
+        // 在最热
+        if (i == 0) return true;
+        // 在热点中
+        if (i > 0) {
+            const up = this.#hotList[i - 1];
+            // 需要重排
+            if (counter.cnt > up.cnt)
+                this.#hotList.sort((a, b) => b.cnt - a.cnt);
+            return true;
+        }
+        // 不在热点中
+        // 热点未满
+        if (this.#hot.size < this.#hotLimit) {
+            this.#hotList.push(counter);
+            this.#hot.add(key);
+            this.#pedding.delete(key);
+            return true;
+        }
+        // 热点已满
+        const min = this.#hotList.at(-1);
+        // 小于最低热
+        if (counter.cnt <= min.cnt) return false;
+        // 替换最低热
+
+        // 之前最低热出列
+        this.#hotList.pop();
+        this.#hot.delete(min.key);
+        // 也不在最近数据中, 就标记为待删除
+        if (!this.#last.has(min.key)) this.#pedding.add(min.key);
+
+        // 当前最低热入列
+        this.#hotList.push(counter);
+        this.#hot.add(key);
+        this.#pedding.delete(key);
+
+        return true;
+    }
+    #cLast(key) {
+        if (!this.#lastLimit) return false;
+        this.#last.delete(key);
+        this.#last.add(key);
+        this.#pedding.delete(key);
+        if (this.#last.size <= this.#lastLimit) return true;
+        const out = this.#last.values().next().value;
+        this.#last.delete(out);
+        // 也不在热点数据中, 就标记为待删除
+        if (!this.#hot.has(out)) this.#pedding.add(out);
+        return true;
+    }
+
+
+    async get(key, query) {
+        const data = this.#cache.get(key) ?? await query();
+        const inHot = this.#cHot(key);
+        const inLast = this.#cLast(key);
+        if (inHot || inLast) this.#cache.set(key, data);
+        let i = this.#cache.size - this.#cacheLimit;
+        if (!i) return data;
+        for (const key of this.#pedding) {
+            if (!i) return data;
+            this.#cache.delete(key);
+            this.#pedding.delete(key);
+            i--;
+        }
+        return data;
+    }
+    update(key, value) {
+        if (!this.#cache.has(key)) this.#cache.set(key, value);
+    }
+    clear() {
+        this.#cache.clear();
+    }
+}
 class Collection {
     /**
      * @param {Database} master 
      * @param {CollectionOptions} param1
      */
-    constructor(master, { collection, options, indexes }) {
+    constructor(master, { collection, options, indexes, cache }) {
         this.#master = master;
         this.#collection = collection;
         this.#options = options;
         this.#indexes = indexes;
+        if (cache && cache.enabled) {
+            this.#cache = new Cache(cache);
+        }
     }
     /** @type {Database} */
     #master;
     #collection;
     #options;
     #indexes;
+    #cache = null;
 
     get collection() { return this.#collection }
     get options() { return this.#options }
@@ -65,13 +179,28 @@ class Collection {
      * @returns {Promise<T|null>}
      */
     async get(key, index = '') {
-        return this.transaction(store => (index ? store.index(index) : store).get(key));
+        const handler = () => this.transaction(store => (index ? store.index(index) : store).get(key));
+        if (this.#cache && this.#options.keyPath && !index) return this.#cache.get(key, handler);
+        return handler();
     }
 
     /**
      * @returns {Promise<boolean>}
      */
     async put(data) {
+        if (this.#cache) {
+            let key;
+            if (Array.isArray(this.#options.keyPath)) {
+                key = [];
+                for (const path of this.#options.keyPath) {
+                    key.push(data[path]);
+                }
+                key = key.join('/');
+            } else {
+                key = data[this.#options.keyPath];
+            }
+            this.#cache.update(key, data);
+        }
         return this.transaction(store => store.put(data), 'readwrite').then(_ => true);
     }
 
@@ -79,6 +208,7 @@ class Collection {
      * @returns {Promise<boolean>}
      */
     async clear() {
+        if (this.#cache) this.#cache.clear();
         return this.transaction(store => store.clear(), 'readwrite').then(_ => true);
     }
 }
