@@ -1,10 +1,12 @@
 html { 
+    overflow-anchor: none;
     #comment_list .v-hd { 
         >*:not(.v-ph) { 
             display: none; 
         } 
         >.v-ph {
             display: block;
+            width: 100%;
         } 
     } 
     .v-ph { 
