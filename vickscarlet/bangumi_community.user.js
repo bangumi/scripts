@@ -460,6 +460,8 @@
         const first = e.querySelector(':scope>.clearit')
         const replyWrapper = e.querySelector('#reply_wrapper');
         if (replyWrapper) {
+            const placeholder = create('div');
+            replyWrapper.replaceWith(placeholder);
             e.querySelector('#sliderContainer')?.style.setProperty('display', 'none', 'important');
             const getSwitch = () => {
                 const raw = localStorage.getItem('sickyReplySwitch')
@@ -479,10 +481,11 @@
                 })();
                 if (s) {
                     sicky.style.visibility = 'visible';
+                    replyWrapper.replaceWith(placeholder);
                     sicky.append(replyWrapper);
                 } else {
                     sicky.style.visibility = 'hidden';
-                    e.append(replyWrapper);
+                    placeholder.replaceWith(replyWrapper);
                 }
 
             }).bind(this, () => {
