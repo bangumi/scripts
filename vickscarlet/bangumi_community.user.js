@@ -14,11 +14,11 @@
 // ==/UserScript==
 (async () => {
     /**merge:js=_common.dom.utils.js**/
-    async function waitElement(parent, id, timeout = 1000) { return new Promise((resolve, reject) => { let isDone = false; const done = (fn) => { if (isDone) return; isDone = true; fn(); }; const observer = new MutationObserver((mutations) => { for (const mutation of mutations) { for (const node of mutation.addedNodes) { if (node.id == id) { done(() => { observer.disconnect(); resolve(node); }); return; } } } }); observer.observe(parent, { childList: true, subtree: true }); const node = parent.querySelector('#' + id); if (node) return done(() => { observer.disconnect(); resolve(node); }); setTimeout(() => done(() => { observer.disconnect(); const node = parent.querySelector('#' + id); if (node) resolve(node); else reject(); }), timeout); }); }
-    function observeChildren(element, callback) { new MutationObserver((mutations) => { for (const mutation of mutations) for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) callback(node); }).observe(element, { childList: true }); for (const child of element.children) callback(child); }
+    async function waitElement(parent, id, timeout = 1000) { return new Promise(resolve => { let isDone = false; const done = (fn) => { if (isDone) return; isDone = true; fn(); }; const observer = new MutationObserver((mutations) => { for (const mutation of mutations) { for (const node of mutation.addedNodes) { if (node.id == id) { done(() => { observer.disconnect(); resolve(node); }); return; } } } }); observer.observe(parent, { childList: true, subtree: true }); const node = parent.querySelector('#' + id); if (node) return done(() => { observer.disconnect(); resolve(node); }); setTimeout(() => done(() => { observer.disconnect(); resolve(parent.querySelector('#' + id)); }), timeout); }); }
+    function observeChildren(element, callback) { new MutationObserver((mutations) => { for (const mutation of mutations) for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) callback(node); }).observe(element, { childList: true }); for (const child of Array.from(element.children)) callback(child); }
     /**merge**/
     /**merge:js=_common.dom.script.js**/
-    async function loadScript(src) { if (!this._loaded) this._loaded = new Set(); if (this._loaded.has(src)) return; if (!this._pedding) this._pedding = new Map(); const list = this._pedding.get(src) ?? []; const pedding = new Promise(resolve => list.push(resolve)); if (!this._pedding.has(src)) { this._pedding.set(src, list); const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this._loaded.add(src); list.forEach(resolve => resolve()); }; document.body.appendChild(script); } return pedding }
+    class LoadScript { static #loaded = new Set(); static #pedding = new Map(); static async load(src) { if (this.#loaded.has(src)) return; const list = this.#pedding.get(src) ?? []; const pedding = new Promise(resolve => list.push(resolve)); if (!this.#pedding.has(src)) { this.#pedding.set(src, list); const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this.#loaded.add(src); list.forEach(resolve => resolve()); }; document.body.appendChild(script); } return pedding } }
     /**merge**/
     /**merge:js=_common.dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
@@ -44,7 +44,7 @@
     /**merge:js=_common.database.js**/
     class Cache { constructor({ hot, last }) { this.#hotLimit = hot ?? 0; this.#lastLimit = last ?? 0; this.#cacheLimit = this.#hotLimit + this.#lastLimit; } #hotLimit; #lastLimit; #cacheLimit; #hotList = []; #hot = new Set(); #last = new Set(); #pedding = new Set(); #cache = new Map(); #times = new Map(); #cHot(key) { if (!this.#hotLimit) return false; const counter = this.#times.get(key) || { key, cnt: 0 }; counter.cnt++; this.#times.set(key, counter); if (this.#hot.size == 0) { this.#hotList.push(counter); this.#hot.add(key); this.#pedding.delete(key); return true; } const i = this.#hotList.indexOf(counter); if (i == 0) return true; if (i > 0) { const up = this.#hotList[i - 1]; if (counter.cnt > up.cnt) this.#hotList.sort((a, b) => b.cnt - a.cnt); return true; } if (this.#hot.size < this.#hotLimit) { this.#hotList.push(counter); this.#hot.add(key); this.#pedding.delete(key); return true; } const min = this.#hotList.at(-1); if (counter.cnt <= min.cnt) return false; this.#hotList.pop(); this.#hot.delete(min.key); if (!this.#last.has(min.key)) this.#pedding.add(min.key); this.#hotList.push(counter); this.#hot.add(key); this.#pedding.delete(key); return true; } #cLast(key) { if (!this.#lastLimit) return false; this.#last.delete(key); this.#last.add(key); this.#pedding.delete(key); if (this.#last.size <= this.#lastLimit) return true; const out = this.#last.values().next().value; this.#last.delete(out); if (!this.#hot.has(out)) this.#pedding.add(out); return true; } async get(key, query) { const data = this.#cache.get(key) ?? await query(); const inHot = this.#cHot(key); const inLast = this.#cLast(key); if (inHot || inLast) this.#cache.set(key, data); let i = this.#cache.size - this.#cacheLimit; if (!i) return data; for (const key of this.#pedding) { if (!i) return data; this.#cache.delete(key); this.#pedding.delete(key); i--; } return data; } update(key, value) { if (!this.#cache.has(key)) this.#cache.set(key, value); } clear() { this.#cache.clear(); } }
     class Collection { constructor(master, { collection, options, indexes, cache }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; if (cache && cache.enabled) { this.#cache = new Cache(cache); } } #master; #collection; #options; #indexes; #cache = null; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction(this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result)); }) }, mode) } async get(key, index = '') { const handler = () => this.transaction(store => (index ? store.index(index) : store).get(key)); if (this.#cache && this.#options.keyPath && !index) return this.#cache.get(key, handler); return handler(); } async put(data) { if (this.#cache) { let key; if (Array.isArray(this.#options.keyPath)) { key = []; for (const path of this.#options.keyPath) { key.push(data[path]); } key = key.join('/'); } else { key = data[this.#options.keyPath]; } this.#cache.update(key, data); } return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async clear() { if (this.#cache) this.#cache.clear(); return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } }
-    class Database { constructor({ dbName, version, collections }) { this.#dbName = dbName; this.#version = version; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', () => reject({ type: 'error', message: request.error })); request.addEventListener('blocked', () => reject({ type: 'blocked' })); request.addEventListener('success', () => resolve(request.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } }
+    class Database { constructor({ dbName, version, collections, blocked }) { this.#dbName = dbName; this.#version = version; this.#blocked = blocked || { alert: false }; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; #blocked; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', () => reject({ type: 'error', message: request.error })); request.addEventListener('blocked', () => { const message = this.#blocked?.message || 'indexedDB is blocked'; if (this.#blocked?.alert) alert(message); reject({ type: 'blocked', message }); }); request.addEventListener('success', () => resolve(request.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { if (!this.#db) await this.init(); return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } }
     /**merge**/
     /**merge:js=_common.event.js**/
     class Event { static #listeners = new Map(); static on(event, listener) { if (!this.#listeners.has(event)) this.#listeners.set(event, new Set()); this.#listeners.get(event).add(listener); } static emit(event, ...args) { if (!this.#listeners.has(event)) return; for (const listener of this.#listeners.get(event).values()) listener(...args); } static off(event, listener) { if (!this.#listeners.has(event)) return; this.#listeners.get(event).delete(listener); } }
@@ -68,7 +68,8 @@
             { collection: 'friends', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }], cache: { enabled: true, last: 1 } },
             { collection: 'users', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }], cache: { enabled: true, last: 5, hot: 5 } },
             { collection: 'images', options: { keyPath: 'uri' }, indexes: [{ name: 'uri', keyPath: 'uri', unique: true }] }
-        ]
+        ],
+        blocked: { alert: true, message: 'Bangumi 社区助手 preview 数据库有更新，请先关闭所有班固米标签页再刷新试试' },
     });
     const menu = new class {
         constructor() {
@@ -205,7 +206,7 @@
 
         async #niceIt(element) {
             const opts = { cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)", cursorwidth: "4px", cursorborder: "none" };
-            await loadScript('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
+            await LoadScript.load('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
             const nice = $(element).niceScroll(opts);
             this.#onResize.add(() => nice.resize());
             return nice;
@@ -407,46 +408,49 @@
         }
     }
 
-    function injectDock(dock) {
-        let n, o;
+    async function injectDock(dock) {
+        if (!dock) return;
+        const robotBtn = await waitElement(dock, 'showrobot');
+        if (!robotBtn) return;
+        robotBtn.style.display = 'none';
+        robotBtn.parentElement.append(create('a', {
+            class: ['showrobot', 'svg-icon'],
+            href: 'javascript:void(0)',
+            onClick: () => chiiLib.ukagaka.toggleDisplay()
+        }, svg('robot'), ['span', '春菜']));
+        const dockUl = robotBtn.parentElement.parentElement;
 
-        o = dock.querySelector('#showrobot');
-        o.style.display = 'none';
-        n = create('a', { class: ['showrobot', 'svg-icon'], href: 'javascript:void(0)' }, svg('robot'), ['span', '春菜']);
-        n.addEventListener('click', () => chiiLib.ukagaka.toggleDisplay());
-        o.parentElement.append(n);
+        const toggleTheme = dockUl.querySelector('#toggleTheme');
+        toggleTheme.style.display = 'none';
+        toggleTheme.parentElement.append(create('a', {
+            class: ['showrobot', 'svg-icon'],
+            href: 'javascript:void(0)',
+            onClick: () => chiiLib.ukagaka.toggleTheme()
+        }, svg('light'), ['span', '开关灯']));
+        toggleTheme.parentElement.classList.remove('last');
 
-        o = dock.querySelector('#toggleTheme');
-        o.style.display = 'none';
-        n = create('a', { class: ['toggleTheme', 'svg-icon'], href: 'javascript:void(0)' }, svg('light'), ['span', '开关灯']);
-        n.addEventListener('click', () => chiiLib.ukagaka.toggleTheme());
-        o.parentElement.append(n);
-        o.parentElement.classList.remove('last');
-
-        o = null;
-        dock.querySelectorAll('li').forEach(e => {
-            if (!o || o.children.length < e.children.length) o = e;
-        });
-        o.querySelectorAll('a').forEach(a => {
+        const actions = dockUl.children[1];
+        for (const action of Array.from(actions.children)) {
             let icon;
-            switch (a.innerText) {
+            switch (action.innerText) {
                 case '提醒': icon = 'notify'; break;
                 case '短信': icon = 'message'; break;
                 case '设置': icon = 'setting'; break;
                 case '登出': icon = 'logout'; break;
             }
             if (icon) {
-                const title = a.innerText
-                removeAllChildren(a);
-                a.classList.add('svg-icon');
-                append(a, svg(icon), ['span', title]);
+                const title = action.innerText
+                removeAllChildren(action);
+                action.classList.add('svg-icon');
+                append(action, svg(icon), ['span', title]);
             }
-            o.parentElement.insertBefore(create('li', a), o);
-        })
-        o.remove();
+            dockUl.insertBefore(create('li', action), actions);
+        }
+        actions.remove();
     }
 
     async function injectCommentList(commentList) {
+        if (!commentList) return;
         const e = commentList.parentElement;
         if (!e) return;
         e.classList.add('topic-box');
@@ -483,32 +487,34 @@
         }, { root: null, rootMargin: '0px', threshold: [0] });
 
         if (first) observer.observe(first);
-        const owner = e.querySelector('.postTopic')?.getAttribute('data-item-user');
+        const ownerItem = e.querySelector('.postTopic');
+        const owner = ownerItem?.getAttribute('data-item-user');
         const self = whoami()?.id;
-        const friends = await getFriends();
-        if (friends.has(owner)) first.classList.add('friend');
-        if (owner == self) first.classList.add('self');
+        if (owner === self) first.classList.add('self');
 
         observeChildren(commentList, async comment => {
+            observer.observe(comment)
             const floor = comment.getAttribute('data-item-user');
-            if (friends.has(floor)) comment.classList.add('friend');
             if (floor === owner) comment.classList.add('owner');
             if (floor === self) comment.classList.add('self');
-            observer.observe(comment)
-            const subReply = await waitElement(comment, 'topic_reply_' + comment.id.substr(5)).catch(() => null);
+            Friends.get().then(friends => friends.has(floor) && comment.classList.add('friend'));
+            const subReply = await waitElement(comment, 'topic_reply_' + comment.id.substr(5));
             if (!subReply) return;
             observeChildren(subReply, clearit => {
+                observer.observe(clearit);
                 const user = clearit.getAttribute('data-item-user');
-                if (friends.has(user)) clearit.classList.add('friend');
                 if (user === owner) clearit.classList.add('owner');
                 if (user === floor) clearit.classList.add('floor');
                 if (user === self) clearit.classList.add('self');
-                observer.observe(clearit);
+                Friends.get().then(friends => friends.has(user) && clearit.classList.add('friend'));
             })
         })
+        Friends.get().then(friends => friends.has(owner) && ownerItem.classList.add('friend'));
+
     }
 
     async function replyWrapperSicky(replyWrapper) {
+        if (!replyWrapper) return;
         const placeholder = create('div');
         const e = replyWrapper.parentElement;
         if (!e) return;
@@ -546,25 +552,38 @@
         }));
         append(replyWrapper, swBtn);
     }
-
-    async function getFriends() {
-        const user = whoami();
-        if (!user) return new Set();
-        const id = user.id;
-        const cache = await db.get('friends', id);
-        if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
-        const res = await fetch(`/user/${id}/friends`);
-        if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
-        const html = await res.text();
-        const element = document.createElement('html')
-        element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
-        const friends = new Set();
-        for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
-            const id = a.href.split('/').pop();
-            friends.add(id);
+    class Friends {
+        static #peddings = null;
+        static async get() {
+            const peddings = this.#peddings ?? [];
+            const pedding = new Promise(resolve => peddings.push(resolve));
+            if (!this.#peddings) {
+                this.#peddings = peddings;
+                (async () => {
+                    const user = whoami();
+                    if (!user) return new Set();
+                    const id = user.id;
+                    const cache = await db.get('friends', id);
+                    if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
+                    const res = await fetch(`/user/${id}/friends`);
+                    if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
+                    const html = await res.text();
+                    const element = document.createElement('html')
+                    element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
+                    const friends = new Set();
+                    for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
+                        const id = a.href.split('/').pop();
+                        friends.add(id);
+                    }
+                    await db.put('friends', { id, friends, timestamp: Date.now() });
+                    return friends;
+                })().then(friends => {
+                    for (const pedding of this.#peddings) pedding(friends);
+                    this.#peddings = null;
+                });
+            }
+            return pedding;
         }
-        await db.put('friends', { id, friends, timestamp: Date.now() });
-        return friends;
     }
 
     function svg(type, size = 14) {
@@ -664,19 +683,7 @@
         }
     };
 
-    await db.init().catch((reason) => {
-        if (!reason) throw new Error('db init failed');
-        switch (reason.type) {
-            case 'error': throw reason.message;
-            case 'blocked': {
-                alert('Bangumi 社区助手 preview 数据库有更新，请先关闭所有班固米标签页再刷新试试');
-                throw new Error('db init blocked');
-            }
-            default: throw reason;
-        }
-    });
-
-    waitElement(document, 'dock').then(injectDock).catch(_ => { });
-    waitElement(document, 'comment_list').then(injectCommentList).catch(_ => { });
-    waitElement(document, 'reply_wrapper').then(replyWrapperSicky).catch(_ => { });
+    waitElement(document, 'dock').then(injectDock);
+    waitElement(document, 'comment_list').then(injectCommentList);
+    waitElement(document, 'reply_wrapper').then(replyWrapperSicky);
 })();

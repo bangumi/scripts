@@ -14,8 +14,8 @@
 // ==/UserScript==
 (async () => {
     /**merge:js=_common.dom.utils.js**/
-    async function waitElement(parent, id, timeout = 1000) { return new Promise((resolve, reject) => { let isDone = false; const done = (fn) => { if (isDone) return; isDone = true; fn(); }; const observer = new MutationObserver((mutations) => { for (const mutation of mutations) { for (const node of mutation.addedNodes) { if (node.id == id) { done(() => { observer.disconnect(); resolve(node); }); return; } } } }); observer.observe(parent, { childList: true, subtree: true }); const node = parent.querySelector('#' + id); if (node) return done(() => { observer.disconnect(); resolve(node); }); setTimeout(() => done(() => { observer.disconnect(); const node = parent.querySelector('#' + id); if (node) resolve(node); else reject(); }), timeout); }); }
-    function observeChildren(element, callback) { new MutationObserver((mutations) => { for (const mutation of mutations) for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) callback(node); }).observe(element, { childList: true }); for (const child of element.children) callback(child); }
+    async function waitElement(parent, id, timeout = 1000) { return new Promise(resolve => { let isDone = false; const done = (fn) => { if (isDone) return; isDone = true; fn(); }; const observer = new MutationObserver((mutations) => { for (const mutation of mutations) { for (const node of mutation.addedNodes) { if (node.id == id) { done(() => { observer.disconnect(); resolve(node); }); return; } } } }); observer.observe(parent, { childList: true, subtree: true }); const node = parent.querySelector('#' + id); if (node) return done(() => { observer.disconnect(); resolve(node); }); setTimeout(() => done(() => { observer.disconnect(); resolve(parent.querySelector('#' + id)); }), timeout); }); }
+    function observeChildren(element, callback) { new MutationObserver((mutations) => { for (const mutation of mutations) for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) callback(node); }).observe(element, { childList: true }); for (const child of Array.from(element.children)) callback(child); }
     /**merge**/
     /**merge:js=_common.dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
@@ -23,7 +23,7 @@
     addStyle(/**merge:css=bangumi_comment_list_optimization.user.1.css**/`html {overflow-anchor: none;#comment_list .v-hd {>*:not(.v-ph:last-child) {display: none !important;}>.v-ph:last-child {display: block;height: 44px;width: 100%;}}.v-ph {display: none;}}`/**merge**/);
     const style = addStyle(/**merge:css=bangumi_comment_list_optimization.user.2.css**/`html {#sliderContainer,#comment_list > * > * {display: none;}}`/**merge**/);
 
-    const container = await waitElement(document, 'comment_list').catch(_ => null);
+    const container = await waitElement(document, 'comment_list');
     if (!container) return;
 
     // 监听高度变化
