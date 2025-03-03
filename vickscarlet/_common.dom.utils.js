@@ -1,6 +1,6 @@
 /**merge:js=_common.dom.utils.js**//**merge**/
 async function waitElement(parent, id, timeout = 1000) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
         let isDone = false;
         const done = (fn) => {
             if (isDone) return;
@@ -30,9 +30,7 @@ async function waitElement(parent, id, timeout = 1000) {
 
         setTimeout(() => done(() => {
             observer.disconnect();
-            const node = parent.querySelector('#' + id);
-            if (node) resolve(node);
-            else reject();
+            resolve(parent.querySelector('#' + id));
         }), timeout);
     });
 }
@@ -44,5 +42,5 @@ function observeChildren(element, callback) {
                 if (node.nodeType === Node.ELEMENT_NODE)
                     callback(node);
     }).observe(element, { childList: true });
-    for (const child of element.children) callback(child);
+    for (const child of Array.from(element.children)) callback(child);
 }
