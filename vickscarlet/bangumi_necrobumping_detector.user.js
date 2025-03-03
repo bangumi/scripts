@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 挖坟人探测器
-// @version      1.0.4
+// @version      1.0.6
 // @namespace    b38.dev
 // @description  Bangumi 挖坟人探测器, 看看是谁在挖坟，在日志和小组里生效
 // @author       神戸小鳥 @vickscarlet
@@ -24,7 +24,9 @@
     nodes.forEach(node => {
         const id = node.id;
         if (!id || !id.startsWith('post_')) return;
-        const [f, t] = node.children[0].children[0].children[0].textContent.split(' - ')
+        const small = node.querySelector('small:has(>a.floor-anchor)');
+        if (!small) return;
+        const [f, t] = small.textContent.split(' - ')
         posts.push([new Date(t).getTime(), t, id, f]);
     })
     posts.sort(([a], [b]) => a - b)
