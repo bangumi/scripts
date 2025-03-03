@@ -217,9 +217,10 @@ class Database {
     /**
      * @param {Options} param0
      */
-    constructor({ dbName, version, collections }) {
+    constructor({ dbName, version, collections, blocked }) {
         this.#dbName = dbName;
         this.#version = version;
+        this.#blocked = blocked || { alert: false };
 
         for (const options of collections) {
             this.#collections.set(options.collection, new Collection(this, options));
@@ -232,12 +233,17 @@ class Database {
     #collections = new Map();
     /** @type {IDBDatabase}  */
     #db;
+    #blocked;
 
     async init() {
         this.#db = await new Promise((resolve, reject) => {
             const request = window.indexedDB.open(this.#dbName, this.#version);
             request.addEventListener('error', () => reject({ type: 'error', message: request.error }));
-            request.addEventListener('blocked', () => reject({ type: 'blocked' }));
+            request.addEventListener('blocked', () => {
+                const message = this.#blocked?.message || 'indexedDB is blocked';
+                if (this.#blocked?.alert) alert(message);
+                reject({ type: 'blocked', message });
+            });
             request.addEventListener('success', () => resolve(request.result));
             request.addEventListener('upgradeneeded', () => {
                 for (const c of this.#collections.values()) {
@@ -264,6 +270,7 @@ class Database {
      * @returns {ReturnType<typeof handler>}
      */
     async transaction(collection, handler, mode = 'readonly') {
+        if (!this.#db) await this.init();
         return new Promise(async (resolve, reject) => {
             const transaction = this.#db.transaction(collection, mode);
             const store = transaction.objectStore(collection);
