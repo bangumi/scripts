@@ -22,7 +22,7 @@ async function waitElement(parent, id, timeout = 1000) {
         });
         observer.observe(parent, { childList: true, subtree: true });
 
-        const node = parent.getElementById(id);
+        const node = parent.querySelector('#' + id);
         if (node) return done(() => {
             observer.disconnect();
             resolve(node);
@@ -30,9 +30,19 @@ async function waitElement(parent, id, timeout = 1000) {
 
         setTimeout(() => done(() => {
             observer.disconnect();
-            const node = parent.getElementById(id);
+            const node = parent.querySelector('#' + id);
             if (node) resolve(node);
             else reject();
         }), timeout);
     });
+}
+
+function observeChildren(element, callback) {
+    new MutationObserver((mutations) => {
+        for (const mutation of mutations)
+            for (const node of mutation.addedNodes)
+                if (node.nodeType === Node.ELEMENT_NODE)
+                    callback(node);
+    }).observe(element, { childList: true });
+    for (const child of element.children) callback(child);
 }

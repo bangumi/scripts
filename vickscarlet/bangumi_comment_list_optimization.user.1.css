@@ -6,6 +6,7 @@ html {
         } 
         >.v-ph:last-child {
             display: block;
+            height: 44px;
             width: 100%;
         }
     }
