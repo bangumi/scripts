@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 高楼优化
-// @version      3.0.0
+// @version      3.0.1
 // @namespace    b38.dev
 // @description  优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用
 // @author       神戸小鳥 @vickscarlet
@@ -19,7 +19,7 @@
     /**merge:js=_common.dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
     /**merge**/
-    addStyle(/**merge:css=bangumi_comment_list_optimization.user.1.css**/`html {overflow-anchor: none;#comment_list .v-hd {>*:not(.v-ph) {display: none;}>.v-ph {display: block;width: 100%;}}.v-ph {display: none;}}`/**merge**/);
+    addStyle(/**merge:css=bangumi_comment_list_optimization.user.1.css**/`html {overflow-anchor: none;#comment_list .v-hd {>*:not(.v-ph:last-child) {display: none !important;}>.v-ph:last-child {display: block;width: 100%;}}.v-ph {display: none;}}`/**merge**/);
     const style = addStyle(/**merge:css=bangumi_comment_list_optimization.user.2.css**/`html {#sliderContainer,#comment_list > * > * {display: none;}}`/**merge**/);
 
     waitElement(document, 'comment_list').then(container => {

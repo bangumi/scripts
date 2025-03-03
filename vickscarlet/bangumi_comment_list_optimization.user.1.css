@@ -1,15 +1,15 @@
-html { 
+html {
     overflow-anchor: none;
-    #comment_list .v-hd { 
-        >*:not(.v-ph) { 
-            display: none; 
+    #comment_list .v-hd {
+        >*:not(.v-ph:last-child) {
+            display: none !important;
         } 
-        >.v-ph {
+        >.v-ph:last-child {
             display: block;
             width: 100%;
-        } 
-    } 
-    .v-ph { 
-        display: none; 
+        }
+    }
+    .v-ph {
+        display: none;
     } 
 }
