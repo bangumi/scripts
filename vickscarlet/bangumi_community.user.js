@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.2
+// @version      0.1.3
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -13,6 +13,10 @@
 // @run-at       document-start
 // ==/UserScript==
 (async () => {
+    /**merge:js=_common.dom.utils.js**/
+    async function waitElement(parent, id, timeout = 1000) { return new Promise((resolve, reject) => { let isDone = false; const done = (fn) => { if (isDone) return; isDone = true; fn(); }; const observer = new MutationObserver((mutations) => { for (const mutation of mutations) { for (const node of mutation.addedNodes) { if (node.id == id) { done(() => { observer.disconnect(); resolve(node); }); return; } } } }); observer.observe(parent, { childList: true, subtree: true }); const node = parent.querySelector('#' + id); if (node) return done(() => { observer.disconnect(); resolve(node); }); setTimeout(() => done(() => { observer.disconnect(); const node = parent.querySelector('#' + id); if (node) resolve(node); else reject(); }), timeout); }); }
+    function observeChildren(element, callback) { new MutationObserver((mutations) => { for (const mutation of mutations) for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) callback(node); }).observe(element, { childList: true }); for (const child of element.children) callback(child); }
+    /**merge**/
     /**merge:js=_common.dom.script.js**/
     async function loadScript(src) { if (!this._loaded) this._loaded = new Set(); if (this._loaded.has(src)) return; if (!this._pedding) this._pedding = new Map(); const list = this._pedding.get(src) ?? []; const pedding = new Promise(resolve => list.push(resolve)); if (!this._pedding.has(src)) { this._pedding.set(src, list); const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this._loaded.add(src); list.forEach(resolve => resolve()); }; document.body.appendChild(script); } return pedding }
     /**merge**/
@@ -79,14 +83,7 @@
             ['li', { onClick: () => this.#block() }, ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言']],
             ['li', { onClick: () => this.#show() }, ['a', { href: 'javascript:void(0)' }, svg('detail'), '详细信息']]
         );
-        #panel = create('div',
-            {
-                id: 'community-helper-user-panel',
-                onScroll: e => e.preventDefault(),
-                onWheel: e => e.preventDefault(),
-            },
-            ['div', { class: 'close-mask', onClick: () => this.#close() }],
-        );
+        #panel = create('div', { id: 'community-helper-user-panel' }, ['div', { class: 'close-mask', onClick: () => this.#close() }]);
         #style = addStyle()
         #bfbgi(src) {
             const randomClass = 'v-rand-' + Math.floor(Math.random() * 100000 + 100000).toString(16);
@@ -410,9 +407,7 @@
         }
     }
 
-    function dockInject() {
-        const dock = document.querySelector('#dock');
-        if (!dock) return;
+    function injectDock(dock) {
         let n, o;
 
         o = dock.querySelector('#showrobot');
@@ -451,50 +446,11 @@
         o.remove();
     }
 
-    async function parseHasCommentList() {
-        const commentList = document.querySelector('#comment_list')
-        if (!commentList) return;
+    async function injectCommentList(commentList) {
         const e = commentList.parentElement;
         if (!e) return;
         e.classList.add('topic-box');
         const first = e.querySelector(':scope>.clearit')
-        const replyWrapper = e.querySelector('#reply_wrapper');
-        if (replyWrapper) {
-            const placeholder = create('div');
-            replyWrapper.replaceWith(placeholder);
-            e.querySelector('#sliderContainer')?.style.setProperty('display', 'none', 'important');
-            const getSwitch = () => {
-                const raw = localStorage.getItem('sickyReplySwitch')
-                if (!raw) return 1;
-                return Number(raw) || 0;
-            }
-            const swBtn = create('div', { class: 'switch', switch: Number(localStorage.getItem('sickyReplySwitch')) || 1 });
-            swBtn.addEventListener('click', callNow(sw => {
-                const s = sw ? sw() : getSwitch();
-                swBtn.setAttribute('switch', s);
-                const sicky = (() => {
-                    const q = e.querySelector('.sicky-reply')
-                    if (q) return q;
-                    const c = create('div', { class: 'sicky-reply' });
-                    e.insertBefore(c, first || commentList);
-                    return c;
-                })();
-                if (s) {
-                    sicky.style.visibility = 'visible';
-                    replyWrapper.replaceWith(placeholder);
-                    sicky.append(replyWrapper);
-                } else {
-                    sicky.style.visibility = 'hidden';
-                    placeholder.replaceWith(replyWrapper);
-                }
-
-            }).bind(this, () => {
-                const s = (getSwitch() + 1) % 2;
-                localStorage.setItem('sickyReplySwitch', s)
-                return s;
-            }));
-            append(replyWrapper, swBtn);
-        }
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(async entry => {
@@ -524,7 +480,7 @@
                     inner.replaceWith(tips);
                 }
             });
-        }, { root: null, rootMargin: '0px', threshold: [0.01] });
+        }, { root: null, rootMargin: '0px', threshold: [0] });
 
         if (first) observer.observe(first);
         const owner = e.querySelector('.postTopic')?.getAttribute('data-item-user');
@@ -532,21 +488,63 @@
         const friends = await getFriends();
         if (friends.has(owner)) first.classList.add('friend');
         if (owner == self) first.classList.add('self');
-        for (const comment of Array.from(commentList.children)) {
-            const floor = comment.getAttribute('data-item-user')
+
+        observeChildren(commentList, async comment => {
+            const floor = comment.getAttribute('data-item-user');
             if (friends.has(floor)) comment.classList.add('friend');
             if (floor === owner) comment.classList.add('owner');
             if (floor === self) comment.classList.add('self');
             observer.observe(comment)
-            comment.querySelectorAll('.clearit').forEach(clearit => {
+            const subReply = await waitElement(comment, 'topic_reply_' + comment.id.substr(5)).catch(() => null);
+            if (!subReply) return;
+            observeChildren(subReply, clearit => {
                 const user = clearit.getAttribute('data-item-user');
                 if (friends.has(user)) clearit.classList.add('friend');
                 if (user === owner) clearit.classList.add('owner');
                 if (user === floor) clearit.classList.add('floor');
                 if (user === self) clearit.classList.add('self');
                 observer.observe(clearit);
-            });
+            })
+        })
+    }
+
+    async function replyWrapperSicky(replyWrapper) {
+        const placeholder = create('div');
+        const e = replyWrapper.parentElement;
+        if (!e) return;
+        replyWrapper.replaceWith(placeholder);
+        e.querySelector('#sliderContainer')?.style.setProperty('display', 'none', 'important');
+        const getSwitch = () => {
+            const raw = localStorage.getItem('sickyReplySwitch')
+            if (!raw) return 1;
+            return Number(raw) || 0;
         }
+        const swBtn = create('div', { class: 'switch', switch: Number(localStorage.getItem('sickyReplySwitch')) || 1 });
+        swBtn.addEventListener('click', callNow(sw => {
+            const s = sw ? sw() : getSwitch();
+            swBtn.setAttribute('switch', s);
+            const sicky = (() => {
+                const q = e.querySelector('.sicky-reply')
+                if (q) return q;
+                const c = create('div', { class: 'sicky-reply' });
+                e.insertBefore(c, e.querySelector(':scope>.clearit') || e.querySelector(':scope>#comment_list') || replyWrapper);
+                return c;
+            })();
+            if (s) {
+                sicky.style.visibility = 'visible';
+                replyWrapper.replaceWith(placeholder);
+                sicky.append(replyWrapper);
+            } else {
+                sicky.style.visibility = 'hidden';
+                placeholder.replaceWith(replyWrapper);
+            }
+
+        }).bind(this, () => {
+            const s = (getSwitch() + 1) % 2;
+            localStorage.setItem('sickyReplySwitch', s)
+            return s;
+        }));
+        append(replyWrapper, swBtn);
     }
 
     async function getFriends() {
@@ -666,20 +664,19 @@
         }
     };
 
-    document.addEventListener('readystatechange', callNow(async () => {
-        if (document.readyState !== 'complete') return;
-        await db.init().catch((reason) => {
-            if (!reason) throw new Error('db init failed');
-            switch (reason.type) {
-                case 'error': throw reason.message;
-                case 'blocked': {
-                    alert('Bangumi 社区助手 preview 数据库有更新，请先关闭所有班固米标签页再刷新试试');
-                    throw new Error('db init blocked');
-                }
-                default: throw reason;
+    await db.init().catch((reason) => {
+        if (!reason) throw new Error('db init failed');
+        switch (reason.type) {
+            case 'error': throw reason.message;
+            case 'blocked': {
+                alert('Bangumi 社区助手 preview 数据库有更新，请先关闭所有班固米标签页再刷新试试');
+                throw new Error('db init blocked');
             }
-        });
-        dockInject();
-        parseHasCommentList();
-    }))
+            default: throw reason;
+        }
+    });
+
+    waitElement(document, 'dock').then(injectDock).catch(_ => { });
+    waitElement(document, 'comment_list').then(injectCommentList).catch(_ => { });
+    waitElement(document, 'reply_wrapper').then(replyWrapperSicky).catch(_ => { });
 })();
