@@ -4,20 +4,22 @@
  * @param {string} src 脚本链接
  * @returns {Promise<void>}
  */
-async function loadScript(src) {
-    if (!this._loaded) this._loaded = new Set();
-    if (this._loaded.has(src)) return;
-    if (!this._pedding) this._pedding = new Map();
-    const list = this._pedding.get(src) ?? [];
-    const pedding = new Promise(resolve => list.push(resolve));
-    if (!this._pedding.has(src)) {
-        this._pedding.set(src, list);
-        const script = create('script', { src, type: 'text/javascript' });
-        script.onload = () => {
-            this._loaded.add(src);
-            list.forEach(resolve => resolve());
-        };
-        document.body.appendChild(script);
+class LoadScript {
+    static #loaded = new Set();
+    static #pedding = new Map();
+    static async load(src) {
+        if (this.#loaded.has(src)) return;
+        const list = this.#pedding.get(src) ?? [];
+        const pedding = new Promise(resolve => list.push(resolve));
+        if (!this.#pedding.has(src)) {
+            this.#pedding.set(src, list);
+            const script = create('script', { src, type: 'text/javascript' });
+            script.onload = () => {
+                this.#loaded.add(src);
+                list.forEach(resolve => resolve());
+            };
+            document.body.appendChild(script);
+        }
+        return pedding
     }
-    return pedding
 }
