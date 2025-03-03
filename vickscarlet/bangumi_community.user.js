@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.3
+// @version      0.1.4
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -559,30 +559,38 @@
             const pedding = new Promise(resolve => peddings.push(resolve));
             if (!this.#peddings) {
                 this.#peddings = peddings;
-                (async () => {
-                    const user = whoami();
-                    if (!user) return new Set();
-                    const id = user.id;
-                    const cache = await db.get('friends', id);
-                    if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
-                    const res = await fetch(`/user/${id}/friends`);
-                    if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
-                    const html = await res.text();
-                    const element = document.createElement('html')
-                    element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
-                    const friends = new Set();
-                    for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
-                        const id = a.href.split('/').pop();
-                        friends.add(id);
-                    }
-                    await db.put('friends', { id, friends, timestamp: Date.now() });
-                    return friends;
-                })().then(friends => {
-                    for (const pedding of this.#peddings) pedding(friends);
-                    this.#peddings = null;
-                });
+                this.#trigger();
             }
             return pedding;
+        }
+        static async #get() {
+            const user = whoami();
+            if (!user) return new Set();
+            const id = user.id;
+            const cache = await db.get('friends', id);
+            if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
+            const friends = await this.#fetch(id);
+            await db.put('friends', { id, friends, timestamp: Date.now() });
+            return friends;
+        }
+        static async #fetch(id) {
+            const res = await fetch(`/user/${id}/friends`);
+            if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
+            const html = await res.text();
+            const element = document.createElement('html')
+            element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
+            const friends = new Set();
+            for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
+                const id = a.href.split('/').pop();
+                friends.add(id);
+            }
+            return friends;
+        }
+
+        static async #trigger() {
+            const friends = await this.#get();
+            for (const pedding of this.#peddings) pedding(friends);
+            this.#peddings = null;
         }
     }
 
