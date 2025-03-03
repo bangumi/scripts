@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.4
+// @version      0.1.5
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -533,7 +533,7 @@
                 const q = e.querySelector('.sicky-reply')
                 if (q) return q;
                 const c = create('div', { class: 'sicky-reply' });
-                e.insertBefore(c, e.querySelector(':scope>.clearit') || e.querySelector(':scope>#comment_list') || replyWrapper);
+                e.insertBefore(c, e.querySelector(':scope>.clearit') || e.querySelector(':scope>#comment_list') || placeholder);
                 return c;
             })();
             if (s) {
