@@ -9,9 +9,8 @@ async function waitElement(parent, id, timeout = 1000) {
         };
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
-                if (mutation.type === 'childList') continue;
                 for (const node of mutation.addedNodes) {
-                    if (node.nodeType === Node.ELEMENT_NODE && node.id == id) {
+                    if (node.id == id) {
                         done(() => {
                             observer.disconnect();
                             resolve(node);
@@ -23,13 +22,11 @@ async function waitElement(parent, id, timeout = 1000) {
         });
         observer.observe(parent, { childList: true, subtree: true });
 
-        setTimeout(() => {
-            const node = parent.getElementById(id);
-            if (node) done(() => {
-                observer.disconnect();
-                resolve(node);
-            });
-        }, 0);
+        const node = parent.getElementById(id);
+        if (node) return done(() => {
+            observer.disconnect();
+            resolve(node);
+        });
 
         setTimeout(() => done(() => {
             observer.disconnect();
