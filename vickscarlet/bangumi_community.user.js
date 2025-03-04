@@ -289,25 +289,25 @@
     }
 
     class NiceScroll {
-        #getNice(element) {
+        static #getNice(element) {
             return $(element).getNiceScroll?.(0)
         }
 
-        async it(element) {
+        static async it(element) {
             const nice = this.#getNice(element);
             if (nice) return nice;
             await LoadScript.load('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
             return $(element).niceScroll({ cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)", cursorwidth: "4px", cursorborder: "none" });
         }
 
-        to(element, { x, y, d }) {
+        static to(element, { x, y, d }) {
             const nice = this.#getNice(element);
             if (!nice) return;
             if (typeof x === 'number') nice.doScrollLeft(x, d ?? 0);
             if (typeof y === 'number') nice.doScrollTop(y, d ?? 0);
         }
 
-        resize(element) {
+        static resize(element) {
             this.#getNice(element)?.resize();
         }
     }
