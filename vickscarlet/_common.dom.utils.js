@@ -44,3 +44,11 @@ function observeChildren(element, callback) {
     }).observe(element, { childList: true });
     for (const child of Array.from(element.children)) callback(child);
 }
+
+/**
+ * @param {ResizeObserver | IntersectionObserver} Observer 
+ */
+function observerEach(Observer, callback, options) {
+    return new Observer((entries) => entries.forEach(callback), options);
+}
+
