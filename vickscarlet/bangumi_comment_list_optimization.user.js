@@ -21,8 +21,8 @@
     /**merge:js=_common.dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
     /**merge**/
-    addStyle(/**merge:css=bangumi_comment_list_optimization.user.1.css**/`html {overflow-anchor: none;#comment_list .v-hd {>*:not(.v-ph:last-child) {display: none !important;}>.v-ph:last-child {display: block;height: 44px;width: 100%;}}.v-ph {display: none;}}`/**merge**/);
-    const style = addStyle(/**merge:css=bangumi_comment_list_optimization.user.2.css**/`html {#sliderContainer,#comment_list > * > * {display: none;}}`/**merge**/);
+    addStyle(/**merge:css=bangumi_comment_list_optimization.user.1.css**/`html {overflow-anchor: none;#comment_list .v-hd:not(:has(.reply_highlight )) {>*:not(.v-ph:last-child) {display: none !important;}>.v-ph:last-child {display: block;height: 44px;width: 100%;}}.v-ph {display: none;}}`/**merge**/);
+    const style = addStyle(/**merge:css=bangumi_comment_list_optimization.user.2.css**/`html {#sliderContainer,#comment_list > *:not(:has(.reply_highlight)) > * {display: none;}}`/**merge**/);
 
     const container = await waitElement(document, 'comment_list');
     if (!container) return;
@@ -52,4 +52,15 @@
         intersectionObserver.observe(item);
     });
     style.remove();
+
+    const onHashChange = () => {
+        const hash = window.location.hash;
+        if (!hash) return;
+        const item = document.querySelector(hash);
+        if (!item) return;
+        item.scrollTo();
+    };
+    window.addEventListener('hashchange', onHashChange);
+    document.addEventListener('load', onHashChange);
+    onHashChange();
 })();

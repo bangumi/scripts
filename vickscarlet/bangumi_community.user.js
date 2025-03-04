@@ -122,7 +122,10 @@
 
         static async isBlocked(id) {
             const data = await db.get('users', id) || {};
-            return !!data.blocked;
+            const isBlocked = !!data.blocked;
+            if (isBlocked) this.#blockeds.add(id);
+            else this.#blockeds.delete(id);
+            return isBlocked;
         }
 
         static async block(id) {
@@ -313,7 +316,7 @@
         }
     }
 
-    const menu = new class {
+    class Menu {
         constructor() {
             window.addEventListener('resize', () => this.#resize())
         }
@@ -525,6 +528,7 @@
             ].map(fn => fn()));
         }
     }
+    const menu = new Menu();
 
     async function injectDock(dock) {
         if (!dock) return;
