@@ -173,15 +173,46 @@ class Collection {
     }
 
     /**
+     * @param {IDBObjectStore} store
+     * @param {string} [index='']
+     */
+    #index(store, index = '') {
+        if (!index) return store;
+        return store.index(index);
+    }
+
+    /**
      * @template T
      * @param {IDBValidKey | IDBKeyRange} key
      * @param {string} [index='']
      * @returns {Promise<T|null>}
      */
-    async get(key, index = '') {
-        const handler = () => this.transaction(store => (index ? store.index(index) : store).get(key));
+    async get(key, index) {
+        const handler = () => this.transaction(store => this.#index(store, index).get(key));
         if (this.#cache && this.#options.keyPath && !index) return this.#cache.get(key, handler);
         return handler();
+    }
+
+    /**
+     * @template T
+     * @param {IDBValidKey | IDBKeyRange} key
+     * @param {number} [count]
+     * @param {string} [index='']
+     * @returns {Promise<T[]>}
+     */
+    async getAll(key, count, index) {
+        return this.transaction(store => this.#index(store, index).getAll(key, count));
+    }
+
+    /**
+     * @template T
+     * @param {IDBValidKey | IDBKeyRange} key
+     * @param {number} [count]
+     * @param {string} [index='']
+     * @returns {Promise<T[]>}
+     */
+    async getAllKeys(key, count, index) {
+        return this.transaction(store => this.#index(store, index).getAllKeys(key, count));
     }
 
     /**
@@ -202,6 +233,15 @@ class Collection {
             this.#cache.update(key, data);
         }
         return this.transaction(store => store.put(data), 'readwrite').then(_ => true);
+    }
+
+    /**
+     * @template T
+     * @param {IDBValidKey | IDBKeyRange} key
+     * @returns {Promise<boolean>}
+     */
+    async delete(key) {
+        return this.transaction(store => store.delete(key), 'readwrite').then(_ => true);
     }
 
     /**
@@ -290,6 +330,29 @@ class Database {
     async get(collection, key, index) {
         return this.#collections.get(collection).get(key, index);
     }
+    /**
+     * @template T
+     * @param {string} collection
+     * @param {Parameters<typeof Collection.prototype.getAll>[0]} key
+     * @param {Parameters<typeof Collection.prototype.getAll>[1]} count
+     * @param {Parameters<typeof Collection.prototype.getAll>[2]} index
+     * @returns {ReturnType<typeof Collection.prototype.getAll<T>>}
+     */
+    async getAll(collection, key, count, index) {
+        return this.#collections.get(collection).getAll(key, count, index);
+    }
+
+    /**
+     * @template T
+     * @param {string} collection
+     * @param {Parameters<typeof Collection.prototype.getAllKeys>[0]} key
+     * @param {Parameters<typeof Collection.prototype.getAllKeys>[1]} count
+     * @param {Parameters<typeof Collection.prototype.getAllKeys>[2]} index
+     * @returns {ReturnType<typeof Collection.prototype.getAllKeys<T>>}
+     */
+    async getAllKeys(collection, key, count, index) {
+        return this.#collections.get(collection).getAllKeys(key, count, index);
+    }
 
     /**
      * @param {string} collection
@@ -297,6 +360,15 @@ class Database {
      */
     async put(collection, data) {
         return this.#collections.get(collection).put(data);
+    }
+
+    /**
+     * @param {string} collection
+     * @param {Parameters<typeof Collection.prototype.delete>[0]} key
+     * @returns {ReturnType<typeof Collection.prototype.delete>}
+     */
+    async delete(collection, key) {
+        return this.#collections.get(collection).delete(key);
     }
 
     /**
