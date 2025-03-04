@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.9
+// @version      0.1.10
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -11,6 +11,8 @@
 // @match        *://chii.in/*
 // @match        *://bangumi.tv/*
 // @run-at       document-start
+// @downloadURL https://update.greasyfork.org/scripts/527566/Bangumi%20%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B%20preview.user.js
+// @updateURL https://update.greasyfork.org/scripts/527566/Bangumi%20%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B%20preview.meta.js
 // ==/UserScript==
 (async () => {
     /**merge:js=_common.dom.utils.js**/
@@ -62,7 +64,7 @@
         /**merge:css=bangumi_community.user.2.css**/`html, html[data-theme='dark'] {.tip-item,.svg-icon {position: relative;display: flex !important;align-items: center !important;justify-content: center !important;cursor: pointer;.tip, span {visibility: hidden;position: absolute;top: 0;left: 50%;transform: translate(-50%, calc(-100% - 10px));padding: 2px 5px;border-radius: 5px;background: rgb(from var(--color-black) r g b / 0.6);white-space: nowrap;color: var(--color-white);}.tip::after, span::after {content: '';position: absolute !important;bottom: 0;left: 50%;border-top: 5px solid rgb(from var(--color-black) r g b / 0.6);border-right: 5px solid transparent;border-left: 5px solid transparent;backdrop-filter: blur(5px);transform: translate(-50%, 100%);}}.tip-item:hover, .svg-icon:hover { .tip, span { visibility: visible; } }.switch {display: inline-block;position: relative;cursor: pointer;border-radius: 50px;height: 12px;width: 40px;border: 1px solid var(--color-switch-border);}.switch::before {content: '';display: block;position: absolute;pointer-events: none;height: 12px;width: 40px;top: 0px;border-radius: 24px;background-color: var(--color-switch-off);}.switch::after {content: '';display: block;position: absolute;pointer-events: none;top: 0;left: 0;height: 12px;width: 24px;border-radius: 24px;box-sizing: border-box;background-color: var(--color-switch-bar-inner);border: 5px solid var(--color-switch-bar-border);}.switch[switch="1"]::before {background-color: var(--color-switch-on);}.switch[switch="1"]::after {left: 16px;}.topic-box {#comment_list {.icon {color: var(--color-gray-11);}}.block {display: none;}.sicky-reply {background-color: var(--color-sicky-bg);border: 1px solid var(--color-sicky-border);box-shadow: 0px 0px 0px 2px var(--color-sicky-shadow);textarea {background-color: var(--color-sicky-textarea);}}.sicky-reply:has(:focus),.sicky-reply:hover {grid-template-rows: 1fr;background-color: var(--color-sicky-hover-bg);border: 1px solid var(--color-sicky-hover-border);box-shadow: 0 0 4px var(--color-sicky-hover-shadow);}#reply_wrapper {position: relative;padding: 5px;min-height: 50px;margin: 0;textarea.reply {width: 100% !important;}.switch {position: absolute;right: 10px;top: 10px;}.tip.rr + .switch {top: 35px;}}.sicky-reply {position: sticky;top: 0;z-index: 2;display: grid;height: auto;grid-template-rows: 0fr;border-radius: 4px;backdrop-filter: blur(5px);transition: all 0.3s ease;width: calc(100% - 1px);overflow: hidden;#slider {position: absolute;right: 5px;top: 13px;max-width: 100%;}}.svg-box {display: flex;justify-content: center;align-items: center;}}.vcomm {ul {white-space: nowrap;justify-content: center;align-items: center;}a {display: flex;align-items: center;gap: 0.5em;}}}`/**merge**/,
         /**merge:css=bangumi_community.user.3.css**/`html, html[data-theme='dark'] {.vc-serif {font-family: source-han-serif-sc, source-han-serif-japanese, 宋体, 新宋体;font-weight: 900;}#community-helper-user-panel {position: fixed !important;z-index: 9999;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;> .close-mask {position: absolute;z-index: -100;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;background: rgb(from var(--color-base) r g b / 0.5);cursor: pointer;backdrop-filter: blur(5px);}> .container {max-width: 1280px;min-height: 390px;max-height: 600px;width: calc(100% - 60px);height: calc(100vh - 60px);> fieldset.board {padding-top: 24px;legend {position: absolute;font-weight: bold;top: 5px;left: 5px;padding: 0;line-height: 12px;font-size: 12px;display: flex;align-items: center;gap: 0.5em;color: var(--color-bangumi-font);> svg {width: 14px;height: 14px;}}}> .tags-field {ul {display: flex;flex-wrap: wrap;gap: 4px;li {padding: 0 5px;border-radius: 50px;background: rgb(from var(--color-font) r g b / .25);border: 1px solid var(--color-font);box-sizing: border-box;white-space: pre;}}}display: grid;grid-template-columns: auto auto auto 1fr auto;grid-template-rows: 180px 34px 36px 40px calc(100% - 310px);gap: 5px 5px;padding: 30px 5px 5px 5px;margin-bottom: 25px;grid-template-areas:"avatar note note note bio""actions note note note bio""stats note note note bio""chart note note note bio""usedname usedname tags tags bio";> .board {--loading-size: 50px;--color-font: var(--color-bangumi-font);--color-from: var(--color-base-2);--color-to: var(--color-base-2);--color-alpha: 0.05;color: var(--color-font);padding: 10px;position: relative;border-radius: 4px;> .actions,> .action {color: var(--color-base-font);position: absolute;top: 5px;right: 5px;cursor: pointer;}> .actions{cursor: none;display: flex;gap: 8px;> .action { cursor: pointer; }}}> .board::after,> .board::before {content: '';position: absolute;border-radius: 4px;top: 0;left: 0;right: 0;bottom: 0;background-size: cover;z-index: -10;}> .board::before { opacity: 0.2; }> .failed,> .loading::before,> .board::after {opacity: 1;background: linear-gradient(150deg, rgb(from var(--color-from) r g b / var(--color-alpha)), rgb(from var(--color-to) r g b / var(--color-alpha)) 75%);box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter: blur(10px);}> .loading::after,> .failed::before,> .failed::after {background: none !important;box-shadow: none !important;backdrop-filter: none !important;}> .loading::after {width: var(--loading-size);height: var(--loading-size);top: calc(50% - calc(var(--loading-size) / 2));left: calc(50% - calc(var(--loading-size) / 2));aspect-ratio: 1;border-radius: 50%;border: calc(var(--loading-size) / 6.25) solid;box-sizing: border-box;border-color: var(--color-bangumi) transparent;animation: loading-spine 1s infinite;}> .failed::before,> .failed::after {width: var(--loading-size);;height: calc(var(--loading-size) / 6.25);top: calc(50% - calc(var(--loading-size) / 2));left: calc(50% - calc(var(--loading-size) / 12.5));}> .failed::after { transform: rotate(45deg); }> .failed::before { transform: rotate(-45deg); }> .editable:not(.editing) {.edit, textarea { display: none !important; }}> .editable.editing {.normal { display: none !important; }textarea {width: 100%;height: 100%;resize: vertical;border: none;padding: 0;box-sizing: border-box;background: rgb(from var(--color-base) r g b / .1);border-radius: 4px;max-height: 100%;font-size: 12px;line-height: 18px;color: var(--color-font);overscroll-behavior: contain;}textarea:focus, textarea:hover {border: none;box-shadow: 0 0 1px rgb(from var(--color-bangumi) r g b / .5);}}> .avatar {grid-area: avatar;--color-font: var(--color-bangumi);--color-from: var(--color-bangumi);--color-alpha: .25;min-width: 120px;max-width: 280px;display: flex;flex-direction: column;justify-content: center;align-items: center;gap: 5px;img {width: 100px;height: 100px;border-radius: 100px;object-fit: cover;}span {position: absolute;top: 5px;right: 0;transform: translate(100%) rotate(90deg);transform-origin: 0% 0%;}span::before {content: '@';}svg {width: 100%;height: 50px;text {transform: translate(50%, 0.18em);text-anchor: middle;dominant-baseline: hanging;}}}> .actions {grid-area: actions;--loading-size: 24px;--color-from: var(--color-yellow);--color-font: var(--color-yellow-font);display: grid;padding: 0;grid-template-columns: repeat(4, 1fr);grid-template-areas: "one two three four";> * {position: relative;display: grid;place-items: center;width: 100%;padding: 10px 0;}> .home { grid-area: one; }> .pm { grid-area: two; }> .friend { grid-area: three; }> .block { grid-area: four; }> *:not(.block)::after {position: absolute;content: '';width: 2px;height: calc(100% - 10px);top: 5px;right: -1px;background: rgb(from var(--color-from) r g b / .25);}}> .stats {grid-area: stats;--loading-size: 24px;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-columns: repeat(3, 1fr);grid-template-rows: repeat(2, 1fr);> .stat {line-height: 14px;font-size: 14px;font-weight: bold;padding: 2px 5px;background: rgb(from var(--color-stat) r g b / .25);}> .stat:hover { background: rgb(from var(--color-stat) r g b / .5); }> .stat:first-child {border-radius: 4px 0 0 0;}> .stat:nth-child(3) {border-radius: 0 4px 0 0;}> .stat:last-child {border-radius: 0 0 4px 0;}> .stat:nth-child(4) {border-radius: 0 0 0 4px;}> .coll {--color-stat: var(--color-bangumi);}> .done {--color-stat: var(--color-green);}> .rate {--color-stat: var(--color-skyblue);}> .avg  {--color-stat: var(--color-yellow);}> .std  {--color-stat: var(--color-purple);}> .cnt  {--color-stat: var(--color-blue);}}> .chart {grid-area: chart;--loading-size: 24px;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-rows: repeat(10, 4px);> * {display: flex;justify-content: flex-start !important;width: 100%;.bar {height: 2px;background: rgb(from var(--color-bangumi) r g b / .65);transition: all 0.3s ease;}}> *:first-child::before, *:first-child>.bar { border-radius: 4px 4px 0 0; }> *:last-child::before, *:last-child>.bar { border-radius: 0 0 4px 4px; }> *::before {content: '';position: absolute;top: 1px;left: 0;width: 100%;height: 2px;background: rgb(from var(--color-bangumi) r g b / .15);z-index: -1;transition: all 0.3s ease;}> *:hover::before { background: rgb(from var(--color-bangumi) r g b / .3); }> *:hover > .bar { background: rgb(from var(--color-bangumi) r g b / 1); }}> .tags {grid-area: tags;min-width: 200px;--color-from: var(--color-blue);--color-font: var(--color-blue-font);> .wrapper {height: 100%;> * { max-height: 100%; }}}> .note {grid-area: note;min-width: 200px;--color-from: var(--color-green);--color-font: var(--color-green-font);white-space: pre-wrap;> .wrapper {height: 100%;> * { max-height: 100%; }}}> .usedname {grid-area: usedname;--color-from: var(--color-purple);--color-font: var(--color-purple-font);max-width: 400px;min-width: 200px;> ul { max-height: 100%; }}> .bio {grid-area: bio;--color-from: var(--color-bangumi);--color-font: var(--color-base-font);max-width: 505px;min-width: 300px;max-height: calc(100% - 34px);> div { height: calc(100% + 2px); }}}}@media (max-width: 850px) {#community-helper-user-panel > .container {grid-template-columns: auto auto auto 1fr;grid-template-rows: 180px 34px 36px 40px auto auto;max-height: 900px;grid-template-areas:"avatar note note note""actions note note note""stats note note note""chart note note note""usedname usedname tags tags""bio bio bio bio";> .tags,> .usedname {max-height: 300px;}> .bio {max-width: 100%;max-height: 100%;}}}@media (max-width: 520px) {#community-helper-user-panel > .container {grid-template-columns: 1fr;grid-template-rows: 180px 34px 36px 40px auto auto auto auto;max-height: 1100px;grid-template-areas:"avatar""actions""stats""chart""note""usedname""tags""bio";> .board { min-width: 130px; width: calc(100% - 20px); max-width: calc(100% - 20px); }> .actions, > .stats, > .chart { width: 100%; max-width: 100%; }> .note { max-height: 200px; }> .tags, > .usedname { max-height: 150px; }> .bio { max-height: 100%; }}}}`/**merge**/,
     )
-    const version = 6;
+    const version = 12;
     const db = new Database({
         dbName: 'VCommunity', version, collections: [
             { collection: 'values', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }] },
@@ -83,27 +85,33 @@
 
     async function updateDatabase() {
         if (localStorage.getItem('VCommunity') == version.toString()) return;
-        const lastVersion = await db.get('values', 'version') || 0;
+        const lastVersion = (await db.get('values', 'version'))?.version || 0;
         if (lastVersion < 5) {
             // V5 update
             const users = await db.getAll('users');
-            for (const { id, names, namesUpdate, namesTml, block, note, tags } of users) {
-                if (names) {
-                    if (names.size > 1 || namesUpdate) {
-                        const usedname = { id, names, namesUpdate, namesTml };
-                        if (namesUpdate) usedname.update = namesUpdate;
-                        if (namesTml) usedname.tml = namesTml;
-                        await db.put('usednames', usedname);
-                    }
+            for (const { id, names, namesUpdate: update, namesTml: tml, block, note, tags } of users) {
+                if (names && tml) {
+                    names.delete('');
+                    await db.put('usednames', { id, names, update, tml });
                 }
                 if (!block && !note && !(tags && (tags.size || tags.length))) {
                     await db.delete('users', id);
                 } else {
-                    const user = { id }
+                    const user = { id };
                     if (block) user.blocked = 1;
                     if (note) user.note = note;
                     if (tags) user.tags = tags;
                     await db.put('users', user);
+                }
+            }
+        } else if(lastVersion < 12) {
+            const usednames = await db.getAll('usednames');
+            for(const { id, names, update, tml } of usednames) {
+                if(!names || !tml) {
+                    await db.delete('usednames', id);
+                } else {
+                    names.delete('');
+                    await db.put('usednames',{ id, names, update, tml });
                 }
             }
         }
