@@ -11,8 +11,6 @@
 // @match        *://chii.in/*
 // @match        *://bangumi.tv/*
 // @run-at       document-start
-// @downloadURL https://update.greasyfork.org/scripts/527566/Bangumi%20%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B%20preview.user.js
-// @updateURL https://update.greasyfork.org/scripts/527566/Bangumi%20%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B%20preview.meta.js
 // ==/UserScript==
 (async () => {
     /**merge:js=_common.dom.utils.js**/
