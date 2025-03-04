@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.6
+// @version      0.1.7
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -16,6 +16,7 @@
     /**merge:js=_common.dom.utils.js**/
     async function waitElement(parent, id, timeout = 1000) { return new Promise(resolve => { let isDone = false; const done = (fn) => { if (isDone) return; isDone = true; fn(); }; const observer = new MutationObserver((mutations) => { for (const mutation of mutations) { for (const node of mutation.addedNodes) { if (node.id == id) { done(() => { observer.disconnect(); resolve(node); }); return; } } } }); observer.observe(parent, { childList: true, subtree: true }); const node = parent.querySelector('#' + id); if (node) return done(() => { observer.disconnect(); resolve(node); }); setTimeout(() => done(() => { observer.disconnect(); resolve(parent.querySelector('#' + id)); }), timeout); }); }
     function observeChildren(element, callback) { new MutationObserver((mutations) => { for (const mutation of mutations) for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) callback(node); }).observe(element, { childList: true }); for (const child of Array.from(element.children)) callback(child); }
+    function observerEach(Observer, callback, options) { return new Observer((entries) => entries.forEach(callback), options); }
     /**merge**/
     /**merge:js=_common.dom.script.js**/
     class LoadScript { static #loaded = new Set(); static #pedding = new Map(); static async load(src) { if (this.#loaded.has(src)) return; const list = this.#pedding.get(src) ?? []; const pedding = new Promise(resolve => list.push(resolve)); if (!this.#pedding.has(src)) { this.#pedding.set(src, list); const script = create('script', { src, type: 'text/javascript' }); script.onload = () => { this.#loaded.add(src); list.forEach(resolve => resolve()); }; document.body.appendChild(script); } return pedding } }
@@ -574,28 +575,40 @@
         const first = e.querySelector(':scope>.clearit')
         const friends = await Friends.get();
         const blockeds = await User.getBlockeds();
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(async entry => {
-                const clearit = entry.target;
-                if (clearit.isVCommed || !entry.isIntersecting) return;
-                clearit.isVCommed = true;
-                const id = clearit.getAttribute('data-item-user')
-                if (!id) return;
-                const inner = clearit.querySelector('.inner');
+        const observer = observerEach(IntersectionObserver, entry => {
+            const clearit = entry.target;
+            if (!entry.isIntersecting) return;
+            if (clearit._vc?.never) return;
+            if (!clearit._vc) clearit._vc = {};
+            const id = clearit.getAttribute('data-item-user')
+            if (!id) return clearit._vc.never = true;
+            if (!clearit._vc.done) {
+                clearit._vc.done = true;
                 const icon = create('a', { class: ['icon', 'svg-icon'], href: 'javascript:void(0)' }, svg('mark'));
                 const action = create('div', { class: ['action', 'dropdown', 'vcomm'] }, icon);
                 icon.addEventListener('mouseenter', () => append(action, menu.id(id)));
                 const actionBox = clearit.querySelector('.post_actions');
                 actionBox.insertBefore(action, actionBox.lastElementChild);
-                if (blockeds.has(id)) {
-                    const btn = create('div', { class: 'svg-box' }, svg('expand'))
-                    const tip = create('span', { class: 'svg-box' }, svg('collapse'), '已折叠')
-                    const tips = create('div', { class: ['inner', 'tips'] }, tip, btn);
-                    btn.addEventListener('click', () => tips.replaceWith(inner));
-                    inner.replaceWith(tips);
-                }
-            });
-        }, { root: null, rootMargin: '0px', threshold: [0] });
+            }
+            if (clearit._vc.blocked && !blockeds.has(id)) {
+                const { inner, placeholder, display } = clearit._vc.blocked;
+                if (!display) placeholder.replaceWith(inner);
+                delete clearit._vc.blocked;
+            } else if (!clearit._vc.blocked && blockeds.has(id)) {
+                const inner = clearit.querySelector('.inner');
+                const btn = create('div', { class: 'svg-box' }, svg('expand'))
+                const tip = create('span', { class: 'svg-box' }, svg('collapse'), '已折叠')
+                const placeholder = create('div', { class: ['inner', 'tips'] }, tip, btn);
+                btn.addEventListener('click', () => {
+                    clearit._vc.blocked.display = true;
+                    delete clearit._vc.inner;
+                    delete clearit._vc.placeholder;
+                    placeholder.replaceWith(inner)
+                });
+                inner.replaceWith(placeholder);
+                clearit._vc.blocked = { inner, placeholder };
+            }
+        });
         if (first) observer.observe(first);
         const ownerItem = e.querySelector('.postTopic');
         const owner = ownerItem?.getAttribute('data-item-user');
