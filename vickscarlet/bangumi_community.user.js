@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
-// @version      0.1.5
+// @version      0.1.6
 // @namespace    b38.dev
 // @description  社区助手预览版
 // @author       神戸小鳥 @vickscarlet
@@ -43,8 +43,8 @@
     /**merge**/
     /**merge:js=_common.database.js**/
     class Cache { constructor({ hot, last }) { this.#hotLimit = hot ?? 0; this.#lastLimit = last ?? 0; this.#cacheLimit = this.#hotLimit + this.#lastLimit; } #hotLimit; #lastLimit; #cacheLimit; #hotList = []; #hot = new Set(); #last = new Set(); #pedding = new Set(); #cache = new Map(); #times = new Map(); #cHot(key) { if (!this.#hotLimit) return false; const counter = this.#times.get(key) || { key, cnt: 0 }; counter.cnt++; this.#times.set(key, counter); if (this.#hot.size == 0) { this.#hotList.push(counter); this.#hot.add(key); this.#pedding.delete(key); return true; } const i = this.#hotList.indexOf(counter); if (i == 0) return true; if (i > 0) { const up = this.#hotList[i - 1]; if (counter.cnt > up.cnt) this.#hotList.sort((a, b) => b.cnt - a.cnt); return true; } if (this.#hot.size < this.#hotLimit) { this.#hotList.push(counter); this.#hot.add(key); this.#pedding.delete(key); return true; } const min = this.#hotList.at(-1); if (counter.cnt <= min.cnt) return false; this.#hotList.pop(); this.#hot.delete(min.key); if (!this.#last.has(min.key)) this.#pedding.add(min.key); this.#hotList.push(counter); this.#hot.add(key); this.#pedding.delete(key); return true; } #cLast(key) { if (!this.#lastLimit) return false; this.#last.delete(key); this.#last.add(key); this.#pedding.delete(key); if (this.#last.size <= this.#lastLimit) return true; const out = this.#last.values().next().value; this.#last.delete(out); if (!this.#hot.has(out)) this.#pedding.add(out); return true; } async get(key, query) { const data = this.#cache.get(key) ?? await query(); const inHot = this.#cHot(key); const inLast = this.#cLast(key); if (inHot || inLast) this.#cache.set(key, data); let i = this.#cache.size - this.#cacheLimit; if (!i) return data; for (const key of this.#pedding) { if (!i) return data; this.#cache.delete(key); this.#pedding.delete(key); i--; } return data; } update(key, value) { if (!this.#cache.has(key)) this.#cache.set(key, value); } clear() { this.#cache.clear(); } }
-    class Collection { constructor(master, { collection, options, indexes, cache }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; if (cache && cache.enabled) { this.#cache = new Cache(cache); } } #master; #collection; #options; #indexes; #cache = null; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction(this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result)); }) }, mode) } async get(key, index = '') { const handler = () => this.transaction(store => (index ? store.index(index) : store).get(key)); if (this.#cache && this.#options.keyPath && !index) return this.#cache.get(key, handler); return handler(); } async put(data) { if (this.#cache) { let key; if (Array.isArray(this.#options.keyPath)) { key = []; for (const path of this.#options.keyPath) { key.push(data[path]); } key = key.join('/'); } else { key = data[this.#options.keyPath]; } this.#cache.update(key, data); } return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async clear() { if (this.#cache) this.#cache.clear(); return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } }
-    class Database { constructor({ dbName, version, collections, blocked }) { this.#dbName = dbName; this.#version = version; this.#blocked = blocked || { alert: false }; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; #blocked; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', () => reject({ type: 'error', message: request.error })); request.addEventListener('blocked', () => { const message = this.#blocked?.message || 'indexedDB is blocked'; if (this.#blocked?.alert) alert(message); reject({ type: 'blocked', message }); }); request.addEventListener('success', () => resolve(request.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { if (!this.#db) await this.init(); return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } }
+    class Collection { constructor(master, { collection, options, indexes, cache }) { this.#master = master; this.#collection = collection; this.#options = options; this.#indexes = indexes; if (cache && cache.enabled) { this.#cache = new Cache(cache); } } #master; #collection; #options; #indexes; #cache = null; get collection() { return this.#collection } get options() { return this.#options } get indexes() { return this.#indexes } async transaction(handler, mode) { return this.#master.transaction(this.#collection, async store => { const request = await handler(store); return new Promise((resolve, reject) => { request.addEventListener('error', e => reject(e)); request.addEventListener('success', () => resolve(request.result)); }) }, mode) } #index(store, index = '') { if (!index) return store; return store.index(index); } async get(key, index) { const handler = () => this.transaction(store => this.#index(store, index).get(key)); if (this.#cache && this.#options.keyPath && !index) return this.#cache.get(key, handler); return handler(); } async getAll(key, count, index) { return this.transaction(store => this.#index(store, index).getAll(key, count)); } async getAllKeys(key, count, index) { return this.transaction(store => this.#index(store, index).getAllKeys(key, count)); } async put(data) { if (this.#cache) { let key; if (Array.isArray(this.#options.keyPath)) { key = []; for (const path of this.#options.keyPath) { key.push(data[path]); } key = key.join('/'); } else { key = data[this.#options.keyPath]; } this.#cache.update(key, data); } return this.transaction(store => store.put(data), 'readwrite').then(_ => true); } async delete(key) { return this.transaction(store => store.delete(key), 'readwrite').then(_ => true); } async clear() { if (this.#cache) this.#cache.clear(); return this.transaction(store => store.clear(), 'readwrite').then(_ => true); } }
+    class Database { constructor({ dbName, version, collections, blocked }) { this.#dbName = dbName; this.#version = version; this.#blocked = blocked || { alert: false }; for (const options of collections) { this.#collections.set(options.collection, new Collection(this, options)); } } #dbName; #version; #collections = new Map(); #db; #blocked; async init() { this.#db = await new Promise((resolve, reject) => { const request = window.indexedDB.open(this.#dbName, this.#version); request.addEventListener('error', () => reject({ type: 'error', message: request.error })); request.addEventListener('blocked', () => { const message = this.#blocked?.message || 'indexedDB is blocked'; if (this.#blocked?.alert) alert(message); reject({ type: 'blocked', message }); }); request.addEventListener('success', () => resolve(request.result)); request.addEventListener('upgradeneeded', () => { for (const c of this.#collections.values()) { const { collection, options, indexes } = c; let store; if (!request.result.objectStoreNames.contains(collection)) store = request.result.createObjectStore(collection, options); else store = request.transaction.objectStore(collection); if (!indexes) continue; for (const { name, keyPath, unique } of indexes) { if (store.indexNames.contains(name)) continue; store.createIndex(name, keyPath, { unique }); } } }); }); return this; } async transaction(collection, handler, mode = 'readonly') { if (!this.#db) await this.init(); return new Promise(async (resolve, reject) => { const transaction = this.#db.transaction(collection, mode); const store = transaction.objectStore(collection); const result = await handler(store); transaction.addEventListener('error', e => reject(e)); transaction.addEventListener('complete', () => resolve(result)); }); } async get(collection, key, index) { return this.#collections.get(collection).get(key, index); } async getAll(collection, key, count, index) { return this.#collections.get(collection).getAll(key, count, index); } async getAllKeys(collection, key, count, index) { return this.#collections.get(collection).getAllKeys(key, count, index); } async put(collection, data) { return this.#collections.get(collection).put(data); } async delete(collection, key) { return this.#collections.get(collection).delete(key); } async clear(collection) { return this.#collections.get(collection).clear(); } async clearAll() { for (const c of this.#collections.values()) await c.clear(); return true; } }
     /**merge**/
     /**merge:js=_common.event.js**/
     class Event { static #listeners = new Map(); static on(event, listener) { if (!this.#listeners.has(event)) this.#listeners.set(event, new Set()); this.#listeners.get(event).add(listener); } static emit(event, ...args) { if (!this.#listeners.has(event)) return; for (const listener of this.#listeners.get(event).values()) listener(...args); } static off(event, listener) { if (!this.#listeners.has(event)) return; this.#listeners.get(event).delete(listener); } }
@@ -61,82 +61,101 @@
         /**merge:css=bangumi_community.user.2.css**/`html, html[data-theme='dark'] {.tip-item,.svg-icon {position: relative;display: flex !important;align-items: center !important;justify-content: center !important;cursor: pointer;.tip, span {visibility: hidden;position: absolute;top: 0;left: 50%;transform: translate(-50%, calc(-100% - 10px));padding: 2px 5px;border-radius: 5px;background: rgb(from var(--color-black) r g b / 0.6);white-space: nowrap;color: var(--color-white);}.tip::after, span::after {content: '';position: absolute !important;bottom: 0;left: 50%;border-top: 5px solid rgb(from var(--color-black) r g b / 0.6);border-right: 5px solid transparent;border-left: 5px solid transparent;backdrop-filter: blur(5px);transform: translate(-50%, 100%);}}.tip-item:hover, .svg-icon:hover { .tip, span { visibility: visible; } }.switch {display: inline-block;position: relative;cursor: pointer;border-radius: 50px;height: 12px;width: 40px;border: 1px solid var(--color-switch-border);}.switch::before {content: '';display: block;position: absolute;pointer-events: none;height: 12px;width: 40px;top: 0px;border-radius: 24px;background-color: var(--color-switch-off);}.switch::after {content: '';display: block;position: absolute;pointer-events: none;top: 0;left: 0;height: 12px;width: 24px;border-radius: 24px;box-sizing: border-box;background-color: var(--color-switch-bar-inner);border: 5px solid var(--color-switch-bar-border);}.switch[switch="1"]::before {background-color: var(--color-switch-on);}.switch[switch="1"]::after {left: 16px;}.topic-box {#comment_list {.icon {color: var(--color-gray-11);}}.block {display: none;}.sicky-reply {background-color: var(--color-sicky-bg);border: 1px solid var(--color-sicky-border);box-shadow: 0px 0px 0px 2px var(--color-sicky-shadow);textarea {background-color: var(--color-sicky-textarea);}}.sicky-reply:has(:focus),.sicky-reply:hover {grid-template-rows: 1fr;background-color: var(--color-sicky-hover-bg);border: 1px solid var(--color-sicky-hover-border);box-shadow: 0 0 4px var(--color-sicky-hover-shadow);}#reply_wrapper {position: relative;padding: 5px;min-height: 50px;margin: 0;textarea.reply {width: 100% !important;}.switch {position: absolute;right: 10px;top: 10px;}.tip.rr + .switch {top: 35px;}}.sicky-reply {position: sticky;top: 0;z-index: 2;display: grid;height: auto;grid-template-rows: 0fr;border-radius: 4px;backdrop-filter: blur(5px);transition: all 0.3s ease;width: calc(100% - 1px);overflow: hidden;#slider {position: absolute;right: 5px;top: 13px;max-width: 100%;}}.svg-box {display: flex;justify-content: center;align-items: center;}}.vcomm {ul {white-space: nowrap;justify-content: center;align-items: center;}a {display: flex;align-items: center;gap: 0.5em;}}}`/**merge**/,
         /**merge:css=bangumi_community.user.3.css**/`html, html[data-theme='dark'] {.vc-serif {font-family: source-han-serif-sc, source-han-serif-japanese, 宋体, 新宋体;font-weight: 900;}#community-helper-user-panel {position: fixed !important;z-index: 9999;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;> .close-mask {position: absolute;z-index: -100;display: grid;place-items: center;top: 0;right: 0;bottom: 0;left: 0;background: rgb(from var(--color-base) r g b / 0.5);cursor: pointer;backdrop-filter: blur(5px);}> .container {max-width: 1280px;min-height: 390px;max-height: 600px;width: calc(100% - 60px);height: calc(100vh - 60px);> fieldset.board {padding-top: 24px;legend {position: absolute;font-weight: bold;top: 5px;left: 5px;padding: 0;line-height: 12px;font-size: 12px;display: flex;align-items: center;gap: 0.5em;color: var(--color-bangumi-font);> svg {width: 14px;height: 14px;}}}> .tags-field {ul {display: flex;flex-wrap: wrap;gap: 4px;li {padding: 0 5px;border-radius: 50px;background: rgb(from var(--color-font) r g b / .25);border: 1px solid var(--color-font);box-sizing: border-box;white-space: pre;}}}display: grid;grid-template-columns: auto auto auto 1fr auto;grid-template-rows: 180px 34px 36px 40px calc(100% - 310px);gap: 5px 5px;padding: 30px 5px 5px 5px;margin-bottom: 25px;grid-template-areas:"avatar note note note bio""actions note note note bio""stats note note note bio""chart note note note bio""usedname usedname tags tags bio";> .board {--loading-size: 50px;--color-font: var(--color-bangumi-font);--color-from: var(--color-base-2);--color-to: var(--color-base-2);--color-alpha: 0.05;color: var(--color-font);padding: 10px;position: relative;border-radius: 4px;> .actions,> .action {color: var(--color-base-font);position: absolute;top: 5px;right: 5px;cursor: pointer;}> .actions{cursor: none;display: flex;gap: 8px;> .action { cursor: pointer; }}}> .board::after,> .board::before {content: '';position: absolute;border-radius: 4px;top: 0;left: 0;right: 0;bottom: 0;background-size: cover;z-index: -10;}> .board::before { opacity: 0.2; }> .failed,> .loading::before,> .board::after {opacity: 1;background: linear-gradient(150deg, rgb(from var(--color-from) r g b / var(--color-alpha)), rgb(from var(--color-to) r g b / var(--color-alpha)) 75%);box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter: blur(10px);}> .loading::after,> .failed::before,> .failed::after {background: none !important;box-shadow: none !important;backdrop-filter: none !important;}> .loading::after {width: var(--loading-size);height: var(--loading-size);top: calc(50% - calc(var(--loading-size) / 2));left: calc(50% - calc(var(--loading-size) / 2));aspect-ratio: 1;border-radius: 50%;border: calc(var(--loading-size) / 6.25) solid;box-sizing: border-box;border-color: var(--color-bangumi) transparent;animation: loading-spine 1s infinite;}> .failed::before,> .failed::after {width: var(--loading-size);;height: calc(var(--loading-size) / 6.25);top: calc(50% - calc(var(--loading-size) / 2));left: calc(50% - calc(var(--loading-size) / 12.5));}> .failed::after { transform: rotate(45deg); }> .failed::before { transform: rotate(-45deg); }> .editable:not(.editing) {.edit, textarea { display: none !important; }}> .editable.editing {.normal { display: none !important; }textarea {width: 100%;height: 100%;resize: vertical;border: none;padding: 0;box-sizing: border-box;background: rgb(from var(--color-base) r g b / .1);border-radius: 4px;max-height: 100%;font-size: 12px;line-height: 18px;color: var(--color-font);overscroll-behavior: contain;}textarea:focus, textarea:hover {border: none;box-shadow: 0 0 1px rgb(from var(--color-bangumi) r g b / .5);}}> .avatar {grid-area: avatar;--color-font: var(--color-bangumi);--color-from: var(--color-bangumi);--color-alpha: .25;min-width: 120px;max-width: 280px;display: flex;flex-direction: column;justify-content: center;align-items: center;gap: 5px;img {width: 100px;height: 100px;border-radius: 100px;object-fit: cover;}span {position: absolute;top: 5px;right: 0;transform: translate(100%) rotate(90deg);transform-origin: 0% 0%;}span::before {content: '@';}svg {width: 100%;height: 50px;text {transform: translate(50%, 0.18em);text-anchor: middle;dominant-baseline: hanging;}}}> .actions {grid-area: actions;--loading-size: 24px;--color-from: var(--color-yellow);--color-font: var(--color-yellow-font);display: grid;padding: 0;grid-template-columns: repeat(4, 1fr);grid-template-areas: "one two three four";> * {position: relative;display: grid;place-items: center;width: 100%;padding: 10px 0;}> .home { grid-area: one; }> .pm { grid-area: two; }> .friend { grid-area: three; }> .block { grid-area: four; }> *:not(.block)::after {position: absolute;content: '';width: 2px;height: calc(100% - 10px);top: 5px;right: -1px;background: rgb(from var(--color-from) r g b / .25);}}> .stats {grid-area: stats;--loading-size: 24px;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-columns: repeat(3, 1fr);grid-template-rows: repeat(2, 1fr);> .stat {line-height: 14px;font-size: 14px;font-weight: bold;padding: 2px 5px;background: rgb(from var(--color-stat) r g b / .25);}> .stat:hover { background: rgb(from var(--color-stat) r g b / .5); }> .stat:first-child {border-radius: 4px 0 0 0;}> .stat:nth-child(3) {border-radius: 0 4px 0 0;}> .stat:last-child {border-radius: 0 0 4px 0;}> .stat:nth-child(4) {border-radius: 0 0 0 4px;}> .coll {--color-stat: var(--color-bangumi);}> .done {--color-stat: var(--color-green);}> .rate {--color-stat: var(--color-skyblue);}> .avg  {--color-stat: var(--color-yellow);}> .std  {--color-stat: var(--color-purple);}> .cnt  {--color-stat: var(--color-blue);}}> .chart {grid-area: chart;--loading-size: 24px;--color-font: var(--color-base-font);padding: 0;display: grid;grid-template-rows: repeat(10, 4px);> * {display: flex;justify-content: flex-start !important;width: 100%;.bar {height: 2px;background: rgb(from var(--color-bangumi) r g b / .65);transition: all 0.3s ease;}}> *:first-child::before, *:first-child>.bar { border-radius: 4px 4px 0 0; }> *:last-child::before, *:last-child>.bar { border-radius: 0 0 4px 4px; }> *::before {content: '';position: absolute;top: 1px;left: 0;width: 100%;height: 2px;background: rgb(from var(--color-bangumi) r g b / .15);z-index: -1;transition: all 0.3s ease;}> *:hover::before { background: rgb(from var(--color-bangumi) r g b / .3); }> *:hover > .bar { background: rgb(from var(--color-bangumi) r g b / 1); }}> .tags {grid-area: tags;min-width: 200px;--color-from: var(--color-blue);--color-font: var(--color-blue-font);> .wrapper {height: 100%;> * { max-height: 100%; }}}> .note {grid-area: note;min-width: 200px;--color-from: var(--color-green);--color-font: var(--color-green-font);white-space: pre-wrap;> .wrapper {height: 100%;> * { max-height: 100%; }}}> .usedname {grid-area: usedname;--color-from: var(--color-purple);--color-font: var(--color-purple-font);max-width: 400px;min-width: 200px;> ul { max-height: 100%; }}> .bio {grid-area: bio;--color-from: var(--color-bangumi);--color-font: var(--color-base-font);max-width: 505px;min-width: 300px;max-height: calc(100% - 34px);> div { height: calc(100% + 2px); }}}}@media (max-width: 850px) {#community-helper-user-panel > .container {grid-template-columns: auto auto auto 1fr;grid-template-rows: 180px 34px 36px 40px auto auto;max-height: 900px;grid-template-areas:"avatar note note note""actions note note note""stats note note note""chart note note note""usedname usedname tags tags""bio bio bio bio";> .tags,> .usedname {max-height: 300px;}> .bio {max-width: 100%;max-height: 100%;}}}@media (max-width: 520px) {#community-helper-user-panel > .container {grid-template-columns: 1fr;grid-template-rows: 180px 34px 36px 40px auto auto auto auto;max-height: 1100px;grid-template-areas:"avatar""actions""stats""chart""note""usedname""tags""bio";> .board { min-width: 130px; width: calc(100% - 20px); max-width: calc(100% - 20px); }> .actions, > .stats, > .chart { width: 100%; max-width: 100%; }> .note { max-height: 200px; }> .tags, > .usedname { max-height: 150px; }> .bio { max-height: 100%; }}}}`/**merge**/,
     )
-
+    const version = 6;
     const db = new Database({
-        dbName: 'VCommunity', version: 4, collections: [
+        dbName: 'VCommunity', version, collections: [
             { collection: 'values', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }] },
             { collection: 'friends', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }], cache: { enabled: true, last: 1 } },
-            { collection: 'users', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }], cache: { enabled: true, last: 5, hot: 5 } },
-            { collection: 'images', options: { keyPath: 'uri' }, indexes: [{ name: 'uri', keyPath: 'uri', unique: true }] }
+            { collection: 'usednames', options: { keyPath: 'id' }, indexes: [{ name: 'id', keyPath: 'id', unique: true }], cache: { enabled: true, last: 3 } },
+            { collection: 'images', options: { keyPath: 'uri' }, indexes: [{ name: 'uri', keyPath: 'uri', unique: true }] },
+            {
+                collection: 'users', options: { keyPath: 'id' },
+                indexes: [
+                    { name: 'id', keyPath: 'id', unique: true },
+                    { name: 'blocked', keyPath: 'blocked', unique: false }
+                ],
+                cache: { enabled: true, last: 5, hot: 5 }
+            },
         ],
         blocked: { alert: true, message: 'Bangumi 社区助手 preview 数据库有更新，请先关闭所有班固米标签页再刷新试试' },
     });
-    const menu = new class {
-        constructor() {
-            window.addEventListener('resize', () => this.#resize())
+
+    async function updateDatabase() {
+        if (localStorage.getItem('VCommunity') == version.toString()) return;
+        const lastVersion = await db.get('values', 'version') || 0;
+        if (lastVersion < 5) {
+            // V5 update
+            const users = await db.getAll('users');
+            for (const { id, names, namesUpdate, namesTml, block, note, tags } of users) {
+                if (names) {
+                    if (names.size > 1 || namesUpdate) {
+                        const usedname = { id, names, namesUpdate, namesTml };
+                        if (namesUpdate) usedname.update = namesUpdate;
+                        if (namesTml) usedname.tml = namesTml;
+                        await db.put('usednames', usedname);
+                    }
+                }
+                if (!block && !note && !(tags && (tags.size || tags.length))) {
+                    await db.delete('users', id);
+                } else {
+                    const user = { id }
+                    if (block) user.blocked = 1;
+                    if (note) user.note = note;
+                    if (tags) user.tags = tags;
+                    await db.put('users', user);
+                }
+            }
+        }
+        await db.put('values', { id: 'version', version });
+        localStorage.setItem('VCommunity', version.toString());
+    }
+    await updateDatabase();
+
+    class User {
+        static #blockeds = null;
+        static async getBlockeds() {
+            if (this.#blockeds) return this.#blockeds;
+            const list = await db.getAllKeys('users', 1, null, 'blocked');
+            return this.#blockeds = new Set(list);
         }
 
-        #onResize = new Set();
-        #resize() {
-            for (const fn of this.#onResize) fn();
-        }
-        #menu = create('ul',
-            ['li', { onClick: () => this.#block() }, ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言']],
-            ['li', { onClick: () => this.#show() }, ['a', { href: 'javascript:void(0)' }, svg('detail'), '详细信息']]
-        );
-        #panel = create('div', { id: 'community-helper-user-panel' }, ['div', { class: 'close-mask', onClick: () => this.#close() }]);
-        #style = addStyle()
-        #bfbgi(src) {
-            const randomClass = 'v-rand-' + Math.floor(Math.random() * 100000 + 100000).toString(16);
-            this.#style.innerText = `.${randomClass}::before {background-image: url("${src}");}`
-            return randomClass
+        static async isBlocked(id) {
+            const data = await db.get('users', id) || {};
+            return !!data.blocked;
         }
 
-        #id;
-
-        id(id) {
-            this.#id = id;
-            return this.#menu;
-        }
-
-        async #block() {
-            const id = this.#id;
+        static async block(id) {
             if (!confirm('确定要屏蔽吗？')) return false;
-            const data = await db.get('users', id) || { id };
-            data.block = true;
-            await db.put('users', data);
+            const { blocked: _, ...data } = await db.get('users', id) || { id };
+            await db.put('users', { blocked: 1, ...data });
+            if (this.#blockeds) this.#blockeds.add(id);
             return true
         }
 
-        async #unblock() {
-            const id = this.#id;
+        static async unblock(id) {
             if (!confirm('确定要解除屏蔽吗？')) return false;
-            const data = await db.get('users', id) || { id };
-            data.block = false;
-            await db.put('users', data);
+            const { id: _, blocked: __, ...data } = await db.get('users', id) || {};
+            if (Object.keys(data).length) await db.put('users', { id, ...data });
+            else await db.delete('users', id);
+            if (this.#blockeds) this.#blockeds.delete(id);
             return true
         }
 
-        async #connect(nid, gh) {
+        static async connect(nid, gh) {
             if (!confirm('真的要加好友吗？')) return false;
             const ret = await fetch(`/connect/${nid}?gh=${gh}`);
             return ret.ok
         }
 
-        async #disconnect(nid, gh) {
+        static async disconnect(nid, gh) {
             if (!confirm('真的要解除好友吗？')) return false;
             const ret = await fetch(`/disconnect/${nid}?gh=${gh}`);
             return ret.ok
         }
 
-        async #loadUserData(id) {
-            return await db.get('users', id) || { id, names: new Set() };
-        }
-
-        async #loadUsedname(id) {
-            const data = await this.#loadUserData(id);
-            const { names, namesUpdate, namesTml } = data;
-            if (namesUpdate < Date.now() - 3600_000) return names;
+        static async usednames(id) {
+            const data = await db.get('usednames', id) || { id, names: new Set() };
+            if (data.update < Date.now() - 3600_000) return data.names;
             const getUsedNames = async (end, tml, ret = [], page = 1) => {
                 const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`);
                 const html = await res.text();
@@ -148,19 +167,15 @@
                     return { ret, tml };
                 return getUsedNames(end, tml, ret, page + 1);
             };
-            const { ret, tml } = await getUsedNames(namesTml);
-            const namesN = new Set(ret).union(names);
-            namesN.delete('');
-            if (namesTml && names.size == namesN.size) return names;
-            const save = await this.#loadUserData(id);
-            save.names = namesN;
-            save.namesUpdate = Date.now();
-            save.namesTml = tml;
-            await db.put('users', save);
-            return namesN;
+            const { ret, tml } = await getUsedNames(data.tml);
+            const update = Date.now();
+            const names = new Set(ret).union(data.names);
+            names.delete('');
+            await db.put('usednames', { id, names, update, tml });
+            return names;
         }
 
-        async #loadHomepage(id) {
+        static async homepage(id) {
             const res = await fetch('/user/' + id);
             const me = whoami();
             if (!res.ok) return null;
@@ -204,19 +219,130 @@
             return { type, name, src, bio, nid, gh, stats, chart }
         }
 
-        async #niceIt(element) {
-            const opts = { cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)", cursorwidth: "4px", cursorborder: "none" };
-            await LoadScript.load('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
-            const nice = $(element).niceScroll(opts);
-            this.#onResize.add(() => nice.resize());
-            return nice;
+        static async getNote(id) {
+            const data = await db.get('users', id) || {};
+            return data.note || '';
         }
 
-        #scrollTo(element, { x, y, d }) {
-            const nice = $(element).getNiceScroll(0)
+        static async setNote(id, note) {
+            const { id: _, note: __, ...data } = await db.get('users', id) || {};
+            if (note) await db.put('users', { id, note, ...data });
+            else if (Object.keys(data).length == 0) await db.delete('users', id);
+            return note;
+        }
+
+        static async getTags(id) {
+            const data = await db.get('users', id) || {};
+            return data.tags || new Set();
+        }
+
+        static async setTags(id, tags) {
+            tags = new Set(tags);
+            tags.delete('');
+            const { id: _, tags: __, ...data } = await db.get('users', id) || {};
+            if (tags.size) await db.put('users', { id, tags, ...data });
+            else if (Object.keys(data).length == 0) await db.delete('users', id);
+            return tags;
+        }
+    }
+
+    class Friends {
+        static #peddings = null;
+        static async get() {
+            const peddings = this.#peddings ?? [];
+            const pedding = new Promise(resolve => peddings.push(resolve));
+            if (!this.#peddings) {
+                this.#peddings = peddings;
+                this.#trigger();
+            }
+            return pedding;
+        }
+        static async #get() {
+            const user = whoami();
+            if (!user) return new Set();
+            const id = user.id;
+            const cache = await db.get('friends', id);
+            if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
+            const friends = await this.#fetch(id);
+            await db.put('friends', { id, friends, timestamp: Date.now() });
+            return friends;
+        }
+        static async #fetch(id) {
+            const res = await fetch(`/user/${id}/friends`);
+            if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
+            const html = await res.text();
+            const element = document.createElement('html')
+            element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
+            const friends = new Set();
+            for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
+                const id = a.href.split('/').pop();
+                friends.add(id);
+            }
+            return friends;
+        }
+
+        static async #trigger() {
+            const friends = await this.#get();
+            for (const pedding of this.#peddings) pedding(friends);
+            this.#peddings = null;
+        }
+    }
+
+    class NiceScroll {
+        #getNice(element) {
+            return $(element).getNiceScroll?.(0)
+        }
+
+        async it(element) {
+            const nice = this.#getNice(element);
+            if (nice) return nice;
+            await LoadScript.load('https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js');
+            return $(element).niceScroll({ cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)", cursorwidth: "4px", cursorborder: "none" });
+        }
+
+        to(element, { x, y, d }) {
+            const nice = this.#getNice(element);
             if (!nice) return;
             if (typeof x === 'number') nice.doScrollLeft(x, d ?? 0);
             if (typeof y === 'number') nice.doScrollTop(y, d ?? 0);
+        }
+
+        resize(element) {
+            this.#getNice(element)?.resize();
+        }
+    }
+
+    const menu = new class {
+        constructor() {
+            window.addEventListener('resize', () => this.#resize())
+        }
+
+        #onResize = new Set();
+        #resize() {
+            for (const e of this.#onResize) NiceScroll.resize(e);
+        }
+        #menu = create('ul',
+            ['li', { onClick: () => User.block(this.#id) }, ['a', { href: 'javascript:void(0)' }, svg('block'), '屏蔽发言']],
+            ['li', { onClick: () => this.#show() }, ['a', { href: 'javascript:void(0)' }, svg('detail'), '详细信息']]
+        );
+        #panel = create('div', { id: 'community-helper-user-panel' }, ['div', { class: 'close-mask', onClick: () => this.#close() }]);
+        #style = addStyle()
+        #bfbgi(src) {
+            const randomClass = 'v-rand-' + Math.floor(Math.random() * 100000 + 100000).toString(16);
+            this.#style.innerText = `.${randomClass}::before {background-image: url("${src}");}`
+            return randomClass
+        }
+
+        #id;
+
+        id(id) {
+            this.#id = id;
+            return this.#menu;
+        }
+
+        async #niceIt(element) {
+            await NiceScroll.it(element);
+            this.#onResize.add(element);
         }
 
         #isShow = false;
@@ -255,7 +381,7 @@
             await Promise.all([
                 async () => {
                     // 头像、昵称、简介、统计、图表、PM
-                    const homepage = await this.#loadHomepage(id);
+                    const homepage = await User.homepage(id);
                     if (!this.#isShow || id != this.#id) return;
                     avatar.classList.remove('loading');
                     bio.classList.remove('loading');
@@ -295,16 +421,16 @@
                             pmBtn.addEventListener('click', () => newTab('/pm/compose/' + nid + '.chii'));
                             if (friend) connectBtn.replaceWith(disconnectBtn)
                             connectBtn.addEventListener('click', async () => {
-                                if (await this.#connect(nid, gh)) connectBtn.replaceWith(disconnectBtn);
+                                if (await User.connect(nid, gh)) connectBtn.replaceWith(disconnectBtn);
                             });
                             disconnectBtn.addEventListener('click', async () => {
-                                if (await this.#disconnect(nid, gh)) disconnectBtn.replaceWith(connectBtn);
+                                if (await User.disconnect(nid, gh)) disconnectBtn.replaceWith(connectBtn);
                             });
                     }
                 },
                 async () => {
                     // 曾用名
-                    const names = await this.#loadUsedname(id);
+                    const names = await User.usednames(id);
                     if (!this.#isShow || id != this.#id) return;
                     usedname.classList.remove('loading');
                     const usednameUl = create('ul', ...map(names, v => ['li', v]));;
@@ -314,14 +440,14 @@
                 },
                 async () => {
                     // 屏蔽按钮
-                    const user = await this.#loadUserData(id);
+                    const blocked = await User.isBlocked(id);
                     if (!this.#isShow || id != this.#id) return;
-                    if (user.block) unblockBtn.replaceWith(blockedBtn)
+                    if (blocked) unblockBtn.replaceWith(blockedBtn)
                     blockedBtn.addEventListener('click', async () => {
-                        if (await this.#unblock()) blockedBtn.replaceWith(unblockBtn);
+                        if (await User.unblock(id)) blockedBtn.replaceWith(unblockBtn);
                     });
                     unblockBtn.addEventListener('click', async () => {
-                        if (await this.#block()) unblockBtn.replaceWith(blockedBtn);
+                        if (await User.block(id)) unblockBtn.replaceWith(blockedBtn);
                     });
                     this.#resize();
                 },
@@ -342,17 +468,12 @@
                         removeAllChildren(content);
                         e.classList.add('loading');
                         e.classList.remove('editing');
-                        const data = await this.#loadUserData(id);
-                        if (save) {
-                            const tags = value.split('\n').map(tag => tag.trim()).filter(tag => tag);
-                            if (!tags.length && data.tags) delete data.tags;
-                            else data.tags = new Set(tags);
-                            await db.put('users', data);
-                            data.tags;
-                        }
+                        const tags = save
+                            ? await User.setTags(id, value.split('\n').map(tag => tag.trim()))
+                            : await User.getTags(id);
                         if (!this.#isShow || id != this.#id) return;
                         e.classList.remove('loading');
-                        append(content, ...map(data.tags ?? [], tag => ['li', tag]));
+                        append(content, ...map(tags, tag => ['li', tag]));
                         this.#resize();
                     }
                     edit.addEventListener('click', () => {
@@ -360,7 +481,7 @@
                         textarea.value = Array.from(content.children, e => e.innerText).join('\n');
                         textarea.focus();
                         textarea.setSelectionRange(0, 0);
-                        this.#scrollTo(textarea, { x: 0, y: 0 });
+                        NiceScroll.to(textarea, { x: 0, y: 0 });
                     });
                     ok.addEventListener('click', () => render(true, textarea.value))
                     close.addEventListener('click', () => render())
@@ -383,14 +504,10 @@
                         removeAllChildren(content);
                         e.classList.add('loading');
                         e.classList.remove('editing');
-                        const data = await this.#loadUserData(id);
-                        if (save) {
-                            data.note = value;
-                            await db.put('users', data);
-                        }
+                        const note = save ? await User.setNote(id, value) : await User.getNote(id);
                         if (!this.#isShow || id != this.#id) return;
                         e.classList.remove('loading');
-                        append(content, ['span', data.note ?? ''])
+                        append(content, ['span', note ?? ''])
                         this.#resize();
                     }
                     edit.addEventListener('click', () => {
@@ -398,7 +515,7 @@
                         textarea.value = content.innerText;
                         textarea.focus();
                         textarea.setSelectionRange(0, 0);
-                        this.#scrollTo(textarea, { x: 0, y: 0 });
+                        NiceScroll.to(textarea, { x: 0, y: 0 });
                     });
                     ok.addEventListener('click', () => render(true, textarea.value))
                     close.addEventListener('click', () => render())
@@ -455,7 +572,8 @@
         if (!e) return;
         e.classList.add('topic-box');
         const first = e.querySelector(':scope>.clearit')
-
+        const friends = await Friends.get();
+        const blockeds = await User.getBlockeds();
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(async entry => {
                 const clearit = entry.target;
@@ -463,20 +581,13 @@
                 clearit.isVCommed = true;
                 const id = clearit.getAttribute('data-item-user')
                 if (!id) return;
-                const data = await db.get('users', id) || { id, names: new Set() };
                 const inner = clearit.querySelector('.inner');
                 const icon = create('a', { class: ['icon', 'svg-icon'], href: 'javascript:void(0)' }, svg('mark'));
                 const action = create('div', { class: ['action', 'dropdown', 'vcomm'] }, icon);
                 icon.addEventListener('mouseenter', () => append(action, menu.id(id)));
                 const actionBox = clearit.querySelector('.post_actions');
                 actionBox.insertBefore(action, actionBox.lastElementChild);
-                if (!data.names) data.names = new Set();
-                const currentName = inner.querySelector('strong > a').innerText;
-                if (currentName && !data.names.has(currentName)) {
-                    data.names.add(currentName);
-                    await db.put('users', data);
-                }
-                if (data.block) {
+                if (blockeds.has(id)) {
                     const btn = create('div', { class: 'svg-box' }, svg('expand'))
                     const tip = create('span', { class: 'svg-box' }, svg('collapse'), '已折叠')
                     const tips = create('div', { class: ['inner', 'tips'] }, tip, btn);
@@ -485,32 +596,29 @@
                 }
             });
         }, { root: null, rootMargin: '0px', threshold: [0] });
-
         if (first) observer.observe(first);
         const ownerItem = e.querySelector('.postTopic');
         const owner = ownerItem?.getAttribute('data-item-user');
         const self = whoami()?.id;
+        if (friends.has(owner)) ownerItem.classList.add('friend')
         if (owner === self) first.classList.add('self');
-
-        observeChildren(commentList, async comment => {
-            observer.observe(comment)
-            const floor = comment.getAttribute('data-item-user');
-            if (floor === owner) comment.classList.add('owner');
-            if (floor === self) comment.classList.add('self');
-            Friends.get().then(friends => friends.has(floor) && comment.classList.add('friend'));
-            const subReply = await waitElement(comment, 'topic_reply_' + comment.id.substr(5));
+        observeChildren(commentList, async item => {
+            observer.observe(item)
+            const floor = item.getAttribute('data-item-user');
+            if (friends.has(floor)) item.classList.add('friend')
+            if (floor === owner) item.classList.add('owner');
+            if (floor === self) item.classList.add('self');
+            const subReply = await waitElement(item, 'topic_reply_' + item.id.substr(5));
             if (!subReply) return;
-            observeChildren(subReply, clearit => {
-                observer.observe(clearit);
-                const user = clearit.getAttribute('data-item-user');
-                if (user === owner) clearit.classList.add('owner');
-                if (user === floor) clearit.classList.add('floor');
-                if (user === self) clearit.classList.add('self');
-                Friends.get().then(friends => friends.has(user) && clearit.classList.add('friend'));
+            observeChildren(subReply, item => {
+                observer.observe(item);
+                const user = item.getAttribute('data-item-user');
+                if (friends.has(user)) item.classList.add('friend')
+                if (user === owner) item.classList.add('owner');
+                if (user === floor) item.classList.add('floor');
+                if (user === self) item.classList.add('self');
             })
         })
-        Friends.get().then(friends => friends.has(owner) && ownerItem.classList.add('friend'));
-
     }
 
     async function replyWrapperSicky(replyWrapper) {
@@ -551,47 +659,6 @@
             return s;
         }));
         append(replyWrapper, swBtn);
-    }
-    class Friends {
-        static #peddings = null;
-        static async get() {
-            const peddings = this.#peddings ?? [];
-            const pedding = new Promise(resolve => peddings.push(resolve));
-            if (!this.#peddings) {
-                this.#peddings = peddings;
-                this.#trigger();
-            }
-            return pedding;
-        }
-        static async #get() {
-            const user = whoami();
-            if (!user) return new Set();
-            const id = user.id;
-            const cache = await db.get('friends', id);
-            if (cache && cache.timestamp > Date.now() - 3600_000) return cache.friends;
-            const friends = await this.#fetch(id);
-            await db.put('friends', { id, friends, timestamp: Date.now() });
-            return friends;
-        }
-        static async #fetch(id) {
-            const res = await fetch(`/user/${id}/friends`);
-            if (!res.ok) console.warn(`Error fetching friends: ${res.status}`);
-            const html = await res.text();
-            const element = document.createElement('html')
-            element.innerHTML = html.replace(/<(img|script|link)/g, '<noload');
-            const friends = new Set();
-            for (const a of element.querySelectorAll('#memberUserList a.avatar')) {
-                const id = a.href.split('/').pop();
-                friends.add(id);
-            }
-            return friends;
-        }
-
-        static async #trigger() {
-            const friends = await this.#get();
-            for (const pedding of this.#peddings) pedding(friends);
-            this.#peddings = null;
-        }
     }
 
     function svg(type, size = 14) {
@@ -694,4 +761,8 @@
     waitElement(document, 'dock').then(injectDock);
     waitElement(document, 'comment_list').then(injectCommentList);
     waitElement(document, 'reply_wrapper').then(replyWrapperSicky);
+    if (localStorage.getItem('VCommunityENV') === 'development') {
+        unsafeWindow.vcomm = { version, db, menu, create, append, User }
+    }
+    // localStorage.setItem('VCommunityENV', 'development');
 })();
