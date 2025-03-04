@@ -72,7 +72,7 @@ html, html[data-theme='dark'] {
         }
         .clearit.reply_highlight {
             border: 1px solid var(--color-reply) !important;
-            background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;
+            background: rgb(from var(--color-reply) r g b / .125) !important;
             box-shadow: 0 0 4px rgb(from var(--color-reply) r g b / .5);
             border-radius: 0 !important;
         }
