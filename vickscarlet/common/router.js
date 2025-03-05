@@ -1,4 +1,4 @@
-/**merge:js=_common.router.js**/ /**merge**/
+/**merge:js=common/router.js**/ /**merge**/
 class Router {
     #root = { part: { raw: '', enum: new Set(['']) }, child: [] };
 

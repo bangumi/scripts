@@ -1,4 +1,4 @@
-/**merge:js=_common.database.js**/ /**merge**/
+/**merge:js=common/database.js**/ /**merge**/
 /**
  * @typedef {{
  *  name: string

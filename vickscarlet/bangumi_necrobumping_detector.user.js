@@ -16,7 +16,7 @@
     if (!column) return;
     const nodes = column.querySelectorAll('.clearit');
     if (!nodes) return;
-    /**merge:js=_common.dom.style.js**/
+    /**merge:js=common/dom.style.js**/
     function addStyle(...styles) { const style = document.createElement('style'); style.append(document.createTextNode(styles.join('\n'))); document.head.appendChild(style); return style; }
     /**merge**/
     addStyle(/**merge:css=bangumi_necrobumping_detector.user.css**/`.flexColumn {display: flex;flex-direction: column;}.menuSticky {position: sticky;top: 0;align-self: flex-start;}.necrobumpingTip {background: #6fe5cc;padding: 8px;color: #444;border-radius: 4px 4px 0 0;}.necrobumpingList {position: relative;gap: 5px;padding: 8px;border-radius: 4px;li {display: inline-block;color: #444;span {color:#6fe5cc}}}@media(max-width:640px) {.menuSticky {align-self: auto;}}`/**merge**/)

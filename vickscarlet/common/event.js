@@ -1,4 +1,4 @@
-/**merge:js=_common.event.js**/ /**merge**/
+/**merge:js=common/event.js**/ /**merge**/
 class Event {
     static #listeners = new Map();
     static on(event, listener) {

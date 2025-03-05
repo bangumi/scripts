@@ -1,4 +1,4 @@
-/**merge:js=_common.dom.style.js**/ /**merge**/
+/**merge:js=common/dom.style.js**/ /**merge**/
 /**
  * @param  {...string} styles
  * @returns {HTMLStyleElement}

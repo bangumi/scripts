@@ -1,4 +1,4 @@
-/**merge:js=_common.svgicon.js**/ /**merge**/
+/**merge:js=common/svgicon.js**/ /**merge**/
 class SvgIcon {
     static #base(size=14, viewBox="0 0 16 16") { return { viewBox, fill: 'currentColor', width: size, height: size }; }
     static #hfws(size, viewBox) { return { ...this.#base(size, viewBox), stroke: 'currentColor', "stroke-width": 1, "stroke-linecap": "round", "stroke-linejoin": "round" }; }

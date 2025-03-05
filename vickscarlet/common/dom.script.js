@@ -1,4 +1,4 @@
-/**merge:js=_common.dom.script.js**/ /**merge**/
+/**merge:js=common/dom.script.js**/ /**merge**/
 /**
  * 加载脚本
  * @param {string} src 脚本链接

@@ -1,4 +1,4 @@
-/**merge:js=_common.dom.utils.js**/ /**merge**/
+/**merge:js=common/dom.utils.js**/ /**merge**/
 async function waitElement(parent, id, timeout = 1000) {
     return new Promise((resolve) => {
         let isDone = false;

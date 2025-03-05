@@ -1,4 +1,4 @@
-/**merge:js=_common.dom.js**/ /**merge**/
+/**merge:js=common/dom.js**/ /**merge**/
 
 /**
  * 设置事件监听

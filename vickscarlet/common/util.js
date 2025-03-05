@@ -1,4 +1,4 @@
-/**merge:js=_common.util.js**/ /**merge**/
+/**merge:js=common/util.js**/ /**merge**/
 /**
  * 返回一个函数，该函数在调用时会等待上一个调用完成后再执行
  * @param {Function} fn
