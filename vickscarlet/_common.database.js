@@ -1,4 +1,4 @@
-/**merge:js=_common.database.js**//**merge**/
+/**merge:js=_common.database.js**/ /**merge**/
 /**
  * @typedef {{
  *  name: string
@@ -59,8 +59,7 @@ class Cache {
         if (i > 0) {
             const up = this.#hotList[i - 1];
             // 需要重排
-            if (counter.cnt > up.cnt)
-                this.#hotList.sort((a, b) => b.cnt - a.cnt);
+            if (counter.cnt > up.cnt) this.#hotList.sort((a, b) => b.cnt - a.cnt);
             return true;
         }
         // 不在热点中
@@ -103,9 +102,8 @@ class Cache {
         return true;
     }
 
-
     async get(key, query) {
-        const data = this.#cache.get(key) ?? await query();
+        const data = this.#cache.get(key) ?? (await query());
         const inHot = this.#cHot(key);
         const inLast = this.#cLast(key);
         if (inHot || inLast) this.#cache.set(key, data);
@@ -128,7 +126,7 @@ class Cache {
 }
 class Collection {
     /**
-     * @param {Database} master 
+     * @param {Database} master
      * @param {CollectionOptions} param1
      */
     constructor(master, { collection, options, indexes, cache }) {
@@ -147,9 +145,15 @@ class Collection {
     #indexes;
     #cache = null;
 
-    get collection() { return this.#collection }
-    get options() { return this.#options }
-    get indexes() { return this.#indexes }
+    get collection() {
+        return this.#collection;
+    }
+    get options() {
+        return this.#options;
+    }
+    get indexes() {
+        return this.#indexes;
+    }
 
     /**
      * @param {<T=unknown>(store:IDBObjectStore)=>Promise<IDBRequest<T>>} handler
@@ -159,17 +163,15 @@ class Collection {
     async transaction(handler, mode) {
         return this.#master.transaction(
             this.#collection,
-            async store => {
+            async (store) => {
                 const request = await handler(store);
                 return new Promise((resolve, reject) => {
-                    request.addEventListener('error', e => reject(e));
-                    request.addEventListener('success', () =>
-                        resolve(request.result)
-                    );
-                })
+                    request.addEventListener('error', (e) => reject(e));
+                    request.addEventListener('success', () => resolve(request.result));
+                });
             },
             mode
-        )
+        );
     }
 
     /**
@@ -188,7 +190,7 @@ class Collection {
      * @returns {Promise<T|null>}
      */
     async get(key, index) {
-        const handler = () => this.transaction(store => this.#index(store, index).get(key));
+        const handler = () => this.transaction((store) => this.#index(store, index).get(key));
         if (this.#cache && this.#options.keyPath && !index) return this.#cache.get(key, handler);
         return handler();
     }
@@ -201,7 +203,7 @@ class Collection {
      * @returns {Promise<T[]>}
      */
     async getAll(key, count, index) {
-        return this.transaction(store => this.#index(store, index).getAll(key, count));
+        return this.transaction((store) => this.#index(store, index).getAll(key, count));
     }
 
     /**
@@ -212,7 +214,7 @@ class Collection {
      * @returns {Promise<T[]>}
      */
     async getAllKeys(key, count, index) {
-        return this.transaction(store => this.#index(store, index).getAllKeys(key, count));
+        return this.transaction((store) => this.#index(store, index).getAllKeys(key, count));
     }
 
     /**
@@ -232,7 +234,7 @@ class Collection {
             }
             this.#cache.update(key, data);
         }
-        return this.transaction(store => store.put(data), 'readwrite').then(_ => true);
+        return this.transaction((store) => store.put(data), 'readwrite').then((_) => true);
     }
 
     /**
@@ -241,7 +243,7 @@ class Collection {
      * @returns {Promise<boolean>}
      */
     async delete(key) {
-        return this.transaction(store => store.delete(key), 'readwrite').then(_ => true);
+        return this.transaction((store) => store.delete(key), 'readwrite').then((_) => true);
     }
 
     /**
@@ -249,7 +251,7 @@ class Collection {
      */
     async clear() {
         if (this.#cache) this.#cache.clear();
-        return this.transaction(store => store.clear(), 'readwrite').then(_ => true);
+        return this.transaction((store) => store.clear(), 'readwrite').then((_) => true);
     }
 }
 
@@ -278,7 +280,9 @@ class Database {
     async init() {
         this.#db = await new Promise((resolve, reject) => {
             const request = window.indexedDB.open(this.#dbName, this.#version);
-            request.addEventListener('error', () => reject({ type: 'error', message: request.error }));
+            request.addEventListener('error', () =>
+                reject({ type: 'error', message: request.error })
+            );
             request.addEventListener('blocked', () => {
                 const message = this.#blocked?.message || 'indexedDB is blocked';
                 if (this.#blocked?.alert) alert(message);
@@ -315,7 +319,7 @@ class Database {
             const transaction = this.#db.transaction(collection, mode);
             const store = transaction.objectStore(collection);
             const result = await handler(store);
-            transaction.addEventListener('error', e => reject(e));
+            transaction.addEventListener('error', (e) => reject(e));
             transaction.addEventListener('complete', () => resolve(result));
         });
     }
@@ -383,8 +387,7 @@ class Database {
      * @returns {Promise<boolean>}
      */
     async clearAll() {
-        for (const c of this.#collections.values())
-            await c.clear();
+        for (const c of this.#collections.values()) await c.clear();
         return true;
     }
 }

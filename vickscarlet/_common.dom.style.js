@@ -1,6 +1,6 @@
-/**merge:js=_common.dom.style.js**//**merge**/
+/**merge:js=_common.dom.style.js**/ /**merge**/
 /**
- * @param  {...string} styles 
+ * @param  {...string} styles
  * @returns {HTMLStyleElement}
  */
 function addStyle(...styles) {

@@ -1,4 +1,4 @@
-/**merge:js=_common.dom.js**//**merge**/
+/**merge:js=_common.dom.js**/ /**merge**/
 
 /**
  * 设置事件监听
@@ -67,8 +67,7 @@ function addClass(element, value) {
  */
 function setStyle(element, styles) {
     for (let [k, v] of Object.entries(styles)) {
-        if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k))
-            v += 'px';
+        if (v && typeof v === 'number' && !['zIndex', 'fontWeight'].includes(k)) v += 'px';
         element.style[k] = v;
     }
     return element;
@@ -119,7 +118,7 @@ function createSVG(name, props, ...childrens) {
     if (props === undefined) return element;
     if (Array.isArray(props) || props instanceof Node || typeof props !== 'object')
         return append(element, props, ...childrens);
-    return appendSVG(setProps(element, props), ...childrens)
+    return appendSVG(setProps(element, props), ...childrens);
 }
 
 /**
@@ -149,11 +148,22 @@ function removeAllChildren(element) {
  * @param {string|number} text 文本
  */
 function createTextSVG(text, fontClass) {
-    const testWidthElement = create('span', { class: fontClass, style: { fontSize: '10px', position: 'absolute', opacity: 0 } }, text);
+    const testWidthElement = create(
+        'span',
+        {
+            class: fontClass,
+            style: { fontSize: '10px', position: 'absolute', opacity: 0 },
+        },
+        text
+    );
     append(document.body, testWidthElement);
     const w = testWidthElement.offsetWidth;
     testWidthElement.remove();
-    return createSVG('svg', { class: fontClass, fill: 'currentColor', viewBox: `0 0 ${w} 10` }, ['text', { 'font-size': 10 }, text]);
+    return createSVG('svg', { class: fontClass, fill: 'currentColor', viewBox: `0 0 ${w} 10` }, [
+        'text',
+        { 'font-size': 10 },
+        text,
+    ]);
 }
 async function newTab(href) {
     create('a', { href, target: '_blank' }).click();

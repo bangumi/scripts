@@ -1,4 +1,4 @@
-/**merge:js=_common.bangumi.js**//**merge**/
+/**merge:js=_common.bangumi.js**/ /**merge**/
 function whoami() {
     // 超展开在 iframe 中， 可以用 window.parent 获得父级窗口
     let nid;

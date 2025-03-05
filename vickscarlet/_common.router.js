@@ -1,29 +1,28 @@
-/**merge:js=_common.router.js**//**merge**/
+/**merge:js=_common.router.js**/ /**merge**/
 class Router {
-    #root = {
-        part: { raw: '', enum: new Set(['']) },
-        child: [],
-    };
+    #root = { part: { raw: '', enum: new Set(['']) }, child: [] };
 
     #parsePart(raw) {
         raw = raw.trim();
-        const part = { raw: raw };
+        const part = { raw };
         if (raw.at(-1) == ')' && raw.includes('(')) {
-            const split = raw.replace(')', '').split('(');
+            const split = raw.split('(');
             raw = split[0];
-            part.enum = new Set(split[1].split('|').map((s) => s.trim()));
+            const enums = split[1].replace(')', '').split('|');
+            part.enum = new Set(enums.map((s) => s.trim()));
         }
         switch (raw[0]) {
-            case ':': part.key = raw.slice(1);
-            case '*': break;
-            default: if (raw) part.enum = new Set([raw])
+            case ':':
+                part.key = raw.slice(1);
+            case '*':
+                break;
+            default:
+                if (raw) part.enum = new Set([raw]);
         }
         return part;
     }
     #find({ child }, part) {
-        for (const layer of child)
-            if (layer.part.raw === part)
-                return layer;
+        for (const layer of child) if (layer.part.raw === part) return layer;
         return null;
     }
 
@@ -49,20 +48,17 @@ class Router {
         child.handler = handler;
         child.fallback = fallback;
         if (!children) return;
-        for (const options of children)
-            this.#use(child, options);
+        for (const options of children) this.#use(child, options);
     }
 
     #use(layer, { pattern, handler, children, fallback }) {
-        for (const p of [pattern].flat())
-            this.#useSingle(layer, p, children, handler, fallback);
+        for (const p of [pattern].flat()) this.#useSingle(layer, p, children, handler, fallback);
     }
 
     use(options) {
         this.#use(this.#root, options);
         return this;
     }
-
 
     #deepMatch(layer, [path, ...paths], params = {}, [...pattern] = []) {
         const { part, child, handler, fallback } = layer;

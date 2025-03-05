@@ -1,4 +1,4 @@
-/**merge:js=_common.util.js**//**merge**/
+/**merge:js=_common.util.js**/ /**merge**/
 /**
  * 返回一个函数，该函数在调用时会等待上一个调用完成后再执行
  * @param {Function} fn
@@ -10,7 +10,7 @@ function callWhenDone(fn) {
         done = false;
         await fn();
         done = true;
-    }
+    };
 }
 
 /**
@@ -37,5 +37,5 @@ function map(list, fn, ret = []) {
         ret.push(result);
         i++;
     }
-    return ret
+    return ret;
 }
