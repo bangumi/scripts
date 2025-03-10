@@ -2,7 +2,7 @@
 // @name         Bangumi 年鉴
 // @description  根据Bangumi的时光机数据生成年鉴
 // @namespace    syaro.io
-// @version      1.3.13
+// @version      1.3.14
 // @author       神戸小鳥 @vickscarlet
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
@@ -347,7 +347,7 @@
                 if (!dL) endL = Math.min(mid + 1, endR);
             } else if (last == year) {
                 startL = endL = mid;
-                if (!dL) startR = Math.min(mid + 1, endR);
+                if (!dR) startR = Math.min(mid + 1, endR);
             }
             if (startL == endL) dL = true;
             if (startR == endR) dR = true;
