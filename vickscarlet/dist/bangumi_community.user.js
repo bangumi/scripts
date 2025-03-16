@@ -10,9 +10,9 @@
 // @match        *://bgm.tv/*
 // @match        *://chii.in/*
 // @match        *://bangumi.tv/*
-// @require      https://cdn.jsdelivr.net/npm/umd-react/dist/react.production.min.js
-// @require      https://cdn.jsdelivr.net/npm/umd-react/dist/react-dom.production.min.js
-// @require      https://cdn.jsdelivr.net/npm/umd-react/dist/react-dom.production.min.js
+// @require      https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd//react.production.min.js
+// @require      https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd//react-dom.production.min.js
+// @require      https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd//react-dom.production.min.js
 // @grant        GM_addStyle
 // @run-at       document-start
 // ==/UserScript==
