@@ -1,0 +1,26 @@
+@import '../../styles/colors.css';
+.v-stats {
+    --loading-size: 24px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    > .v-stat {
+        line-height: 14px;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 2px 5px;
+        background: rgb(from var(--color-stat) r g b / .25);
+    }
+    > .v-stat:hover { background: rgb(from var(--color-stat) r g b / .5); }
+    > .v-stat:first-child {border-radius: 4px 0 0 0;}
+    > .v-stat:nth-child(3) {border-radius: 0 4px 0 0;}
+    > .v-stat:last-child {border-radius: 0 0 4px 0;}
+    > .v-stat:nth-child(4) {border-radius: 0 0 0 4px;}
+    > .v-coll {--color-stat: var(--color-bangumi);}
+    > .v-done {--color-stat: var(--color-green);}
+    > .v-rate {--color-stat: var(--color-skyblue);}
+    > .v-avg  {--color-stat: var(--color-yellow);}
+    > .v-std  {--color-stat: var(--color-purple);}
+    > .v-cnt  {--color-stat: var(--color-blue);}
+}

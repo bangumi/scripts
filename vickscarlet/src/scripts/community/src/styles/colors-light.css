@@ -1,0 +1,22 @@
+@import './colors-base.css';
+html {
+    --color-base: #ffffff;
+    --color-base-2: #e8e8e8;
+    --color-base-bg: #eaeffba0;
+    --color-base-font: #282828;
+
+    --color-gray-1: #e8e8e8;
+    --color-gray-2: #cccccc;
+    --color-gray-3: #aaaaaa;
+    --color-gray-4: #969696;
+
+    --color-gray-11: #cccccc;
+
+    --color-bangumi-2: #AB515D;
+    --color-bangumi-font: rgb(from var(--color-bangumi) calc(r - 50) calc(g - 50) calc(b - 50));
+    --color-yellow-font: rgb(from var(--color-yellow) calc(r - 50) calc(g - 50) calc(b - 50));
+    --color-purple-font: rgb(from var(--color-purple) calc(r - 50) calc(g - 50) calc(b - 50));
+    --color-blue-font: rgb(from var(--color-blue) calc(r - 50) calc(g - 50) calc(b - 50));
+    --color-green-font: rgb(from var(--color-green) calc(r - 50) calc(g - 50) calc(b - 50));
+    --color-red-font: rgb(from var(--color-red) calc(r - 50) calc(g - 50) calc(b - 50));
+}

@@ -1,0 +1,23 @@
+fieldset.v-board.v-actions-board {
+    > textarea {
+        width: 100%;
+        height: 100%;
+        resize: vertical;
+        border: none;
+        padding: 0;
+        box-sizing: border-box;
+        background: rgb(from var(--color-base) r g b / .1);
+        border-radius: 4px;
+        max-height: 100%;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--color-font);
+        overscroll-behavior: contain;
+    }
+    > textarea:focus, > textarea:hover {
+        box-shadow: 0 0 1px rgb(from var(--color-bangumi) r g b / .5);
+    }
+    > textarea + * {
+        visibility: hidden;
+    }
+}

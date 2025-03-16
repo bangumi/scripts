@@ -1,0 +1,28 @@
+.v-actions.v-board {
+    --loading-size: 24px;
+    display: grid;
+    padding: 0;
+    height: 34px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas: "home pm friend blocked";
+    > * {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        padding: 10px 0;
+    }
+    > .v-home { grid-area: home; }
+    > .v-pm { grid-area: pm; }
+    > .v-friend { grid-area: friend; }
+    > .v-blocked { grid-area: blocked; }
+    > *:not(.v-blocked)::after {
+        position: absolute;
+        content: '';
+        width: 2px;
+        height: calc(100% - 10px);
+        top: 5px;
+        right: -1px;
+        background: rgb(from var(--board-color-from) r g b / .25);
+    }
+}

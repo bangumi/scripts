@@ -1,3 +1,2 @@
-*.user.js
-_merge.cjs
-common/svgicon.js
+dist/*
+**/*.js

@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "composite": true,
+        "strict": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "moduleResolution": "bundler",
+        "jsx": "preserve",
+        "noEmit": true,
+        "skipLibCheck": true,
+    },
+}
