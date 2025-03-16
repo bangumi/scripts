@@ -18,17 +18,17 @@ export default defineConfig({
                     react: [
                         'React',
                         () =>
-                            'https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd//react.production.min.js',
+                            'https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd/react.production.min.js',
                     ],
                     'react-dom/client': [
                         'ReactDOM',
                         () =>
-                            'https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd//react-dom.production.min.js',
+                            'https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd/react-dom.production.min.js',
                     ],
                     'react-dom': [
                         'ReactDOM',
                         () =>
-                            'https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd//react-dom.production.min.js',
+                            'https://cdn.jsdelivr.net/gh/bangumi/scripts@7d3e6bbc780436f0e31a9133976cf77ac6a9d2de/vickscarlet/umd/react-dom.production.min.js',
                     ],
                     // 'react-custom-scrollbars': cdn.jsdelivr(
                     //     'ReactCustomScrollbars',
