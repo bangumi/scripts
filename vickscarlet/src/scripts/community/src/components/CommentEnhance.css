@@ -18,16 +18,6 @@
         div.reply_collapse { padding: 5px 10px; }
     }
 
-    /* 圆形头像 */
-    .postTopic, #comment_list {
-        .avatar {
-            img,
-            .avatarNeue {
-                border-radius: 50% !important;
-            }
-        }
-    }
-
     /* 高亮 */
     .clearit:not(.message) {
         transition: all 0.3s ease;

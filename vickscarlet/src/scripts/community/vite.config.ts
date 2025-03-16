@@ -17,8 +17,7 @@ export default defineConfig({
                 externalGlobals: {
                     react: [
                         'React',
-                        () =>
-                            'https://cdn.jsdelivr.net/npm/umd-react/dist/react.production.min.js',
+                        () => 'https://cdn.jsdelivr.net/npm/umd-react/dist/react.production.min.js',
                     ],
                     'react-dom/client': [
                         'ReactDOM',
@@ -38,9 +37,9 @@ export default defineConfig({
             },
             userscript: {
                 name: 'Bangumi 社区助手 preview',
-                version: '0.1.11',
+                version: '0.1.12',
                 namespace: 'b38.dev',
-                description: '社区助手预览版',
+                description: '社区助手预览版 with React',
                 author: '神戸小鳥 @vickscarlet',
                 license: 'MIT',
                 icon: 'https://bgm.tv/img/favicon.ico',
