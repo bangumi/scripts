@@ -66,6 +66,16 @@ GreasyFork|[`Bangumi 挖坟人探测器`](https://greasyfork.org/zh-CN/scripts/4
 GitHub|[`bangumi_quick_rating.user.js`](dist/bangumi_quick_rating.user.js?raw=true)
 GreasyFork|[`Bangumi 收藏快速评分`](https://greasyfork.org/zh-CN/scripts/527943-bangumi-%E6%94%B6%E8%97%8F%E5%BF%AB%E9%80%9F%E8%AF%84%E5%88%86)
 
+## `Stable` Bangumi 统一地址
+
+> [!TIP]  
+> 统一跳转你的班固米域名到同一个，再也不用怕谷歌搜索出的结果和你的常用地址不一样啦  
+
+源|链接
+---|---
+GitHub|[`bangumi_unified.user.js`](dist/bangumi_unified.user.js?raw=true)
+GreasyFork|[`Bangumi 统一地址`](https://greasyfork.org/zh-CN/scripts/530055-bangumi-%E7%BB%9F%E4%B8%80%E5%9C%B0%E5%9D%80)
+
 ## `Deprecated` Bangumi 用户备注与屏蔽
 
 > [!WARNING]  

@@ -16,6 +16,8 @@
     "build:quick_rating": "cd src/scripts/quick_rating && vite build",
     "dev:report": "cd src/scripts/report && vite",
     "build:report": "cd src/scripts/report && vite build",
+    "dev:unified": "cd src/scripts/unified && vite",
+    "build:unified": "cd src/scripts/unified && vite build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },
