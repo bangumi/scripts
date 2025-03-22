@@ -1,0 +1,32 @@
+@import '../../styles/colors.css';
+.v-chart {
+    --loading-size: 24px;
+    padding: 0;
+    display: grid;
+    grid-template-rows: repeat(10, 4px);
+    > * {
+        display: flex;
+        justify-content: flex-start !important;
+        width: 100%;
+        .v-bar { 
+            height: 2px;
+            background: rgb(from var(--color-bangumi) r g b / .65);
+            transition: all 0.3s ease;
+        }
+    }
+    > *:first-child::before, *:first-child>.v-bar { border-radius: 4px 4px 0 0; }
+    > *:last-child::before, *:last-child>.v-bar { border-radius: 0 0 4px 4px; }
+    > *::before {
+        content: '';
+        position: absolute;
+        top: 1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgb(from var(--color-bangumi) r g b / .15); 
+        z-index: -1;
+        transition: all 0.3s ease;
+    }
+    > *:hover::before { background: rgb(from var(--color-bangumi) r g b / .3); }
+    > *:hover > .bar { background: rgb(from var(--color-bangumi) r g b / 1); }
+}

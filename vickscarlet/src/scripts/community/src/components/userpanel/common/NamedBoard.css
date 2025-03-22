@@ -1,0 +1,20 @@
+fieldset.v-board {
+    padding-top: 24px;
+    legend {
+        position: absolute;
+        font-weight: bold;
+        top: 5px;
+        left: 5px;
+        padding: 0;
+        line-height: 12px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        color: var(--color-bangumi-font);
+        > svg {
+            width: 14px;
+            height: 14px;
+        }
+    }
+}

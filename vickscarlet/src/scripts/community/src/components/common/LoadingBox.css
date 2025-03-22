@@ -1,0 +1,23 @@
+@keyframes loading-spine {to{transform: rotate(.5turn)}}
+.v-loading {
+    display: grid !important;
+    place-items: center !important;
+    grid-template: none !important;
+    --loading-size: 50px;
+    --loading-color: #fff;
+    > * { display: none !important; }
+    > .v-loading-item {
+        display: block !important;
+        width: var(--loading-size) !important;
+        height: var(--loading-size) !important;
+        aspect-ratio: 1 !important;
+        border-radius: 50% !important;
+        border: calc(var(--loading-size) / 6.25) solid !important;
+        box-sizing: border-box !important;
+        border-color: var(--loading-color) transparent !important;
+        animation: loading-spine 1s infinite !important;
+    }
+    > .v-loading-item::before, >.v-loading-item::after {
+        content: none !important;
+    }
+}

@@ -1,0 +1,140 @@
+@import '../styles/colors.css';
+*:has(>#comment_list) {
+    .postTopic {
+        border-bottom: none;
+        .inner.tips {
+            display: flex;
+            height: 40px;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-reply-tips);
+        }
+    }
+
+    #comment_list {
+        box-sizing: border-box;
+        .row:nth-child(odd), .row:nth-child(even) { background: transparent; }
+        > .clearit:first-child { border-top: 1px solid transparent; }
+        div.reply_collapse { padding: 5px 10px; }
+    }
+
+    /* 高亮 */
+    .clearit:not(.message) {
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        border-bottom: none !important;
+        border-top: 1px dashed var(--color-reply-sp);
+        .inner.tips {
+            display: flex;
+            height: 40px;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-reply-tips);
+        }
+        .sub_reply_collapse .inner.tips { height: auto; }
+        --color-reply: var(--color-bangumi);
+    }
+    .clearit.v-friend { --color-reply: var(--color-green); }
+    .clearit.v-owner { --color-reply: var(--color-yellow); }
+    .clearit.v-floor { --color-reply: var(--color-purple); }
+    .clearit.v-self { --color-reply: var(--color-blue); }
+    .clearit.v-friend, .clearit.v-owner, .clearit.v-floor, .clearit.v-self {
+        border-top: 1px solid var(--color-reply) !important;
+        background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;
+        > .inner > :first-child > strong::before, > .inner > strong::before {
+            padding: 1px 4px;
+            margin-right: 4px;
+            border-radius: 2px;
+            background: rgb(from var(--color-bangumi) r g b /.5);
+            color: var(--color-bangumi-font)
+        }
+    }
+    .clearit.reply_highlight {
+        border: 1px solid var(--color-reply) !important;
+        background: rgb(from var(--color-reply) r g b / .125) !important;
+        box-shadow: 0 0 4px rgb(from var(--color-reply) r g b / .5);
+        border-radius: 0 !important;
+    }
+    .clearit:not(:has(.clearit:not(.message):hover), .message):hover {
+        border-top: 1px solid var(--color-reply) !important;
+        background: linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px, #00000000 60px) !important;
+        box-shadow: 0 0 4px rgb(from var(--color-reply) r g b / .5);
+    }
+    .clearit.v-self { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自'; } }
+    .clearit.v-friend { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友'; } }
+    .clearit.v-owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼'; } }
+    .clearit.v-floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '层'; } }
+    .clearit.v-friend.v-owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼'; } } 
+    .clearit.v-friend.v-floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 层'; } }
+    .clearit.v-owner.v-floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '楼 层'; } }
+    .clearit.v-self.v-owner { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼'; } } 
+    .clearit.v-self.v-floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 层'; } }
+    .clearit.v-friend.v-owner.v-floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '友 楼 层'; } }
+    .clearit.v-self.v-owner.v-floor { > .inner > :first-child > strong::before, > .inner > strong::before { content: '自 楼 层'; } }
+    
+    /* 折叠 */
+    .clearit.v-collapse {
+        position: relative !important;
+        padding: 5px 10px !important;
+        .post_actions { margin: 0 !important; }
+        > a.avatar { display: none !important; }
+        > .inner {
+            line-height: 18px;
+            span.sign.tip_j,
+            >*:not(:first-child) { display: none !important; }
+        }
+    }
+    .clearit.sub_reply_bg.v-collapse { padding: 5px 0 !important; }
+    .clearit.postTopic.v-collapse { padding: 10px 5px !important; }
+    .clearit.v-collapse:before {
+        content: '';
+        width: 14px;
+        position: absolute;
+        display: grid;
+        place-items: center;
+        top: 0;
+        left: 0;
+        height: 100%;
+        padding: 0 4px;
+        font-weight: 900;
+        color: var(--color-bangumi);
+        text-shadow: 0 0 5px rgb(from var(--color-bangumi-font) r g b / .25);
+        background: linear-gradient(to right, var(--color-bangumi) 1px, rgb(from var(--color-bangumi) r g b / .125) 1px, #00000000) !important;
+    }
+    .clearit.v-collapse:after {
+        content: '';
+        mask: url(../../../../common/svg/collapse.svg);
+        width: 14px;
+        height: 14px;
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        background: var(--color-bangumi) !important;
+        transform: translateY(-50%);
+        visibility: visible;
+    }
+    
+    .post_actions {
+        .action {
+            gap: 4px;
+            
+            a.icon:hover,
+            a.icon {
+                color: var(--color-gray-11);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 0;
+                padding: 0 1px;
+                box-sizing: border-box;
+            }
+        }
+        .dropdown ul a {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            gap: 5px;
+        }
+    }
+
+}

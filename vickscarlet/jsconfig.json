@@ -1,7 +1,0 @@
-{
-    "compilerOptions": {
-        "module": "none",
-        "target": "esnext"
-    },
-    "exclude": ["node_modules"]
-}

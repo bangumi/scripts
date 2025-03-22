@@ -1,0 +1,6 @@
+html { 
+    #sliderContainer, 
+    #comment_list > *:not(:has(.reply_highlight)) > * { 
+        display: none; 
+    } 
+}

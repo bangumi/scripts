@@ -1,0 +1,12 @@
+fieldset.v-board.v-actions-board {
+    position: relative;
+    > .v-actions-list {
+        color: var(--color-base-font);
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        top: 5px;
+        right: 5px;
+        gap: 5px;
+    }
+}

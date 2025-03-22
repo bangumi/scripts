@@ -1,0 +1,38 @@
+
+.flexColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.menuSticky {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+}
+
+.necrobumpingTip {
+    background: #6fe5cc;
+    padding: 8px;
+    color: #444;
+    border-radius: 4px 4px 0 0;
+}
+
+.necrobumpingList {
+    position: relative;
+    gap: 5px;
+    padding: 8px;
+    border-radius: 4px;
+    li {
+        display: inline-block;
+        color: #444;
+        span {
+        color:#6fe5cc
+        }
+    }
+}
+
+@media(max-width:640px) {
+    .menuSticky {
+        align-self: auto;
+    }
+}

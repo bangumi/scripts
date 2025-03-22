@@ -1,0 +1,16 @@
+html {
+    overflow-anchor: none;
+    #comment_list .v-hd:not(:has(.reply_highlight )) {
+        >*:not(.v-ph:last-child) {
+            display: none !important;
+        } 
+        >.v-ph:last-child {
+            display: block;
+            height: 44px;
+            width: 100%;
+        }
+    }
+    .v-ph {
+        display: none;
+    } 
+}

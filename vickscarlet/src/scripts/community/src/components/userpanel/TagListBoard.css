@@ -1,0 +1,3 @@
+.v-board .v-tag-list {
+    --color-font: var(--board-color-font);
+}

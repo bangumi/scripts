@@ -1,29 +1,98 @@
 # [vickscarlet](https://bgm.tv/user/vickscarlet)
 
-## [Bangumi 用户备注与屏蔽](kotorichan-remark.user.js?raw=true)
+> [!IMPORTANT]  
+> [组件bug与建议](https://bgm.tv/blog/342007)  
+> 标签|释义
+> ---|---
+> `Preview`|预览版，功能不完善，BUG 较多
+> `Stable`|正式版，功能开发完成，BUG 较少
+> `Deprecated`|已弃用，功能不再维护，BUG 随时间越来越多
 
-给用户添加备注或者屏蔽用户, 增加好友曾用名
+## `Preview` Bangumi 社区助手 preview
 
-`Dock菜单`, 点击菜单可以快速跳转到`管理窗口`对应的标签页
+> [!TIP]  
+> 用于替换 `Bangumi 用户备注与屏蔽`  
+> 正在开发中  
 
-![Dock菜单](images/remark/01.png)
+源|链接
+---|---
+GitHub|[`bangumi_community.user.js`](dist/bangumi_community.user.js?raw=true)
+GreasyFork|[`Bangumi 社区助手 preview`](https://greasyfork.org/zh-CN/scripts/527566-bangumi-%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B-preview)
 
-`管理窗口`, 要取消屏蔽某个用户主要通过这里
+## `Stable` Bangumi 高楼优化
 
-![管理窗口](images/remark/02.png)
+> [!TIP] 
+> 优化 Bangumi 高楼（例如学姐楼）的滚动体验 
 
-`鼠标悬停信息语好友标识`, 鼠标悬停在用户的头像上(如果没有头像就是悬停在名字上)会显示出对该用户的备注(或添加备注按钮), 备注点击可修改, 如果是好友, 则悬停信息中会有曾用名, 界面中如果是好友会用橙色标识出来。
+源|链接
+---|---
+超合金组件|[`app/3603`](https://bgm.tv/dev/app/3603) ※ 暂时不建议使用超合金组件版本
+GitHub|[`bangumi_comment_list_optimization.user.js`](dist/bangumi_comment_list_optimization.user.js?raw=true)
+GreasyFork|[`Bangumi 高楼优化`](https://greasyfork.org/zh-CN/scripts/527434-bangumi-%E9%AB%98%E6%A5%BC%E4%BC%98%E5%8C%96)
 
-![鼠标悬停信息语好友标识](images/remark/03.png)
-![鼠标悬停信息语好友标识](images/remark/04.png)
+## `Stable` Bangumi 年鉴
 
-`被屏蔽用户`, 访问被屏蔽用户主页会设置一个蒙版, 可以关闭这个蒙版, 也可以取消屏蔽这个用户, 另一个取消屏蔽用户的方式是到`管理窗口`中的`屏蔽列表`标签页, 鼠标悬停在用户头像上会有取消屏蔽按钮
+> [!TIP]  
+> 个人自制的年鉴  
+> 可以按年份统计，也可以统计生涯  
+> 可以统计看过的时长（部分无 wiki 时长为推测）  
 
-![被屏蔽用户](images/remark/05.png)
-![被屏蔽用户](images/remark/06.png)
+源|链接
+---|---
+GitHub|[`bangumi_report.user.js`](dist/bangumi_report.user.js?raw=true)
+GreasyFork|[`Bangumi 年鉴`](https://greasyfork.org/zh-CN/scripts/456969-bangumi-%E5%B9%B4%E9%89%B4)
 
-## [Bangumi 加密通信翻译](kotorichan-encode_translate.user.js?raw=true)
+## `Stable` Bangumi 挖坟人探测器
 
-## [Bangumi 年鉴](bangumi_report.user.js?raw=true)
+> [!TIP]  
+> 看看谁挖了这个帖子  
+> 在小组和日志中生效  
+> 与上一个人回复间隔相差 1 个月被归为挖坟  
 
-## [Bangumi 看过番剧时长统计](bgagumi_timer.user.js?raw=true)
+源|链接
+---|---
+超合金组件|[`app/3201`](https://bgm.tv/dev/app/3201)
+GitHub|[`bangumi_necrobumping_detector.user.js`](dist/bangumi_necrobumping_detector.user.js?raw=true)
+GreasyFork|[`Bangumi 挖坟人探测器`](https://greasyfork.org/zh-CN/scripts/490941-bangumi-%E6%8C%96%E5%9D%9F%E4%BA%BA%E6%8E%A2%E6%B5%8B%E5%99%A8)
+
+## `Stable` Bangumi 收藏快速评分
+
+> [!TIP]  
+> 在想要快速修改自己的收藏评分吗，试试这个吧  
+
+源|链接
+---|---
+超合金组件|[`app/1925`](https://bgm.tv/dev/app/1925)
+GitHub|[`bangumi_quick_rating.user.js`](dist/bangumi_quick_rating.user.js?raw=true)
+GreasyFork|[`Bangumi 收藏快速评分`](https://greasyfork.org/zh-CN/scripts/527943-bangumi-%E6%94%B6%E8%97%8F%E5%BF%AB%E9%80%9F%E8%AF%84%E5%88%86)
+
+## `Stable` Bangumi 统一地址
+
+> [!TIP]  
+> 统一跳转你的班固米域名到同一个，再也不用怕谷歌搜索出的结果和你的常用地址不一样啦  
+
+源|链接
+---|---
+GitHub|[`bangumi_unified.user.js`](dist/bangumi_unified.user.js?raw=true)
+GreasyFork|[`Bangumi 统一地址`](https://greasyfork.org/zh-CN/scripts/530055-bangumi-%E7%BB%9F%E4%B8%80%E5%9C%B0%E5%9D%80)
+
+## `Deprecated` Bangumi 用户备注与屏蔽
+
+> [!WARNING]  
+> 即将替换为Bangumi 社区助手  
+
+源|链接
+---|---
+超合金组件|[`app/661`](https://bgm.tv/dev/app/661)
+GitHub|[`kotorichan-remark.user.js`](dist/kotorichan-remark.user.js?raw=true)
+
+
+## `Deprecated` Bangumi 加密通信翻译
+
+> [!WARNING]  
+> 一时兴起的脚本，不建议使用 
+
+源|链接
+---|---
+超合金组件|[`app/1523`](https://bgm.tv/dev/app/1523)
+GitHub|[`kotorichan-encode_translate.user.js`](dist/kotorichan-encode_translate.user.js?raw=true)

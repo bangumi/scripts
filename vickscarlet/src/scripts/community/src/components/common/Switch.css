@@ -1,0 +1,44 @@
+.v-switch {
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    border-radius: 50px;
+    height: 12px;
+    width: 40px;
+    border: 1px solid var(--color-switch-border);
+}
+
+.v-switch::before {
+    content: '';
+    display: block;
+    position: absolute;
+    pointer-events: none;
+    height: 12px;
+    width: 40px;
+    top: 0px;
+    border-radius: 24px;
+    background-color: var(--color-switch-off);
+}
+
+.v-switch::after {
+    content: '';
+    display: block;
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    height: 12px;
+    width: 24px;
+    border-radius: 24px;
+    box-sizing: border-box;
+    background-color: var(--color-switch-bar-inner);
+    border: 5px solid var(--color-switch-bar-border);
+}
+
+.v-switch[data-enabled="enabled"]::before {
+    background-color: var(--color-switch-on);
+}
+
+.v-switch[data-enabled="enabled"]::after {
+    left: 16px;
+}

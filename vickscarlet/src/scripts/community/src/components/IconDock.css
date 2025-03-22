@@ -1,0 +1,10 @@
+#dock {
+    a {
+        position: relative;
+        display: grid;
+        place-items: center;
+    }
+    li:not(:last-child) {
+        border-right: 1px solid var(--color-dock-sp);
+    }
+}

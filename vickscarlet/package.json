@@ -1,15 +1,42 @@
 {
-  "name": "scripts-with-bangumi",
-  "version": "1.0.0",
-  "description": "Scripts with bangumi",
-  "main": "index.js",
-  "scripts": {},
-  "keywords": [
-    "javascript",
-    "bangumi"
-  ],
+  "name": "bangumi-userscripts-vickscarlet",
+  "description": "Bangumi UserScripts by Vick Scarlet",
+  "version": "2.0.0",
   "author": "VickScarlet",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {}
+  "type": "module",
+  "scripts": {
+    "dev:comment_list_optimization": "cd src/scripts/comment_list_optimization && vite",
+    "build:comment_list_optimization": "cd src/scripts/comment_list_optimization && vite build",
+    "dev:community": "cd src/scripts/community && vite",
+    "build:community": "cd src/scripts/community && vite build",
+    "dev:necrobumping_detector": "cd src/scripts/necrobumping_detector && vite",
+    "build:necrobumping_detector": "cd src/scripts/necrobumping_detector && vite build",
+    "dev:quick_rating": "cd src/scripts/quick_rating && vite",
+    "build:quick_rating": "cd src/scripts/quick_rating && vite build",
+    "dev:report": "cd src/scripts/report && vite",
+    "build:report": "cd src/scripts/report && vite build",
+    "dev:unified": "cd src/scripts/unified && vite",
+    "build:unified": "cd src/scripts/unified && vite build",
+    "build": "npm-run-all build:*",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.5.32",
+    "@types/jquery.nicescroll": "^3.7.5",
+    "@types/react": "^19.0.10",
+    "@types/react-custom-scrollbars": "^4.0.13",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "npm-run-all": "^4.1.5",
+    "react": "^19.0.0",
+    "react-custom-scrollbars": "^4.2.1",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1",
+    "vite-plugin-monkey": "^5.0.8",
+    "vite-plugin-svgr": "^4.3.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.0.8"
+  }
 }

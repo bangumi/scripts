@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多种类页面排序与筛选
 // @namespace   tv.bgm.cedar.sortandfiltermultiplepages
-// @version     2.2.3
+// @version     2.2.4
 // @description 为多种不同的页面添加排序与筛选功能
 // @author      Cedar
 // @include     /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/subject/\d+/comments.*/
@@ -570,7 +570,7 @@ class MainController {
 // 吐槽页 /subject/{id}/comments
 class CommentsParser {
   static lengthParser = el => el.querySelector('p').innerText.length;
-  static datetimeParser = el => parseDatetimeString(el.querySelector('small').innerText.slice(2));
+  static datetimeParser = el => parseDatetimeString(el.querySelector('small+small').innerText.slice(2));
 
   static scoreParser(el) {
     let e = el.querySelector('.starlight');
