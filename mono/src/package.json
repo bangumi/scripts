@@ -37,7 +37,7 @@
   "homepage": "https://github.com/bangumi/scripts/tree/master/mono",
   "dependencies": {
     "preact": "^8.1.0",
-    "tslib": "^1.7.1"
+    "tslib": "^1.14.1"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
