@@ -12,22 +12,6 @@ export default defineConfig({
                 fileName: 'bangumi_unified.user.js',
             },
             userscript: {
-                // ==UserScript==
-                // @name
-                // @namespace    b38.dev
-                // @version      1.0.0
-                // @author       神戸小鳥 @vickscarlet
-                // @description  Bangumi 统一地址 v1
-                // @license      MIT
-                // @icon         https://bgm.tv/img/favicon.ico
-                // @match        *://bgm.tv/*
-                // @match        *://chii.in/*
-                // @match        *://bangumi.tv/*
-                // @grant        GM_setValue
-                // @grant        GM_getValue
-                // @grant        GM_registerMenuCommand
-                // @run-at       document-start
-                // ==/UserScript==
                 name: 'Bangumi 统一地址',
                 version: '1.0.0',
                 namespace: 'b38.dev',
@@ -38,7 +22,7 @@ export default defineConfig({
                 grant: ['GM_setValue', 'GM_getValue', 'GM_registerMenuCommand'],
                 homepage:
                     'https://github.com/bangumi/scripts/blob/master/vickscarlet/src/scripts/unified',
-                match: ['*://bgm.tv/user/*', '*://chii.in/user/*', '*://bangumi.tv/user/*'],
+                match: ['*://bgm.tv/*', '*://chii.in/*', '*://bangumi.tv/*'],
                 'run-at': 'document-start',
             },
         }),

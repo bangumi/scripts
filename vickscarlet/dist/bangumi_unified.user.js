@@ -7,9 +7,9 @@
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
 // @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/src/scripts/unified
-// @match        *://bgm.tv/user/*
-// @match        *://chii.in/user/*
-// @match        *://bangumi.tv/user/*
+// @match        *://bgm.tv/*
+// @match        *://chii.in/*
+// @match        *://bangumi.tv/*
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
