@@ -43,9 +43,9 @@ class Cache {
         this.#cacheLimit = this.#hotLimit + this.#lastLimit
     }
 
-    #hotLimit
-    #lastLimit
-    #cacheLimit
+    #hotLimit: number
+    #lastLimit: number
+    #cacheLimit: number
 
     #hotList: Counter[] = []
     #hot = new Set()
@@ -73,8 +73,7 @@ class Cache {
         if (i > 0) {
             const up = this.#hotList[i - 1]
             // 需要重排
-            if (counter.cnt > up.cnt)
-                this.#hotList.sort((a, b) => b.cnt - a.cnt)
+            if (counter.cnt > up.cnt) this.#hotList.sort((a, b) => b.cnt - a.cnt)
             return true
         }
         // 不在热点中
@@ -141,10 +140,7 @@ class Cache {
 }
 
 class Collection {
-    constructor(
-        master: Database,
-        { collection, options, indexes, cache }: CollectionOptions
-    ) {
+    constructor(master: Database, { collection, options, indexes, cache }: CollectionOptions) {
         this.#master = master
         this.#collection = collection
         this.#options = options
@@ -153,11 +149,11 @@ class Collection {
             this.#cache = new Cache(cache)
         }
     }
-    #master
-    #collection
-    #options
-    #indexes
-    #cache: Cache | null = null
+    #master: Database
+    #collection: string
+    #options?: IDBObjectStoreParameters
+    #indexes?: Index[]
+    #cache: Cache
 
     get collection() {
         return this.#collection
@@ -170,9 +166,7 @@ class Collection {
     }
 
     async transaction<T>(
-        handler: (
-            store: IDBObjectStore
-        ) => Promise<IDBRequest<T>> | IDBRequest<T>,
+        handler: (store: IDBObjectStore) => Promise<IDBRequest<T>> | IDBRequest<T>,
         mode?: 'readonly' | 'readwrite'
     ) {
         return this.#master.transaction(
@@ -181,9 +175,7 @@ class Collection {
                 const request = await handler(store)
                 return new Promise<T>((resolve, reject) => {
                     request.addEventListener('error', (e) => reject(e))
-                    request.addEventListener('success', () =>
-                        resolve(request.result)
-                    )
+                    request.addEventListener('success', () => resolve(request.result))
                 })
             },
             mode
@@ -197,38 +189,19 @@ class Collection {
 
     async get<T>(key: IDBValidKey | IDBKeyRange, index?: string) {
         const handler = () =>
-            this.transaction<T | null>((store) =>
-                this.#index(store, index).get(key)
-            )
-        if (
-            this.#cache &&
-            this.#options?.keyPath &&
-            !index &&
-            typeof key == 'string'
-        ) {
+            this.transaction<T | null>((store) => this.#index(store, index).get(key))
+        if (this.#cache && this.#options?.keyPath && !index && typeof key == 'string') {
             return this.#cache.get(key, handler)
         }
         return handler()
     }
 
-    async getAll<T>(
-        key?: IDBValidKey | IDBKeyRange,
-        count?: number,
-        index?: string
-    ) {
-        return this.transaction<T[]>((store) =>
-            this.#index(store, index).getAll(key, count)
-        )
+    async getAll<T>(key?: IDBValidKey | IDBKeyRange, count?: number, index?: string) {
+        return this.transaction<T[]>((store) => this.#index(store, index).getAll(key, count))
     }
 
-    async getAllKeys(
-        key?: IDBValidKey | IDBKeyRange,
-        count?: number,
-        index?: string
-    ) {
-        return this.transaction((store) =>
-            this.#index(store, index).getAllKeys(key, count)
-        )
+    async getAllKeys(key?: IDBValidKey | IDBKeyRange, count?: number, index?: string) {
+        return this.transaction((store) => this.#index(store, index).getAllKeys(key, count))
     }
 
     async put<T extends BaseData>(data: T) {
@@ -245,22 +218,16 @@ class Collection {
             }
             this.#cache.update(key as string, data)
         }
-        return this.transaction((store) => store.put(data), 'readwrite').then(
-            (_) => true
-        )
+        return this.transaction((store) => store.put(data), 'readwrite').then((_) => true)
     }
 
     async delete(key: IDBValidKey | IDBKeyRange) {
-        return this.transaction((store) => store.delete(key), 'readwrite').then(
-            (_) => true
-        )
+        return this.transaction((store) => store.delete(key), 'readwrite').then((_) => true)
     }
 
     async clear() {
         if (this.#cache) this.#cache.clear()
-        return this.transaction((store) => store.clear(), 'readwrite').then(
-            (_) => true
-        )
+        return this.transaction((store) => store.clear(), 'readwrite').then((_) => true)
     }
 }
 
@@ -271,18 +238,15 @@ export class Database {
         this.#blocked = blocked || { alert: false }
 
         for (const options of collections) {
-            this.#collections.set(
-                options.collection,
-                new Collection(this, options)
-            )
+            this.#collections.set(options.collection, new Collection(this, options))
         }
     }
 
-    #dbName
-    #version
+    #dbName: string
+    #version: number
     #collections = new Map<string, Collection>()
     #db: IDBDatabase | null = null
-    #blocked
+    #blocked?: { alert?: boolean; message?: string }
 
     async init() {
         this.#db = await new Promise((resolve, reject) => {
@@ -301,10 +265,7 @@ export class Database {
                     const { collection, options, indexes } = c
                     let store
                     if (!request.result.objectStoreNames.contains(collection))
-                        store = request.result.createObjectStore(
-                            collection,
-                            options
-                        )
+                        store = request.result.createObjectStore(collection, options)
                     else store = request.transaction!.objectStore(collection)
                     if (!indexes) continue
                     for (const { name, keyPath, unique } of indexes) {
@@ -332,11 +293,7 @@ export class Database {
         })
     }
 
-    async get<T>(
-        collection: string,
-        key: IDBValidKey | IDBKeyRange,
-        index?: string
-    ) {
+    async get<T>(collection: string, key: IDBValidKey | IDBKeyRange, index?: string) {
         return this.#collections.get(collection)!.get<T>(key, index)
     }
 

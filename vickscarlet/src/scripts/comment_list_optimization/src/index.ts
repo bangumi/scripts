@@ -5,16 +5,15 @@ import {
     resizeObserver,
     intersectionObserver,
 } from '@common/dom'
-import './vhd.css'
+import css from './vhd.css?inline'
 import initCss from './init.css?inline'
+addStyle(css)
 const style = addStyle(initCss)
 waitElement(document, '#comment_list').then(async (container) => {
     if (!container) return
     // 监听高度变化
     const ro = resizeObserver((entrie) => {
-        const placeholder = entrie.target.querySelector(
-            ':scope>.v-ph'
-        ) as HTMLBaseElement
+        const placeholder = entrie.target.querySelector(':scope>.v-ph') as HTMLBaseElement
         if (!placeholder) return
         placeholder.style.height = entrie.contentRect.height + 'px'
     })

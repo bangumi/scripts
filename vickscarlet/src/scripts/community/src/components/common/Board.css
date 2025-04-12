@@ -24,6 +24,7 @@
 }
 .v-board::before { 
     background: var(--board-before-bg);
+    background-size: cover;
     opacity: var(--board-before-opacity);
 }
 .v-board::after {

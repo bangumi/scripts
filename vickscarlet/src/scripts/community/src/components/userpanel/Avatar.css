@@ -6,7 +6,6 @@
 .v-avatar.v-board {
     min-width: 120px;
     max-width: 280px;
-    height: 180px;
     display: flex;
     flex-direction: column;
     justify-content: center;

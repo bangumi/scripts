@@ -55,8 +55,6 @@ html, html[data-theme='dark'] {
                 --board-color-font: var(--color-bangumi);
                 --board-color-from: var(--color-bangumi); 
                 --board-color-alpha: .25;
-                min-width: 120px;
-                max-width: 280px;
             }
             > .v-actions {
                 grid-area: actions;

@@ -21,13 +21,18 @@ export interface Props {
 }
 
 export function CommentEnhance({ comment, owner, floor }: Props) {
-    const [user] = useState(
-        () => comment.getAttribute('data-item-user') as string
-    )
+    const [user] = useState(() => comment.getAttribute('data-item-user') as string)
     const menuRef = useRef<HTMLDivElement>(null)
+    const [actions, setActions] = useState<Element | null>(null)
     const [showPanel, setShowPanel] = useState(false)
     const [collapse, setCollapse] = useState(false)
     const [blocked, setBlocked] = useState(false)
+    useEffect(() => {
+        if (!menuRef.current) return
+        if (!actions) return menuRef.current.remove()
+        if (actions.children.length < 2) actions.append(menuRef.current)
+        else actions.insertBefore(menuRef.current, actions.lastElementChild!)
+    }, [menuRef.current, actions])
     useEffect(() => {
         if (user === whoami()?.id) comment.classList.add('v-self')
         if (user === owner) comment.classList.add('v-owner')
@@ -41,15 +46,7 @@ export function CommentEnhance({ comment, owner, floor }: Props) {
             if (!friends.has(user)) return
             comment.classList.add('v-friend')
         })
-        waitElement(comment, '.post_actions').then((actions) => {
-            if (!actions) return
-            if (actions.children.length < 2) actions.append(menuRef.current!)
-            else
-                actions.insertBefore(
-                    menuRef.current!,
-                    actions.lastElementChild!
-                )
-        })
+        waitElement(comment, '.post_actions').then(setActions)
     }, [comment])
     useEffect(() => {
         if (collapse) comment.classList.add('v-collapse')
@@ -108,10 +105,7 @@ export function CommentEnhance({ comment, owner, floor }: Props) {
                 </li>
                 {showPanel &&
                     createPortal(
-                        <UserPanel
-                            id={user}
-                            onClose={() => setShowPanel(false)}
-                        />,
+                        <UserPanel id={user} onClose={() => setShowPanel(false)} />,
                         document.body
                     )}
             </ul>

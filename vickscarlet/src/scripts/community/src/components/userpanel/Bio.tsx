@@ -7,6 +7,7 @@ import './Bio.css'
 
 export interface Data {
     bio: Element | null
+    background?: string
 }
 
 export interface Props {
@@ -28,6 +29,7 @@ export function Bio({ data }: Props) {
         <NamedBoard
             className="v-bio"
             loading={!data}
+            background={data?.background}
             name={
                 <>
                     <User /> Bio

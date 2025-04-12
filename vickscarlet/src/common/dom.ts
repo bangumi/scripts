@@ -10,10 +10,7 @@ export function addStyle(...styles: string[]) {
     return style
 }
 
-export async function waitElement<E extends Element>(
-    parent: Element | Document,
-    selector: string
-) {
+export async function waitElement<E extends Element>(parent: Element | Document, selector: string) {
     return new Promise<E | null>((resolve) => {
         let isDone = false
         const done = (fn: () => void) => {
@@ -54,22 +51,16 @@ export async function waitElement<E extends Element>(
     })
 }
 
-export function observeChildren(
-    element: Element,
-    callback: (e: Element) => void
-) {
+export function observeChildren(element: Element, callback: (e: Element) => void) {
     new MutationObserver((mutations) => {
         for (const mutation of mutations)
             for (const node of mutation.addedNodes)
-                if (node.nodeType === Node.ELEMENT_NODE)
-                    callback(node as Element)
+                if (node.nodeType === Node.ELEMENT_NODE) callback(node as Element)
     }).observe(element, { childList: true })
     for (const child of element.children) callback(child)
 }
 
-export function resizeObserver(
-    callback: Parameters<Array<ResizeObserverEntry>['forEach']>[0]
-) {
+export function resizeObserver(callback: Parameters<Array<ResizeObserverEntry>['forEach']>[0]) {
     return new ResizeObserver((entries) => entries.forEach(callback))
 }
 
@@ -77,10 +68,7 @@ export function intersectionObserver(
     callback: Parameters<Array<IntersectionObserverEntry>['forEach']>[0],
     options?: IntersectionObserverInit
 ) {
-    return new IntersectionObserver(
-        (entries) => entries.forEach(callback),
-        options
-    )
+    return new IntersectionObserver((entries) => entries.forEach(callback), options)
 }
 
 export async function newTab(href: string) {
