@@ -9,8 +9,9 @@
                 border-right: none !important;
                 padding: 0 !important;
                 position: relative;
-                display: grid;
-                place-items: center;
+                display: flex;
+                align-items: center;
+                min-height: 18px;
             }
             li:not(:last-child)::after {
                 content: "";

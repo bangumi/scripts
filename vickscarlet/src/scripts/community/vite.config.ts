@@ -38,7 +38,7 @@ export default defineConfig({
             },
             userscript: {
                 name: 'Bangumi 社区助手 preview',
-                version: '0.1.13',
+                version: '0.1.14',
                 namespace: 'b38.dev',
                 description: '社区助手预览版 with React',
                 author: '神戸小鳥 @vickscarlet',
