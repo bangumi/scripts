@@ -13,7 +13,7 @@
                 align-items: center;
                 min-height: 18px;
             }
-            li:not(:last-child)::after {
+            li:not(.first)::after {
                 content: "";
                 display: block;
                 background: rgb(from var(--color-bangumi-2) r g b / 0.6);
@@ -21,7 +21,7 @@
                 height: calc(100% - 4px);
                 position: absolute;
                 top: 2px;
-                right: -4.5px;
+                left: -4.5px;
             }
         }
         > ul::after {
