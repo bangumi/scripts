@@ -153,7 +153,7 @@ class Collection {
     #collection: string
     #options?: IDBObjectStoreParameters
     #indexes?: Index[]
-    #cache: Cache
+    #cache?: Cache
 
     get collection() {
         return this.#collection

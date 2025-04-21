@@ -1,15 +1,23 @@
 {
-    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
+        "allowJs": true,
+        "composite": true,
+        "strict": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "skipLibCheck": true,
         "baseUrl": ".",
         "paths": {
             "@common/*": ["../../common/*"],
         }
     },
-    "include": [
-        "src",
-        "vite.config.ts",
-        "../../common",
-        "../../vite-env.d.ts"
+    "include": ["src", "../../common"],
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
     ]
 }

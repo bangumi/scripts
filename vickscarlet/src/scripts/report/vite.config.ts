@@ -21,14 +21,11 @@ export default defineConfig({
                 icon: 'https://bgm.tv/img/favicon.ico',
                 homepage:
                     'https://github.com/bangumi/scripts/blob/master/vickscarlet/src/scripts/report',
-                match: [
-                    '*://bgm.tv/user/*',
-                    '*://chii.in/user/*',
-                    '*://bangumi.tv/user/*',
-                ],
+                match: ['*://bgm.tv/user/*', '*://chii.in/user/*', '*://bangumi.tv/user/*'],
             },
         }),
     ],
+    root: '.',
     build: {
         emptyOutDir: false,
         target: 'es2022',

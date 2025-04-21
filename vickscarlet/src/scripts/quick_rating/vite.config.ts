@@ -41,6 +41,7 @@ export default defineConfig({
             },
         }),
     ],
+    root: '.',
     build: {
         emptyOutDir: false,
         target: 'es2022',

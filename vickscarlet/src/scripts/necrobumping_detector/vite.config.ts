@@ -15,8 +15,7 @@ export default defineConfig({
                 name: 'Bangumi 挖坟人探测器',
                 version: '1.0.6',
                 namespace: 'b38.dev',
-                description:
-                    'Bangumi 挖坟人探测器, 看看是谁在挖坟，在日志和小组里生效',
+                description: 'Bangumi 挖坟人探测器, 看看是谁在挖坟，在日志和小组里生效',
                 author: '神戸小鳥 @vickscarlet',
                 license: 'MIT',
                 icon: 'https://bgm.tv/img/favicon.ico',
@@ -26,6 +25,7 @@ export default defineConfig({
             },
         }),
     ],
+    root: '.',
     build: {
         emptyOutDir: false,
         target: 'es2022',

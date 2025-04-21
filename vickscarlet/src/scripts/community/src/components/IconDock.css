@@ -1,10 +1,30 @@
 #dock {
-    a {
-        position: relative;
-        display: grid;
-        place-items: center;
-    }
-    li:not(:last-child) {
-        border-right: 1px solid var(--color-dock-sp);
+    padding: 0;
+    > div.content {
+        padding: 2px 4px;
+        > ul.clearit {
+            display: flex;
+            gap: 8px;
+            >li, li>a {
+                border-right: none !important;
+                padding: 0 !important;
+                position: relative;
+                display: grid;
+                place-items: center;
+            }
+            li:not(:last-child)::after {
+                content: "";
+                display: block;
+                background: rgb(from var(--color-bangumi-2) r g b / 0.6);
+                width: 1px;
+                height: calc(100% - 4px);
+                position: absolute;
+                top: 2px;
+                right: -4.5px;
+            }
+        }
+        > ul::after {
+            content: none;
+        }
     }
 }

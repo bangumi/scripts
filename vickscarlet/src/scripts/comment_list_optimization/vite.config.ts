@@ -15,8 +15,7 @@ export default defineConfig({
                 name: 'Bangumi 高楼优化',
                 version: '3.0.4',
                 namespace: 'b38.dev',
-                description:
-                    '优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用',
+                description: '优化高楼评论的滚动性能，只渲染可见区域的评论，减少卡顿和内存占用',
                 author: '神戸小鳥 @vickscarlet',
                 license: 'MIT',
                 icon: 'https://bgm.tv/img/favicon.ico',
@@ -27,6 +26,7 @@ export default defineConfig({
             },
         }),
     ],
+    root: '.',
     build: {
         emptyOutDir: false,
         target: 'es2022',
