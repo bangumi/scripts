@@ -1,5 +1,5 @@
 @import '../styles/colors.css';
-.v-sicky-reply {
+.v-sticky-reply {
     position: sticky;
     top: 0;
     z-index: 2;
@@ -12,19 +12,19 @@
     width: calc(100% - 1px);
     overflow: hidden;
     margin-bottom: 5px;
-    background-color: var(--color-sicky-bg);
-    border: 1px solid var(--color-sicky-border);
-    box-shadow: 0px 0px 0px 2px var(--color-sicky-shadow);
+    background-color: var(--color-sticky-bg);
+    border: 1px solid var(--color-sticky-border);
+    box-shadow: 0px 0px 0px 2px var(--color-sticky-shadow);
     textarea.reply {
-        background-color: var(--color-sicky-textarea) !important;
+        background-color: var(--color-sticky-textarea) !important;
     }
 }
-.v-sicky-reply:has(:focus),
-.v-sicky-reply:hover {
+.v-sticky-reply:has(:focus),
+.v-sticky-reply:hover {
     grid-template-rows: 1fr;
-    background-color: var(--color-sicky-hover-bg);
-    border: 1px solid var(--color-sicky-hover-border);
-    box-shadow: 0 0 4px var(--color-sicky-hover-shadow);
+    background-color: var(--color-sticky-hover-bg);
+    border: 1px solid var(--color-sticky-hover-border);
+    box-shadow: 0 0 4px var(--color-sticky-hover-shadow);
 }
 #reply_wrapper {
     position: relative;

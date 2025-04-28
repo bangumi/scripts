@@ -1,4 +1,4 @@
 export { IconDock, replaceDock } from './IconDock'
 export { UserPanel } from './userpanel'
-export { SickyReply, sickyIt } from './SickyReply'
+export { StickyReply, stickyIt } from './StickyReply'
 export { CommentEnhance, commentEnhance } from './CommentEnhance'

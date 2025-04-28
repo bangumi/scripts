@@ -23,14 +23,14 @@ html {
     --color-reply-friend: var(--color-green);
     --color-reply-self: var(--color-blue);
 
-    --color-sicky-bg: rgb(from var(--color-base) r g b / .125);
-    --color-sicky-border: rgb(from var(--color-bangumi) r g b / .25);
-    --color-sicky-shadow: rgb(from var(--color-base) r g b / .05);
-    --color-sicky-textarea: rgb(from var(--color-base) r g b / .8);
+    --color-sticky-bg: rgb(from var(--color-base) r g b / .125);
+    --color-sticky-border: rgb(from var(--color-bangumi) r g b / .25);
+    --color-sticky-shadow: rgb(from var(--color-base) r g b / .05);
+    --color-sticky-textarea: rgb(from var(--color-base) r g b / .8);
 
-    --color-sicky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);
-    --color-sicky-hover-border: var(--color-bangumi);
-    --color-sicky-hover-shadow: var(--color-bangumi);
+    --color-sticky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);
+    --color-sticky-hover-border: var(--color-bangumi);
+    --color-sticky-hover-shadow: var(--color-bangumi);
 
     --color-primary: var(--color-bangumi);
     --color-secondary: var(--color-blue);

@@ -1,7 +1,7 @@
 .v-tip-item {
     position: relative;
     cursor: pointer;
-    > .v-tip:last-child {
+    > .v-tip {
         visibility: hidden;
         position: absolute;
         top: 0;
@@ -14,7 +14,7 @@
         color: var(--color-white);
         z-index: 100;
     }
-    > .v-tip:last-child::after {
+    > .v-tip::after {
         content: '';
         position: absolute !important;
         bottom: 0;
@@ -25,4 +25,4 @@
         transform: translate(-50%, 100%);
     }
 }
-.v-tip-item:hover { .v-tip:last-child { visibility: visible; } }
+.v-tip-item:hover { .v-tip { visibility: visible; } }
