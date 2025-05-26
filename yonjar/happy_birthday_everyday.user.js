@@ -132,7 +132,7 @@ class ProfilePage {
         });
     } else {
       document
-        .querySelector("#addToBirthdaySet")
+        .querySelector("#removeFromBirthdaySet")
         .addEventListener("click", () => {
           this.removeFromBirthdaySet();
           location.reload(); // 重新加载页面以更新按钮状态
