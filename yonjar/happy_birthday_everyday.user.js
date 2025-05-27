@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi寿星名单
 // @namespace    https://github.com/bangumi/scripts/yonjar
-// @version      0.0.1
+// @version      0.0.2
 // @description  把目录里的角色或人物的生日添加到localstorge 并在生日当天显示
 // @author       Yonjar
 // @match        https://bgm.tv/*
