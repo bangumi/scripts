@@ -43,25 +43,29 @@
   document.getElementsByTagName("head")[0].appendChild(style);
 
   function swapTitlesAndSubtitles() {
-    const cardElements = document.querySelectorAll(".card:not([data-swapped])"); // 只选择还未处理过的.card元素
+    const cardElements = document.querySelectorAll(".card:not([data-swapped])");
 
     cardElements.forEach((card) => {
       const titleElement = card.querySelector(".title");
       const subtitleElement = titleElement.querySelector(".subtitle");
 
       if (titleElement && subtitleElement) {
-        const fullTitleText = titleElement.textContent.trim();
-        const subtitleText = subtitleElement.textContent.trim();
+        const linkElement = titleElement.querySelector("a");
 
-        if (subtitleText === "") {
-          card.setAttribute("data-swapped", "true"); // 标记该.card元素已经被处理过
-        } else {
-          const pureTitleText = fullTitleText.replace(subtitleText, "").trim();
+        if (linkElement) {
+          const linkHref = linkElement.getAttribute("href");
+          const fullTitleText = linkElement.textContent.trim();
+          const subtitleText = subtitleElement.textContent.trim();
 
-          // 重新组合.title和.subtitle
-          titleElement.innerHTML = `${subtitleText} <small class="grey">${pureTitleText}</small>`;
+          if (subtitleText === "") {
+            card.setAttribute("data-swapped", "true");
+          } else {
+            const pureTitleText = fullTitleText.replace(subtitleText, "").trim();
 
-          card.setAttribute("data-swapped", "true"); // 标记该.card元素已经被处理过
+            linkElement.innerHTML = `${subtitleText} <small class="grey">${pureTitleText}</small>`;
+
+            card.setAttribute("data-swapped", "true");
+          }
         }
       }
     });
