@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.3
-// @description  显示条目页面关联条目的收藏情况,显示关联条目的排名，单行本设为全部已读/取消全部已读
+// @version      0.6.4
+// @description  显示条目页面关联条目的收藏情况，显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
 // @grant        GM_addStyle
@@ -440,7 +440,12 @@ color: #aaa;
       let fetchList = [],
         fetchList1 = [];
       itemsList.forEach((elem) => {
-        elem.style.height = "200px";
+        // 检查元素是否在单行本区域内，如果不是才设置固定高度
+        let isInMangaSection = mangaSection && mangaSection.contains(elem);
+        if (!isInMangaSection) {
+          elem.style.height = "200px";
+        }
+
         let avatarLink =
           elem.querySelector("a.avatar") || elem.querySelector("a");
         if (!avatarLink) {
@@ -680,6 +685,10 @@ color: #aaa;
           existingRank.classList.add("relate_rank");
         }
         existingRank.innerHTML = `<small>Rank </small>${rank}`;
+        let isInMangaSection = mangaSection && mangaSection.contains(elem);
+        if (isInMangaSection) {
+          existingRank.style.top = "0";
+        }
       }
       count++;
       return;
@@ -694,6 +703,10 @@ color: #aaa;
       }
       rankSp.innerHTML = `<small>Rank </small>${rank}`;
       elem.appendChild(rankSp);
+      let isInMangaSection = mangaSection && mangaSection.contains(elem);
+      if (isInMangaSection) {
+        rankSp.style.top = "0";
+      }
     }
     count++;
   }
