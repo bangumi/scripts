@@ -76,6 +76,30 @@ height: 18px;
 background: no-repeat url(/img/ico/ico_eye.png) 50% top;
 }
 
+/* 控制面板样式 */
+.bangumi-control-panel {
+margin: 10px 0;
+padding: 10px;
+background: #f8f8f8;
+border-radius: 4px;
+border: 1px solid #ddd;
+}
+
+.bangumi-help-text {
+margin-top: 8px;
+font-size: 12px;
+color: #666;
+}
+
+/* 关灯模式支持 */
+[data-theme="dark"] .bangumi-control-panel {
+background: #2a2a2a;
+border-color: #444;
+}
+
+[data-theme="dark"] .bangumi-help-text {
+color: #aaa;
+}
 `);
   // 检测 indexedDB 兼容性，因为只有新版本浏览器支持
   let indexedDB =
@@ -229,8 +253,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
 
   // 创建控制面板容器
   let controlPanel = document.createElement("div");
-  controlPanel.style.cssText =
-    "margin: 10px 0; padding: 10px; background: #f8f8f8; border-radius: 4px; border: 1px solid #ddd;";
+  controlPanel.className = "bangumi-control-panel";
 
   // 私密选项
   let privateLabel = document.createElement("label");
@@ -336,7 +359,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
 
   // 添加说明文字
   let helpText = document.createElement("div");
-  helpText.style.cssText = "margin-top: 8px; font-size: 12px; color: #666;";
+  helpText.className = "bangumi-help-text";
   helpText.textContent =
     '提示：批量操作会将当前页面所有条目标记为"已收藏"状态，请谨慎使用';
   controlPanel.appendChild(helpText);
