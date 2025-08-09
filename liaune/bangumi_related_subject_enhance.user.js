@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.2
+// @version      0.6.3
 // @description  显示条目页面关联条目的收藏情况,显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -18,7 +18,9 @@ color: #FFF;
 box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
 -moz-border-radius: 4px;
 -webkit-border-radius: 4px;
-border-radius: 4px
+border-radius: 4px;
+position: relative;
+top: 10px;
 }
 .relate_rank_1{
 padding: 2px 5px 1px 5px;
@@ -415,7 +417,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
       let fetchList = [],
         fetchList1 = [];
       itemsList.forEach((elem) => {
-        elem.style.height = "150px";
+        elem.style.height = "200px";
         let avatarLink =
           elem.querySelector("a.avatar") || elem.querySelector("a");
         if (!avatarLink) {
