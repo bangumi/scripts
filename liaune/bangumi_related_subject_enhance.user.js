@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.1
+// @version      0.6.2
 // @description  显示条目页面关联条目的收藏情况,显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -102,7 +102,7 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             let objectStore = transaction.objectStore(tableName);
             let reqInfo = objectStore.get(itemId);
             reqInfo.onsuccess = evt => {
-                let result = evt.target.result;
+                let {result} = evt.target;
                 if(!!result) {
                     cacheLists.push(itemId);
                     callback(true, result.value.content);
@@ -161,74 +161,165 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
     }
 
     let collectStatus,securitycode,privacy,update=0,count=0,count1=0,flag = 0;
-    let itemsList1 = document.querySelectorAll('#columnSubjectHomeB  ul.browserCoverMedium li');
-    let itemsList2 = document.querySelectorAll('#columnSubjectHomeB  ul.coversSmall li');
-    let itemsList3 = document.querySelectorAll('#columnSubjectHomeB  ul.browserCoverSmall li');
+
+    // 修正选择器以适配新 UI
+    let itemsList1 = document.querySelectorAll('.subject_section ul.browserCoverMedium li');
+    let itemsList2 = document.querySelectorAll('.subject_section ul.coversSmall li');
+    let itemsList3 = document.querySelectorAll('.subject_section ul.browserCoverSmall li');
+
     let itemsList = [];
     for(let i=0;i<itemsList1.length;i++) itemsList.push(itemsList1[i]);
     for(let i=0;i<itemsList2.length;i++) itemsList.push(itemsList2[i]);
 
-    if(localStorage.getItem('bangumi_subject_collectStatus'))
-        collectStatus = JSON.parse(localStorage.getItem('bangumi_subject_collectStatus'));
-    else collectStatus = {};
+    if (localStorage.getItem('bangumi_subject_collectStatus')) {
+      collectStatus = JSON.parse(localStorage.getItem('bangumi_subject_collectStatus'));
+    } else {
+      collectStatus = {};
+    }
 
     let badgeUserPanel=document.querySelectorAll('#badgeUserPanel a');
-    badgeUserPanel.forEach( (elem, index) => {
-        if(elem.href.match(/logout/)) securitycode = elem.href.split('/logout/')[1].toString();
+    badgeUserPanel.forEach( (elem) => {
+        if (elem.href.match(/logout/)) {
+          securitycode = elem.href.split('/logout/')[1].toString();
+        }
     });
+
+    // 找到所有相关的单行本区域
+    let targetSections = document.querySelectorAll('.subject_section');
+    let mangaSection = null;
+
+    // 查找包含单行本的区域
+    targetSections.forEach(section => {
+        let subtitle = section.querySelector('.subtitle');
+        if (subtitle && (subtitle.textContent.includes('单行本'))) {
+            mangaSection = section;
+        }
+    });
+
+    // 如果没找到，使用第一个包含列表的区域
+    if (!mangaSection) {
+        targetSections.forEach(section => {
+            if (section.querySelector('ul.browserCoverMedium')) {
+                mangaSection = section;
+            }
+        });
+    }
 
     //更新缓存数据
     const updateBtn = createElement('a','chiiBtn','javascript:;','更新');
     updateBtn.addEventListener('click', updateInfo);
-    if(itemsList3.length) document.querySelectorAll('#columnSubjectHomeB .subject_section .clearit')[1].append(updateBtn);
-    else document.querySelectorAll('#columnSubjectHomeB .subject_section .clearit')[0].append(updateBtn);
+    updateBtn.style.marginRight = '10px';
+
+    // 创建控制面板容器
+    let controlPanel = document.createElement('div');
+    controlPanel.style.cssText = 'margin: 10px 0; padding: 10px; background: #f8f8f8; border-radius: 4px; border: 1px solid #ddd;';
+
+    // 私密选项
+    let privateLabel = document.createElement('label');
+    privateLabel.style.cssText = 'margin-right: 15px; cursor: pointer;';
+    let checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.style.marginRight = '5px';
+    privateLabel.appendChild(checkbox);
+    privateLabel.appendChild(document.createTextNode('私密收藏'));
+
+    checkbox.onclick = function (){
+        privacy = checkbox.checked ? 1 : 0;
+    };
+
+    // 全部标为已读按钮
+    let allCollect = createElement('a','chiiBtn','javascript:;','全部标为已读');
+    allCollect.style.marginRight = '10px';
+    allCollect.onclick = function (){
+        if (!confirm(`确定要${allCollect.textContent}吗？\n\n${privacy ? "将以私密方式收藏" : "将以公开方式收藏"}`)) {
+          return;
+        }
+
+        let targetItems = itemsList3.length ? itemsList3 : itemsList;
+        if (targetItems.length === 0) {
+            alert('没有找到可操作的条目');
+            return;
+        }
+
+        let i = 0;
+        flag = (flag==1)?0:1;
+        allCollect.textContent = (flag==1) ? `全部取消已读 (${targetItems.length})` : `全部标为已读 (${targetItems.length})`;
+        allCollect.style.backgroundColor = flag ? '#dc3545' : '#28a745';
+
+        let processInterval = setInterval(function(){
+            if (i >= targetItems.length) {
+                clearInterval(processInterval);
+                allCollect.textContent = flag ? '全部标为已读' : '全部取消已读';
+                allCollect.style.backgroundColor = '';
+                alert('操作完成！');
+                return;
+            }
+
+            let elem = targetItems[i];
+            let avatarLink = elem.querySelector('a.avatar') || elem.querySelector('a');
+            if (!avatarLink) {
+                i++;
+                return;
+            }
+
+            let {href} = avatarLink;
+            let ID = href.split('/subject/')[1];
+            let avatarNeue = elem.querySelector('span.avatarNeue');
+
+            if(flag){
+                collectStatus[ID] = 'collect';
+                if (avatarNeue) {
+                  avatarNeue.classList.add('relate_collect');
+                }
+                $.post(`/subject/${ID}/interest/update?gh=${securitycode}`, {
+                    status: 'collect',
+                    privacy: privacy || 0
+                });
+            } else {
+                delete collectStatus[ID];
+                if (avatarNeue) {
+                  avatarNeue.classList.remove('relate_collect');
+                }
+                $.post(`/subject/${ID}/remove?gh=${securitycode}`);
+            }
+
+            // 更新按钮文本显示进度
+            allCollect.textContent = `${(flag ? '标记中... ' : '取消中... ') + (i + 1)}/${targetItems.length}`;
+
+            i++;
+            localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
+        }, 300);
+    };
+
+    // 组装控制面板
+    controlPanel.appendChild(updateBtn);
+    controlPanel.appendChild(privateLabel);
+    controlPanel.appendChild(allCollect);
+
+    // 添加说明文字
+    let helpText = document.createElement('div');
+    helpText.style.cssText = 'margin-top: 8px; font-size: 12px; color: #666;';
+    helpText.textContent = '提示：批量操作会将当前页面所有条目标记为"已收藏"状态，请谨慎使用';
+    controlPanel.appendChild(helpText);
+
+    // 插入控制面板
+    if (mangaSection) {
+        let subtitle = mangaSection.querySelector('.subtitle');
+        if (subtitle) {
+            subtitle.parentNode.insertBefore(controlPanel, subtitle.nextSibling);
+        } else {
+            mangaSection.insertBefore(controlPanel, mangaSection.firstChild);
+        }
+    }
 
     getInfo(update);
     function updateInfo(){
         count=0;
         update=1;
+        updateBtn.textContent = '更新中...';
+        updateBtn.disabled = true;
         getInfo(update);
     }
-
-    let privatebox = document.createElement('a'); privatebox.textContent = '私密';
-    let checkbox = document.createElement('input'); checkbox.type = 'checkbox';
-    privatebox.appendChild(checkbox);
-    if(itemsList3.length) $(privatebox).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .clearit')[0]);
-    checkbox.onclick = function (){
-        if (checkbox.checked) privacy = 1;
-        else privacy = 0;
-    };
-
-    let allCollect = createElement('a','chiiBtn','javascript:;','全部标为已读');
-    allCollect.onclick = function (){
-        if (!confirm("确定要"+allCollect.textContent+"吗？")) return;
-        let i = 0;
-        flag = (flag==1)?0:1;
-        allCollect.textContent =(flag==1)? '全部取消已读':'全部标为已读';
-        let getitemsList3= setInterval(function(){
-            let elem = itemsList3[i];
-            let href = elem.querySelector('a.avatar').href;
-            let ID = href.split('/subject/')[1];
-            let avatarNeue = elem.querySelector('span.avatarNeue');
-            if(flag){
-                collectStatus[ID] = 'collect';
-                avatarNeue.classList.add('relate_collect');
-                $.post('/subject/' + ID + '/interest/update?gh=' + securitycode, { status: 'collect',privacy:privacy});
-            }
-            else{
-                delete collectStatus[ID];
-                avatarNeue.classList.remove('relate_collect');
-                $.post('/subject/' + ID + '/remove?gh=' + securitycode);
-            }
-            i++;
-            localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
-            if(i >= itemsList3.length){
-                clearInterval(getitemsList3);
-            }
-        },300);
-    };
-    if(itemsList3.length)
-        $(allCollect).insertAfter(document.querySelectorAll('#columnSubjectHomeB .subject_section .clearit')[0]);
 
     function createElement(type,className,href,textContent){
         let Element = document.createElement(type);
@@ -239,6 +330,17 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
     }
 
     function showCheckIn(elem,ID){
+        // 检查是否已经存在 checkIn 按钮，避免重复添加
+        let avatarLink = elem.querySelector('a.avatar') || elem.querySelector('a');
+        if (!avatarLink) {
+          return;
+        }
+
+        let existingCheckIn = avatarLink.querySelector('.subCheckIn');
+        if (existingCheckIn) {
+            return; // 如果已经存在，直接返回
+        }
+
         let checkIn = createElement('a','subCheckIn','javascript:;');
         let flag = 0;
         let avatarNeue = elem.querySelector('span.avatarNeue');
@@ -247,26 +349,36 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             if(flag){
                 checkIn.style.backgroundPosition= "bottom left";
                 collectStatus[ID] = 'collect';
-                avatarNeue.classList.add('relate_collect');
-                $.post('/subject/' + ID + '/interest/update?gh=' + securitycode, { status: 'collect',privacy:privacy});
+                if (avatarNeue) {
+                  avatarNeue.classList.add('relate_collect');
+                }
+                $.post(`/subject/${ID}/interest/update?gh=${securitycode}`, { status: 'collect',privacy:privacy || 0});
             }
             else{
                 checkIn.style.backgroundPosition= "top left";
                 delete collectStatus[ID];
-                avatarNeue.classList.remove('relate_collect');
-                $.post('/subject/' + ID + '/remove?gh=' + securitycode);
+                if (avatarNeue) {
+                  avatarNeue.classList.remove('relate_collect');
+                }
+                $.post(`/subject/${ID}/remove?gh=${securitycode}`);
             }
             localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
         });
-        elem.querySelector('a.avatar').append(checkIn);
+
+        avatarLink.appendChild(checkIn);
     }
 
     function getInfo(update){
         if(itemsList.length){
             let fetchList = [],fetchList1 = [];
-            itemsList.forEach( (elem, index) => {
+            itemsList.forEach( (elem) => {
                 elem.style.height="150px";
-                let href = elem.querySelector('a.avatar').href;
+                let avatarLink = elem.querySelector('a.avatar') || elem.querySelector('a');
+                if (!avatarLink) {
+                  return;
+                }
+
+                let {href} = avatarLink;
                 let href1 = href.replace(/subject/,"update");
                 let ID = href.split('/subject/')[1];
                 getCache(ID, function(success, result) {
@@ -277,19 +389,26 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
                         fetchList.push(elem);
                     }
                 });
-                if(collectStatus[ID]!='collect')
-                    showCheckIn(elem,ID);
-                if(collectStatus[ID] && !update)
-                    displayCollect(collectStatus[ID],elem);
-                else fetchList1.push(elem);
+                if (collectStatus[ID]!='collect') {
+                  showCheckIn(elem,ID);
+                }
+                if (collectStatus[ID] && !update) {
+                  displayCollect(collectStatus[ID],elem);
+                } else {
+                  fetchList1.push(elem);
+                }
             });
             let i=0,j=0;
             let getitemsList= setInterval(function(){
                 let elem = fetchList[i];
-                if(!elem) console.log(i);
-                else{
-                    let href = elem.querySelector('a.avatar').href;
-                    showRank(href,elem);
+                if(!elem) {
+                    console.log(i);
+                } else {
+                    let avatarLink = elem.querySelector('a.avatar') || elem.querySelector('a');
+                    if (avatarLink) {
+                        let {href} = avatarLink;
+                        showRank(href,elem);
+                    }
                     i++;
                     //console.log(i);
                 }
@@ -299,11 +418,15 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             },500);
             let getitemsList1= setInterval(function(){
                 let elem = fetchList1[j];
-                if(!elem) console.log(j);
-                else{
-                    let href = elem.querySelector('a.avatar').href;
-                    let href1 = href.replace(/subject/,"update");
-                    showCollect(href1,elem);
+                if(!elem) {
+                    console.log(j);
+                } else {
+                    let avatarLink = elem.querySelector('a.avatar') || elem.querySelector('a');
+                    if (avatarLink) {
+                        let {href} = avatarLink;
+                        let href1 = href.replace(/subject/,"update");
+                        showCollect(href1,elem);
+                    }
                     j++;
                     //console.log(j);
                 }
@@ -313,13 +436,19 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             },500);
         }
         if(itemsList3.length){
-            itemsList3.forEach( (elem, index) => {
-                let href = elem.querySelector('a').href;
+            itemsList3.forEach( (elem) => {
+                let avatarLink = elem.querySelector('a.avatar') || elem.querySelector('a');
+                if (!avatarLink) {
+                    return;
+                }
+
+                let {href} = avatarLink;
                 let ID = href.split('/subject/')[1];
-                if(collectStatus[ID])
+                if (collectStatus[ID]) {
                     displayCollect(collectStatus[ID],elem);
-                else if(collectStatus[ID]!='collect')
+                } else if (collectStatus[ID]!='collect') {
                     showCheckIn(elem,ID);
+                }
             });
         }
 
@@ -335,8 +464,11 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             let Match = targetStr.match(/"GenInterestBox\('(\S+?)'\)" checked="checked"/);
             let interest = Match ? Match[1] : null;
             let ID = thisItem.split('/update/')[1];
-            if(interest) collectStatus[ID] = interest;
-            else if(collectStatus[ID]) delete collectStatus[ID];
+            if (interest) {
+                collectStatus[ID] = interest;
+            } else if (collectStatus[ID]) {
+                delete collectStatus[ID];
+            }
             localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
         });
     }
@@ -357,17 +489,32 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
                 collectStatus[ID] = 'collect';
                 localStorage.setItem('bangumi_subject_collectStatus',JSON.stringify(collectStatus));
             }
-            if(!update) displayCollect(interest,elem);
+            if (!update) {
+                displayCollect(interest,elem);
+            }
         });
     }
 
     function displayCollect(interest,elem){
         let avatarNeue = elem.querySelector('span.avatarNeue');
-        if(interest=='wish')          avatarNeue.classList.add('relate_wish');
-        else if(interest=='collect')  avatarNeue.classList.add('relate_collect');
-        else if(interest=='do')       avatarNeue.classList.add('relate_do');
-        else if(interest=='on_hold')  avatarNeue.classList.add('relate_on_hold');
-        else if(interest=='dropped')  avatarNeue.classList.add('relate_dropped');
+        if (!avatarNeue) {
+          return;
+        }
+
+        // 先清除所有收藏状态的 CSS 类，避免重复添加
+        avatarNeue.classList.remove('relate_wish', 'relate_collect', 'relate_do', 'relate_on_hold', 'relate_dropped');
+
+        if (interest=='wish') {
+            avatarNeue.classList.add('relate_wish');
+        } else if (interest=='collect') {
+            avatarNeue.classList.add('relate_collect');
+        } else if (interest=='do') {
+            avatarNeue.classList.add('relate_do');
+        } else if (interest=='on_hold') {
+            avatarNeue.classList.add('relate_on_hold');
+        } else if (interest=='dropped') {
+            avatarNeue.classList.add('relate_dropped');
+        }
         count1++;
     }
 
@@ -380,13 +527,15 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
         xhr.onload = function(){
             let d = xhr.responseXML;
             let nameinfo = d.querySelector('#infobox li');
-            let name_cn = nameinfo.innerText.match(/中文名: (\.*)/)?nameinfo.innerText.match(/中文名: (\.*)/)[1]:null;
+            let name_cn = nameinfo && nameinfo.innerText.match(/中文名: (\.*)/)?nameinfo.innerText.match(/中文名: (\.*)/)[1]:null;
             //获取排名
             let ranksp = d.querySelector('#panelInterestWrapper .global_score small.alarm');
             let rank = ranksp ? ranksp.innerText.match(/\d+/)[0]:null;
             //获取站内评分和评分人数
-            let score = d.querySelector('#panelInterestWrapper .global_score span.number').innerText;
-            let votes = d.querySelector('#ChartWarpper small.grey span').innerText;
+            let scoreElement = d.querySelector('#panelInterestWrapper .global_score span.number');
+            let score = scoreElement ? scoreElement.innerText : null;
+            let votesElement = d.querySelector('#ChartWarpper small.grey span');
+            let votes = votesElement ? votesElement.innerText : null;
             //获取好友评分和评分人数
             let frdScore = d.querySelector('#panelInterestWrapper .frdScore');
             let score_f = frdScore ? frdScore.querySelector('span.num').innerText:null;
@@ -395,25 +544,51 @@ background: no-repeat url(/img/ico/ico_eye.png) 50% top;
             let info = {"name_cn":name_cn,"rank":rank,"score":score,"votes":votes,"score_f":score_f,"votes_f":votes_f,"score_u":score_u};
             let ID = href.split('/subject/')[1];
             setCache(ID,info);
-            if(!update) displayRank(rank,elem);
-            else{
+            if (!update) {
+                displayRank(rank,elem);
+            } else {
                 count+=1;
-                updateBtn.textContent='更新中... (' + count + '/' + itemsList.length +')';
-                if(count==itemsList.length){ updateBtn.textContent='更新完毕！';}
+                updateBtn.textContent=`更新中... (${count}/${itemsList.length})`;
+                if (count==itemsList.length) {
+                    updateBtn.textContent='更新完毕！';
+                    updateBtn.disabled = false;
+                    setTimeout(() => {
+                        updateBtn.textContent = '更新';
+                    }, 2000);
+                }
             }
         };
     }
 
     function displayRank(rank,elem){
+        // 检查是否已经存在排名标签，避免重复添加
+        let existingRank = elem.querySelector('.rank');
+        if (existingRank) {
+            // 如果已经存在，更新内容而不是添加新的
+            if (rank) {
+                existingRank.className = 'rank';
+                if (rank<=1500) {
+                  existingRank.classList.add('relate_rank_1');
+                } else {
+                  existingRank.classList.add('relate_rank');
+                }
+                existingRank.innerHTML = `<small>Rank </small>${rank}`;
+            }
+            count++;
+            return;
+        }
+
         let rankSp = createElement('span','rank');
         if (rank) {
-            if(rank<=1500) rankSp.classList.add('relate_rank_1');
-            else rankSp.classList.add('relate_rank');
+            if (rank<=1500) {
+              rankSp.classList.add('relate_rank_1');
+            } else {
+              rankSp.classList.add('relate_rank');
+            }
             rankSp.innerHTML = `<small>Rank </small>${rank}`;
-            elem.append(rankSp);
+            elem.appendChild(rankSp);
         }
         count++;
     }
 
 })();
-
