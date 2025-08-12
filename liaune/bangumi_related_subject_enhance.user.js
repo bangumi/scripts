@@ -297,14 +297,19 @@ height: 100%;
         if (flag) {
           collectStatus[ID] = "collect";
           avatarNeue.classList.add("relate_collect");
-          $.post(`/subject/${ID}/interest/update?gh=${securitycode}`, {
-            status: "collect",
-            privacy: privacy,
+          fetch(`/subject/${ID}/interest/update?gh=${securitycode}`, {
+            method: "POST",
+            body: new URLSearchParams({
+              status: "collect",
+              privacy: privacy,
+            }),
           });
         } else {
           delete collectStatus[ID];
           avatarNeue.classList.remove("relate_collect");
-          $.post(`/subject/${ID}/remove?gh=${securitycode}`);
+          fetch(`/subject/${ID}/remove?gh=${securitycode}`, {
+            method: "POST",
+          });
         }
 
         i++;
@@ -321,11 +326,10 @@ height: 100%;
     mangaControlPanel.appendChild(privateLabel);
     mangaControlPanel.appendChild(allCollect);
 
-    $(mangaControlPanel).insertBefore(
-      document.querySelectorAll(
-        "#columnSubjectHomeB .subject_section .clearit"
-      )[0]
+    const clearitElement = document.querySelector(
+      "#columnSubjectHomeB .subject_section .clearit"
     );
+    clearitElement.parentNode.insertBefore(mangaControlPanel, clearitElement);
   }
 
   function createElement(type, className, href, textContent) {
@@ -342,7 +346,7 @@ height: 100%;
     }
 
     let checkIn = createElement("a", "subCheckIn", "javascript:;");
-    let flag = (collectStatus[ID] === "collect") ? 1 : 0;
+    let flag = collectStatus[ID] === "collect" ? 1 : 0;
     let avatarNeue = elem.querySelector("span.avatarNeue");
     checkIn.addEventListener("click", function () {
       flag = flag == 1 ? 0 : 1;
@@ -350,15 +354,20 @@ height: 100%;
         checkIn.style.backgroundPosition = "bottom left";
         collectStatus[ID] = "collect";
         avatarNeue.classList.add("relate_collect");
-        $.post(`/subject/${ID}/interest/update?gh=${securitycode}`, {
-          status: "collect",
-          privacy: privacy,
+        fetch(`/subject/${ID}/interest/update?gh=${securitycode}`, {
+          method: "POST",
+          body: new URLSearchParams({
+            status: "collect",
+            privacy: privacy,
+          }),
         });
       } else {
         checkIn.style.backgroundPosition = "top left";
         delete collectStatus[ID];
         avatarNeue.classList.remove("relate_collect");
-        $.post(`/subject/${ID}/remove?gh=${securitycode}`);
+        fetch(`/subject/${ID}/remove?gh=${securitycode}`, {
+          method: "POST",
+        });
       }
       localStorage.setItem(
         "bangumi_subject_collectStatus",
@@ -437,7 +446,7 @@ height: 100%;
     }
 
     let thisItem = window.location.href.replace(/subject/, "update");
-    fetch(thisItem, { credentials: "include" })
+    fetch(thisItem)
       .then((data) => {
         return new Promise(function (resovle, reject) {
           let targetStr = data.text();
@@ -463,7 +472,7 @@ height: 100%;
   }
 
   function showCollect(href, elem) {
-    fetch(href, { credentials: "include" })
+    fetch(href)
       .then((data) => {
         return new Promise(function (resovle, reject) {
           let targetStr = data.text();
@@ -506,63 +515,61 @@ height: 100%;
   }
 
   function showRank(href, elem) {
-    let xhr = new XMLHttpRequest();
-    xhr.open("GET", href);
-    xhr.withCredentials = true;
-    xhr.responseType = "document";
-    xhr.send();
-    xhr.onload = function () {
-      let d = xhr.responseXML;
-      let nameinfo = d.querySelector("#infobox li");
-      let name_cn = nameinfo.innerText.match(/中文名: (\.*)/)
-        ? nameinfo.innerText.match(/中文名: (\.*)/)[1]
-        : null;
-      //获取排名
-      let ranksp = d.querySelector(
-        "#panelInterestWrapper .global_score small.alarm"
-      );
-      let rank = ranksp ? ranksp.innerText.match(/\d+/)[0] : null;
-      //获取站内评分和评分人数
-      let score = d.querySelector(
-        "#panelInterestWrapper .global_score span.number"
-      ).innerText;
-      let votes = d.querySelector("#ChartWarpper small.grey span").innerText;
-      //获取好友评分和评分人数
-      let frdScore = d.querySelector("#panelInterestWrapper .frdScore");
-      let score_f = frdScore
-        ? frdScore.querySelector("span.num").innerText
-        : null;
-      let votes_f = frdScore
-        ? frdScore.querySelector("a.l").innerText.match(/\d+/)[0]
-        : null;
-      let score_u = 0;
-      let info = {
-        name_cn: name_cn,
-        rank: rank,
-        score: score,
-        votes: votes,
-        score_f: score_f,
-        votes_f: votes_f,
-        score_u: score_u,
-      };
-      let ID = href.split("/subject/")[1];
-      setCache(ID, info);
-      if (!update) {
-        displayRank(rank, elem);
-      } else {
-        count += 1;
-        updateBtn.textContent = `更新中... (${count}/${itemsList.length})`;
-        if (count == itemsList.length) {
-          updateBtn.textContent = "更新完毕！";
-          isUpdating = false;
-          updateBtn.style.opacity = "1";
-          updateBtn.style.pointerEvents = "auto";
-          setTimeout(() => {
-            updateBtn.textContent = "更新排名";
-          }, 1000);
+    fetch(href)
+      .then((response) => response.text())
+      .then((html) => {
+        const parser = new DOMParser();
+        const d = parser.parseFromString(html, "text/html");
+        let nameinfo = d.querySelector("#infobox li");
+        let name_cn = nameinfo.innerText.match(/中文名: (\.*)/)
+          ? nameinfo.innerText.match(/中文名: (\.*)/)[1]
+          : null;
+        //获取排名
+        let ranksp = d.querySelector(
+          "#panelInterestWrapper .global_score small.alarm"
+        );
+        let rank = ranksp ? ranksp.innerText.match(/\d+/)[0] : null;
+        //获取站内评分和评分人数
+        let score = d.querySelector(
+          "#panelInterestWrapper .global_score span.number"
+        ).innerText;
+        let votes = d.querySelector("#ChartWarpper small.grey span").innerText;
+        //获取好友评分和评分人数
+        let frdScore = d.querySelector("#panelInterestWrapper .frdScore");
+        let score_f = frdScore
+          ? frdScore.querySelector("span.num").innerText
+          : null;
+        let votes_f = frdScore
+          ? frdScore.querySelector("a.l").innerText.match(/\d+/)[0]
+          : null;
+        let score_u = 0;
+        let info = {
+          name_cn: name_cn,
+          rank: rank,
+          score: score,
+          votes: votes,
+          score_f: score_f,
+          votes_f: votes_f,
+          score_u: score_u,
+        };
+        let ID = href.split("/subject/")[1];
+        setCache(ID, info);
+        if (!update) {
+          displayRank(rank, elem);
+        } else {
+          count += 1;
+          updateBtn.textContent = `更新中... (${count}/${itemsList.length})`;
+          if (count == itemsList.length) {
+            updateBtn.textContent = "更新完毕！";
+            isUpdating = false;
+            updateBtn.style.opacity = "1";
+            updateBtn.style.pointerEvents = "auto";
+            setTimeout(() => {
+              updateBtn.textContent = "更新排名";
+            }, 1000);
+          }
         }
-      }
-    };
+      });
   }
 
   function displayRank(rank, elem) {
