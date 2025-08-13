@@ -176,34 +176,28 @@ height: 100%;
     count1 = 0,
     flag = 0;
 
-  let itemsList1 = document.querySelectorAll(
+  let relatedSubjects = document.querySelectorAll(
     "#columnSubjectHomeB ul.browserCoverMedium li:not(:has(a.thumbTipSmall))"
   );
-  let itemsList2 = document.querySelectorAll(
+  let recommendedSubjects = document.querySelectorAll(
     "#columnSubjectHomeB ul.coversSmall li"
   );
-  let itemsList3 = document.querySelectorAll(
+  let volumeSubjects = document.querySelectorAll(
     "#columnSubjectHomeB ul.browserCoverMedium li:has(a.thumbTipSmall)"
   );
 
-  let itemsList = [];
-  for (let i = 0; i < itemsList1.length; i++) itemsList.push(itemsList1[i]);
-  for (let i = 0; i < itemsList2.length; i++) itemsList.push(itemsList2[i]);
+  let itemsList = [...relatedSubjects, ...recommendedSubjects];
 
-  if (localStorage.getItem("bangumi_subject_collectStatus")) {
-    collectStatus = JSON.parse(
-      localStorage.getItem("bangumi_subject_collectStatus")
-    );
-  } else {
-    collectStatus = {};
-  }
+  collectStatus = JSON.parse(
+    localStorage.getItem("bangumi_subject_collectStatus") || "{}"
+  );
 
   let badgeUserPanel = document.querySelectorAll("#badgeUserPanel a");
-  badgeUserPanel.forEach((elem) => {
+  for (const elem of badgeUserPanel) {
     if (elem.href.match(/logout/)) {
       securitycode = elem.href.split("/logout/")[1].toString();
     }
-  });
+  }
 
   // 更新排名数据
   let isUpdating = false;
@@ -218,7 +212,7 @@ height: 100%;
     updateInfo();
   });
 
-  if (itemsList3.length) {
+  if (volumeSubjects.length) {
     document
       .querySelectorAll("#columnSubjectHomeB .subject_section .clearit")[1]
       .append(updateBtn);
@@ -243,7 +237,7 @@ height: 100%;
     getInfo(update);
   }
 
-  if (itemsList3.length) {
+  if (volumeSubjects.length) {
     let mangaControlPanel = document.createElement("div");
     mangaControlPanel.className = "manga-control-panel";
 
@@ -270,12 +264,12 @@ height: 100%;
         return;
       }
 
-      let i = 0;
+      let volumeIndex = 0;
       flag = flag == 1 ? 0 : 1;
       allCollect.textContent = flag == 1 ? "全部取消已读" : "全部标为已读";
 
-      let getitemsList3 = setInterval(function () {
-        let elem = itemsList3[i];
+      let getVolumeSubjects = setInterval(function () {
+        let elem = volumeSubjects[volumeIndex];
         let { href } = elem.querySelector("a.avatar");
         let ID = href.split("/subject/")[1];
         let avatarNeue = elem.querySelector("span.avatarNeue");
@@ -301,13 +295,13 @@ height: 100%;
           });
         }
 
-        i++;
+        volumeIndex++;
         localStorage.setItem(
           "bangumi_subject_collectStatus",
           JSON.stringify(collectStatus)
         );
-        if (i >= itemsList3.length) {
-          clearInterval(getitemsList3);
+        if (volumeIndex >= volumeSubjects.length) {
+          clearInterval(getVolumeSubjects);
         }
       }, 300);
     };
@@ -373,7 +367,7 @@ height: 100%;
     if (itemsList.length) {
       let fetchList = [],
         fetchList1 = [];
-      itemsList.forEach((elem) => {
+      for (const elem of itemsList) {
         let { href } = elem.querySelector("a.avatar");
         let href1 = href.replace(/subject/, "update");
         let ID = href.split("/subject/")[1];
@@ -392,41 +386,43 @@ height: 100%;
         } else {
           fetchList1.push(elem);
         }
-      });
-      let i = 0,
-        j = 0;
+      }
+
+      let rankFetchIndex = 0,
+        collectFetchIndex = 0;
       let getitemsList = setInterval(function () {
-        let elem = fetchList[i];
+        let elem = fetchList[rankFetchIndex];
         if (!elem) {
-          // console.log(i);
+          // console.log(rankFetchIndex);
         } else {
           let { href } = elem.querySelector("a.avatar");
           showRank(href, elem);
-          i++;
-          //console.log(i);
+          rankFetchIndex++;
+          //console.log(rankFetchIndex);
         }
         if (count >= itemsList.length) {
           clearInterval(getitemsList);
         }
       }, 500);
       let getitemsList1 = setInterval(function () {
-        let elem = fetchList1[j];
+        let elem = fetchList1[collectFetchIndex];
         if (!elem) {
-          // console.log(j);
+          // console.log(collectFetchIndex);
         } else {
           let { href } = elem.querySelector("a.avatar");
           let href1 = href.replace(/subject/, "update");
           showCollect(href1, elem);
-          j++;
-          //console.log(j);
+          collectFetchIndex++;
+          //console.log(collectFetchIndex);
         }
         if (count1 >= itemsList.length) {
           clearInterval(getitemsList1);
         }
       }, 500);
     }
-    if (itemsList3.length) {
-      itemsList3.forEach((elem) => {
+
+    if (volumeSubjects.length) {
+      for (const elem of volumeSubjects) {
         let { href } = elem.querySelector("a");
         let ID = href.split("/subject/")[1];
         if (collectStatus[ID]) {
@@ -434,7 +430,7 @@ height: 100%;
         } else if (collectStatus[ID] != "collect") {
           showCheckIn(elem, ID);
         }
-      });
+      }
     }
 
     let thisItem = window.location.href.replace(/subject/, "update");
