@@ -9,9 +9,8 @@
 // ==/UserScript==
 (function () {
   GM_addStyle(`
-.relate_rank{
-padding: 2px 5px 1px 5px;
-background: #b4b020;
+.rank-badge {
+padding: 2px 5px;
 color: #FFF;
 -webkit-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
 -moz-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
@@ -23,48 +22,35 @@ position: relative;
 top: -12px;
 display: inline-block;
 }
-.relate_rank_1{
-padding: 2px 5px 1px 5px;
+.rank-badge--high {
 background: #15d7b3;
-color: #FFF;
--webkit-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
--moz-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
-box-shadow: 0 1px 2px #EEE,inset 0 1px 1px #FFF;
--moz-border-radius: 4px;
--webkit-border-radius: 4px;
-border-radius: 4px;
-position: relative;
-top: -12px;
-display: inline-block;
 }
-.relate_wish{
-border: 2px solid #fd59a9;
+.rank-badge--normal {
+background: #b4b020;
+}
+.collect-status {
+border: 2px solid;
 border-radius: 4px;
 box-sizing: border-box;
 }
-.relate_collect{
-border: 2px solid #3838e6;
-border-radius: 4px;
-box-sizing: border-box;
+.collect-status--wish {
+border-color: #fd59a9;
 }
-.relate_do{
-border: 2px solid #15d748;
-border-radius: 4px;
-box-sizing: border-box;
+.collect-status--collect {
+border-color: #3838e6;
 }
-.relate_on_hold{
-border: 2px solid #f6af45;
-border-radius: 4px;
-box-sizing: border-box;
+.collect-status--do {
+border-color: #15d748;
 }
-.relate_dropped{
-border: 2px solid #5a5855;
-border-radius: 4px;
-box-sizing: border-box;
+.collect-status--on-hold {
+border-color: #f6af45;
+}
+.collect-status--dropped {
+border-color: #5a5855;
 }
 
-.subCheckIn{
-display:block;
+.collect-toggle {
+display: block;
 top: -20px;
 left: 5px;
 opacity: 0.5;
@@ -296,7 +282,7 @@ height: 100%;
 
         if (flag) {
           collectStatus[ID] = "collect";
-          avatarNeue.classList.add("relate_collect");
+          avatarNeue.classList.add("collect-status", "collect-status--collect");
           fetch(`/subject/${ID}/interest/update?gh=${securitycode}`, {
             method: "POST",
             body: new URLSearchParams({
@@ -306,7 +292,10 @@ height: 100%;
           });
         } else {
           delete collectStatus[ID];
-          avatarNeue.classList.remove("relate_collect");
+          avatarNeue.classList.remove(
+            "collect-status",
+            "collect-status--collect"
+          );
           fetch(`/subject/${ID}/remove?gh=${securitycode}`, {
             method: "POST",
           });
@@ -341,11 +330,11 @@ height: 100%;
   }
 
   function showCheckIn(elem, ID) {
-    if (elem.querySelector("a.subCheckIn")) {
+    if (elem.querySelector("a.collect-toggle")) {
       return;
     }
 
-    let checkIn = createElement("a", "subCheckIn", "javascript:;");
+    let checkIn = createElement("a", "collect-toggle", "javascript:;");
     let flag = collectStatus[ID] === "collect" ? 1 : 0;
     let avatarNeue = elem.querySelector("span.avatarNeue");
     checkIn.addEventListener("click", function () {
@@ -353,7 +342,7 @@ height: 100%;
       if (flag) {
         checkIn.style.backgroundPosition = "bottom left";
         collectStatus[ID] = "collect";
-        avatarNeue.classList.add("relate_collect");
+        avatarNeue.classList.add("collect-status", "collect-status--collect");
         fetch(`/subject/${ID}/interest/update?gh=${securitycode}`, {
           method: "POST",
           body: new URLSearchParams({
@@ -364,7 +353,10 @@ height: 100%;
       } else {
         checkIn.style.backgroundPosition = "top left";
         delete collectStatus[ID];
-        avatarNeue.classList.remove("relate_collect");
+        avatarNeue.classList.remove(
+          "collect-status",
+          "collect-status--collect"
+        );
         fetch(`/subject/${ID}/remove?gh=${securitycode}`, {
           method: "POST",
         });
@@ -501,15 +493,15 @@ height: 100%;
   function displayCollect(interest, elem) {
     let avatarNeue = elem.querySelector("span.avatarNeue");
     if (interest == "wish") {
-      avatarNeue.classList.add("relate_wish");
+      avatarNeue.classList.add("collect-status", "collect-status--wish");
     } else if (interest == "collect") {
-      avatarNeue.classList.add("relate_collect");
+      avatarNeue.classList.add("collect-status", "collect-status--collect");
     } else if (interest == "do") {
-      avatarNeue.classList.add("relate_do");
+      avatarNeue.classList.add("collect-status", "collect-status--do");
     } else if (interest == "on_hold") {
-      avatarNeue.classList.add("relate_on_hold");
+      avatarNeue.classList.add("collect-status", "collect-status--on-hold");
     } else if (interest == "dropped") {
-      avatarNeue.classList.add("relate_dropped");
+      avatarNeue.classList.add("collect-status", "collect-status--dropped");
     }
     count1++;
   }
@@ -575,10 +567,11 @@ height: 100%;
   function displayRank(rank, elem) {
     let rankSp = createElement("span", "rank");
     if (rank) {
+      rankSp.classList.add("rank-badge");
       if (rank <= 1500) {
-        rankSp.classList.add("relate_rank_1");
+        rankSp.classList.add("rank-badge--high");
       } else {
-        rankSp.classList.add("relate_rank");
+        rankSp.classList.add("rank-badge--normal");
       }
       rankSp.innerHTML = `<small>Rank </small>${rank}`;
       const subjectLink = [...elem.querySelectorAll('a[href^="/subject/"]')].at(
