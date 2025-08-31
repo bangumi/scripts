@@ -58,7 +58,8 @@ function createFriendNode(uid, friend) {
     return $(`
         <a id="${friend.node_id}" class="avatar" href="${member_url}">
           <span class="avatarNeue avatarSize32 ll" style="margin:3px 3px 0 0;background-image:url(\'${friend.img}\')" ></span>
-        </a>`);
+        </a>
+        `);
 }
 
 function createMoreNode(st) {
@@ -119,8 +120,9 @@ function main() {
                   哪些好友${words[st]}？
                 </a>
               </h2>
-            <ul id="friend_${st}" class="groupsLine">
-            </ul>
+              <ul class="groupsLine">
+                <li id="friend_${st}" class="clearit" style="border: none;"></li>
+              </ul>
             </div>`);
         $('#friend_' + st).empty();
         get_members(status_url, st);
