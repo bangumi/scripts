@@ -27,6 +27,7 @@ const addOnSources = {
 };
 
 const DEBUG = false;
+const CACHE_VERSION = 1;
 const TIME_ZONE = 'CN';
 // valid value: 'CN', 'JP'
 
@@ -66,7 +67,7 @@ class Bangumi {
         this.bgm = bgmlist[this.id];
         this.a = a;
         if (addOnSources && addOnSources[this.id]) {
-            this.bgm.onAirSite = addOnSources[this.id].concat(this.bgm.onAirSite);
+            this.bgm.onAirSite = addOnSources[this.id].map(url => ({ title: url.replace(/https?:\/\/.+?\./, '').split('/')[0], url: url })).concat(this.bgm.onAirSite);
         }
     }
     getTime() {
@@ -85,7 +86,7 @@ class Bangumi {
     }
     get$Html() {
         const $re = $(this.a).clone();
-        $re.find('img').removeAttr('class');
+        $re.find('img').removeAttr('class').attr('width', 48);
         $re.find('span').remove();
         $re.attr('title', this.bgm.titleCN + '\n' + this.bgm.titleJP + '\n播放时间:\n' + this.getTime());
         $re.attr('alt', this.bgm.titleCN + '<br>' + this.bgm.titleJP);
@@ -166,14 +167,14 @@ $week.find('.thumbTip').click(function () {
         <ul class="line_list">
             ${onAirSite.map((v, i) => `
                 <li class="line_${i % 2 ? 'odd' : 'even'}">
-                    <h6><a target="_blank" href="${v}">${v.replace(/https?:\/\/.+?\./, '').split('/')[0]}</a></h6>
+                    <h6><a target="_blank" href="${v.url}">${v.title}</a></h6>
                 </li>
                 `.trim()).join('')}
         </ul>`, style);
     return false;
 });
 
-GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;width:' + TB_WINDOW_WIDTH + 'px;}');
+GM_addStyle('#TB_window.userscript_bgmlist_integrator{display:block;width:' + TB_WINDOW_WIDTH + 'px;padding:8px;}');
 
 const CHECK_UPDATE_INTERVAL = 1000 * 60 * 60 * 8; // 8h
 
@@ -249,7 +250,10 @@ async function update({ paths, version }) {
                     weekDayCN: getWeek(cnDate ?? jpDate),
                     timeJP: getTime(jpDate),
                     timeCN: cnDate != null ? getTime(cnDate) : '',
-                    onAirSite: item.sites.map((site) => site.url ?? siteInfoMap[site.site]?.urlTemplate.replace('{{id}}', site.id)).filter(it => it),
+                    onAirSite: item.sites.map((site) => ({
+                        title: siteInfoMap[site.site]?.title ?? site.site,
+                        url: site.url ?? siteInfoMap[site.site]?.urlTemplate.replace('{{id}}', site.id)
+                    })).filter(it => it.url),
                     officalSite: item.officalSite,
                     bgmId: +site.id,
                     showDate: item.begin,
@@ -263,6 +267,7 @@ async function update({ paths, version }) {
     GM_setValue('bgmlist', bgmlist);
     GM_setValue('paths', paths);
     GM_setValue('version', version);
+    GM_setValue('cacheVersion', CACHE_VERSION)
 
     showTbWindow('bgmlist 数据更新成功! 请<a class="l" href="javascript:location.reload();">刷新页面</a><br>',
         'left:80%;top:20px;width:18%;');
@@ -270,8 +275,9 @@ async function update({ paths, version }) {
 }
 
 function checkUpdate() {
+    const forceUpdate = (GM_getValue('cacheVersion') || 0) !== CACHE_VERSION;
     const lastCheckUpdate = GM_getValue('lastCheckUpdate') || 0;
-    if (new Date().getTime() - lastCheckUpdate < CHECK_UPDATE_INTERVAL && !DEBUG) {
+    if (new Date().getTime() - lastCheckUpdate < CHECK_UPDATE_INTERVAL && !forceUpdate && !DEBUG) {
         return;
     }
     request('https://bgmlist.com/api/v1/bangumi/season/?start=2020q1')
@@ -282,7 +288,7 @@ function checkUpdate() {
             const paths = archive.items.slice(-8).map(it => `https://bgmlist.com/api/v1/bangumi/archive/${it}`).join(',');
             const oldPaths = GM_getValue('paths');
             const oldVersion = GM_getValue('version');
-            if (!oldPaths || !oldVersion || paths != oldPaths || version != oldVersion || DEBUG) {
+            if (!oldPaths || !oldVersion || paths != oldPaths || version != oldVersion || forceUpdate || DEBUG) {
                 update({ paths: paths, version: version });
             }
             GM_setValue('lastCheckUpdate', new Date().getTime());
