@@ -242,7 +242,7 @@ importers:
         version: link:../../packages/dom
       '@b38dev/event':
         specifier: workspace:^
-        version: link:../../packages/router
+        version: link:../../packages/event
       '@b38dev/util':
         specifier: workspace:^
         version: link:../../packages/util

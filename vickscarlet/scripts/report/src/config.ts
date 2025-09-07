@@ -1,4 +1,4 @@
-export const uid = /\/user\/(.+)?(\/.*)?/.exec(window.location.href)?.[1] || ''
+export const uid = window.location.pathname.split('/')[2] || ''
 
 export type Types = keyof typeof Types
 export type SubTypes = keyof typeof SubTypes

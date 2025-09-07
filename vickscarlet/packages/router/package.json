@@ -1,5 +1,5 @@
 {
-  "name": "@b38dev/event",
+  "name": "@b38dev/router",
   "version": "1.0.0",
   "description": "Util",
   "main": "./src/index.ts",

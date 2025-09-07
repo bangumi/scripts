@@ -1,14 +1,14 @@
 
-.btn { user-select: none; cursor: pointer; }
+.v-report-btn { user-select: none; cursor: pointer; }
 
-.btn.primary { background: #fc899488; }
-.btn.primary:hover { background: #fc8994; }
-.btn.danger { background: #fc222288; }
-.btn.danger:hover { background: #fc2222; }
-.btn.success { background: #22fc2288; }
-.btn.success:hover { background: #22fc22; }
-.btn.warning { background: #fcb12288; }
-.btn.warning:hover { background: #fcb122; }
+.v-report-btn.primary { background: #fc899488; }
+.v-report-btn.primary:hover { background: #fc8994; }
+.v-report-btn.danger { background: #fc222288; }
+.v-report-btn.danger:hover { background: #fc2222; }
+.v-report-btn.success { background: #22fc2288; }
+.v-report-btn.success:hover { background: #22fc22; }
+.v-report-btn.warning { background: #fcb12288; }
+.v-report-btn.warning:hover { background: #fcb122; }
 
 #kotori-report-canvas::-webkit-scrollbar, #kotori-report .scroll::-webkit-scrollbar { display: none; }
 
@@ -49,7 +49,7 @@
         > .btn-group {
             display: flex;
             gap: 10px;
-            > .btn {
+            > .v-report-btn {
                 width: 100%;
                 padding: 10px 0;
                 text-align: center;
@@ -58,7 +58,7 @@
                 font-size: 16px;
                 font-weight: bold;
             }
-            > .btn:hover {
+            > .v-report-btn:hover {
                 width: 100%;
                 padding: 10px 0;
                 text-align: center;

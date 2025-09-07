@@ -49,7 +49,7 @@ export async function fl(type: string, subType: string, p = 1, expire = 30) {
     const edge = e.querySelector('span.p_edge')
     let max
     if (edge) {
-        max = Number(edge.textContent!.match(/\/\s*(\d+)\s*\)/)?.[1] || 1)
+        max = Number(/\/\s*(\d+)\s*\)/.exec(edge.textContent)?.[1] || 1)
     } else {
         const ap = e.querySelectorAll<HTMLAnchorElement>('a.p')
         if (ap.length == 0) {

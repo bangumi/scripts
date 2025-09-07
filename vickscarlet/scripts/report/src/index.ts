@@ -18,7 +18,7 @@ async function showCanvas(element: Element) {
     const close = create('div', { style: { height: canvas.style.height } })!
     const main = create('div', { id: 'kotori-report-canvas' }, close, canvas)!
     close.addEventListener('click', () => main.remove())
-    document.body.appendChild(main!)
+    document.body.appendChild(main)
 }
 function pw(v: number, m: number) {
     return { style: { width: (v * 100) / m + '%' } }
@@ -253,11 +253,6 @@ async function buildReport(options: YR & LTR & { isLifeTime: boolean }) {
  */
 function buildMenu() {
     const year = new Date().getFullYear()
-    interface SubTypeOptions {
-        value: SubTypes
-        name: string
-        checked: boolean
-    }
     const yearSelectOptions = new Array(year - 2007)
         .fill(0)
         .map((_, i) => ['option', { value: year - i }, year - i] as CreateParams)
@@ -278,8 +273,12 @@ function buildMenu() {
         )
     ) as HTMLSelectElement
     const tagSelect = create('select', ['option', { value: '' }, '不筛选']) as HTMLSelectElement
-    const btnGo = create('div', { class: ['btn', 'primary'] }, '生成') as HTMLDivElement
-    const btnClr = create('div', { class: ['btn', 'warning'] }, '清理缓存') as HTMLDivElement
+    const btnGo = create('div', { class: ['v-report-btn', 'primary'] }, '生成') as HTMLDivElement
+    const btnClr = create(
+        'div',
+        { class: ['v-report-btn', 'v-report', 'warning'] },
+        '清理缓存'
+    ) as HTMLDivElement
     const btnGroup = ['div', { class: 'btn-group' }, btnGo, btnClr] as AppendParams
     const additionField = [
         'fieldset',
@@ -453,7 +452,7 @@ let menu: HTMLDivElement | null = null
  * 切换菜单显隐
  */
 function menuToggle() {
-    if (!menu) menu = buildMenu()
+    menu ??= buildMenu()
     menu.style.display = menu.style.display == 'block' ? 'none' : 'block'
 }
 // MENU END
