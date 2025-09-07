@@ -8,6 +8,100 @@ importers:
 
   .:
     devDependencies:
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
+
+  packages/bangumi: {}
+
+  packages/database: {}
+
+  packages/dom: {}
+
+  packages/event: {}
+
+  packages/icon:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.1
+        version: 19.1.1
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+
+  packages/router:
+    devDependencies:
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  packages/util: {}
+
+  scripts/calendar:
+    dependencies:
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/comment_list_optimization:
+    dependencies:
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/community:
+    dependencies:
+      '@b38dev/bangumi':
+        specifier: workspace:^
+        version: link:../../packages/bangumi
+      '@b38dev/database':
+        specifier: workspace:^
+        version: link:../../packages/database
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+      '@b38dev/icon':
+        specifier: workspace:^
+        version: link:../../packages/icon
+    devDependencies:
       '@svgr/plugin-svgo':
         specifier: ^8.1.0
         version: 8.1.0(@svgr/core@8.1.0(typescript@5.8.3))(typescript@5.8.3)
@@ -29,9 +123,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@6.2.6)
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -41,6 +132,142 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/fast_search:
+    dependencies:
+      '@b38dev/bangumi':
+        specifier: workspace:^
+        version: link:../../packages/bangumi
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/necrobumping_detector:
+    dependencies:
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/quick_rating:
+    dependencies:
+      '@b38dev/bangumi':
+        specifier: workspace:^
+        version: link:../../packages/bangumi
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/report:
+    dependencies:
+      '@b38dev/database':
+        specifier: workspace:^
+        version: link:../../packages/database
+      '@b38dev/dom':
+        specifier: workspace:^
+        version: link:../../packages/dom
+      '@b38dev/event':
+        specifier: workspace:^
+        version: link:../../packages/router
+      '@b38dev/util':
+        specifier: workspace:^
+        version: link:../../packages/util
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/unified:
+    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.8.3

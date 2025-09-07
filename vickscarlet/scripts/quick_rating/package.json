@@ -1,0 +1,50 @@
+{
+  "name": "@b38dev/quick-rating",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "1.0.2",
+  "description": "Bangumi 收藏快速评分, 仅自己收藏页面生效",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "out": "bangumi_quick_rating.user.js",
+  "userscript": {
+    "name": "Bangumi 收藏快速评分",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/quick_rating",
+    "match": [
+      "*://bgm.tv/anime/list/*/*",
+      "*://bgm.tv/book/list/*/*",
+      "*://bgm.tv/game/list/*/*",
+      "*://bgm.tv/music/list/*/*",
+      "*://bgm.tv/real/list/*/*",
+      "*://chii.in/anime/list/*/*",
+      "*://chii.in/book/list/*/*",
+      "*://chii.in/game/list/*/*",
+      "*://chii.in/music/list/*/*",
+      "*://chii.in/real/list/*/*",
+      "*://bangumi.tv/anime/list/*/*",
+      "*://bangumi.tv/book/list/*/*",
+      "*://bangumi.tv/game/list/*/*",
+      "*://bangumi.tv/music/list/*/*",
+      "*://bangumi.tv/real/list/*/*"
+    ]
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@b38dev/bangumi": "workspace:^",
+    "@b38dev/dom": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.2.6",
+    "vite-plugin-monkey": "^5.0.8",
+    "vite-plugin-svgr": "^4.3.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.1.1"
+  }
+}

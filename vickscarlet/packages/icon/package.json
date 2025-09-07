@@ -1,0 +1,15 @@
+{
+  "name": "@b38dev/icon",
+  "version": "1.0.0",
+  "description": "Util",
+  "author": "Vick Scarlet(vick@syaro.io)",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^19.1.1",
+    "react": "^19.1.0"
+  },
+  "exports": {
+    "./*": "./src/*.tsx",
+    "./svg/*.svg": "./svg/*.svg"
+  }
+}

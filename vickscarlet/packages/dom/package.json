@@ -1,0 +1,13 @@
+{
+  "name": "@b38dev/dom",
+  "version": "1.0.0",
+  "description": "Util",
+  "main": "./src/index.ts",
+  "author": "Vick Scarlet(vick@syaro.io)",
+  "license": "MIT",
+  "dependencies": {},
+  "exports": {
+    ".": "./src/index.ts",
+    "./js": "./src/js/index.js"
+  }
+}

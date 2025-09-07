@@ -1,0 +1,9 @@
+{
+  "name": "@b38dev/database",
+  "version": "1.0.0",
+  "description": "Indexeddb helper",
+  "main": "./src/index.ts",
+  "author": "Vick Scarlet(vick@syaro.io)",
+  "license": "MIT",
+  "dependencies": {}
+}

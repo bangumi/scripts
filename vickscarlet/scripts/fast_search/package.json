@@ -1,0 +1,38 @@
+{
+  "name": "@b38dev/fast-search",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "1.0.0",
+  "description": "Bangumi 快速搜索, Ctrl-K",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "out": "bangumi_fast_search.user.js",
+  "userscript": {
+    "name": "Bangumi 快速搜索",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/fast_search",
+    "match": [
+      "*://bgm.tv/*",
+      "*://chii.in/*",
+      "*://bangumi.tv/*"
+    ]
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@b38dev/bangumi": "workspace:^",
+    "@b38dev/dom": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.2.6",
+    "vite-plugin-monkey": "^5.0.8",
+    "vite-plugin-svgr": "^4.3.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.1.1"
+  }
+}
