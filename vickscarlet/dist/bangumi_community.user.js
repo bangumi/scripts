@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
 // @namespace    b38.dev
-// @version      0.1.14
+// @version      0.1.15
 // @author       神戸小鳥 @vickscarlet
 // @description  社区助手预览版 with React
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
-// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/src/scripts/community
+// @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/community
 // @match        *://bgm.tv/*
 // @match        *://chii.in/*
 // @match        *://bangumi.tv/*
@@ -14,7 +14,7 @@
 // @run-at       document-start
 // ==/UserScript==
 
-(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const o=document.createElement("style");o.textContent=r,document.head.append(o)})(` @keyframes loading-spine{to{transform:rotate(.5turn)}}.v-loading{display:grid!important;place-items:center!important;grid-template:none!important;--loading-size: 50px;--loading-color: #fff;>*{display:none!important}>.v-loading-item{display:block!important;width:var(--loading-size)!important;height:var(--loading-size)!important;aspect-ratio:1!important;border-radius:50%!important;border:calc(var(--loading-size) / 6.25) solid!important;box-sizing:border-box!important;border-color:var(--loading-color) transparent!important;animation:loading-spine 1s infinite!important}>.v-loading-item:before,>.v-loading-item:after{content:none!important}}.v-board{--board-color-font: black;--board-color-from: #ccc;--board-color-to: #fff;--board-color-alpha: .05;--board-before-opacity: .2;--board-before-bg: transparent;color:var(--board-color-font);padding:10px;position:relative;border-radius:4px}.v-board:after,.v-board:before{content:"";position:absolute;border-radius:4px;inset:0;background-size:cover;z-index:-10}.v-board:before{background:var(--board-before-bg);background-size:cover;opacity:var(--board-before-opacity)}.v-board:after{opacity:1;background:linear-gradient(150deg,rgb(from var(--board-color-from) r g b / var(--board-color-alpha)),rgb(from var(--board-color-to) r g b / var(--board-color-alpha)) 75%);box-shadow:0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter:blur(10px)}.v-tip-item{position:relative;cursor:pointer;>.v-tip:last-child{visibility:hidden;position:absolute;top:0;left:50%;transform:translate(-50%,calc(-100% - 10px));padding:2px 5px;border-radius:5px;background:rgb(from var(--color-black) r g b / .6);white-space:nowrap;color:var(--color-white);z-index:100}>.v-tip:last-child:after{content:"";position:absolute!important;bottom:0;left:50%;border-top:5px solid rgb(from var(--color-black) r g b / .6);border-right:5px solid transparent;border-left:5px solid transparent;transform:translate(-50%,100%)}}.v-tip-item:hover{.v-tip:last-child{visibility:visible}}.v-switch{display:inline-block;position:relative;cursor:pointer;border-radius:50px;height:12px;width:40px;border:1px solid var(--color-switch-border)}.v-switch:before{content:"";display:block;position:absolute;pointer-events:none;height:12px;width:40px;top:0;border-radius:24px;background-color:var(--color-switch-off)}.v-switch:after{content:"";display:block;position:absolute;pointer-events:none;top:0;left:0;height:12px;width:24px;border-radius:24px;box-sizing:border-box;background-color:var(--color-switch-bar-inner);border:5px solid var(--color-switch-bar-border)}.v-switch[data-enabled=enabled]:before{background-color:var(--color-switch-on)}.v-switch[data-enabled=enabled]:after{left:16px}#dock{padding:0;>div.content{padding:2px 4px;>ul.clearit{display:flex;gap:8px;>li,li>a{border-right:none!important;padding:0!important;position:relative;display:flex;align-items:center;min-height:18px}li:not(.first):after{content:"";display:block;background:rgb(from var(--color-bangumi-2) r g b / .6);width:1px;height:calc(100% - 4px);position:absolute;top:2px;left:-4.5px}}>ul:after{content:none}}}.v-serif{font-family:source-han-serif-sc,source-han-serif-japanese,\u5B8B\u4F53,\u65B0\u5B8B\u4F53;font-weight:900}.v-avatar.v-board{min-width:120px;max-width:280px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;img{width:100px;height:100px;border-radius:100px;object-fit:cover}span{position:absolute;top:5px;right:0;transform:translate(100%) rotate(90deg);transform-origin:0% 0%}span:before{content:"@"}svg{width:100%;height:50px;text{transform:translate(50%,.18em);text-anchor:middle;dominant-baseline:hanging}}}.v-actions.v-board{--loading-size: 24px;display:grid;padding:0;height:34px;grid-template-columns:repeat(4,1fr);grid-template-areas:"home pm friend blocked";>*{position:relative;display:grid;place-items:center;width:100%;padding:10px 0}>.v-home{grid-area:home}>.v-pm{grid-area:pm}>.v-friend{grid-area:friend}>.v-blocked{grid-area:blocked}>*:not(.v-blocked):after{position:absolute;content:"";width:2px;height:calc(100% - 10px);top:5px;right:-1px;background:rgb(from var(--board-color-from) r g b / .25)}}.v-stats{--loading-size: 24px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);>.v-stat{line-height:14px;font-size:14px;font-weight:700;padding:2px 5px;background:rgb(from var(--color-stat) r g b / .25)}>.v-stat:hover{background:rgb(from var(--color-stat) r g b / .5)}>.v-stat:first-child{border-radius:4px 0 0}>.v-stat:nth-child(3){border-radius:0 4px 0 0}>.v-stat:last-child{border-radius:0 0 4px}>.v-stat:nth-child(4){border-radius:0 0 0 4px}>.v-coll{--color-stat: var(--color-bangumi)}>.v-done{--color-stat: var(--color-green)}>.v-rate{--color-stat: var(--color-skyblue)}>.v-avg{--color-stat: var(--color-yellow)}>.v-std{--color-stat: var(--color-purple)}>.v-cnt{--color-stat: var(--color-blue)}}.v-chart{--loading-size: 24px;padding:0;display:grid;grid-template-rows:repeat(10,4px);>*{display:flex;justify-content:flex-start!important;width:100%;.v-bar{height:2px;background:rgb(from var(--color-bangumi) r g b / .65);transition:all .3s ease}}>*:first-child:before,*:first-child>.v-bar{border-radius:4px 4px 0 0}>*:last-child:before,*:last-child>.v-bar{border-radius:0 0 4px 4px}>*:before{content:"";position:absolute;top:1px;left:0;width:100%;height:2px;background:rgb(from var(--color-bangumi) r g b / .15);z-index:-1;transition:all .3s ease}>*:hover:before{background:rgb(from var(--color-bangumi) r g b / .3)}>*:hover>.bar{background:rgb(from var(--color-bangumi) r g b / 1)}}fieldset.v-board{padding-top:24px;legend{position:absolute;font-weight:700;top:5px;left:5px;padding:0;line-height:12px;font-size:12px;display:flex;align-items:center;gap:.5em;color:var(--color-bangumi-font);>svg{width:14px;height:14px}}}fieldset.v-board.v-actions-board{position:relative;>.v-actions-list{color:var(--color-base-font);position:absolute;display:flex;justify-content:center;top:5px;right:5px;gap:5px}}fieldset.v-board.v-actions-board{>textarea{width:100%;height:100%;resize:vertical;border:none;padding:0;box-sizing:border-box;background:rgb(from var(--color-base) r g b / .1);border-radius:4px;max-height:100%;font-size:12px;line-height:18px;color:var(--color-font);overscroll-behavior:contain}>textarea:focus,>textarea:hover{box-shadow:0 0 1px rgb(from var(--color-bangumi) r g b / .5)}>textarea+*{visibility:hidden}}ul.v-tag-list{display:flex;flex-wrap:wrap;gap:4px;>li{padding:0 5px;border-radius:50px;background:rgb(from var(--color-font) r g b / .25);border:1px solid var(--color-font);box-sizing:border-box;white-space:pre}}.v-board .v-tag-list{--color-font: var(--board-color-font)}html,html[data-theme=dark]{#community-helper-user-panel{position:fixed!important;z-index:9999;display:grid;place-items:center;inset:0;>.v-close-mask{position:absolute;z-index:-100;display:grid;place-items:center;inset:0;background:rgb(from var(--color-base) r g b / .5);cursor:pointer;backdrop-filter:blur(5px)}>.v-container{max-width:1280px;min-height:390px;max-height:600px;width:calc(100% - 60px);height:calc(100vh - 60px);display:grid;grid-template-columns:auto auto auto 1fr auto;grid-template-rows:180px 34px 36px 40px calc(100% - 310px);gap:5px 5px;padding:30px 5px 5px;margin-bottom:25px;grid-template-areas:"avatar note note note bio" "actions note note note bio" "stats note note note bio" "chart note note note bio" "usedname usedname tags tags bio";>.v-loading{--loading-color: var(--color-bangumi)}>.v-board{--board-color-font: var(--color-bangumi-font);--board-color-from: var(--color-base-2);--board-color-to: var(--color-base-2)}>.v-avatar{grid-area:avatar;--board-color-font: var(--color-bangumi);--board-color-from: var(--color-bangumi);--board-color-alpha: .25}>.v-actions{grid-area:actions;--board-color-from: var(--color-yellow);--board-color-font: var(--color-yellow-font)}>.v-stats{grid-area:stats;--board-color-font: var(--color-base-font)}>.v-chart{grid-area:chart;--board-color-font: var(--color-base-font)}>.v-tags{grid-area:tags;min-width:200px;--board-color-from: var(--color-blue);--board-color-font: var(--color-blue-font);>.v-wrapper{max-height:100%}}>.v-note{grid-area:note;min-width:200px;--board-color-from: var(--color-green);--board-color-font: var(--color-green-font);white-space:pre-wrap;>.v-wrapper{height:100%;>*{max-height:100%}}}>.v-usedname{grid-area:usedname;--board-color-from: var(--color-purple);--board-color-font: var(--color-purple-font);max-width:400px;min-width:200px;>.v-wrapper{max-height:100%}}>.v-bio{grid-area:bio;--board-color-from: var(--color-bangumi);--board-color-font: var(--color-base-font);max-width:505px;min-width:300px;max-height:calc(100% - 34px);>.v-wrapper{height:calc(100% + 2px)}}}}@media (max-width: 850px){#community-helper-user-panel>.v-container{grid-template-columns:auto auto auto 1fr;grid-template-rows:180px 34px 36px 40px auto auto;max-height:900px;grid-template-areas:"avatar note note note" "actions note note note" "stats note note note" "chart note note note" "usedname usedname tags tags" "bio bio bio bio";>.v-tags,>.v-usedname{max-height:300px}>.v-bio{max-width:100%;max-height:100%}}}@media (max-width: 520px){#community-helper-user-panel>.v-container{grid-template-columns:1fr;grid-template-rows:180px 34px 36px 40px auto auto auto auto;max-height:1100px;grid-template-areas:"avatar" "actions" "stats" "chart" "note" "usedname" "tags" "bio";>.v-board{min-width:130px;width:calc(100% - 20px);max-width:calc(100% - 20px)}>.v-actions,>.v-stats,>.v-chart{width:100%;max-width:100%}>.v-note{max-height:200px}>.v-tags,>.v-usedname{max-height:150px}>.v-bio{max-height:100%}}}}.v-sticky-reply{position:sticky;top:0;z-index:2;display:grid;height:auto;grid-template-rows:0fr;border-radius:4px;backdrop-filter:blur(5px);transition:all .3s ease;width:calc(100% - 1px);overflow:hidden;margin-bottom:5px;background-color:var(--color-sticky-bg);border:1px solid var(--color-sticky-border);box-shadow:0 0 0 2px var(--color-sticky-shadow);textarea.reply{background-color:var(--color-sticky-textarea)!important}}.v-sticky-reply:has(:focus),.v-sticky-reply:hover{grid-template-rows:1fr;background-color:var(--color-sticky-hover-bg);border:1px solid var(--color-sticky-hover-border);box-shadow:0 0 4px var(--color-sticky-hover-shadow)}#reply_wrapper{position:relative;padding:5px;min-height:50px;margin:0;textarea.reply{width:100%!important}.v-switch{position:absolute;right:10px;top:10px}.tip.rr~.v-switch{top:35px}}html{--color-bangumi: #fd8a96;--color-white: #ffffff;--color-black: #000000;--color-yellow: #f9c74c;--color-purple: #a54cf9;--color-blue: #02a3fb;--color-green: #95eb89;--color-red: #f94144;--color-skyblue: #7ed2ff}html{--color-base: #ffffff;--color-base-2: #e8e8e8;--color-base-bg: #eaeffba0;--color-base-font: #282828;--color-gray-1: #e8e8e8;--color-gray-2: #cccccc;--color-gray-3: #aaaaaa;--color-gray-4: #969696;--color-gray-11: #cccccc;--color-bangumi-2: #AB515D;--color-bangumi-font: rgb(from var(--color-bangumi) calc(r - 50) calc(g - 50) calc(b - 50) );--color-yellow-font: rgb(from var(--color-yellow) calc(r - 50) calc(g - 50) calc(b - 50) );--color-purple-font: rgb(from var(--color-purple) calc(r - 50) calc(g - 50) calc(b - 50) );--color-blue-font: rgb(from var(--color-blue) calc(r - 50) calc(g - 50) calc(b - 50) );--color-green-font: rgb(from var(--color-green) calc(r - 50) calc(g - 50) calc(b - 50) );--color-red-font: rgb(from var(--color-red) calc(r - 50) calc(g - 50) calc(b - 50) )}html[data-theme=dark]{--color-base: #000000;--color-base-2: #1f1f1f;--color-base-bg: #23262ba0;--color-base-font: #e8e8e8;--color-gray-1: #444444;--color-gray-2: #555555;--color-gray-3: #6a6a6a;--color-gray-4: #888888;--color-gray-11: #cccccc;--color-bangumi-2: #ffb6bd;--color-bangumi-font: rgb(from var(--color-bangumi) calc(r + 50) calc(g + 50) calc(b + 50) );--color-yellow-font: rgb(from var(--color-yellow) calc(r + 50) calc(g + 50) calc(b + 50) );--color-purple-font: rgb(from var(--color-purple) calc(r + 50) calc(g + 50) calc(b + 50) );--color-blue-font: rgb(from var(--color-blue) calc(r + 50) calc(g + 50) calc(b + 50) );--color-green-font: rgb(from var(--color-green) calc(r + 50) calc(g + 50) calc(b + 50) );--color-red-font: rgb(from var(--color-red) calc(r + 50) calc(g + 50) calc(b + 50) )}html{--color-dock-sp: var(--color-gray-2);--color-switch-border: var(--color-gray-2);--color-switch-on: var(--color-green);--color-switch-off: var(--color-gray-4);--color-switch-bar-border: var(--color-white);--color-switch-bar-inner: var(--color-gray-11);--color-hover: var(--color-blue);--color-icon-btn-bg: rgb(from var(--color-bangumi) r g b / .25);--color-icon-btn-color: var(--color-white);--color-reply-sp: var(--color-gray-1);--color-reply-tips: var(--color-gray-3);--color-reply-normal: var(--color-bangumi);--color-reply-owner: var(--color-yellow);--color-reply-floor: var(--color-purple);--color-reply-friend: var(--color-green);--color-reply-self: var(--color-blue);--color-sticky-bg: rgb(from var(--color-base) r g b / .125);--color-sticky-border: rgb(from var(--color-bangumi) r g b / .25);--color-sticky-shadow: rgb(from var(--color-base) r g b / .05);--color-sticky-textarea: rgb(from var(--color-base) r g b / .8);--color-sticky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);--color-sticky-hover-border: var(--color-bangumi);--color-sticky-hover-shadow: var(--color-bangumi);--color-primary: var(--color-bangumi);--color-secondary: var(--color-blue);--color-success: var(--color-green);--color-info: var(--color-blue);--color-important: var(--color-purple);--color-warning: var(--color-yellow);--color-danger: var(--color-red)}*:has(>#comment_list){.postTopic{border-bottom:none;.inner.tips{display:flex;height:40px;align-items:center;gap:8px;color:var(--color-reply-tips)}}#comment_list{box-sizing:border-box;.row:nth-child(odd),.row:nth-child(2n){background:transparent}>.clearit:first-child{border-top:1px solid transparent}div.reply_collapse{padding:5px 10px}}.clearit:not(.message){transition:all .3s ease;box-sizing:border-box;border-bottom:none!important;border-top:1px dashed var(--color-reply-sp);.inner.tips{display:flex;height:40px;align-items:center;gap:8px;color:var(--color-reply-tips)}.sub_reply_collapse .inner.tips{height:auto}--color-reply: var(--color-bangumi)}.clearit.v-friend{--color-reply: var(--color-green)}.clearit.v-owner{--color-reply: var(--color-yellow)}.clearit.v-floor{--color-reply: var(--color-purple)}.clearit.v-self{--color-reply: var(--color-blue)}.clearit.v-friend,.clearit.v-owner,.clearit.v-floor,.clearit.v-self{border-top:1px solid var(--color-reply)!important;background:linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px,#0000 60px)!important;>.inner>:first-child>strong:before,>.inner>strong:before{padding:1px 4px;margin-right:4px;border-radius:2px;background:rgb(from var(--color-bangumi) r g b /.5);color:var(--color-bangumi-font)}}.clearit.reply_highlight{border:1px solid var(--color-reply)!important;background:rgb(from var(--color-reply) r g b / .125)!important;box-shadow:0 0 4px rgb(from var(--color-reply) r g b / .5);border-radius:0!important}.clearit:not(:has(.clearit:not(.message):hover),.message):hover{border-top:1px solid var(--color-reply)!important;background:linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px,#0000 60px)!important;box-shadow:0 0 4px rgb(from var(--color-reply) r g b / .5)}.clearit.v-self{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA"}}.clearit.v-friend{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB"}}.clearit.v-owner{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u697C"}}.clearit.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u5C42"}}.clearit.v-friend.v-owner{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB \u697C"}}.clearit.v-friend.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB \u5C42"}}.clearit.v-owner.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u697C \u5C42"}}.clearit.v-self.v-owner{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA \u697C"}}.clearit.v-self.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA \u5C42"}}.clearit.v-friend.v-owner.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB \u697C \u5C42"}}.clearit.v-self.v-owner.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA \u697C \u5C42"}}.clearit.v-collapse{position:relative!important;padding:5px 10px!important;.post_actions{margin:0!important}>a.avatar{display:none!important}>.inner{line-height:18px;span.sign.tip_j,>*:not(:first-child){display:none!important}}}.clearit.sub_reply_bg.v-collapse{padding:5px 0!important}.clearit.postTopic.v-collapse{padding:10px 5px!important}.clearit.v-collapse:before{content:"";width:14px;position:absolute;display:grid;place-items:center;top:0;left:0;height:100%;padding:0 4px;font-weight:900;color:var(--color-bangumi);text-shadow:0 0 5px rgb(from var(--color-bangumi-font) r g b / .25);background:linear-gradient(to right,var(--color-bangumi) 1px,rgb(from var(--color-bangumi) r g b / .125) 1px,#00000000)!important}.clearit.v-collapse:after{content:"";mask:url("data:image/svg+xml,%3csvg%20viewBox='0%200%2016%2016'%20xmlns='http://www.w3.org/2000/svg'%20width='14px'%20height='14px'%20fill='currentColor'%20%3e%3cpath%20d='M10.896%202H8.75V.75a.75.75%200%200%200-1.5%200V2H5.104a.25.25%200%200%200-.177.427l2.896%202.896a.25.25%200%200%200%20.354%200l2.896-2.896A.25.25%200%200%200%2010.896%202ZM8.75%2015.25a.75.75%200%200%201-1.5%200V14H5.104a.25.25%200%200%201-.177-.427l2.896-2.896a.25.25%200%200%201%20.354%200l2.896%202.896a.25.25%200%200%201-.177.427H8.75v1.25Zm-6.5-6.5a.75.75%200%200%200%200-1.5h-.5a.75.75%200%200%200%200%201.5h.5ZM6%208a.75.75%200%200%201-.75.75h-.5a.75.75%200%200%201%200-1.5h.5A.75.75%200%200%201%206%208Zm2.25.75a.75.75%200%200%200%200-1.5h-.5a.75.75%200%200%200%200%201.5h.5ZM12%208a.75.75%200%200%201-.75.75h-.5a.75.75%200%200%201%200-1.5h.5A.75.75%200%200%201%2012%208Zm2.25.75a.75.75%200%200%200%200-1.5h-.5a.75.75%200%200%200%200%201.5h.5Z'%3e%3c/path%3e%3c/svg%3e");width:14px;height:14px;position:absolute;left:2px;top:50%;background:var(--color-bangumi)!important;transform:translateY(-50%);visibility:visible}.post_actions{.action{gap:4px;a.icon:hover,a.icon{color:var(--color-gray-11);display:flex;align-items:center;justify-content:center;min-width:0;padding:0 1px;box-sizing:border-box}}.dropdown ul a{display:flex;align-items:center;cursor:pointer;gap:5px}}}#timeline .tml_item,#home_grp_tpc,#home_subject_tpc,#headerNeue2,#comment_list,#reply_wrapper,#comment_box,#subjectPanelIndex,#subjectPanelCollect,#columnB .SidePanel .side_port,#memberUserList,.postTopic{.userImage,.avatar{img,.avatarNeue{border-radius:50%!important}img.avatar_mn{width:28px!important;height:28px!important;padding:0!important;border:none!important}}}.prg_list{display:flex;flex-wrap:wrap} `);
+(r=>{if(typeof GM_addStyle=="function"){GM_addStyle(r);return}const o=document.createElement("style");o.textContent=r,document.head.append(o)})(` @keyframes loading-spine{to{transform:rotate(.5turn)}}.v-loading{display:grid!important;place-items:center!important;grid-template:none!important;--loading-size: 50px;--loading-color: #fff;>*{display:none!important}>.v-loading-item{display:block!important;width:var(--loading-size)!important;height:var(--loading-size)!important;aspect-ratio:1!important;border-radius:50%!important;border:calc(var(--loading-size) / 6.25) solid!important;box-sizing:border-box!important;border-color:var(--loading-color) transparent!important;animation:loading-spine 1s infinite!important}>.v-loading-item:before,>.v-loading-item:after{content:none!important}}.v-board{--board-color-font: black;--board-color-from: #ccc;--board-color-to: #fff;--board-color-alpha: .05;--board-before-opacity: .2;--board-before-bg: transparent;color:var(--board-color-font);padding:10px;position:relative;border-radius:4px}.v-board:after,.v-board:before{content:"";position:absolute;border-radius:4px;inset:0;background-size:cover;z-index:-10}.v-board:before{background:var(--board-before-bg);background-size:cover;opacity:var(--board-before-opacity)}.v-board:after{opacity:1;background:linear-gradient(150deg,rgb(from var(--board-color-from) r g b / var(--board-color-alpha)),rgb(from var(--board-color-to) r g b / var(--board-color-alpha)) 75%);box-shadow:0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);backdrop-filter:blur(10px)}.v-serif{font-family:source-han-serif-sc,source-han-serif-japanese,\u5B8B\u4F53,\u65B0\u5B8B\u4F53;font-weight:900}.v-avatar.v-board{min-width:120px;max-width:280px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;img{width:100px;height:100px;border-radius:100px;object-fit:cover}span{position:absolute;top:5px;right:0;transform:translate(100%) rotate(90deg);transform-origin:0% 0%}span:before{content:"@"}svg{width:100%;height:50px;text{transform:translate(50%,.18em);text-anchor:middle;dominant-baseline:hanging}}}.v-tip-item{position:relative;cursor:pointer;>.v-tip{visibility:hidden;position:absolute;top:0;left:50%;transform:translate(-50%,calc(-100% - 10px));padding:2px 5px;border-radius:5px;background:rgb(from var(--color-black) r g b / .6);white-space:nowrap;color:var(--color-white);z-index:100}>.v-tip:after{content:"";position:absolute!important;bottom:0;left:50%;border-top:5px solid rgb(from var(--color-black) r g b / .6);border-right:5px solid transparent;border-left:5px solid transparent;transform:translate(-50%,100%)}}.v-tip-item:hover{.v-tip{visibility:visible}}.v-actions.v-board{--loading-size: 24px;display:grid;padding:0;height:34px;grid-template-columns:repeat(4,1fr);grid-template-areas:"home pm friend blocked";>*{position:relative;display:grid;place-items:center;width:100%;padding:10px 0}>.v-home{grid-area:home}>.v-pm{grid-area:pm}>.v-friend{grid-area:friend}>.v-blocked{grid-area:blocked}>*:not(.v-blocked):after{position:absolute;content:"";width:2px;height:calc(100% - 10px);top:5px;right:-1px;background:rgb(from var(--board-color-from) r g b / .25)}}.v-switch{display:inline-block;position:relative;cursor:pointer;border-radius:50px;height:12px;width:40px;border:1px solid var(--color-switch-border)}.v-switch:before{content:"";display:block;position:absolute;pointer-events:none;height:12px;width:40px;top:0;border-radius:24px;background-color:var(--color-switch-off)}.v-switch:after{content:"";display:block;position:absolute;pointer-events:none;top:0;left:0;height:12px;width:24px;border-radius:24px;box-sizing:border-box;background-color:var(--color-switch-bar-inner);border:5px solid var(--color-switch-bar-border)}.v-switch[data-enabled=enabled]:before{background-color:var(--color-switch-on)}.v-switch[data-enabled=enabled]:after{left:16px}.v-stats{--loading-size: 24px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);>.v-stat{line-height:14px;font-size:14px;font-weight:700;padding:2px 5px;background:rgb(from var(--color-stat) r g b / .25)}>.v-stat:hover{background:rgb(from var(--color-stat) r g b / .5)}>.v-stat:first-child{border-radius:4px 0 0}>.v-stat:nth-child(3){border-radius:0 4px 0 0}>.v-stat:last-child{border-radius:0 0 4px}>.v-stat:nth-child(4){border-radius:0 0 0 4px}>.v-coll{--color-stat: var(--color-bangumi)}>.v-done{--color-stat: var(--color-green)}>.v-rate{--color-stat: var(--color-skyblue)}>.v-avg{--color-stat: var(--color-yellow)}>.v-std{--color-stat: var(--color-purple)}>.v-cnt{--color-stat: var(--color-blue)}}.v-chart{--loading-size: 24px;padding:0;display:grid;grid-template-rows:repeat(10,4px);>*{display:flex;justify-content:flex-start!important;width:100%;.v-bar{height:2px;background:rgb(from var(--color-bangumi) r g b / .65);transition:all .3s ease}}>*:first-child:before,*:first-child>.v-bar{border-radius:4px 4px 0 0}>*:last-child:before,*:last-child>.v-bar{border-radius:0 0 4px 4px}>*:before{content:"";position:absolute;top:1px;left:0;width:100%;height:2px;background:rgb(from var(--color-bangumi) r g b / .15);z-index:-1;transition:all .3s ease}>*:hover:before{background:rgb(from var(--color-bangumi) r g b / .3)}>*:hover>.bar{background:rgb(from var(--color-bangumi) r g b / 1)}}fieldset.v-board{padding-top:24px;legend{position:absolute;font-weight:700;top:5px;left:5px;padding:0;line-height:12px;font-size:12px;display:flex;align-items:center;gap:.5em;color:var(--color-bangumi-font);>svg{width:14px;height:14px}}}fieldset.v-board.v-actions-board{position:relative;>.v-actions-list{color:var(--color-base-font);position:absolute;display:flex;justify-content:center;top:5px;right:5px;gap:5px}}fieldset.v-board.v-actions-board{>textarea{width:100%;height:100%;resize:vertical;border:none;padding:0;box-sizing:border-box;background:rgb(from var(--color-base) r g b / .1);border-radius:4px;max-height:100%;font-size:12px;line-height:18px;color:var(--color-font);overscroll-behavior:contain}>textarea:focus,>textarea:hover{box-shadow:0 0 1px rgb(from var(--color-bangumi) r g b / .5)}>textarea+*{visibility:hidden}}ul.v-tag-list{display:flex;flex-wrap:wrap;gap:4px;>li{padding:0 5px;border-radius:50px;background:rgb(from var(--color-font) r g b / .25);border:1px solid var(--color-font);box-sizing:border-box;white-space:pre}}.v-board .v-tag-list{--color-font: var(--board-color-font)}html,html[data-theme=dark]{#community-helper-user-panel{position:fixed!important;z-index:9999;display:grid;place-items:center;inset:0;>.v-close-mask{position:absolute;z-index:-100;display:grid;place-items:center;inset:0;background:rgb(from var(--color-base) r g b / .5);cursor:pointer;backdrop-filter:blur(5px)}>.v-container{max-width:1280px;min-height:390px;max-height:600px;width:calc(100% - 60px);height:calc(100vh - 60px);display:grid;grid-template-columns:auto auto auto 1fr auto;grid-template-rows:180px 34px 36px 40px calc(100% - 310px);gap:5px 5px;padding:30px 5px 5px;margin-bottom:25px;grid-template-areas:"avatar note note note bio" "actions note note note bio" "stats note note note bio" "chart note note note bio" "usedname usedname tags tags bio";>.v-loading{--loading-color: var(--color-bangumi)}>.v-board{--board-color-font: var(--color-bangumi-font);--board-color-from: var(--color-base-2);--board-color-to: var(--color-base-2)}>.v-avatar{grid-area:avatar;--board-color-font: var(--color-bangumi);--board-color-from: var(--color-bangumi);--board-color-alpha: .25}>.v-actions{grid-area:actions;--board-color-from: var(--color-yellow);--board-color-font: var(--color-yellow-font)}>.v-stats{grid-area:stats;--board-color-font: var(--color-base-font)}>.v-chart{grid-area:chart;--board-color-font: var(--color-base-font)}>.v-tags{grid-area:tags;min-width:200px;--board-color-from: var(--color-blue);--board-color-font: var(--color-blue-font);>.v-wrapper{max-height:100%}}>.v-note{grid-area:note;min-width:200px;--board-color-from: var(--color-green);--board-color-font: var(--color-green-font);white-space:pre-wrap;>.v-wrapper{height:100%;>*{max-height:100%}}}>.v-usedname{grid-area:usedname;--board-color-from: var(--color-purple);--board-color-font: var(--color-purple-font);max-width:400px;min-width:200px;>.v-wrapper{max-height:100%}}>.v-bio{grid-area:bio;--board-color-from: var(--color-bangumi);--board-color-font: var(--color-base-font);max-width:505px;min-width:300px;max-height:calc(100% - 34px);>.v-wrapper{height:calc(100% + 2px)}}}}@media (max-width: 850px){#community-helper-user-panel>.v-container{grid-template-columns:auto auto auto 1fr;grid-template-rows:180px 34px 36px 40px auto auto;max-height:900px;grid-template-areas:"avatar note note note" "actions note note note" "stats note note note" "chart note note note" "usedname usedname tags tags" "bio bio bio bio";>.v-tags,>.v-usedname{max-height:300px}>.v-bio{max-width:100%;max-height:100%}}}@media (max-width: 520px){#community-helper-user-panel>.v-container{grid-template-columns:1fr;grid-template-rows:180px 34px 36px 40px auto auto auto auto;max-height:1100px;grid-template-areas:"avatar" "actions" "stats" "chart" "note" "usedname" "tags" "bio";>.v-board{min-width:130px;width:calc(100% - 20px);max-width:calc(100% - 20px)}>.v-actions,>.v-stats,>.v-chart{width:100%;max-width:100%}>.v-note{max-height:200px}>.v-tags,>.v-usedname{max-height:150px}>.v-bio{max-height:100%}}}}.v-sticky-reply{position:sticky;top:0;z-index:2;display:grid;height:auto;grid-template-rows:0fr;border-radius:4px;backdrop-filter:blur(5px);transition:all .3s ease;width:calc(100% - 1px);overflow:hidden;margin-bottom:5px;background-color:var(--color-sticky-bg);border:1px solid var(--color-sticky-border);box-shadow:0 0 0 2px var(--color-sticky-shadow);textarea.reply{background-color:var(--color-sticky-textarea)!important}}.v-sticky-reply:has(:focus),.v-sticky-reply:hover{grid-template-rows:1fr;background-color:var(--color-sticky-hover-bg);border:1px solid var(--color-sticky-hover-border);box-shadow:0 0 4px var(--color-sticky-hover-shadow)}#reply_wrapper{position:relative;padding:5px;min-height:50px;margin:0;textarea.reply{width:100%!important}.v-switch{position:absolute;right:10px;top:10px}.tip.rr~.v-switch{top:35px}}html{--color-bangumi: #fd8a96;--color-white: #ffffff;--color-black: #000000;--color-yellow: #f9c74c;--color-purple: #a54cf9;--color-blue: #02a3fb;--color-green: #95eb89;--color-red: #f94144;--color-skyblue: #7ed2ff}html{--color-base: #ffffff;--color-base-2: #e8e8e8;--color-base-bg: #eaeffba0;--color-base-font: #282828;--color-gray-1: #e8e8e8;--color-gray-2: #cccccc;--color-gray-3: #aaaaaa;--color-gray-4: #969696;--color-gray-11: #cccccc;--color-bangumi-2: #AB515D;--color-bangumi-font: rgb(from var(--color-bangumi) calc(r - 50) calc(g - 50) calc(b - 50) );--color-yellow-font: rgb(from var(--color-yellow) calc(r - 50) calc(g - 50) calc(b - 50) );--color-purple-font: rgb(from var(--color-purple) calc(r - 50) calc(g - 50) calc(b - 50) );--color-blue-font: rgb(from var(--color-blue) calc(r - 50) calc(g - 50) calc(b - 50) );--color-green-font: rgb(from var(--color-green) calc(r - 50) calc(g - 50) calc(b - 50) );--color-red-font: rgb(from var(--color-red) calc(r - 50) calc(g - 50) calc(b - 50) )}html[data-theme=dark]{--color-base: #000000;--color-base-2: #1f1f1f;--color-base-bg: #23262ba0;--color-base-font: #e8e8e8;--color-gray-1: #444444;--color-gray-2: #555555;--color-gray-3: #6a6a6a;--color-gray-4: #888888;--color-gray-11: #cccccc;--color-bangumi-2: #ffb6bd;--color-bangumi-font: rgb(from var(--color-bangumi) calc(r + 50) calc(g + 50) calc(b + 50) );--color-yellow-font: rgb(from var(--color-yellow) calc(r + 50) calc(g + 50) calc(b + 50) );--color-purple-font: rgb(from var(--color-purple) calc(r + 50) calc(g + 50) calc(b + 50) );--color-blue-font: rgb(from var(--color-blue) calc(r + 50) calc(g + 50) calc(b + 50) );--color-green-font: rgb(from var(--color-green) calc(r + 50) calc(g + 50) calc(b + 50) );--color-red-font: rgb(from var(--color-red) calc(r + 50) calc(g + 50) calc(b + 50) )}html{--color-dock-sp: var(--color-gray-2);--color-switch-border: var(--color-gray-2);--color-switch-on: var(--color-green);--color-switch-off: var(--color-gray-4);--color-switch-bar-border: var(--color-white);--color-switch-bar-inner: var(--color-gray-11);--color-hover: var(--color-blue);--color-icon-btn-bg: rgb(from var(--color-bangumi) r g b / .25);--color-icon-btn-color: var(--color-white);--color-reply-sp: var(--color-gray-1);--color-reply-tips: var(--color-gray-3);--color-reply-normal: var(--color-bangumi);--color-reply-owner: var(--color-yellow);--color-reply-floor: var(--color-purple);--color-reply-friend: var(--color-green);--color-reply-self: var(--color-blue);--color-sticky-bg: rgb(from var(--color-base) r g b / .125);--color-sticky-border: rgb(from var(--color-bangumi) r g b / .25);--color-sticky-shadow: rgb(from var(--color-base) r g b / .05);--color-sticky-textarea: rgb(from var(--color-base) r g b / .8);--color-sticky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);--color-sticky-hover-border: var(--color-bangumi);--color-sticky-hover-shadow: var(--color-bangumi);--color-primary: var(--color-bangumi);--color-secondary: var(--color-blue);--color-success: var(--color-green);--color-info: var(--color-blue);--color-important: var(--color-purple);--color-warning: var(--color-yellow);--color-danger: var(--color-red)}*:has(>#comment_list){.postTopic{border-bottom:none;.inner.tips{display:flex;height:40px;align-items:center;gap:8px;color:var(--color-reply-tips)}}#comment_list{box-sizing:border-box;.row:nth-child(odd),.row:nth-child(2n){background:transparent}>.clearit:first-child{border-top:1px solid transparent}div.reply_collapse{padding:5px 10px}}.clearit:not(.message){transition:all .3s ease;box-sizing:border-box;border-bottom:none!important;border-top:1px dashed var(--color-reply-sp);.inner.tips{display:flex;height:40px;align-items:center;gap:8px;color:var(--color-reply-tips)}.sub_reply_collapse .inner.tips{height:auto}--color-reply: var(--color-bangumi)}.clearit.v-friend{--color-reply: var(--color-green)}.clearit.v-owner{--color-reply: var(--color-yellow)}.clearit.v-floor{--color-reply: var(--color-purple)}.clearit.v-self{--color-reply: var(--color-blue)}.clearit.v-friend,.clearit.v-owner,.clearit.v-floor,.clearit.v-self{border-top:1px solid var(--color-reply)!important;background:linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px,#0000 60px)!important;>.inner>:first-child>strong:before,>.inner>strong:before{padding:1px 4px;margin-right:4px;border-radius:2px;background:rgb(from var(--color-bangumi) r g b /.5);color:var(--color-bangumi-font)}}.clearit.reply_highlight{border:1px solid var(--color-reply)!important;background:rgb(from var(--color-reply) r g b / .125)!important;box-shadow:0 0 4px rgb(from var(--color-reply) r g b / .5);border-radius:0!important}.clearit:not(:has(.clearit:not(.message):hover),.message):hover{border-top:1px solid var(--color-reply)!important;background:linear-gradient(rgb(from var(--color-reply) r g b / .125) 1px,#0000 60px)!important;box-shadow:0 0 4px rgb(from var(--color-reply) r g b / .5)}.clearit.v-self{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA"}}.clearit.v-friend{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB"}}.clearit.v-owner{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u697C"}}.clearit.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u5C42"}}.clearit.v-friend.v-owner{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB \u697C"}}.clearit.v-friend.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB \u5C42"}}.clearit.v-owner.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u697C \u5C42"}}.clearit.v-self.v-owner{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA \u697C"}}.clearit.v-self.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA \u5C42"}}.clearit.v-friend.v-owner.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u53CB \u697C \u5C42"}}.clearit.v-self.v-owner.v-floor{>.inner>:first-child>strong:before,>.inner>strong:before{content:"\u81EA \u697C \u5C42"}}.clearit.v-collapse{position:relative!important;padding:5px 10px!important;.post_actions{margin:0!important}>a.avatar{display:none!important}>.inner{line-height:18px;span.sign.tip_j,>*:not(:first-child){display:none!important}}}.clearit.sub_reply_bg.v-collapse{padding:5px 0!important}.clearit.postTopic.v-collapse{padding:10px 5px!important}.clearit.v-collapse:before{content:"";width:14px;position:absolute;display:grid;place-items:center;top:0;left:0;height:100%;padding:0 4px;font-weight:900;color:var(--color-bangumi);text-shadow:0 0 5px rgb(from var(--color-bangumi-font) r g b / .25);background:linear-gradient(to right,var(--color-bangumi) 1px,rgb(from var(--color-bangumi) r g b / .125) 1px,#00000000)!important}.clearit.v-collapse:after{content:"";mask:url("data:image/svg+xml,%3csvg%20viewBox='0%200%2016%2016'%20xmlns='http://www.w3.org/2000/svg'%20width='14px'%20height='14px'%20fill='currentColor'%20%3e%3cpath%20d='M10.896%202H8.75V.75a.75.75%200%200%200-1.5%200V2H5.104a.25.25%200%200%200-.177.427l2.896%202.896a.25.25%200%200%200%20.354%200l2.896-2.896A.25.25%200%200%200%2010.896%202ZM8.75%2015.25a.75.75%200%200%201-1.5%200V14H5.104a.25.25%200%200%201-.177-.427l2.896-2.896a.25.25%200%200%201%20.354%200l2.896%202.896a.25.25%200%200%201-.177.427H8.75v1.25Zm-6.5-6.5a.75.75%200%200%200%200-1.5h-.5a.75.75%200%200%200%200%201.5h.5ZM6%208a.75.75%200%200%201-.75.75h-.5a.75.75%200%200%201%200-1.5h.5A.75.75%200%200%201%206%208Zm2.25.75a.75.75%200%200%200%200-1.5h-.5a.75.75%200%200%200%200%201.5h.5ZM12%208a.75.75%200%200%201-.75.75h-.5a.75.75%200%200%201%200-1.5h.5A.75.75%200%200%201%2012%208Zm2.25.75a.75.75%200%200%200%200-1.5h-.5a.75.75%200%200%200%200%201.5h.5Z'%3e%3c/path%3e%3c/svg%3e");width:14px;height:14px;position:absolute;left:2px;top:50%;background:var(--color-bangumi)!important;transform:translateY(-50%);visibility:visible}.post_actions{.action{gap:4px;a.icon:hover,a.icon{color:var(--color-gray-11);display:flex;align-items:center;justify-content:center;min-width:0;padding:0 1px;box-sizing:border-box}}.dropdown ul a{display:flex;align-items:center;cursor:pointer;gap:5px;padding:6px}}}#timeline .tml_item,#home_grp_tpc,#home_subject_tpc,#headerNeue2,#comment_list,#reply_wrapper,#comment_box,#subjectPanelIndex,#subjectPanelCollect,#columnB .SidePanel .side_port,#memberUserList,.postTopic{.userImage,.avatar{img,.avatarNeue{border-radius:50%!important}img.avatar_mn{width:28px!important;height:28px!important;padding:0!important;border:none!important}}}.prg_list{display:flex;flex-wrap:wrap} `);
 
 (async function () {
   'use strict';
@@ -303,15 +303,7 @@
     const lastVersion = (await db.get("values", "version"))?.version || 0;
     if (lastVersion < 5) {
       const users = await db.getAll("users");
-      for (const {
-        id,
-        names,
-        namesUpdate: update,
-        namesTml: tml,
-        block: block2,
-        note,
-        tags
-      } of users) {
+      for (const { id, names, namesUpdate: update, namesTml: tml, block: block2, note, tags } of users) {
         if (names && tml) {
           names.delete("");
           await db.put("usednames", { id, names, update, tml });
@@ -468,8 +460,6 @@
     return jsxRuntime.exports;
   }
   var jsxRuntimeExports = requireJsxRuntime();
-  var reactDom = { exports: {} };
-  var reactDom_production = {};
   var react = { exports: {} };
   var react_production = {};
   /**
@@ -920,6 +910,246 @@
     }
     return react.exports;
   }
+  var reactExports = requireReact();
+  function getNice(element) {
+    if (!element) return null;
+    return $(element).getNiceScroll?.(0);
+  }
+  async function it(element) {
+    if (!element) return null;
+    const nice = getNice(element);
+    if (nice) return nice;
+    await loadScript("https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js");
+    return $(element).niceScroll({
+      cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)",
+      cursorwidth: "4px",
+      cursorborder: "none"
+    });
+  }
+  function resize(element) {
+    const nice = getNice(element);
+    if (!nice) return;
+    nice.resize();
+  }
+  const whoami = /* @__PURE__ */ (() => {
+    let cache = null;
+    return () => {
+      if (cache) return cache;
+      let nid;
+      try {
+        nid = window.CHOBITS_UID ?? window.parent.CHOBITS_UID ?? CHOBITS_UID ?? 0;
+      } catch (e) {
+        nid = 0;
+      }
+      const dockA = window.parent.document.querySelector(
+        "#dock li.first a"
+      );
+      if (dockA) {
+        const id = dockA.href.split("/").pop();
+        return cache = { id, nid };
+      }
+      const bannerAvatar = window.parent.document.querySelector(
+        ".idBadgerNeue> .avatar"
+      );
+      if (bannerAvatar) {
+        const id = bannerAvatar.href.split("/").pop();
+        return cache = { id, nid };
+      }
+      return null;
+    };
+  })();
+  let blockeds = null;
+  const getBlockeds = /* @__PURE__ */ (() => {
+    let peddings = null;
+    const queryDB = async () => {
+      const list = await db.getAllKeys("users", 1, void 0, "blocked");
+      blockeds = new Set(list);
+      for (const pedding of peddings) pedding(blockeds);
+      peddings = null;
+    };
+    return async () => {
+      if (blockeds) return blockeds;
+      const p = peddings ?? [];
+      const pedding = new Promise((resolve) => p.push(resolve));
+      if (!peddings) {
+        peddings = p;
+        queryDB();
+      }
+      return pedding;
+    };
+  })();
+  async function isBlocked(id) {
+    const data = await db.get("users", id);
+    const isBlocked2 = !!data?.blocked;
+    if (!blockeds) return isBlocked2;
+    if (isBlocked2) blockeds.add(id);
+    else blockeds.delete(id);
+    return isBlocked2;
+  }
+  async function block(id) {
+    if (!confirm("确定要屏蔽吗？")) return false;
+    const data = await db.get("users", id) ?? { id };
+    await db.put("users", { ...data, blocked: 1 });
+    if (blockeds) blockeds.add(id);
+    return true;
+  }
+  async function unblock(id) {
+    if (!confirm("确定要解除屏蔽吗？")) return false;
+    const data = await db.get("users", id);
+    if (!data) return true;
+    delete data.blocked;
+    if (Object.keys(data).length > 1) await db.put("users", data);
+    else await db.delete("users", id);
+    if (blockeds) blockeds.delete(id);
+    return true;
+  }
+  async function connect(nid, gh) {
+    if (!confirm("真的要加好友吗？")) return false;
+    const ret = await fetch(`/connect/${nid}?gh=${gh}`);
+    return ret.ok;
+  }
+  async function disconnect(nid, gh) {
+    if (!confirm("真的要解除好友吗？")) return false;
+    const ret = await fetch(`/disconnect/${nid}?gh=${gh}`);
+    return ret.ok;
+  }
+  async function usednames(id) {
+    const data = await db.get("usednames", id) || {
+      names: /* @__PURE__ */ new Set()
+    };
+    if (data.update < Date.now() - 36e5) return data.names;
+    const getUsedNames = async (end, tml2, ret2 = [], page = 1) => {
+      const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`);
+      const html = await res.text();
+      const names2 = Array.from(
+        html.matchAll(/从 <strong>(?<from>.*?)<\/strong> 改名为/g),
+        (m) => m.groups?.from ?? ""
+      );
+      const tmls = Array.from(
+        html.matchAll(/<h4 class="Header">(?<tml>\d{4}-\d{1,2}-\d{1,2})<\/h4>/g),
+        (m) => m.groups?.tml ?? ""
+      );
+      if (!tml2) tml2 = tmls[0];
+      ret2.push(...names2);
+      if (tmls.includes(end) || !html.includes(">下一页 &rsaquo;&rsaquo;</a>"))
+        return { ret: ret2, tml: tml2 };
+      return getUsedNames(end, tml2, ret2, page + 1);
+    };
+    const { ret, tml } = await getUsedNames(data.tml);
+    const update = Date.now();
+    const names = new Set(ret).union(data.names);
+    names.delete("");
+    await db.put("usednames", { id, names, update, tml });
+    return names;
+  }
+  async function homepage(id) {
+    const res = await fetch("/user/" + id);
+    const me = whoami();
+    if (!res.ok) return null;
+    const html = await res.text();
+    const element = document.createElement("html");
+    element.innerHTML = html.replace(/<(img|script|link)/g, "<noload");
+    const nameSingle = element.querySelector("#headerProfile .nameSingle");
+    const bio = element.querySelector(".bio");
+    bio?.classList.remove("bio");
+    const name = nameSingle.querySelector(".name a").innerText;
+    const src = nameSingle.querySelector(".headerAvatar .avatar span").style.backgroundImage.replace('url("', "").replace('")', "");
+    const pinnedLayout = element.querySelector("#userStats_all");
+    const stats = Array.from(pinnedLayout.querySelectorAll(".gridStats > .item"), (e) => {
+      const name2 = e.lastElementChild.innerText;
+      let type2;
+      switch (name2) {
+        case "收藏":
+          type2 = "coll";
+          break;
+        case "完成":
+          type2 = "done";
+          break;
+        case "完成率":
+          type2 = "rate";
+          break;
+        case "平均分":
+          type2 = "avg";
+          break;
+        case "标准差":
+          type2 = "std";
+          break;
+        case "评分数":
+          type2 = "cnt";
+          break;
+      }
+      return {
+        type: type2,
+        name: name2,
+        value: e.firstElementChild.innerText
+      };
+    });
+    const chart = Array.from(pinnedLayout.querySelectorAll("#ChartWarpper li > a"), (e) => {
+      return {
+        label: e.firstElementChild.innerText,
+        value: parseInt(e.lastElementChild.innerText.replace(/[()]/g, ""))
+      };
+    });
+    if (me.nid == 0) return { type: "guest", name, src, bio, stats, chart };
+    if (me.id == id) return { type: "self", name, src, bio, stats, chart };
+    const actions = nameSingle.querySelectorAll(
+      "#headerProfile .actions a.chiiBtn"
+    );
+    const nid = actions[1].href.split("/").pop()?.replace(".chii", "") ?? "";
+    const friend = actions[0].innerText == "解除好友";
+    const gh = friend ? actions[0].getAttribute("onclick")?.split(",").pop()?.split(/['"]/)[1] : actions[0].href.split("gh=").pop();
+    const type = friend ? "friend" : "normal";
+    return { type, name, src, bio, nid, gh: gh ?? "", stats, chart };
+  }
+  async function getNote(id) {
+    return (await db.get("users", id))?.note || "";
+  }
+  async function setNote(id, note) {
+    const data = await db.get("users", id);
+    if (!data) {
+      if (note) await db.put("users", { id, note });
+      return note;
+    }
+    if (note) data.note = note;
+    else delete data.note;
+    if (Object.keys(data).length > 1) await db.put("users", data);
+    else await db.delete("users", id);
+    return note;
+  }
+  async function getTags(id) {
+    return (await db.get("users", id))?.tags || /* @__PURE__ */ new Set();
+  }
+  async function setTagsByString(id, tags) {
+    return setTags(
+      id,
+      tags.split("\n").map((tag) => tag.trim())
+    );
+  }
+  async function setTags(id, tags) {
+    const tagset = new Set(tags);
+    tagset.delete("");
+    const data = await db.get("users", id);
+    if (!data) {
+      if (tagset.size) await db.put("users", { id, tags: tagset });
+      return tagset;
+    }
+    if (tagset.size) data.tags = tagset;
+    else delete data.tags;
+    if (Object.keys(data).length > 1) await db.put("users", data);
+    else await db.delete("users", id);
+    return tagset;
+  }
+  function goHome(id) {
+    newTab("/user/" + id);
+  }
+  function goPm(nid) {
+    newTab("/pm/compose/" + nid + ".chii");
+  }
+  function goLogin() {
+    newTab("/login");
+  }
+  var reactDom = { exports: {} };
+  var reactDom_production = {};
   /**
    * @license React
    * react-dom.production.js
@@ -1684,17 +1914,17 @@
           return lanes;
       }
     }
-    function getNextLanes(root3, wipLanes, rootHasPendingCommit) {
-      var pendingLanes = root3.pendingLanes;
+    function getNextLanes(root2, wipLanes, rootHasPendingCommit) {
+      var pendingLanes = root2.pendingLanes;
       if (0 === pendingLanes) return 0;
-      var nextLanes = 0, suspendedLanes = root3.suspendedLanes, pingedLanes = root3.pingedLanes;
-      root3 = root3.warmLanes;
+      var nextLanes = 0, suspendedLanes = root2.suspendedLanes, pingedLanes = root2.pingedLanes;
+      root2 = root2.warmLanes;
       var nonIdlePendingLanes = pendingLanes & 134217727;
-      0 !== nonIdlePendingLanes ? (pendingLanes = nonIdlePendingLanes & ~suspendedLanes, 0 !== pendingLanes ? nextLanes = getHighestPriorityLanes(pendingLanes) : (pingedLanes &= nonIdlePendingLanes, 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = nonIdlePendingLanes & ~root3, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))))) : (nonIdlePendingLanes = pendingLanes & ~suspendedLanes, 0 !== nonIdlePendingLanes ? nextLanes = getHighestPriorityLanes(nonIdlePendingLanes) : 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = pendingLanes & ~root3, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))));
+      0 !== nonIdlePendingLanes ? (pendingLanes = nonIdlePendingLanes & ~suspendedLanes, 0 !== pendingLanes ? nextLanes = getHighestPriorityLanes(pendingLanes) : (pingedLanes &= nonIdlePendingLanes, 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = nonIdlePendingLanes & ~root2, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))))) : (nonIdlePendingLanes = pendingLanes & ~suspendedLanes, 0 !== nonIdlePendingLanes ? nextLanes = getHighestPriorityLanes(nonIdlePendingLanes) : 0 !== pingedLanes ? nextLanes = getHighestPriorityLanes(pingedLanes) : rootHasPendingCommit || (rootHasPendingCommit = pendingLanes & ~root2, 0 !== rootHasPendingCommit && (nextLanes = getHighestPriorityLanes(rootHasPendingCommit))));
       return 0 === nextLanes ? 0 : 0 !== wipLanes && wipLanes !== nextLanes && 0 === (wipLanes & suspendedLanes) && (suspendedLanes = nextLanes & -nextLanes, rootHasPendingCommit = wipLanes & -wipLanes, suspendedLanes >= rootHasPendingCommit || 32 === suspendedLanes && 0 !== (rootHasPendingCommit & 4194048)) ? wipLanes : nextLanes;
     }
-    function checkIfRootIsPrerendering(root3, renderLanes2) {
-      return 0 === (root3.pendingLanes & ~(root3.suspendedLanes & ~root3.pingedLanes) & renderLanes2);
+    function checkIfRootIsPrerendering(root2, renderLanes2) {
+      return 0 === (root2.pendingLanes & ~(root2.suspendedLanes & ~root2.pingedLanes) & renderLanes2);
     }
     function computeExpirationTime(lane, currentTime) {
       switch (lane) {
@@ -1753,21 +1983,21 @@
       for (var laneMap = [], i = 0; 31 > i; i++) laneMap.push(initial);
       return laneMap;
     }
-    function markRootUpdated$1(root3, updateLane) {
-      root3.pendingLanes |= updateLane;
-      268435456 !== updateLane && (root3.suspendedLanes = 0, root3.pingedLanes = 0, root3.warmLanes = 0);
+    function markRootUpdated$1(root2, updateLane) {
+      root2.pendingLanes |= updateLane;
+      268435456 !== updateLane && (root2.suspendedLanes = 0, root2.pingedLanes = 0, root2.warmLanes = 0);
     }
-    function markRootFinished(root3, finishedLanes, remainingLanes, spawnedLane, updatedLanes, suspendedRetryLanes) {
-      var previouslyPendingLanes = root3.pendingLanes;
-      root3.pendingLanes = remainingLanes;
-      root3.suspendedLanes = 0;
-      root3.pingedLanes = 0;
-      root3.warmLanes = 0;
-      root3.expiredLanes &= remainingLanes;
-      root3.entangledLanes &= remainingLanes;
-      root3.errorRecoveryDisabledLanes &= remainingLanes;
-      root3.shellSuspendCounter = 0;
-      var entanglements = root3.entanglements, expirationTimes = root3.expirationTimes, hiddenUpdates = root3.hiddenUpdates;
+    function markRootFinished(root2, finishedLanes, remainingLanes, spawnedLane, updatedLanes, suspendedRetryLanes) {
+      var previouslyPendingLanes = root2.pendingLanes;
+      root2.pendingLanes = remainingLanes;
+      root2.suspendedLanes = 0;
+      root2.pingedLanes = 0;
+      root2.warmLanes = 0;
+      root2.expiredLanes &= remainingLanes;
+      root2.entangledLanes &= remainingLanes;
+      root2.errorRecoveryDisabledLanes &= remainingLanes;
+      root2.shellSuspendCounter = 0;
+      var entanglements = root2.entanglements, expirationTimes = root2.expirationTimes, hiddenUpdates = root2.hiddenUpdates;
       for (remainingLanes = previouslyPendingLanes & ~remainingLanes; 0 < remainingLanes; ) {
         var index$5 = 31 - clz32(remainingLanes), lane = 1 << index$5;
         entanglements[index$5] = 0;
@@ -1780,21 +2010,21 @@
           }
         remainingLanes &= ~lane;
       }
-      0 !== spawnedLane && markSpawnedDeferredLane(root3, spawnedLane, 0);
-      0 !== suspendedRetryLanes && 0 === updatedLanes && 0 !== root3.tag && (root3.suspendedLanes |= suspendedRetryLanes & ~(previouslyPendingLanes & ~finishedLanes));
+      0 !== spawnedLane && markSpawnedDeferredLane(root2, spawnedLane, 0);
+      0 !== suspendedRetryLanes && 0 === updatedLanes && 0 !== root2.tag && (root2.suspendedLanes |= suspendedRetryLanes & ~(previouslyPendingLanes & ~finishedLanes));
     }
-    function markSpawnedDeferredLane(root3, spawnedLane, entangledLanes) {
-      root3.pendingLanes |= spawnedLane;
-      root3.suspendedLanes &= ~spawnedLane;
+    function markSpawnedDeferredLane(root2, spawnedLane, entangledLanes) {
+      root2.pendingLanes |= spawnedLane;
+      root2.suspendedLanes &= ~spawnedLane;
       var spawnedLaneIndex = 31 - clz32(spawnedLane);
-      root3.entangledLanes |= spawnedLane;
-      root3.entanglements[spawnedLaneIndex] = root3.entanglements[spawnedLaneIndex] | 1073741824 | entangledLanes & 4194090;
+      root2.entangledLanes |= spawnedLane;
+      root2.entanglements[spawnedLaneIndex] = root2.entanglements[spawnedLaneIndex] | 1073741824 | entangledLanes & 4194090;
     }
-    function markRootEntangled(root3, entangledLanes) {
-      var rootEntangledLanes = root3.entangledLanes |= entangledLanes;
-      for (root3 = root3.entanglements; rootEntangledLanes; ) {
+    function markRootEntangled(root2, entangledLanes) {
+      var rootEntangledLanes = root2.entangledLanes |= entangledLanes;
+      for (root2 = root2.entanglements; rootEntangledLanes; ) {
         var index$6 = 31 - clz32(rootEntangledLanes), lane = 1 << index$6;
-        lane & entangledLanes | root3[index$6] & entangledLanes && (root3[index$6] |= entangledLanes);
+        lane & entangledLanes | root2[index$6] & entangledLanes && (root2[index$6] |= entangledLanes);
         rootEntangledLanes &= ~lane;
       }
     }
@@ -1894,9 +2124,9 @@
       if (5 === tag || 26 === tag || 27 === tag || 6 === tag) return inst.stateNode;
       throw Error(formatProdErrorMessage(33));
     }
-    function getResourcesFromRoot(root3) {
-      var resources = root3[internalRootNodeResourcesKey];
-      resources || (resources = root3[internalRootNodeResourcesKey] = { hoistableStyles: /* @__PURE__ */ new Map(), hoistableScripts: /* @__PURE__ */ new Map() });
+    function getResourcesFromRoot(root2) {
+      var resources = root2[internalRootNodeResourcesKey];
+      resources || (resources = root2[internalRootNodeResourcesKey] = { hoistableStyles: /* @__PURE__ */ new Map(), hoistableScripts: /* @__PURE__ */ new Map() });
       return resources;
     }
     function markNodeAsHoistable(node) {
@@ -2526,10 +2756,10 @@
       } catch (e) {
         passiveBrowserEventsSupported = false;
       }
-    var root2 = null, startText = null, fallbackText = null;
+    var root = null, startText = null, fallbackText = null;
     function getData() {
       if (fallbackText) return fallbackText;
-      var start, startValue = startText, startLength = startValue.length, end, endValue = "value" in root2 ? root2.value : root2.textContent, endLength = endValue.length;
+      var start, startValue = startText, startLength = startValue.length, end, endValue = "value" in root ? root.value : root.textContent, endLength = endValue.length;
       for (start = 0; start < startLength && startValue[start] === endValue[start]; start++) ;
       var minEnd = startLength - start;
       for (end = 1; end <= minEnd && startValue[startLength - end] === endValue[endLength - end]; end++) ;
@@ -2782,7 +3012,7 @@
     }
     function getFallbackBeforeInputChars(domEventName, nativeEvent) {
       if (isComposing)
-        return "compositionend" === domEventName || !canUseCompositionEvent && isFallbackCompositionEnd(domEventName, nativeEvent) ? (domEventName = getData(), fallbackText = startText = root2 = null, isComposing = false, domEventName) : null;
+        return "compositionend" === domEventName || !canUseCompositionEvent && isFallbackCompositionEnd(domEventName, nativeEvent) ? (domEventName = getData(), fallbackText = startText = root = null, isComposing = false, domEventName) : null;
       switch (domEventName) {
         case "paste":
           return null;
@@ -2906,15 +3136,15 @@
       for (; node && node.firstChild; ) node = node.firstChild;
       return node;
     }
-    function getNodeForCharacterOffset(root3, offset) {
-      var node = getLeafNode(root3);
-      root3 = 0;
+    function getNodeForCharacterOffset(root2, offset) {
+      var node = getLeafNode(root2);
+      root2 = 0;
       for (var nodeEnd; node; ) {
         if (3 === node.nodeType) {
-          nodeEnd = root3 + node.textContent.length;
-          if (root3 <= offset && nodeEnd >= offset)
-            return { node, offset: offset - root3 };
-          root3 = nodeEnd;
+          nodeEnd = root2 + node.textContent.length;
+          if (root2 <= offset && nodeEnd >= offset)
+            return { node, offset: offset - root2 };
+          root2 = nodeEnd;
         }
         a: {
           for (; node; ) {
@@ -3710,14 +3940,14 @@
       enqueueUpdate$1(fiber, updateQueue, update, lane);
       return getRootForUpdatedFiber(fiber);
     }
-    function entangleTransitions(root3, fiber, lane) {
+    function entangleTransitions(root2, fiber, lane) {
       fiber = fiber.updateQueue;
       if (null !== fiber && (fiber = fiber.shared, 0 !== (lane & 4194048))) {
         var queueLanes = fiber.lanes;
-        queueLanes &= root3.pendingLanes;
+        queueLanes &= root2.pendingLanes;
         lane |= queueLanes;
         fiber.lanes = lane;
-        markRootEntangled(root3, lane);
+        markRootEntangled(root2, lane);
       }
     }
     function enqueueCapturedUpdate(workInProgress2, capturedUpdate) {
@@ -4196,8 +4426,8 @@
       }
     }
     function forceStoreRerender(fiber) {
-      var root3 = enqueueConcurrentRenderForLane(fiber, 2);
-      null !== root3 && scheduleUpdateOnFiber(root3, fiber, 2);
+      var root2 = enqueueConcurrentRenderForLane(fiber, 2);
+      null !== root2 && scheduleUpdateOnFiber(root2, fiber, 2);
     }
     function mountStateImpl(initialState) {
       var hook = mountWorkInProgressHook();
@@ -4743,13 +4973,13 @@
       null === pending ? update.next = update : (update.next = pending.next, pending.next = update);
       queue.pending = update;
     }
-    function entangleTransitionUpdate(root3, queue, lane) {
+    function entangleTransitionUpdate(root2, queue, lane) {
       if (0 !== (lane & 4194048)) {
         var queueLanes = queue.lanes;
-        queueLanes &= root3.pendingLanes;
+        queueLanes &= root2.pendingLanes;
         lane |= queueLanes;
         queue.lanes = lane;
-        markRootEntangled(root3, lane);
+        markRootEntangled(root2, lane);
       }
     }
     var ContextOnlyDispatcher = {
@@ -5638,9 +5868,9 @@
     function defaultOnRecoverableError(error) {
       reportGlobalError(error);
     }
-    function logUncaughtError(root3, errorInfo) {
+    function logUncaughtError(root2, errorInfo) {
       try {
-        var onUncaughtError = root3.onUncaughtError;
+        var onUncaughtError = root2.onUncaughtError;
         onUncaughtError(errorInfo.value, { componentStack: errorInfo.stack });
       } catch (e$74) {
         setTimeout(function() {
@@ -5648,9 +5878,9 @@
         });
       }
     }
-    function logCaughtError(root3, boundary, errorInfo) {
+    function logCaughtError(root2, boundary, errorInfo) {
       try {
-        var onCaughtError = root3.onCaughtError;
+        var onCaughtError = root2.onCaughtError;
         onCaughtError(errorInfo.value, {
           componentStack: errorInfo.stack,
           errorBoundary: 1 === boundary.tag ? boundary.stateNode : null
@@ -5661,12 +5891,12 @@
         });
       }
     }
-    function createRootErrorUpdate(root3, errorInfo, lane) {
+    function createRootErrorUpdate(root2, errorInfo, lane) {
       lane = createUpdate(lane);
       lane.tag = 3;
       lane.payload = { element: null };
       lane.callback = function() {
-        logUncaughtError(root3, errorInfo);
+        logUncaughtError(root2, errorInfo);
       };
       return lane;
     }
@@ -5675,7 +5905,7 @@
       lane.tag = 3;
       return lane;
     }
-    function initializeClassErrorUpdate(update, root3, fiber, errorInfo) {
+    function initializeClassErrorUpdate(update, root2, fiber, errorInfo) {
       var getDerivedStateFromError = fiber.type.getDerivedStateFromError;
       if ("function" === typeof getDerivedStateFromError) {
         var error = errorInfo.value;
@@ -5683,12 +5913,12 @@
           return getDerivedStateFromError(error);
         };
         update.callback = function() {
-          logCaughtError(root3, fiber, errorInfo);
+          logCaughtError(root2, fiber, errorInfo);
         };
       }
       var inst = fiber.stateNode;
       null !== inst && "function" === typeof inst.componentDidCatch && (update.callback = function() {
-        logCaughtError(root3, fiber, errorInfo);
+        logCaughtError(root2, fiber, errorInfo);
         "function" !== typeof getDerivedStateFromError && (null === legacyErrorBoundariesThatAlreadyFailed ? legacyErrorBoundariesThatAlreadyFailed = /* @__PURE__ */ new Set([this]) : legacyErrorBoundariesThatAlreadyFailed.add(this));
         var stack = errorInfo.stack;
         this.componentDidCatch(errorInfo.value, {
@@ -5696,7 +5926,7 @@
         });
       });
     }
-    function throwException(root3, returnFiber, sourceFiber, value, rootRenderLanes) {
+    function throwException(root2, returnFiber, sourceFiber, value, rootRenderLanes) {
       sourceFiber.flags |= 32768;
       if (null !== value && "object" === typeof value && "function" === typeof value.then) {
         returnFiber = sourceFiber.alternate;
@@ -5710,30 +5940,30 @@
         if (null !== sourceFiber) {
           switch (sourceFiber.tag) {
             case 13:
-              return null === shellBoundary ? renderDidSuspendDelayIfPossible() : null === sourceFiber.alternate && 0 === workInProgressRootExitStatus && (workInProgressRootExitStatus = 3), sourceFiber.flags &= -257, sourceFiber.flags |= 65536, sourceFiber.lanes = rootRenderLanes, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? sourceFiber.updateQueue = /* @__PURE__ */ new Set([value]) : returnFiber.add(value), attachPingListener(root3, value, rootRenderLanes)), false;
+              return null === shellBoundary ? renderDidSuspendDelayIfPossible() : null === sourceFiber.alternate && 0 === workInProgressRootExitStatus && (workInProgressRootExitStatus = 3), sourceFiber.flags &= -257, sourceFiber.flags |= 65536, sourceFiber.lanes = rootRenderLanes, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? sourceFiber.updateQueue = /* @__PURE__ */ new Set([value]) : returnFiber.add(value), attachPingListener(root2, value, rootRenderLanes)), false;
             case 22:
               return sourceFiber.flags |= 65536, value === noopSuspenseyCommitThenable ? sourceFiber.flags |= 16384 : (returnFiber = sourceFiber.updateQueue, null === returnFiber ? (returnFiber = {
                 transitions: null,
                 markerInstances: null,
                 retryQueue: /* @__PURE__ */ new Set([value])
-              }, sourceFiber.updateQueue = returnFiber) : (sourceFiber = returnFiber.retryQueue, null === sourceFiber ? returnFiber.retryQueue = /* @__PURE__ */ new Set([value]) : sourceFiber.add(value)), attachPingListener(root3, value, rootRenderLanes)), false;
+              }, sourceFiber.updateQueue = returnFiber) : (sourceFiber = returnFiber.retryQueue, null === sourceFiber ? returnFiber.retryQueue = /* @__PURE__ */ new Set([value]) : sourceFiber.add(value)), attachPingListener(root2, value, rootRenderLanes)), false;
           }
           throw Error(formatProdErrorMessage(435, sourceFiber.tag));
         }
-        attachPingListener(root3, value, rootRenderLanes);
+        attachPingListener(root2, value, rootRenderLanes);
         renderDidSuspendDelayIfPossible();
         return false;
       }
       if (isHydrating)
-        return returnFiber = suspenseHandlerStackCursor.current, null !== returnFiber ? (0 === (returnFiber.flags & 65536) && (returnFiber.flags |= 256), returnFiber.flags |= 65536, returnFiber.lanes = rootRenderLanes, value !== HydrationMismatchException && (root3 = Error(formatProdErrorMessage(422), { cause: value }), queueHydrationError(createCapturedValueAtFiber(root3, sourceFiber)))) : (value !== HydrationMismatchException && (returnFiber = Error(formatProdErrorMessage(423), {
+        return returnFiber = suspenseHandlerStackCursor.current, null !== returnFiber ? (0 === (returnFiber.flags & 65536) && (returnFiber.flags |= 256), returnFiber.flags |= 65536, returnFiber.lanes = rootRenderLanes, value !== HydrationMismatchException && (root2 = Error(formatProdErrorMessage(422), { cause: value }), queueHydrationError(createCapturedValueAtFiber(root2, sourceFiber)))) : (value !== HydrationMismatchException && (returnFiber = Error(formatProdErrorMessage(423), {
           cause: value
         }), queueHydrationError(
           createCapturedValueAtFiber(returnFiber, sourceFiber)
-        )), root3 = root3.current.alternate, root3.flags |= 65536, rootRenderLanes &= -rootRenderLanes, root3.lanes |= rootRenderLanes, value = createCapturedValueAtFiber(value, sourceFiber), rootRenderLanes = createRootErrorUpdate(
-          root3.stateNode,
+        )), root2 = root2.current.alternate, root2.flags |= 65536, rootRenderLanes &= -rootRenderLanes, root2.lanes |= rootRenderLanes, value = createCapturedValueAtFiber(value, sourceFiber), rootRenderLanes = createRootErrorUpdate(
+          root2.stateNode,
           value,
           rootRenderLanes
-        ), enqueueCapturedUpdate(root3, rootRenderLanes), 4 !== workInProgressRootExitStatus && (workInProgressRootExitStatus = 2)), false;
+        ), enqueueCapturedUpdate(root2, rootRenderLanes), 4 !== workInProgressRootExitStatus && (workInProgressRootExitStatus = 2)), false;
       var wrapperError = Error(formatProdErrorMessage(520), { cause: value });
       wrapperError = createCapturedValueAtFiber(wrapperError, sourceFiber);
       null === workInProgressRootConcurrentErrors ? workInProgressRootConcurrentErrors = [wrapperError] : workInProgressRootConcurrentErrors.push(wrapperError);
@@ -5744,12 +5974,12 @@
       do {
         switch (sourceFiber.tag) {
           case 3:
-            return sourceFiber.flags |= 65536, root3 = rootRenderLanes & -rootRenderLanes, sourceFiber.lanes |= root3, root3 = createRootErrorUpdate(sourceFiber.stateNode, value, root3), enqueueCapturedUpdate(sourceFiber, root3), false;
+            return sourceFiber.flags |= 65536, root2 = rootRenderLanes & -rootRenderLanes, sourceFiber.lanes |= root2, root2 = createRootErrorUpdate(sourceFiber.stateNode, value, root2), enqueueCapturedUpdate(sourceFiber, root2), false;
           case 1:
             if (returnFiber = sourceFiber.type, wrapperError = sourceFiber.stateNode, 0 === (sourceFiber.flags & 128) && ("function" === typeof returnFiber.getDerivedStateFromError || null !== wrapperError && "function" === typeof wrapperError.componentDidCatch && (null === legacyErrorBoundariesThatAlreadyFailed || !legacyErrorBoundariesThatAlreadyFailed.has(wrapperError))))
               return sourceFiber.flags |= 65536, rootRenderLanes &= -rootRenderLanes, sourceFiber.lanes |= rootRenderLanes, rootRenderLanes = createClassErrorUpdate(rootRenderLanes), initializeClassErrorUpdate(
                 rootRenderLanes,
-                root3,
+                root2,
                 sourceFiber,
                 value
               ), enqueueCapturedUpdate(sourceFiber, rootRenderLanes), false;
@@ -7394,19 +7624,19 @@
       }
     }
     var offscreenSubtreeIsHidden = false, offscreenSubtreeWasHidden = false, needsFormReset = false, PossiblyWeakSet = "function" === typeof WeakSet ? WeakSet : Set, nextEffect = null;
-    function commitBeforeMutationEffects(root3, firstChild) {
-      root3 = root3.containerInfo;
+    function commitBeforeMutationEffects(root2, firstChild) {
+      root2 = root2.containerInfo;
       eventsEnabled = _enabled;
-      root3 = getActiveElementDeep(root3);
-      if (hasSelectionCapabilities(root3)) {
-        if ("selectionStart" in root3)
+      root2 = getActiveElementDeep(root2);
+      if (hasSelectionCapabilities(root2)) {
+        if ("selectionStart" in root2)
           var JSCompiler_temp = {
-            start: root3.selectionStart,
-            end: root3.selectionEnd
+            start: root2.selectionStart,
+            end: root2.selectionEnd
           };
         else
           a: {
-            JSCompiler_temp = (JSCompiler_temp = root3.ownerDocument) && JSCompiler_temp.defaultView || window;
+            JSCompiler_temp = (JSCompiler_temp = root2.ownerDocument) && JSCompiler_temp.defaultView || window;
             var selection = JSCompiler_temp.getSelection && JSCompiler_temp.getSelection();
             if (selection && 0 !== selection.rangeCount) {
               JSCompiler_temp = selection.anchorNode;
@@ -7418,7 +7648,7 @@
                 JSCompiler_temp = null;
                 break a;
               }
-              var length = 0, start = -1, end = -1, indexWithinAnchor = 0, indexWithinFocus = 0, node = root3, parentNode = null;
+              var length = 0, start = -1, end = -1, indexWithinAnchor = 0, indexWithinFocus = 0, node = root2, parentNode = null;
               b: for (; ; ) {
                 for (var next; ; ) {
                   node !== JSCompiler_temp || 0 !== anchorOffset && 3 !== node.nodeType || (start = length + anchorOffset);
@@ -7429,7 +7659,7 @@
                   node = next;
                 }
                 for (; ; ) {
-                  if (node === root3) break b;
+                  if (node === root2) break b;
                   parentNode === JSCompiler_temp && ++indexWithinAnchor === anchorOffset && (start = length);
                   parentNode === focusNode && ++indexWithinFocus === selection && (end = length);
                   if (null !== (next = node.nextSibling)) break;
@@ -7443,16 +7673,16 @@
           }
         JSCompiler_temp = JSCompiler_temp || { start: 0, end: 0 };
       } else JSCompiler_temp = null;
-      selectionInformation = { focusedElem: root3, selectionRange: JSCompiler_temp };
+      selectionInformation = { focusedElem: root2, selectionRange: JSCompiler_temp };
       _enabled = false;
       for (nextEffect = firstChild; null !== nextEffect; )
-        if (firstChild = nextEffect, root3 = firstChild.child, 0 !== (firstChild.subtreeFlags & 1024) && null !== root3)
-          root3.return = firstChild, nextEffect = root3;
+        if (firstChild = nextEffect, root2 = firstChild.child, 0 !== (firstChild.subtreeFlags & 1024) && null !== root2)
+          root2.return = firstChild, nextEffect = root2;
         else
           for (; null !== nextEffect; ) {
             firstChild = nextEffect;
             focusNode = firstChild.alternate;
-            root3 = firstChild.flags;
+            root2 = firstChild.flags;
             switch (firstChild.tag) {
               case 0:
                 break;
@@ -7460,8 +7690,8 @@
               case 15:
                 break;
               case 1:
-                if (0 !== (root3 & 1024) && null !== focusNode) {
-                  root3 = void 0;
+                if (0 !== (root2 & 1024) && null !== focusNode) {
+                  root2 = void 0;
                   JSCompiler_temp = firstChild;
                   anchorOffset = focusNode.memoizedProps;
                   focusNode = focusNode.memoizedState;
@@ -7472,11 +7702,11 @@
                       anchorOffset,
                       JSCompiler_temp.elementType === JSCompiler_temp.type
                     );
-                    root3 = selection.getSnapshotBeforeUpdate(
+                    root2 = selection.getSnapshotBeforeUpdate(
                       resolvedPrevProps,
                       focusNode
                     );
-                    selection.__reactInternalSnapshotBeforeUpdate = root3;
+                    selection.__reactInternalSnapshotBeforeUpdate = root2;
                   } catch (error) {
                     captureCommitPhaseError(
                       JSCompiler_temp,
@@ -7487,18 +7717,18 @@
                 }
                 break;
               case 3:
-                if (0 !== (root3 & 1024)) {
-                  if (root3 = firstChild.stateNode.containerInfo, JSCompiler_temp = root3.nodeType, 9 === JSCompiler_temp)
-                    clearContainerSparingly(root3);
+                if (0 !== (root2 & 1024)) {
+                  if (root2 = firstChild.stateNode.containerInfo, JSCompiler_temp = root2.nodeType, 9 === JSCompiler_temp)
+                    clearContainerSparingly(root2);
                   else if (1 === JSCompiler_temp)
-                    switch (root3.nodeName) {
+                    switch (root2.nodeName) {
                       case "HEAD":
                       case "HTML":
                       case "BODY":
-                        clearContainerSparingly(root3);
+                        clearContainerSparingly(root2);
                         break;
                       default:
-                        root3.textContent = "";
+                        root2.textContent = "";
                     }
                 }
                 break;
@@ -7510,12 +7740,12 @@
               case 17:
                 break;
               default:
-                if (0 !== (root3 & 1024)) throw Error(formatProdErrorMessage(163));
+                if (0 !== (root2 & 1024)) throw Error(formatProdErrorMessage(163));
             }
-            root3 = firstChild.sibling;
-            if (null !== root3) {
-              root3.return = firstChild.return;
-              nextEffect = root3;
+            root2 = firstChild.sibling;
+            if (null !== root2) {
+              root2.return = firstChild.return;
+              nextEffect = root2;
               break;
             }
             nextEffect = firstChild.return;
@@ -7807,7 +8037,7 @@
       var deletions = parentFiber.deletions;
       if (null !== deletions)
         for (var i = 0; i < deletions.length; i++) {
-          var childToDelete = deletions[i], root3 = root$jscomp$0, returnFiber = parentFiber, parent = returnFiber;
+          var childToDelete = deletions[i], root2 = root$jscomp$0, returnFiber = parentFiber, parent = returnFiber;
           a: for (; null !== parent; ) {
             switch (parent.tag) {
               case 27:
@@ -7830,11 +8060,11 @@
             parent = parent.return;
           }
           if (null === hostParent) throw Error(formatProdErrorMessage(160));
-          commitDeletionEffectsOnFiber(root3, returnFiber, childToDelete);
+          commitDeletionEffectsOnFiber(root2, returnFiber, childToDelete);
           hostParent = null;
           hostParentIsContainer = false;
-          root3 = childToDelete.alternate;
-          null !== root3 && (root3.return = null);
+          root2 = childToDelete.alternate;
+          null !== root2 && (root2.return = null);
           childToDelete.return = null;
         }
       if (parentFiber.subtreeFlags & 13878)
@@ -7842,26 +8072,26 @@
           commitMutationEffectsOnFiber(parentFiber, root$jscomp$0), parentFiber = parentFiber.sibling;
     }
     var currentHoistableRoot = null;
-    function commitMutationEffectsOnFiber(finishedWork, root3) {
+    function commitMutationEffectsOnFiber(finishedWork, root2) {
       var current = finishedWork.alternate, flags = finishedWork.flags;
       switch (finishedWork.tag) {
         case 0:
         case 11:
         case 14:
         case 15:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 4 && (commitHookEffectListUnmount(3, finishedWork, finishedWork.return), commitHookEffectListMount(3, finishedWork), commitHookEffectListUnmount(5, finishedWork, finishedWork.return));
           break;
         case 1:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           flags & 64 && offscreenSubtreeIsHidden && (finishedWork = finishedWork.updateQueue, null !== finishedWork && (flags = finishedWork.callbacks, null !== flags && (current = finishedWork.shared.hiddenCallbacks, finishedWork.shared.hiddenCallbacks = null === current ? flags : current.concat(flags))));
           break;
         case 26:
           var hoistableRoot = currentHoistableRoot;
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           if (flags & 4) {
@@ -7957,7 +8187,7 @@
           }
           break;
         case 27:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           null !== current && flags & 4 && commitHostUpdate(
@@ -7967,7 +8197,7 @@
           );
           break;
         case 5:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 512 && (offscreenSubtreeWasHidden || null === current || safelyDetachRef(current, current.return));
           if (finishedWork.flags & 32) {
@@ -7986,7 +8216,7 @@
           flags & 1024 && (needsFormReset = true);
           break;
         case 6:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           if (flags & 4) {
             if (null === finishedWork.stateNode)
@@ -8003,13 +8233,13 @@
         case 3:
           tagCaches = null;
           hoistableRoot = currentHoistableRoot;
-          currentHoistableRoot = getHoistableRoot(root3.containerInfo);
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          currentHoistableRoot = getHoistableRoot(root2.containerInfo);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           currentHoistableRoot = hoistableRoot;
           commitReconciliationEffects(finishedWork);
           if (flags & 4 && null !== current && current.memoizedState.isDehydrated)
             try {
-              retryIfBlockedOn(root3.containerInfo);
+              retryIfBlockedOn(root2.containerInfo);
             } catch (error) {
               captureCommitPhaseError(finishedWork, finishedWork.return, error);
             }
@@ -8020,16 +8250,16 @@
           currentHoistableRoot = getHoistableRoot(
             finishedWork.stateNode.containerInfo
           );
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           currentHoistableRoot = flags;
           break;
         case 12:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           break;
         case 13:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           finishedWork.child.flags & 8192 && null !== finishedWork.memoizedState !== (null !== current && null !== current.memoizedState) && (globalMostRecentFallbackTime = now());
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
@@ -8039,15 +8269,15 @@
           var wasHidden = null !== current && null !== current.memoizedState, prevOffscreenSubtreeIsHidden = offscreenSubtreeIsHidden, prevOffscreenSubtreeWasHidden = offscreenSubtreeWasHidden;
           offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden || hoistableRoot;
           offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden || wasHidden;
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           offscreenSubtreeWasHidden = prevOffscreenSubtreeWasHidden;
           offscreenSubtreeIsHidden = prevOffscreenSubtreeIsHidden;
           commitReconciliationEffects(finishedWork);
           if (flags & 8192)
-            a: for (root3 = finishedWork.stateNode, root3._visibility = hoistableRoot ? root3._visibility & -2 : root3._visibility | 1, hoistableRoot && (null === current || wasHidden || offscreenSubtreeIsHidden || offscreenSubtreeWasHidden || recursivelyTraverseDisappearLayoutEffects(finishedWork)), current = null, root3 = finishedWork; ; ) {
-              if (5 === root3.tag || 26 === root3.tag) {
+            a: for (root2 = finishedWork.stateNode, root2._visibility = hoistableRoot ? root2._visibility & -2 : root2._visibility | 1, hoistableRoot && (null === current || wasHidden || offscreenSubtreeIsHidden || offscreenSubtreeWasHidden || recursivelyTraverseDisappearLayoutEffects(finishedWork)), current = null, root2 = finishedWork; ; ) {
+              if (5 === root2.tag || 26 === root2.tag) {
                 if (null === current) {
-                  wasHidden = current = root3;
+                  wasHidden = current = root2;
                   try {
                     if (currentResource = wasHidden.stateNode, hoistableRoot)
                       maybeNodes = currentResource.style, "function" === typeof maybeNodes.setProperty ? maybeNodes.setProperty("display", "none", "important") : maybeNodes.display = "none";
@@ -8060,34 +8290,34 @@
                     captureCommitPhaseError(wasHidden, wasHidden.return, error);
                   }
                 }
-              } else if (6 === root3.tag) {
+              } else if (6 === root2.tag) {
                 if (null === current) {
-                  wasHidden = root3;
+                  wasHidden = root2;
                   try {
                     wasHidden.stateNode.nodeValue = hoistableRoot ? "" : wasHidden.memoizedProps;
                   } catch (error) {
                     captureCommitPhaseError(wasHidden, wasHidden.return, error);
                   }
                 }
-              } else if ((22 !== root3.tag && 23 !== root3.tag || null === root3.memoizedState || root3 === finishedWork) && null !== root3.child) {
-                root3.child.return = root3;
-                root3 = root3.child;
+              } else if ((22 !== root2.tag && 23 !== root2.tag || null === root2.memoizedState || root2 === finishedWork) && null !== root2.child) {
+                root2.child.return = root2;
+                root2 = root2.child;
                 continue;
               }
-              if (root3 === finishedWork) break a;
-              for (; null === root3.sibling; ) {
-                if (null === root3.return || root3.return === finishedWork) break a;
-                current === root3 && (current = null);
-                root3 = root3.return;
+              if (root2 === finishedWork) break a;
+              for (; null === root2.sibling; ) {
+                if (null === root2.return || root2.return === finishedWork) break a;
+                current === root2 && (current = null);
+                root2 = root2.return;
               }
-              current === root3 && (current = null);
-              root3.sibling.return = root3.return;
-              root3 = root3.sibling;
+              current === root2 && (current = null);
+              root2.sibling.return = root2.return;
+              root2 = root2.sibling;
             }
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (current = flags.retryQueue, null !== current && (flags.retryQueue = null, attachSuspenseRetryListeners(finishedWork, current))));
           break;
         case 19:
-          recursivelyTraverseMutationEffects(root3, finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork);
           commitReconciliationEffects(finishedWork);
           flags & 4 && (flags = finishedWork.updateQueue, null !== flags && (finishedWork.updateQueue = null, attachSuspenseRetryListeners(finishedWork, flags)));
           break;
@@ -8096,7 +8326,7 @@
         case 21:
           break;
         default:
-          recursivelyTraverseMutationEffects(root3, finishedWork), commitReconciliationEffects(finishedWork);
+          recursivelyTraverseMutationEffects(root2, finishedWork), commitReconciliationEffects(finishedWork);
       }
     }
     function commitReconciliationEffects(finishedWork) {
@@ -8150,10 +8380,10 @@
           parentFiber = parentFiber.sibling;
         }
     }
-    function recursivelyTraverseLayoutEffects(root3, parentFiber) {
+    function recursivelyTraverseLayoutEffects(root2, parentFiber) {
       if (parentFiber.subtreeFlags & 8772)
         for (parentFiber = parentFiber.child; null !== parentFiber; )
-          commitLayoutEffectOnFiber(root3, parentFiber.alternate, parentFiber), parentFiber = parentFiber.sibling;
+          commitLayoutEffectOnFiber(root2, parentFiber.alternate, parentFiber), parentFiber = parentFiber.sibling;
     }
     function recursivelyTraverseDisappearLayoutEffects(parentFiber) {
       for (parentFiber = parentFiber.child; null !== parentFiber; ) {
@@ -8300,11 +8530,11 @@
       finishedWork = finishedWork.memoizedState.cache;
       finishedWork !== current && (finishedWork.refCount++, null != current && releaseCache(current));
     }
-    function recursivelyTraversePassiveMountEffects(root3, parentFiber, committedLanes, committedTransitions) {
+    function recursivelyTraversePassiveMountEffects(root2, parentFiber, committedLanes, committedTransitions) {
       if (parentFiber.subtreeFlags & 10256)
         for (parentFiber = parentFiber.child; null !== parentFiber; )
           commitPassiveMountOnFiber(
-            root3,
+            root2,
             parentFiber,
             committedLanes,
             committedTransitions
@@ -8681,22 +8911,22 @@
       null !== suspenseHandler && (suspenseHandler.flags |= 32);
       return workInProgressDeferredLane;
     }
-    function scheduleUpdateOnFiber(root3, fiber, lane) {
-      if (root3 === workInProgressRoot && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root3.cancelPendingCommit)
-        prepareFreshStack(root3, 0), markRootSuspended(
-          root3,
+    function scheduleUpdateOnFiber(root2, fiber, lane) {
+      if (root2 === workInProgressRoot && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root2.cancelPendingCommit)
+        prepareFreshStack(root2, 0), markRootSuspended(
+          root2,
           workInProgressRootRenderLanes,
           workInProgressDeferredLane,
           false
         );
-      markRootUpdated$1(root3, lane);
-      if (0 === (executionContext & 2) || root3 !== workInProgressRoot)
-        root3 === workInProgressRoot && (0 === (executionContext & 2) && (workInProgressRootInterleavedUpdatedLanes |= lane), 4 === workInProgressRootExitStatus && markRootSuspended(
-          root3,
+      markRootUpdated$1(root2, lane);
+      if (0 === (executionContext & 2) || root2 !== workInProgressRoot)
+        root2 === workInProgressRoot && (0 === (executionContext & 2) && (workInProgressRootInterleavedUpdatedLanes |= lane), 4 === workInProgressRootExitStatus && markRootSuspended(
+          root2,
           workInProgressRootRenderLanes,
           workInProgressDeferredLane,
           false
-        )), ensureRootIsScheduled(root3);
+        )), ensureRootIsScheduled(root2);
     }
     function performWorkOnRoot(root$jscomp$0, lanes, forceSync) {
       if (0 !== (executionContext & 6)) throw Error(formatProdErrorMessage(327));
@@ -8721,18 +8951,18 @@
             if (0 !== JSCompiler_inline_result) {
               lanes = JSCompiler_inline_result;
               a: {
-                var root3 = root$jscomp$0;
+                var root2 = root$jscomp$0;
                 exitStatus = workInProgressRootConcurrentErrors;
-                var wasRootDehydrated = root3.current.memoizedState.isDehydrated;
-                wasRootDehydrated && (prepareFreshStack(root3, JSCompiler_inline_result).flags |= 256);
+                var wasRootDehydrated = root2.current.memoizedState.isDehydrated;
+                wasRootDehydrated && (prepareFreshStack(root2, JSCompiler_inline_result).flags |= 256);
                 JSCompiler_inline_result = renderRootSync(
-                  root3,
+                  root2,
                   JSCompiler_inline_result,
                   false
                 );
                 if (2 !== JSCompiler_inline_result) {
                   if (workInProgressRootDidAttachPingListener && !wasRootDehydrated) {
-                    root3.errorRecoveryDisabledLanes |= renderWasConcurrent;
+                    root2.errorRecoveryDisabledLanes |= renderWasConcurrent;
                     workInProgressRootInterleavedUpdatedLanes |= renderWasConcurrent;
                     exitStatus = 4;
                     break a;
@@ -8833,15 +9063,15 @@
       } while (1);
       ensureRootIsScheduled(root$jscomp$0);
     }
-    function commitRootWhenReady(root3, finishedWork, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, lanes, spawnedLane, updatedLanes, suspendedRetryLanes, didSkipSuspendedSiblings, exitStatus, suspendedCommitReason, completedRenderStartTime, completedRenderEndTime) {
-      root3.timeoutHandle = -1;
+    function commitRootWhenReady(root2, finishedWork, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, lanes, spawnedLane, updatedLanes, suspendedRetryLanes, didSkipSuspendedSiblings, exitStatus, suspendedCommitReason, completedRenderStartTime, completedRenderEndTime) {
+      root2.timeoutHandle = -1;
       suspendedCommitReason = finishedWork.subtreeFlags;
       if (suspendedCommitReason & 8192 || 16785408 === (suspendedCommitReason & 16785408)) {
         if (suspendedState = { stylesheets: null, count: 0, unsuspend: noop }, accumulateSuspenseyCommitOnFiber(finishedWork), suspendedCommitReason = waitForCommitToBeReady(), null !== suspendedCommitReason) {
-          root3.cancelPendingCommit = suspendedCommitReason(
+          root2.cancelPendingCommit = suspendedCommitReason(
             commitRoot.bind(
               null,
-              root3,
+              root2,
               finishedWork,
               lanes,
               recoverableErrors,
@@ -8856,12 +9086,12 @@
               completedRenderEndTime
             )
           );
-          markRootSuspended(root3, lanes, spawnedLane, !didSkipSuspendedSiblings);
+          markRootSuspended(root2, lanes, spawnedLane, !didSkipSuspendedSiblings);
           return;
         }
       }
       commitRoot(
-        root3,
+        root2,
         finishedWork,
         lanes,
         recoverableErrors,
@@ -8900,19 +9130,19 @@
       }
       return true;
     }
-    function markRootSuspended(root3, suspendedLanes, spawnedLane, didAttemptEntireTree) {
+    function markRootSuspended(root2, suspendedLanes, spawnedLane, didAttemptEntireTree) {
       suspendedLanes &= ~workInProgressRootPingedLanes;
       suspendedLanes &= ~workInProgressRootInterleavedUpdatedLanes;
-      root3.suspendedLanes |= suspendedLanes;
-      root3.pingedLanes &= ~suspendedLanes;
-      didAttemptEntireTree && (root3.warmLanes |= suspendedLanes);
-      didAttemptEntireTree = root3.expirationTimes;
+      root2.suspendedLanes |= suspendedLanes;
+      root2.pingedLanes &= ~suspendedLanes;
+      didAttemptEntireTree && (root2.warmLanes |= suspendedLanes);
+      didAttemptEntireTree = root2.expirationTimes;
       for (var lanes = suspendedLanes; 0 < lanes; ) {
         var index$4 = 31 - clz32(lanes), lane = 1 << index$4;
         didAttemptEntireTree[index$4] = -1;
         lanes &= ~lane;
       }
-      0 !== spawnedLane && markSpawnedDeferredLane(root3, spawnedLane, suspendedLanes);
+      0 !== spawnedLane && markSpawnedDeferredLane(root2, spawnedLane, suspendedLanes);
     }
     function flushSyncWork$1() {
       return 0 === (executionContext & 6) ? (flushSyncWorkAcrossRoots_impl(0), false) : true;
@@ -8928,43 +9158,43 @@
         workInProgress = null;
       }
     }
-    function prepareFreshStack(root3, lanes) {
-      var timeoutHandle = root3.timeoutHandle;
-      -1 !== timeoutHandle && (root3.timeoutHandle = -1, cancelTimeout(timeoutHandle));
-      timeoutHandle = root3.cancelPendingCommit;
-      null !== timeoutHandle && (root3.cancelPendingCommit = null, timeoutHandle());
+    function prepareFreshStack(root2, lanes) {
+      var timeoutHandle = root2.timeoutHandle;
+      -1 !== timeoutHandle && (root2.timeoutHandle = -1, cancelTimeout(timeoutHandle));
+      timeoutHandle = root2.cancelPendingCommit;
+      null !== timeoutHandle && (root2.cancelPendingCommit = null, timeoutHandle());
       resetWorkInProgressStack();
-      workInProgressRoot = root3;
-      workInProgress = timeoutHandle = createWorkInProgress(root3.current, null);
+      workInProgressRoot = root2;
+      workInProgress = timeoutHandle = createWorkInProgress(root2.current, null);
       workInProgressRootRenderLanes = lanes;
       workInProgressSuspendedReason = 0;
       workInProgressThrownValue = null;
       workInProgressRootDidSkipSuspendedSiblings = false;
-      workInProgressRootIsPrerendering = checkIfRootIsPrerendering(root3, lanes);
+      workInProgressRootIsPrerendering = checkIfRootIsPrerendering(root2, lanes);
       workInProgressRootDidAttachPingListener = false;
       workInProgressSuspendedRetryLanes = workInProgressDeferredLane = workInProgressRootPingedLanes = workInProgressRootInterleavedUpdatedLanes = workInProgressRootSkippedLanes = workInProgressRootExitStatus = 0;
       workInProgressRootRecoverableErrors = workInProgressRootConcurrentErrors = null;
       workInProgressRootDidIncludeRecursiveRenderUpdate = false;
       0 !== (lanes & 8) && (lanes |= lanes & 32);
-      var allEntangledLanes = root3.entangledLanes;
+      var allEntangledLanes = root2.entangledLanes;
       if (0 !== allEntangledLanes)
-        for (root3 = root3.entanglements, allEntangledLanes &= lanes; 0 < allEntangledLanes; ) {
+        for (root2 = root2.entanglements, allEntangledLanes &= lanes; 0 < allEntangledLanes; ) {
           var index$2 = 31 - clz32(allEntangledLanes), lane = 1 << index$2;
-          lanes |= root3[index$2];
+          lanes |= root2[index$2];
           allEntangledLanes &= ~lane;
         }
       entangledRenderLanes = lanes;
       finishQueueingConcurrentUpdates();
       return timeoutHandle;
     }
-    function handleThrow(root3, thrownValue) {
+    function handleThrow(root2, thrownValue) {
       currentlyRenderingFiber = null;
       ReactSharedInternals.H = ContextOnlyDispatcher;
       thrownValue === SuspenseException || thrownValue === SuspenseActionException ? (thrownValue = getSuspendedThenable(), workInProgressSuspendedReason = 3) : thrownValue === SuspenseyCommitException ? (thrownValue = getSuspendedThenable(), workInProgressSuspendedReason = 4) : workInProgressSuspendedReason = thrownValue === SelectiveHydrationException ? 8 : null !== thrownValue && "object" === typeof thrownValue && "function" === typeof thrownValue.then ? 6 : 1;
       workInProgressThrownValue = thrownValue;
       null === workInProgress && (workInProgressRootExitStatus = 1, logUncaughtError(
-        root3,
-        createCapturedValueAtFiber(thrownValue, root3.current)
+        root2,
+        createCapturedValueAtFiber(thrownValue, root2.current)
       ));
     }
     function pushDispatcher() {
@@ -8987,12 +9217,12 @@
         false
       );
     }
-    function renderRootSync(root3, lanes, shouldYieldForPrerendering) {
+    function renderRootSync(root2, lanes, shouldYieldForPrerendering) {
       var prevExecutionContext = executionContext;
       executionContext |= 2;
       var prevDispatcher = pushDispatcher(), prevAsyncDispatcher = pushAsyncDispatcher();
-      if (workInProgressRoot !== root3 || workInProgressRootRenderLanes !== lanes)
-        workInProgressTransitions = null, prepareFreshStack(root3, lanes);
+      if (workInProgressRoot !== root2 || workInProgressRootRenderLanes !== lanes)
+        workInProgressTransitions = null, prepareFreshStack(root2, lanes);
       lanes = false;
       var exitStatus = workInProgressRootExitStatus;
       a: do
@@ -9012,24 +9242,24 @@
                 var reason = workInProgressSuspendedReason;
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root3, unitOfWork, thrownValue, reason);
+                throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, reason);
                 if (shouldYieldForPrerendering && workInProgressRootIsPrerendering) {
                   exitStatus = 0;
                   break a;
                 }
                 break;
               default:
-                reason = workInProgressSuspendedReason, workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root3, unitOfWork, thrownValue, reason);
+                reason = workInProgressSuspendedReason, workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, reason);
             }
           }
           workLoopSync();
           exitStatus = workInProgressRootExitStatus;
           break;
         } catch (thrownValue$167) {
-          handleThrow(root3, thrownValue$167);
+          handleThrow(root2, thrownValue$167);
         }
       while (1);
-      lanes && root3.shellSuspendCounter++;
+      lanes && root2.shellSuspendCounter++;
       lastContextDependency = currentlyRenderingFiber$1 = null;
       executionContext = prevExecutionContext;
       ReactSharedInternals.H = prevDispatcher;
@@ -9040,12 +9270,12 @@
     function workLoopSync() {
       for (; null !== workInProgress; ) performUnitOfWork(workInProgress);
     }
-    function renderRootConcurrent(root3, lanes) {
+    function renderRootConcurrent(root2, lanes) {
       var prevExecutionContext = executionContext;
       executionContext |= 2;
       var prevDispatcher = pushDispatcher(), prevAsyncDispatcher = pushAsyncDispatcher();
-      workInProgressRoot !== root3 || workInProgressRootRenderLanes !== lanes ? (workInProgressTransitions = null, workInProgressRootRenderTargetTime = now() + 500, prepareFreshStack(root3, lanes)) : workInProgressRootIsPrerendering = checkIfRootIsPrerendering(
-        root3,
+      workInProgressRoot !== root2 || workInProgressRootRenderLanes !== lanes ? (workInProgressTransitions = null, workInProgressRootRenderTargetTime = now() + 500, prepareFreshStack(root2, lanes)) : workInProgressRootIsPrerendering = checkIfRootIsPrerendering(
+        root2,
         lanes
       );
       a: do
@@ -9057,7 +9287,7 @@
               case 1:
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root3, lanes, thrownValue, 1);
+                throwAndUnwindWorkLoop(root2, lanes, thrownValue, 1);
                 break;
               case 2:
               case 9:
@@ -9068,8 +9298,8 @@
                   break;
                 }
                 lanes = function() {
-                  2 !== workInProgressSuspendedReason && 9 !== workInProgressSuspendedReason || workInProgressRoot !== root3 || (workInProgressSuspendedReason = 7);
-                  ensureRootIsScheduled(root3);
+                  2 !== workInProgressSuspendedReason && 9 !== workInProgressSuspendedReason || workInProgressRoot !== root2 || (workInProgressSuspendedReason = 7);
+                  ensureRootIsScheduled(root2);
                 };
                 thrownValue.then(lanes, lanes);
                 break a;
@@ -9080,7 +9310,7 @@
                 workInProgressSuspendedReason = 5;
                 break a;
               case 7:
-                isThenableResolved(thrownValue) ? (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, replaySuspendedUnitOfWork(lanes)) : (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root3, lanes, thrownValue, 7));
+                isThenableResolved(thrownValue) ? (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, replaySuspendedUnitOfWork(lanes)) : (workInProgressSuspendedReason = 0, workInProgressThrownValue = null, throwAndUnwindWorkLoop(root2, lanes, thrownValue, 7));
                 break;
               case 5:
                 var resource = null;
@@ -9104,12 +9334,12 @@
                 }
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root3, lanes, thrownValue, 5);
+                throwAndUnwindWorkLoop(root2, lanes, thrownValue, 5);
                 break;
               case 6:
                 workInProgressSuspendedReason = 0;
                 workInProgressThrownValue = null;
-                throwAndUnwindWorkLoop(root3, lanes, thrownValue, 6);
+                throwAndUnwindWorkLoop(root2, lanes, thrownValue, 6);
                 break;
               case 8:
                 resetWorkInProgressStack();
@@ -9122,7 +9352,7 @@
           workLoopConcurrentByScheduler();
           break;
         } catch (thrownValue$169) {
-          handleThrow(root3, thrownValue$169);
+          handleThrow(root2, thrownValue$169);
         }
       while (1);
       lastContextDependency = currentlyRenderingFiber$1 = null;
@@ -9177,7 +9407,7 @@
       unitOfWork.memoizedProps = unitOfWork.pendingProps;
       null === next ? completeUnitOfWork(unitOfWork) : workInProgress = next;
     }
-    function throwAndUnwindWorkLoop(root3, unitOfWork, thrownValue, suspendedReason) {
+    function throwAndUnwindWorkLoop(root2, unitOfWork, thrownValue, suspendedReason) {
       lastContextDependency = currentlyRenderingFiber$1 = null;
       resetHooksOnUnwind(unitOfWork);
       thenableState = null;
@@ -9185,7 +9415,7 @@
       var returnFiber = unitOfWork.return;
       try {
         if (throwException(
-          root3,
+          root2,
           returnFiber,
           unitOfWork,
           thrownValue,
@@ -9193,8 +9423,8 @@
         )) {
           workInProgressRootExitStatus = 1;
           logUncaughtError(
-            root3,
-            createCapturedValueAtFiber(thrownValue, root3.current)
+            root2,
+            createCapturedValueAtFiber(thrownValue, root2.current)
           );
           workInProgress = null;
           return;
@@ -9203,19 +9433,19 @@
         if (null !== returnFiber) throw workInProgress = returnFiber, error;
         workInProgressRootExitStatus = 1;
         logUncaughtError(
-          root3,
-          createCapturedValueAtFiber(thrownValue, root3.current)
+          root2,
+          createCapturedValueAtFiber(thrownValue, root2.current)
         );
         workInProgress = null;
         return;
       }
       if (unitOfWork.flags & 32768) {
-        if (isHydrating || 1 === suspendedReason) root3 = true;
+        if (isHydrating || 1 === suspendedReason) root2 = true;
         else if (workInProgressRootIsPrerendering || 0 !== (workInProgressRootRenderLanes & 536870912))
-          root3 = false;
-        else if (workInProgressRootDidSkipSuspendedSiblings = root3 = true, 2 === suspendedReason || 9 === suspendedReason || 3 === suspendedReason || 6 === suspendedReason)
+          root2 = false;
+        else if (workInProgressRootDidSkipSuspendedSiblings = root2 = true, 2 === suspendedReason || 9 === suspendedReason || 3 === suspendedReason || 6 === suspendedReason)
           suspendedReason = suspenseHandlerStackCursor.current, null !== suspendedReason && 13 === suspendedReason.tag && (suspendedReason.flags |= 16384);
-        unwindUnitOfWork(unitOfWork, root3);
+        unwindUnitOfWork(unitOfWork, root2);
       } else completeUnitOfWork(unitOfWork);
     }
     function completeUnitOfWork(unitOfWork) {
@@ -9266,35 +9496,35 @@
       workInProgressRootExitStatus = 6;
       workInProgress = null;
     }
-    function commitRoot(root3, finishedWork, lanes, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, spawnedLane, updatedLanes, suspendedRetryLanes) {
-      root3.cancelPendingCommit = null;
+    function commitRoot(root2, finishedWork, lanes, recoverableErrors, transitions, didIncludeRenderPhaseUpdate, spawnedLane, updatedLanes, suspendedRetryLanes) {
+      root2.cancelPendingCommit = null;
       do
         flushPendingEffects();
       while (0 !== pendingEffectsStatus);
       if (0 !== (executionContext & 6)) throw Error(formatProdErrorMessage(327));
       if (null !== finishedWork) {
-        if (finishedWork === root3.current) throw Error(formatProdErrorMessage(177));
+        if (finishedWork === root2.current) throw Error(formatProdErrorMessage(177));
         didIncludeRenderPhaseUpdate = finishedWork.lanes | finishedWork.childLanes;
         didIncludeRenderPhaseUpdate |= concurrentlyUpdatedLanes;
         markRootFinished(
-          root3,
+          root2,
           lanes,
           didIncludeRenderPhaseUpdate,
           spawnedLane,
           updatedLanes,
           suspendedRetryLanes
         );
-        root3 === workInProgressRoot && (workInProgress = workInProgressRoot = null, workInProgressRootRenderLanes = 0);
+        root2 === workInProgressRoot && (workInProgress = workInProgressRoot = null, workInProgressRootRenderLanes = 0);
         pendingFinishedWork = finishedWork;
-        pendingEffectsRoot = root3;
+        pendingEffectsRoot = root2;
         pendingEffectsLanes = lanes;
         pendingEffectsRemainingLanes = didIncludeRenderPhaseUpdate;
         pendingPassiveTransitions = transitions;
         pendingRecoverableErrors = recoverableErrors;
-        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? (root3.callbackNode = null, root3.callbackPriority = 0, scheduleCallback$1(NormalPriority$1, function() {
+        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? (root2.callbackNode = null, root2.callbackPriority = 0, scheduleCallback$1(NormalPriority$1, function() {
           flushPassiveEffects();
           return null;
-        })) : (root3.callbackNode = null, root3.callbackPriority = 0);
+        })) : (root2.callbackNode = null, root2.callbackPriority = 0);
         recoverableErrors = 0 !== (finishedWork.flags & 13878);
         if (0 !== (finishedWork.subtreeFlags & 13878) || recoverableErrors) {
           recoverableErrors = ReactSharedInternals.T;
@@ -9304,7 +9534,7 @@
           spawnedLane = executionContext;
           executionContext |= 4;
           try {
-            commitBeforeMutationEffects(root3, finishedWork, lanes);
+            commitBeforeMutationEffects(root2, finishedWork, lanes);
           } finally {
             executionContext = spawnedLane, ReactDOMSharedInternals.p = transitions, ReactSharedInternals.T = recoverableErrors;
           }
@@ -9318,7 +9548,7 @@
     function flushMutationEffects() {
       if (1 === pendingEffectsStatus) {
         pendingEffectsStatus = 0;
-        var root3 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootMutationHasEffect = 0 !== (finishedWork.flags & 13878);
+        var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootMutationHasEffect = 0 !== (finishedWork.flags & 13878);
         if (0 !== (finishedWork.subtreeFlags & 13878) || rootMutationHasEffect) {
           rootMutationHasEffect = ReactSharedInternals.T;
           ReactSharedInternals.T = null;
@@ -9327,8 +9557,8 @@
           var prevExecutionContext = executionContext;
           executionContext |= 4;
           try {
-            commitMutationEffectsOnFiber(finishedWork, root3);
-            var priorSelectionInformation = selectionInformation, curFocusedElem = getActiveElementDeep(root3.containerInfo), priorFocusedElem = priorSelectionInformation.focusedElem, priorSelectionRange = priorSelectionInformation.selectionRange;
+            commitMutationEffectsOnFiber(finishedWork, root2);
+            var priorSelectionInformation = selectionInformation, curFocusedElem = getActiveElementDeep(root2.containerInfo), priorFocusedElem = priorSelectionInformation.focusedElem, priorSelectionRange = priorSelectionInformation.selectionRange;
             if (curFocusedElem !== priorFocusedElem && priorFocusedElem && priorFocusedElem.ownerDocument && containsNode(
               priorFocusedElem.ownerDocument.documentElement,
               priorFocusedElem
@@ -9382,14 +9612,14 @@
             executionContext = prevExecutionContext, ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = rootMutationHasEffect;
           }
         }
-        root3.current = finishedWork;
+        root2.current = finishedWork;
         pendingEffectsStatus = 2;
       }
     }
     function flushLayoutEffects() {
       if (2 === pendingEffectsStatus) {
         pendingEffectsStatus = 0;
-        var root3 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootHasLayoutEffect = 0 !== (finishedWork.flags & 8772);
+        var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, rootHasLayoutEffect = 0 !== (finishedWork.flags & 8772);
         if (0 !== (finishedWork.subtreeFlags & 8772) || rootHasLayoutEffect) {
           rootHasLayoutEffect = ReactSharedInternals.T;
           ReactSharedInternals.T = null;
@@ -9398,7 +9628,7 @@
           var prevExecutionContext = executionContext;
           executionContext |= 4;
           try {
-            commitLayoutEffectOnFiber(root3, finishedWork.alternate, finishedWork);
+            commitLayoutEffectOnFiber(root2, finishedWork.alternate, finishedWork);
           } finally {
             executionContext = prevExecutionContext, ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = rootHasLayoutEffect;
           }
@@ -9410,9 +9640,9 @@
       if (4 === pendingEffectsStatus || 3 === pendingEffectsStatus) {
         pendingEffectsStatus = 0;
         requestPaint();
-        var root3 = pendingEffectsRoot, finishedWork = pendingFinishedWork, lanes = pendingEffectsLanes, recoverableErrors = pendingRecoverableErrors;
-        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? pendingEffectsStatus = 5 : (pendingEffectsStatus = 0, pendingFinishedWork = pendingEffectsRoot = null, releaseRootPooledCache(root3, root3.pendingLanes));
-        var remainingLanes = root3.pendingLanes;
+        var root2 = pendingEffectsRoot, finishedWork = pendingFinishedWork, lanes = pendingEffectsLanes, recoverableErrors = pendingRecoverableErrors;
+        0 !== (finishedWork.subtreeFlags & 10256) || 0 !== (finishedWork.flags & 10256) ? pendingEffectsStatus = 5 : (pendingEffectsStatus = 0, pendingFinishedWork = pendingEffectsRoot = null, releaseRootPooledCache(root2, root2.pendingLanes));
+        var remainingLanes = root2.pendingLanes;
         0 === remainingLanes && (legacyErrorBoundariesThatAlreadyFailed = null);
         lanesToEventPriority(lanes);
         finishedWork = finishedWork.stateNode;
@@ -9432,7 +9662,7 @@
           ReactDOMSharedInternals.p = 2;
           ReactSharedInternals.T = null;
           try {
-            for (var onRecoverableError = root3.onRecoverableError, i = 0; i < recoverableErrors.length; i++) {
+            for (var onRecoverableError = root2.onRecoverableError, i = 0; i < recoverableErrors.length; i++) {
               var recoverableError = recoverableErrors[i];
               onRecoverableError(recoverableError.value, {
                 componentStack: recoverableError.stack
@@ -9443,14 +9673,14 @@
           }
         }
         0 !== (pendingEffectsLanes & 3) && flushPendingEffects();
-        ensureRootIsScheduled(root3);
-        remainingLanes = root3.pendingLanes;
-        0 !== (lanes & 4194090) && 0 !== (remainingLanes & 42) ? root3 === rootWithNestedUpdates ? nestedUpdateCount++ : (nestedUpdateCount = 0, rootWithNestedUpdates = root3) : nestedUpdateCount = 0;
+        ensureRootIsScheduled(root2);
+        remainingLanes = root2.pendingLanes;
+        0 !== (lanes & 4194090) && 0 !== (remainingLanes & 42) ? root2 === rootWithNestedUpdates ? nestedUpdateCount++ : (nestedUpdateCount = 0, rootWithNestedUpdates = root2) : nestedUpdateCount = 0;
         flushSyncWorkAcrossRoots_impl(0);
       }
     }
-    function releaseRootPooledCache(root3, remainingLanes) {
-      0 === (root3.pooledCacheLanes &= remainingLanes) && (remainingLanes = root3.pooledCache, null != remainingLanes && (root3.pooledCache = null, releaseCache(remainingLanes)));
+    function releaseRootPooledCache(root2, remainingLanes) {
+      0 === (root2.pooledCacheLanes &= remainingLanes) && (remainingLanes = root2.pooledCache, null != remainingLanes && (root2.pooledCache = null, releaseCache(remainingLanes)));
     }
     function flushPendingEffects(wasDelayedCommit) {
       flushMutationEffects();
@@ -9460,7 +9690,7 @@
     }
     function flushPassiveEffects() {
       if (5 !== pendingEffectsStatus) return false;
-      var root3 = pendingEffectsRoot, remainingLanes = pendingEffectsRemainingLanes;
+      var root2 = pendingEffectsRoot, remainingLanes = pendingEffectsRemainingLanes;
       pendingEffectsRemainingLanes = 0;
       var renderPriority = lanesToEventPriority(pendingEffectsLanes), prevTransition = ReactSharedInternals.T, previousPriority = ReactDOMSharedInternals.p;
       try {
@@ -9491,7 +9721,7 @@
           }
         return true;
       } finally {
-        ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = prevTransition, releaseRootPooledCache(root3, remainingLanes);
+        ReactDOMSharedInternals.p = previousPriority, ReactSharedInternals.T = prevTransition, releaseRootPooledCache(root2, remainingLanes);
       }
     }
     function captureCommitPhaseErrorOnRoot(rootFiber, sourceFiber, error) {
@@ -9530,23 +9760,23 @@
           nearestMountedAncestor = nearestMountedAncestor.return;
         }
     }
-    function attachPingListener(root3, wakeable, lanes) {
-      var pingCache = root3.pingCache;
+    function attachPingListener(root2, wakeable, lanes) {
+      var pingCache = root2.pingCache;
       if (null === pingCache) {
-        pingCache = root3.pingCache = new PossiblyWeakMap();
+        pingCache = root2.pingCache = new PossiblyWeakMap();
         var threadIDs = /* @__PURE__ */ new Set();
         pingCache.set(wakeable, threadIDs);
       } else
         threadIDs = pingCache.get(wakeable), void 0 === threadIDs && (threadIDs = /* @__PURE__ */ new Set(), pingCache.set(wakeable, threadIDs));
-      threadIDs.has(lanes) || (workInProgressRootDidAttachPingListener = true, threadIDs.add(lanes), root3 = pingSuspendedRoot.bind(null, root3, wakeable, lanes), wakeable.then(root3, root3));
+      threadIDs.has(lanes) || (workInProgressRootDidAttachPingListener = true, threadIDs.add(lanes), root2 = pingSuspendedRoot.bind(null, root2, wakeable, lanes), wakeable.then(root2, root2));
     }
-    function pingSuspendedRoot(root3, wakeable, pingedLanes) {
-      var pingCache = root3.pingCache;
+    function pingSuspendedRoot(root2, wakeable, pingedLanes) {
+      var pingCache = root2.pingCache;
       null !== pingCache && pingCache.delete(wakeable);
-      root3.pingedLanes |= root3.suspendedLanes & pingedLanes;
-      root3.warmLanes &= ~pingedLanes;
-      workInProgressRoot === root3 && (workInProgressRootRenderLanes & pingedLanes) === pingedLanes && (4 === workInProgressRootExitStatus || 3 === workInProgressRootExitStatus && (workInProgressRootRenderLanes & 62914560) === workInProgressRootRenderLanes && 300 > now() - globalMostRecentFallbackTime ? 0 === (executionContext & 2) && prepareFreshStack(root3, 0) : workInProgressRootPingedLanes |= pingedLanes, workInProgressSuspendedRetryLanes === workInProgressRootRenderLanes && (workInProgressSuspendedRetryLanes = 0));
-      ensureRootIsScheduled(root3);
+      root2.pingedLanes |= root2.suspendedLanes & pingedLanes;
+      root2.warmLanes &= ~pingedLanes;
+      workInProgressRoot === root2 && (workInProgressRootRenderLanes & pingedLanes) === pingedLanes && (4 === workInProgressRootExitStatus || 3 === workInProgressRootExitStatus && (workInProgressRootRenderLanes & 62914560) === workInProgressRootRenderLanes && 300 > now() - globalMostRecentFallbackTime ? 0 === (executionContext & 2) && prepareFreshStack(root2, 0) : workInProgressRootPingedLanes |= pingedLanes, workInProgressSuspendedRetryLanes === workInProgressRootRenderLanes && (workInProgressSuspendedRetryLanes = 0));
+      ensureRootIsScheduled(root2);
     }
     function retryTimedOutBoundary(boundaryFiber, retryLane) {
       0 === retryLane && (retryLane = claimNextRetryLane());
@@ -9582,8 +9812,8 @@
       return scheduleCallback$3(priorityLevel, callback);
     }
     var firstScheduledRoot = null, lastScheduledRoot = null, didScheduleMicrotask = false, mightHavePendingSyncWork = false, isFlushingWork = false, currentEventTransitionLane = 0;
-    function ensureRootIsScheduled(root3) {
-      root3 !== lastScheduledRoot && null === root3.next && (null === lastScheduledRoot ? firstScheduledRoot = lastScheduledRoot = root3 : lastScheduledRoot = lastScheduledRoot.next = root3);
+    function ensureRootIsScheduled(root2) {
+      root2 !== lastScheduledRoot && null === root2.next && (null === lastScheduledRoot ? firstScheduledRoot = lastScheduledRoot = root2 : lastScheduledRoot = lastScheduledRoot.next = root2);
       mightHavePendingSyncWork = true;
       didScheduleMicrotask || (didScheduleMicrotask = true, scheduleImmediateRootScheduleTask());
     }
@@ -9622,38 +9852,38 @@
       mightHavePendingSyncWork = didScheduleMicrotask = false;
       var syncTransitionLanes = 0;
       0 !== currentEventTransitionLane && (shouldAttemptEagerTransition() && (syncTransitionLanes = currentEventTransitionLane), currentEventTransitionLane = 0);
-      for (var currentTime = now(), prev = null, root3 = firstScheduledRoot; null !== root3; ) {
-        var next = root3.next, nextLanes = scheduleTaskForRootDuringMicrotask(root3, currentTime);
+      for (var currentTime = now(), prev = null, root2 = firstScheduledRoot; null !== root2; ) {
+        var next = root2.next, nextLanes = scheduleTaskForRootDuringMicrotask(root2, currentTime);
         if (0 === nextLanes)
-          root3.next = null, null === prev ? firstScheduledRoot = next : prev.next = next, null === next && (lastScheduledRoot = prev);
-        else if (prev = root3, 0 !== syncTransitionLanes || 0 !== (nextLanes & 3))
+          root2.next = null, null === prev ? firstScheduledRoot = next : prev.next = next, null === next && (lastScheduledRoot = prev);
+        else if (prev = root2, 0 !== syncTransitionLanes || 0 !== (nextLanes & 3))
           mightHavePendingSyncWork = true;
-        root3 = next;
+        root2 = next;
       }
       flushSyncWorkAcrossRoots_impl(syncTransitionLanes);
     }
-    function scheduleTaskForRootDuringMicrotask(root3, currentTime) {
-      for (var suspendedLanes = root3.suspendedLanes, pingedLanes = root3.pingedLanes, expirationTimes = root3.expirationTimes, lanes = root3.pendingLanes & -62914561; 0 < lanes; ) {
+    function scheduleTaskForRootDuringMicrotask(root2, currentTime) {
+      for (var suspendedLanes = root2.suspendedLanes, pingedLanes = root2.pingedLanes, expirationTimes = root2.expirationTimes, lanes = root2.pendingLanes & -62914561; 0 < lanes; ) {
         var index$3 = 31 - clz32(lanes), lane = 1 << index$3, expirationTime = expirationTimes[index$3];
         if (-1 === expirationTime) {
           if (0 === (lane & suspendedLanes) || 0 !== (lane & pingedLanes))
             expirationTimes[index$3] = computeExpirationTime(lane, currentTime);
-        } else expirationTime <= currentTime && (root3.expiredLanes |= lane);
+        } else expirationTime <= currentTime && (root2.expiredLanes |= lane);
         lanes &= ~lane;
       }
       currentTime = workInProgressRoot;
       suspendedLanes = workInProgressRootRenderLanes;
       suspendedLanes = getNextLanes(
-        root3,
-        root3 === currentTime ? suspendedLanes : 0,
-        null !== root3.cancelPendingCommit || -1 !== root3.timeoutHandle
+        root2,
+        root2 === currentTime ? suspendedLanes : 0,
+        null !== root2.cancelPendingCommit || -1 !== root2.timeoutHandle
       );
-      pingedLanes = root3.callbackNode;
-      if (0 === suspendedLanes || root3 === currentTime && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root3.cancelPendingCommit)
-        return null !== pingedLanes && null !== pingedLanes && cancelCallback$1(pingedLanes), root3.callbackNode = null, root3.callbackPriority = 0;
-      if (0 === (suspendedLanes & 3) || checkIfRootIsPrerendering(root3, suspendedLanes)) {
+      pingedLanes = root2.callbackNode;
+      if (0 === suspendedLanes || root2 === currentTime && (2 === workInProgressSuspendedReason || 9 === workInProgressSuspendedReason) || null !== root2.cancelPendingCommit)
+        return null !== pingedLanes && null !== pingedLanes && cancelCallback$1(pingedLanes), root2.callbackNode = null, root2.callbackPriority = 0;
+      if (0 === (suspendedLanes & 3) || checkIfRootIsPrerendering(root2, suspendedLanes)) {
         currentTime = suspendedLanes & -suspendedLanes;
-        if (currentTime === root3.callbackPriority) return currentTime;
+        if (currentTime === root2.callbackPriority) return currentTime;
         null !== pingedLanes && cancelCallback$1(pingedLanes);
         switch (lanesToEventPriority(suspendedLanes)) {
           case 2:
@@ -9669,37 +9899,37 @@
           default:
             suspendedLanes = NormalPriority$1;
         }
-        pingedLanes = performWorkOnRootViaSchedulerTask.bind(null, root3);
+        pingedLanes = performWorkOnRootViaSchedulerTask.bind(null, root2);
         suspendedLanes = scheduleCallback$3(suspendedLanes, pingedLanes);
-        root3.callbackPriority = currentTime;
-        root3.callbackNode = suspendedLanes;
+        root2.callbackPriority = currentTime;
+        root2.callbackNode = suspendedLanes;
         return currentTime;
       }
       null !== pingedLanes && null !== pingedLanes && cancelCallback$1(pingedLanes);
-      root3.callbackPriority = 2;
-      root3.callbackNode = null;
+      root2.callbackPriority = 2;
+      root2.callbackNode = null;
       return 2;
     }
-    function performWorkOnRootViaSchedulerTask(root3, didTimeout) {
+    function performWorkOnRootViaSchedulerTask(root2, didTimeout) {
       if (0 !== pendingEffectsStatus && 5 !== pendingEffectsStatus)
-        return root3.callbackNode = null, root3.callbackPriority = 0, null;
-      var originalCallbackNode = root3.callbackNode;
-      if (flushPendingEffects() && root3.callbackNode !== originalCallbackNode)
+        return root2.callbackNode = null, root2.callbackPriority = 0, null;
+      var originalCallbackNode = root2.callbackNode;
+      if (flushPendingEffects() && root2.callbackNode !== originalCallbackNode)
         return null;
       var workInProgressRootRenderLanes$jscomp$0 = workInProgressRootRenderLanes;
       workInProgressRootRenderLanes$jscomp$0 = getNextLanes(
-        root3,
-        root3 === workInProgressRoot ? workInProgressRootRenderLanes$jscomp$0 : 0,
-        null !== root3.cancelPendingCommit || -1 !== root3.timeoutHandle
+        root2,
+        root2 === workInProgressRoot ? workInProgressRootRenderLanes$jscomp$0 : 0,
+        null !== root2.cancelPendingCommit || -1 !== root2.timeoutHandle
       );
       if (0 === workInProgressRootRenderLanes$jscomp$0) return null;
-      performWorkOnRoot(root3, workInProgressRootRenderLanes$jscomp$0, didTimeout);
-      scheduleTaskForRootDuringMicrotask(root3, now());
-      return null != root3.callbackNode && root3.callbackNode === originalCallbackNode ? performWorkOnRootViaSchedulerTask.bind(null, root3) : null;
+      performWorkOnRoot(root2, workInProgressRootRenderLanes$jscomp$0, didTimeout);
+      scheduleTaskForRootDuringMicrotask(root2, now());
+      return null != root2.callbackNode && root2.callbackNode === originalCallbackNode ? performWorkOnRootViaSchedulerTask.bind(null, root2) : null;
     }
-    function performSyncWorkOnRoot(root3, lanes) {
+    function performSyncWorkOnRoot(root2, lanes) {
       if (flushPendingEffects()) return null;
-      performWorkOnRoot(root3, lanes, true);
+      performWorkOnRoot(root2, lanes, true);
     }
     function scheduleImmediateRootScheduleTask() {
       scheduleMicrotask(function() {
@@ -10214,7 +10444,7 @@
             }
           else
             isComposing ? isFallbackCompositionEnd(domEventName, nativeEvent) && (eventType = "onCompositionEnd") : "keydown" === domEventName && 229 === nativeEvent.keyCode && (eventType = "onCompositionStart");
-          eventType && (useFallbackCompositionData && "ko" !== nativeEvent.locale && (isComposing || "onCompositionStart" !== eventType ? "onCompositionEnd" === eventType && isComposing && (fallbackData = getData()) : (root2 = nativeEventTarget, startText = "value" in root2 ? root2.value : root2.textContent, isComposing = true)), handleEventFunc = accumulateTwoPhaseListeners(targetInst, eventType), 0 < handleEventFunc.length && (eventType = new SyntheticCompositionEvent(
+          eventType && (useFallbackCompositionData && "ko" !== nativeEvent.locale && (isComposing || "onCompositionStart" !== eventType ? "onCompositionEnd" === eventType && isComposing && (fallbackData = getData()) : (root = nativeEventTarget, startText = "value" in root ? root.value : root.textContent, isComposing = true)), handleEventFunc = accumulateTwoPhaseListeners(targetInst, eventType), 0 < handleEventFunc.length && (eventType = new SyntheticCompositionEvent(
             eventType,
             domEventName,
             null,
@@ -11611,15 +11841,15 @@
         "stylesheet" === resource.type && 0 === (resource.state.loading & 4) && (instance = resource.instance, resource.state.loading |= 4, insertStylesheet(instance, props.precedence, hoistableRoot));
       return resource.instance;
     }
-    function insertStylesheet(instance, precedence, root3) {
-      for (var nodes = root3.querySelectorAll(
+    function insertStylesheet(instance, precedence, root2) {
+      for (var nodes = root2.querySelectorAll(
         'link[rel="stylesheet"][data-precedence],style[data-precedence]'
       ), last = nodes.length ? nodes[nodes.length - 1] : null, prior = last, i = 0; i < nodes.length; i++) {
         var node = nodes[i];
         if (node.dataset.precedence === precedence) prior = node;
         else if (prior !== last) break;
       }
-      prior ? prior.parentNode.insertBefore(instance, prior.nextSibling) : (precedence = 9 === root3.nodeType ? root3.head : root3, precedence.insertBefore(instance, precedence.firstChild));
+      prior ? prior.parentNode.insertBefore(instance, prior.nextSibling) : (precedence = 9 === root2.nodeType ? root2.head : root2, precedence.insertBefore(instance, precedence.firstChild));
     }
     function adoptPreloadPropsForStylesheet(stylesheetProps, preloadProps) {
       null == stylesheetProps.crossOrigin && (stylesheetProps.crossOrigin = preloadProps.crossOrigin);
@@ -11761,14 +11991,14 @@
       state.stylesheets = null;
       null !== state.unsuspend && (state.count++, precedencesByRoot = /* @__PURE__ */ new Map(), resources.forEach(insertStylesheetIntoRoot, state), precedencesByRoot = null, onUnsuspend.call(state));
     }
-    function insertStylesheetIntoRoot(root3, resource) {
+    function insertStylesheetIntoRoot(root2, resource) {
       if (!(resource.state.loading & 4)) {
-        var precedences = precedencesByRoot.get(root3);
+        var precedences = precedencesByRoot.get(root2);
         if (precedences) var last = precedences.get(null);
         else {
           precedences = /* @__PURE__ */ new Map();
-          precedencesByRoot.set(root3, precedences);
-          for (var nodes = root3.querySelectorAll(
+          precedencesByRoot.set(root2, precedences);
+          for (var nodes = root2.querySelectorAll(
             "link[data-precedence],style[data-precedence]"
           ), i = 0; i < nodes.length; i++) {
             var node = nodes[i];
@@ -11786,7 +12016,7 @@
         last = onUnsuspend.bind(this);
         nodes.addEventListener("load", last);
         nodes.addEventListener("error", last);
-        i ? i.parentNode.insertBefore(nodes, i.nextSibling) : (root3 = 9 === root3.nodeType ? root3.head : root3, root3.insertBefore(nodes, root3.firstChild));
+        i ? i.parentNode.insertBefore(nodes, i.nextSibling) : (root2 = 9 === root2.nodeType ? root2.head : root2, root2.insertBefore(nodes, root2.firstChild));
         resource.state.loading |= 4;
       }
     }
@@ -11874,8 +12104,8 @@
     }
     function attemptContinuousHydration(fiber) {
       if (13 === fiber.tag) {
-        var root3 = enqueueConcurrentRenderForLane(fiber, 67108864);
-        null !== root3 && scheduleUpdateOnFiber(root3, fiber, 67108864);
+        var root2 = enqueueConcurrentRenderForLane(fiber, 67108864);
+        null !== root2 && scheduleUpdateOnFiber(root2, fiber, 67108864);
         markRetryLaneIfNotHydrated(fiber, 67108864);
       }
     }
@@ -11929,11 +12159,11 @@
                   if (fiber.current.memoizedState.isDehydrated) {
                     var lanes = getHighestPriorityLanes(fiber.pendingLanes);
                     if (0 !== lanes) {
-                      var root3 = fiber;
-                      root3.pendingLanes |= 2;
-                      for (root3.entangledLanes |= 2; lanes; ) {
+                      var root2 = fiber;
+                      root2.pendingLanes |= 2;
+                      for (root2.entangledLanes |= 2; lanes; ) {
                         var lane = 1 << 31 - clz32(lanes);
-                        root3.entanglements[1] |= lane;
+                        root2.entanglements[1] |= lane;
                         lanes &= ~lane;
                       }
                       ensureRootIsScheduled(fiber);
@@ -11942,7 +12172,7 @@
                   }
                   break;
                 case 13:
-                  root3 = enqueueConcurrentRenderForLane(fiber, 2), null !== root3 && scheduleUpdateOnFiber(root3, fiber, 2), flushSyncWork$1(), markRetryLaneIfNotHydrated(fiber, 2);
+                  root2 = enqueueConcurrentRenderForLane(fiber, 2), null !== root2 && scheduleUpdateOnFiber(root2, fiber, 2), flushSyncWork$1(), markRetryLaneIfNotHydrated(fiber, 2);
               }
             fiber = findInstanceBlockingEvent(nativeEvent);
             null === fiber && dispatchEventForPluginEventSystem(
@@ -12196,8 +12426,8 @@
                 if (13 === nearestMounted.tag) {
                   var lane = requestUpdateLane();
                   lane = getBumpedLaneForHydrationByLane(lane);
-                  var root3 = enqueueConcurrentRenderForLane(nearestMounted, lane);
-                  null !== root3 && scheduleUpdateOnFiber(root3, nearestMounted, lane);
+                  var root2 = enqueueConcurrentRenderForLane(nearestMounted, lane);
+                  null !== root2 && scheduleUpdateOnFiber(root2, nearestMounted, lane);
                   markRetryLaneIfNotHydrated(nearestMounted, lane);
                 }
               });
@@ -12314,17 +12544,17 @@
       this._internalRoot = internalRoot;
     }
     ReactDOMHydrationRoot.prototype.render = ReactDOMRoot.prototype.render = function(children) {
-      var root3 = this._internalRoot;
-      if (null === root3) throw Error(formatProdErrorMessage(409));
-      var current = root3.current, lane = requestUpdateLane();
-      updateContainerImpl(current, lane, children, root3, null, null);
+      var root2 = this._internalRoot;
+      if (null === root2) throw Error(formatProdErrorMessage(409));
+      var current = root2.current, lane = requestUpdateLane();
+      updateContainerImpl(current, lane, children, root2, null, null);
     };
     ReactDOMHydrationRoot.prototype.unmount = ReactDOMRoot.prototype.unmount = function() {
-      var root3 = this._internalRoot;
-      if (null !== root3) {
+      var root2 = this._internalRoot;
+      if (null !== root2) {
         this._internalRoot = null;
-        var container = root3.containerInfo;
-        updateContainerImpl(root3.current, 2, null, root3, null, null);
+        var container = root2.containerInfo;
+        updateContainerImpl(root2.current, 2, null, root2, null, null);
         flushSyncWork$1();
         container[internalContainerInstanceKey] = null;
       }
@@ -12459,9 +12689,9 @@
     return client.exports;
   }
   var clientExports = requireClient();
-  const root = document.createElement("div");
+  clientExports.createRoot(document.createElement("div"));
   function rootPortal(...args) {
-    clientExports.createRoot(root).render(reactDomExports.createPortal(...args));
+    clientExports.createRoot(document.createElement("div")).render(reactDomExports.createPortal(...args));
   }
   function cn(...classList) {
     return classList.filter((className) => !!className).join(" ");
@@ -12470,7 +12700,6 @@
     const Type = as || "div";
     return /* @__PURE__ */ jsxRuntimeExports.jsx(Type, { className: "tip-item", ...other });
   }
-  var reactExports = requireReact();
   function LoadingBox({ loading, children, className, ...others }) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       AsElement,
@@ -12506,332 +12735,6 @@
       }
     );
   }
-  function TipItem({ tip, className, children, ...other }) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(AsElement, { className: cn("v-tip-item", className), ...other, children: [
-      children,
-      tip ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "v-tip", children: tip }) : /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, {})
-    ] });
-  }
-  function Switch({ defaultEnabled, onEnable, onDisable }) {
-    const [enabled, setEnabled] = reactExports.useState(defaultEnabled);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "div",
-      {
-        className: "v-switch",
-        "data-enabled": enabled ? "enabled" : "disabled",
-        onClick: () => {
-          const curr = !enabled;
-          setEnabled(curr);
-          if (curr) onEnable?.();
-          else onDisable?.();
-        }
-      }
-    );
-  }
-  const SvgLogin = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "2 2 20 20", xmlns: "http://www.w3.org/2000/svg", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: "14px", height: "14px", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M15 9H15.01M15 15C18.3137 15 21 12.3137 21 9C21 5.68629 18.3137 3 15 3C11.6863 3 9 5.68629 9 9C9 9.27368 9.01832 9.54308 9.05381 9.80704C9.11218 10.2412 9.14136 10.4583 9.12172 10.5956C9.10125 10.7387 9.0752 10.8157 9.00469 10.9419C8.937 11.063 8.81771 11.1823 8.57913 11.4209L3.46863 16.5314C3.29568 16.7043 3.2092 16.7908 3.14736 16.8917C3.09253 16.9812 3.05213 17.0787 3.02763 17.1808C3 17.2959 3 17.4182 3 17.6627V19.4C3 19.9601 3 20.2401 3.10899 20.454C3.20487 20.6422 3.35785 20.7951 3.54601 20.891C3.75992 21 4.03995 21 4.6 21H6.33726C6.58185 21 6.70414 21 6.81923 20.9724C6.92127 20.9479 7.01881 20.9075 7.10828 20.8526C7.2092 20.7908 7.29568 20.7043 7.46863 20.5314L12.5791 15.4209C12.8177 15.1823 12.937 15.063 13.0581 14.9953C13.1843 14.9248 13.2613 14.8987 13.4044 14.8783C13.5417 14.8586 13.7588 14.8878 14.193 14.9462C14.4569 14.9817 14.7263 15 15 15Z" }));
-  const SvgSignup = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "45.5 27.5 17 17", xmlns: "http://www.w3.org/2000/svg", fill: "currentColor", stroke: "currentColor", strokeWidth: 0.5, strokeLinecap: "round", strokeLinejoin: "round", width: "14px", height: "14px", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M57.5,41a.5.5,0,0,0-.5.5V43H47V31h2v.5a.5.5,0,0,0,.5.5h5a.5.5,0,0,0,.5-.5V31h2v.5a.5.5,0,0,0,1,0v-1a.5.5,0,0,0-.5-.5H55v-.5A1.5,1.5,0,0,0,53.5,28h-3A1.5,1.5,0,0,0,49,29.5V30H46.5a.5.5,0,0,0-.5.5v13a.5.5,0,0,0,.5.5h11a.5.5,0,0,0,.5-.5v-2A.5.5,0,0,0,57.5,41ZM50,29.5a.5.5,0,0,1,.5-.5h3a.5.5,0,0,1,.5.5V31H50Zm11.854,4.646-2-2a.5.5,0,0,0-.708,0l-6,6A.5.5,0,0,0,53,38.5v2a.5.5,0,0,0,.5.5h2a.5.5,0,0,0,.354-.146l6-6A.5.5,0,0,0,61.854,34.146ZM54,40V38.707l5.5-5.5L60.793,34.5l-5.5,5.5Zm-2,.5a.5.5,0,0,1-.5.5h-2a.5.5,0,0,1,0-1h2A.5.5,0,0,1,52,40.5Zm0-3a.5.5,0,0,1-.5.5h-2a.5.5,0,0,1,0-1h2A.5.5,0,0,1,52,37.5ZM54.5,35h-5a.5.5,0,0,1,0-1h5a.5.5,0,0,1,0,1Z" }));
-  const SvgUser = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 1 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM10.5 5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z" }));
-  const SvgNotify = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M8 16a2 2 0 0 0 1.985-1.75c.017-.137-.097-.25-.235-.25h-3.5c-.138 0-.252.113-.235.25A2 2 0 0 0 8 16ZM3 5a5 5 0 0 1 10 0v2.947c0 .05.015.098.042.139l1.703 2.555A1.519 1.519 0 0 1 13.482 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947Zm5-3.5A3.5 3.5 0 0 0 4.5 5v2.947c0 .346-.102.683-.294.97l-1.703 2.556a.017.017 0 0 0-.003.01l.001.006c0 .002.002.004.004.006l.006.004.007.001h10.964l.007-.001.006-.004.004-.006.001-.007a.017.017 0 0 0-.003-.01l-1.703-2.554a1.745 1.745 0 0 1-.294-.97V5A3.5 3.5 0 0 0 8 1.5Z" }));
-  const SvgMessage = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M1.75 1h8.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 10.25 10H7.061l-2.574 2.573A1.458 1.458 0 0 1 2 11.543V10h-.25A1.75 1.75 0 0 1 0 8.25v-5.5C0 1.784.784 1 1.75 1ZM1.5 2.75v5.5c0 .138.112.25.25.25h1a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h3.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Zm13 2a.25.25 0 0 0-.25-.25h-.5a.75.75 0 0 1 0-1.5h.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 14.25 12H14v1.543a1.458 1.458 0 0 1-2.487 1.03L9.22 12.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l2.22 2.22v-2.19a.75.75 0 0 1 .75-.75h1a.25.25 0 0 0 .25-.25Z" }));
-  const SvgSetting = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.173.086-.34.183-.5.29-.417.278-.97.423-1.529.27l-1.103-.303c-.109-.03-.175.016-.195.045-.22.312-.412.644-.573.99-.014.031-.021.11.059.19l.815.806c.411.406.562.957.53 1.456a4.709 4.709 0 0 0 0 .582c.032.499-.119 1.05-.53 1.456l-.815.806c-.081.08-.073.159-.059.19.162.346.353.677.573.989.02.03.085.076.195.046l1.102-.303c.56-.153 1.113-.008 1.53.27.161.107.328.204.501.29.447.222.85.629.997 1.189l.289 1.105c.029.109.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.173-.086.34-.183.5-.29.417-.278.97-.423 1.529-.27l1.103.303c.109.029.175-.016.195-.045.22-.313.411-.644.573-.99.014-.031.021-.11-.059-.19l-.815-.806c-.411-.406-.562-.957-.53-1.456a4.709 4.709 0 0 0 0-.582c-.032-.499.119-1.05.53-1.456l.815-.806c.081-.08.073-.159.059-.19a6.464 6.464 0 0 0-.573-.989c-.02-.03-.085-.076-.195-.046l-1.102.303c-.56.153-1.113.008-1.53-.27a4.44 4.44 0 0 0-.501-.29c-.447-.222-.85-.629-.997-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z" }));
-  const SvgLogout = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 0 1 0 1.5h-2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 0 1 0 1.5h-2.5A1.75 1.75 0 0 1 2 13.25Zm10.44 4.5-1.97-1.97a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.749.749 0 0 1-1.275-.326.749.749 0 0 1 .215-.734l1.97-1.97H6.75a.75.75 0 0 1 0-1.5Z" }));
-  const SvgLight = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z" }));
-  const SvgRobot = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M5.75 7.5a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75Zm5.25.75a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 1.5 0v-1.5Z" }), /* @__PURE__ */ reactExports.createElement("path", { d: "M6.25 0h2A.75.75 0 0 1 9 .75V3.5h3.25a2.25 2.25 0 0 1 2.25 2.25V8h.75a.75.75 0 0 1 0 1.5h-.75v2.75a2.25 2.25 0 0 1-2.25 2.25h-8.5a2.25 2.25 0 0 1-2.25-2.25V9.5H.75a.75.75 0 0 1 0-1.5h.75V5.75A2.25 2.25 0 0 1 3.75 3.5H7.5v-2H6.25a.75.75 0 0 1 0-1.5ZM3 5.75v6.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-6.5a.75.75 0 0 0-.75-.75h-8.5a.75.75 0 0 0-.75.75Z" }));
-  const SvgUp = (props) => /* @__PURE__ */ reactExports.createElement("svg", { width: "14px", height: "14px", viewBox: "3 3 18 18", fill: "currentColor", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ reactExports.createElement("path", { fillRule: "evenodd", clipRule: "evenodd", d: "M12 3C12.2652 3 12.5196 3.10536 12.7071 3.29289L19.7071 10.2929C20.0976 10.6834 20.0976 11.3166 19.7071 11.7071C19.3166 12.0976 18.6834 12.0976 18.2929 11.7071L13 6.41421V20C13 20.5523 12.5523 21 12 21C11.4477 21 11 20.5523 11 20V6.41421L5.70711 11.7071C5.31658 12.0976 4.68342 12.0976 4.29289 11.7071C3.90237 11.3166 3.90237 10.6834 4.29289 10.2929L11.2929 3.29289C11.4804 3.10536 11.7348 3 12 3Z" }));
-  function IconDock({ name, home, logout }) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-      home.endsWith("/login") ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { className: "first", style: { order: -2 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: "/login", tip: "登录", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgLogin, {}) }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { className: "first", style: { order: -1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: "/signup", tip: "注册", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgSignup, {}) }) })
-      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { className: "first", style: { order: -2 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: home, tip: name, children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgUser, {}) }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { style: { order: -1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: "/notify/all", tip: "提醒", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgNotify, {}) }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { style: { order: -1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: "/pm", tip: "短信", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgMessage, {}) }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { style: { order: -1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: "/settings", tip: "设置", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgSetting, {}) }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("li", { style: { order: -1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", href: logout, target: "_self", tip: "登出", children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgLogout, {}) }) })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("li", { style: { order: 1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        TipItem,
-        {
-          as: "a",
-          tip: "回顶部",
-          onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgUp, {})
-        }
-      ) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("li", { style: { order: 1 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", tip: "开关灯", onClick: () => chiiLib.ukagaka.toggleTheme(), children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgLight, {}) }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("li", { className: "last", style: { order: 2 }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "a", tip: "春菜", onClick: () => chiiLib.ukagaka.toggleDisplay(), children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgRobot, {}) }) })
-    ] });
-  }
-  function replaceDock(dock2) {
-    if (!dock2) return;
-    const userElement = dock2.children[0].children[0].children[0].children[0];
-    const home = userElement.href;
-    const name = userElement.innerText;
-    const logoutElement = dock2.children[0].children[0].children[1].lastElementChild;
-    const logout = logoutElement.href;
-    const ul = dock2.children[0].children[0];
-    ul.querySelectorAll("li.first,li.last,li:not(:has(*:only-child))").forEach(
-      (e) => e.style.display = "none"
-    );
-    rootPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(IconDock, { name, home, logout }), ul);
-  }
-  function getNice(element) {
-    if (!element) return null;
-    return $(element).getNiceScroll?.(0);
-  }
-  async function it(element) {
-    if (!element) return null;
-    const nice = getNice(element);
-    if (nice) return nice;
-    await loadScript(
-      "https://cdn.jsdelivr.net/npm/jquery.nicescroll@3.7/jquery.nicescroll.min.js"
-    );
-    return $(element).niceScroll({
-      cursorcolor: "rgb(from var(--color-bangumi) r g b / .5)",
-      cursorwidth: "4px",
-      cursorborder: "none"
-    });
-  }
-  function resize(element) {
-    const nice = getNice(element);
-    if (!nice) return;
-    nice.resize();
-  }
-  const whoami = /* @__PURE__ */ (() => {
-    let cache = null;
-    return () => {
-      if (cache) return cache;
-      let nid;
-      try {
-        nid = window.CHOBITS_UID ?? window.parent.CHOBITS_UID ?? CHOBITS_UID ?? 0;
-      } catch (e) {
-        nid = 0;
-      }
-      const dockA = window.parent.document.querySelector(
-        "#dock li.first a"
-      );
-      if (dockA) {
-        const id = dockA.href.split("/").pop();
-        return cache = { id, nid };
-      }
-      const bannerAvatar = window.parent.document.querySelector(
-        ".idBadgerNeue> .avatar"
-      );
-      if (bannerAvatar) {
-        const id = bannerAvatar.href.split("/").pop();
-        return cache = { id, nid };
-      }
-      return null;
-    };
-  })();
-  let blockeds = null;
-  const getBlockeds = /* @__PURE__ */ (() => {
-    let peddings = null;
-    const queryDB = async () => {
-      const list = await db.getAllKeys("users", 1, void 0, "blocked");
-      blockeds = new Set(list);
-      for (const pedding of peddings) pedding(blockeds);
-      peddings = null;
-    };
-    return async () => {
-      if (blockeds) return blockeds;
-      const p = peddings ?? [];
-      const pedding = new Promise((resolve) => p.push(resolve));
-      if (!peddings) {
-        peddings = p;
-        queryDB();
-      }
-      return pedding;
-    };
-  })();
-  async function isBlocked(id) {
-    const data = await db.get("users", id);
-    const isBlocked2 = !!data?.blocked;
-    if (!blockeds) return isBlocked2;
-    if (isBlocked2) blockeds.add(id);
-    else blockeds.delete(id);
-    return isBlocked2;
-  }
-  async function block(id) {
-    if (!confirm("确定要屏蔽吗？")) return false;
-    const data = await db.get("users", id) ?? { id };
-    await db.put("users", { ...data, blocked: 1 });
-    if (blockeds) blockeds.add(id);
-    return true;
-  }
-  async function unblock(id) {
-    if (!confirm("确定要解除屏蔽吗？")) return false;
-    const data = await db.get("users", id);
-    if (!data) return true;
-    delete data.blocked;
-    if (Object.keys(data).length > 1) await db.put("users", data);
-    else await db.delete("users", id);
-    if (blockeds) blockeds.delete(id);
-    return true;
-  }
-  async function connect(nid, gh) {
-    if (!confirm("真的要加好友吗？")) return false;
-    const ret = await fetch(`/connect/${nid}?gh=${gh}`);
-    return ret.ok;
-  }
-  async function disconnect(nid, gh) {
-    if (!confirm("真的要解除好友吗？")) return false;
-    const ret = await fetch(`/disconnect/${nid}?gh=${gh}`);
-    return ret.ok;
-  }
-  async function usednames(id) {
-    const data = await db.get("usednames", id) || {
-      names: /* @__PURE__ */ new Set()
-    };
-    if (data.update < Date.now() - 36e5) return data.names;
-    const getUsedNames = async (end, tml2, ret2 = [], page = 1) => {
-      const res = await fetch(
-        `/user/${id}/timeline?type=say&ajax=1&page=${page}`
-      );
-      const html = await res.text();
-      const names2 = Array.from(
-        html.matchAll(/从 \<strong\>(?<from>.*?)\<\/strong\> 改名为/g),
-        (m) => m.groups?.from ?? ""
-      );
-      const tmls = Array.from(
-        html.matchAll(
-          /\<h4 class="Header"\>(?<tml>\d{4}\-\d{1,2}\-\d{1,2})\<\/h4\>/g
-        ),
-        (m) => m.groups?.tml ?? ""
-      );
-      if (!tml2) tml2 = tmls[0];
-      ret2.push(...names2);
-      if (tmls.includes(end) || !html.includes(">下一页 &rsaquo;&rsaquo;</a>"))
-        return { ret: ret2, tml: tml2 };
-      return getUsedNames(end, tml2, ret2, page + 1);
-    };
-    const { ret, tml } = await getUsedNames(data.tml);
-    const update = Date.now();
-    const names = new Set(ret).union(data.names);
-    names.delete("");
-    await db.put("usednames", { id, names, update, tml });
-    return names;
-  }
-  async function homepage(id) {
-    const res = await fetch("/user/" + id);
-    const me = whoami();
-    if (!res.ok) return null;
-    const html = await res.text();
-    const element = document.createElement("html");
-    element.innerHTML = html.replace(/<(img|script|link)/g, "<noload");
-    const nameSingle = element.querySelector("#headerProfile .nameSingle");
-    const bio = element.querySelector(".bio");
-    bio?.classList.remove("bio");
-    const name = nameSingle.querySelector(".name a").innerText;
-    const src = nameSingle.querySelector(".headerAvatar .avatar span").style.backgroundImage.replace('url("', "").replace('")', "");
-    const pinnedLayout = element.querySelector("#pinnedLayout");
-    const stats = Array.from(
-      pinnedLayout.querySelectorAll(".gridStats > .item"),
-      (e) => {
-        const name2 = e.lastElementChild.innerText;
-        let type2;
-        switch (name2) {
-          case "收藏":
-            type2 = "coll";
-            break;
-          case "完成":
-            type2 = "done";
-            break;
-          case "完成率":
-            type2 = "rate";
-            break;
-          case "平均分":
-            type2 = "avg";
-            break;
-          case "标准差":
-            type2 = "std";
-            break;
-          case "评分数":
-            type2 = "cnt";
-            break;
-        }
-        return {
-          type: type2,
-          name: name2,
-          value: e.firstElementChild.innerText
-        };
-      }
-    );
-    const chart = Array.from(
-      pinnedLayout.querySelectorAll("#ChartWarpper li > a"),
-      (e) => {
-        return {
-          label: e.firstElementChild.innerText,
-          value: parseInt(
-            e.lastElementChild.innerText.replace(
-              /[\(\)]/g,
-              ""
-            )
-          )
-        };
-      }
-    );
-    if (me.nid == 0)
-      return { type: "guest", name, src, bio, stats, chart };
-    if (me.id == id)
-      return { type: "self", name, src, bio, stats, chart };
-    const actions = nameSingle.querySelectorAll(
-      "#headerProfile .actions a.chiiBtn"
-    );
-    const nid = actions[1].href.split("/").pop()?.replace(".chii", "") ?? "";
-    const friend = actions[0].innerText == "解除好友";
-    const gh = friend ? actions[0].getAttribute("onclick")?.split(",").pop()?.split(/['"]/)[1] : actions[0].href.split("gh=").pop();
-    const type = friend ? "friend" : "normal";
-    return { type, name, src, bio, nid, gh: gh ?? "", stats, chart };
-  }
-  async function getNote(id) {
-    return (await db.get("users", id))?.note || "";
-  }
-  async function setNote(id, note) {
-    const data = await db.get("users", id);
-    if (!data) {
-      if (note) await db.put("users", { id, note });
-      return note;
-    }
-    if (note) data.note = note;
-    else delete data.note;
-    if (Object.keys(data).length > 1) await db.put("users", data);
-    else await db.delete("users", id);
-    return note;
-  }
-  async function getTags(id) {
-    return (await db.get("users", id))?.tags || /* @__PURE__ */ new Set();
-  }
-  async function setTagsByString(id, tags) {
-    return setTags(
-      id,
-      tags.split("\n").map((tag) => tag.trim())
-    );
-  }
-  async function setTags(id, tags) {
-    const tagset = new Set(tags);
-    tagset.delete("");
-    const data = await db.get("users", id);
-    if (!data) {
-      if (tagset.size) await db.put("users", { id, tags: tagset });
-      return tagset;
-    }
-    if (tagset.size) data.tags = tagset;
-    else delete data.tags;
-    if (Object.keys(data).length > 1) await db.put("users", data);
-    else await db.delete("users", id);
-    return tagset;
-  }
-  function goHome(id) {
-    newTab("/user/" + id);
-  }
-  function goPm(nid) {
-    newTab("/pm/compose/" + nid + ".chii");
-  }
-  function goLogin() {
-    newTab("/login");
-  }
   function getWidth(text, size, className) {
     const e = document.createElement("span");
     document.body.append(e);
@@ -12850,51 +12753,43 @@
     reactExports.useEffect(() => {
       setWidth(getWidth(text, size, className));
     }, [size, text, className]);
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "svg",
-      {
-        className,
-        fill: "currentColor",
-        viewBox: `0 0 ${width} ${size}`,
-        children: /* @__PURE__ */ jsxRuntimeExports.jsx("text", { fontSize: size, children: text })
-      }
-    );
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { className, fill: "currentColor", viewBox: `0 0 ${width} ${size}`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("text", { fontSize: size, children: text }) });
   }
   function Avatar({ data }) {
     if (!data) return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { className: "v-avatar", loading: true });
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(Board, { className: "v-avatar", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: data.src }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: data.src, alt: "头像" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(TextSVG, { text: data.name, className: "v-serif" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: data.id })
     ] });
   }
+  function TipItem({ tip, className, children, ...other }) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs(AsElement, { className: cn("v-tip-item", className), ...other, children: [
+      children,
+      tip ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "v-tip", children: tip }) : /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, {})
+    ] });
+  }
   const SvgHome = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "-1 -1 34 34", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", strokeWidth: 1, stroke: "currentColor", strokeLinecap: "round", strokeLinejoin: "round", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M31.772 16.043l-15.012-15.724c-0.189-0.197-0.449-0.307-0.721-0.307s-0.533 0.111-0.722 0.307l-15.089 15.724c-0.383 0.398-0.369 1.031 0.029 1.414 0.399 0.382 1.031 0.371 1.414-0.029l1.344-1.401v14.963c0 0.552 0.448 1 1 1h6.986c0.551 0 0.998-0.445 1-0.997l0.031-9.989h7.969v9.986c0 0.552 0.448 1 1 1h6.983c0.552 0 1-0.448 1-1v-14.968l1.343 1.407c0.197 0.204 0.459 0.308 0.722 0.308 0.249 0 0.499-0.092 0.692-0.279 0.398-0.382 0.411-1.015 0.029-1.413zM26.985 14.213v15.776h-4.983v-9.986c0-0.552-0.448-1-1-1h-9.965c-0.551 0-0.998 0.445-1 0.997l-0.031 9.989h-4.989v-15.777c0-0.082-0.013-0.162-0.032-0.239l11.055-11.52 10.982 11.507c-0.021 0.081-0.036 0.165-0.036 0.252z" }));
+  const SvgMessage = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M1.75 1h8.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 10.25 10H7.061l-2.574 2.573A1.458 1.458 0 0 1 2 11.543V10h-.25A1.75 1.75 0 0 1 0 8.25v-5.5C0 1.784.784 1 1.75 1ZM1.5 2.75v5.5c0 .138.112.25.25.25h1a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h3.5a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25h-8.5a.25.25 0 0 0-.25.25Zm13 2a.25.25 0 0 0-.25-.25h-.5a.75.75 0 0 1 0-1.5h.5c.966 0 1.75.784 1.75 1.75v5.5A1.75 1.75 0 0 1 14.25 12H14v1.543a1.458 1.458 0 0 1-2.487 1.03L9.22 12.28a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l2.22 2.22v-2.19a.75.75 0 0 1 .75-.75h1a.25.25 0 0 0 .25-.25Z" }));
   const SvgConnect = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 32 32", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M2.002 27.959c0-0.795 0.597-1.044 0.835-1.154l8.783-4.145c0.63-0.289 1.064-0.885 1.149-1.573s-0.193-1.37-0.733-1.803c-2.078-1.668-3.046-5.334-3.046-7.287v-4.997c0-2.090 3.638-4.995 7.004-4.995 3.396 0 6.997 2.861 6.997 4.995v4.998c0 1.924-0.8 5.604-2.945 7.292-0.547 0.43-0.831 1.115-0.749 1.807 0.082 0.692 0.518 1.291 1.151 1.582l2.997 1.422 0.494-1.996-2.657-1.243c2.771-2.18 3.708-6.463 3.708-8.864v-4.997c0-3.31-4.582-6.995-8.998-6.995s-9.004 3.686-9.004 6.995v4.997c0 2.184 0.997 6.602 3.793 8.846l-8.783 4.145s-1.998 0.89-1.998 1.999v3.001c0 1.105 0.895 1.999 1.998 1.999h21.997v-2l-21.996 0.001v-2.029zM30.998 25.996h-3v-3c0-0.552-0.448-1-1-1s-1 0.448-1 1v3h-3c-0.552 0-1 0.448-1 1s0.448 1 1 1h3v3c0 0.552 0.448 1 1 1s1-0.448 1-1v-3h3c0.552 0 1-0.448 1-1s-0.448-1-1-1z" }));
   const SvgDisconnect = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 32 32", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M29.323,28.000 L31.610,30.293 C31.999,30.684 31.999,31.316 31.610,31.707 C31.415,31.902 31.160,32.000 30.905,32.000 C30.649,32.000 30.394,31.902 30.200,31.707 L27.913,29.414 L25.627,31.707 C25.432,31.902 25.177,32.000 24.922,32.000 C24.667,32.000 24.412,31.902 24.217,31.707 C23.827,31.316 23.827,30.684 24.217,30.293 L26.503,28.000 L24.217,25.707 C23.827,25.316 23.827,24.684 24.217,24.293 C24.606,23.902 25.237,23.902 25.627,24.293 L27.913,26.586 L30.200,24.293 C30.589,23.902 31.220,23.902 31.610,24.293 C31.999,24.684 31.999,25.316 31.610,25.707 L29.323,28.000 ZM21.638,22.294 C22.028,22.684 22.028,23.317 21.638,23.707 C21.249,24.097 20.618,24.098 20.228,23.706 L19.231,22.706 C19.031,22.505 18.925,22.229 18.940,21.947 C18.956,21.664 19.089,21.400 19.308,21.222 C22.876,18.321 23.000,13.053 23.000,13.000 L23.000,7.000 C22.444,4.024 18.877,2.035 16.019,2.001 L15.948,2.003 C13.076,2.003 9.529,4.087 8.968,7.087 L8.964,12.994 C8.964,13.045 9.019,18.324 12.587,21.225 C12.845,21.435 12.982,21.761 12.952,22.093 C12.922,22.425 12.728,22.720 12.436,22.880 L1.988,28.594 L1.988,30.000 L20.933,30.000 C21.484,30.000 21.930,30.448 21.930,31.000 C21.930,31.552 21.484,32.000 20.933,32.000 L1.988,32.000 C0.888,32.000 -0.007,31.103 -0.007,30.000 L-0.007,28.000 C-0.007,27.634 0.193,27.297 0.513,27.122 L10.274,21.785 C7.005,18.239 7.000,13.232 7.000,13.000 L7.000,7.000 L6.987,6.832 C7.672,2.777 12.112,0.043 15.865,0.003 L15.948,-0.000 C19.718,-0.000 24.219,2.744 24.908,6.829 L24.922,6.996 L24.926,12.990 C24.926,13.227 24.888,18.479 21.380,22.034 L21.638,22.294 Z" }));
   const SvgBlocked = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "1 1 22 22", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "none", strokeWidth: 2, stroke: "currentColor", strokeLinecap: "round", strokeLinejoin: "round", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M5.63605 5.63603L18.364 18.364M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" }));
+  const SvgNotify = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M8 16a2 2 0 0 0 1.985-1.75c.017-.137-.097-.25-.235-.25h-3.5c-.138 0-.252.113-.235.25A2 2 0 0 0 8 16ZM3 5a5 5 0 0 1 10 0v2.947c0 .05.015.098.042.139l1.703 2.555A1.519 1.519 0 0 1 13.482 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947Zm5-3.5A3.5 3.5 0 0 0 4.5 5v2.947c0 .346-.102.683-.294.97l-1.703 2.556a.017.017 0 0 0-.003.01l.001.006c0 .002.002.004.004.006l.006.004.007.001h10.964l.007-.001.006-.004.004-.006.001-.007a.017.017 0 0 0-.003-.01l-1.703-2.554a1.745 1.745 0 0 1-.294-.97V5A3.5 3.5 0 0 0 8 1.5Z" }));
   function Actions({ data }) {
-    if (!data) return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { className: "v-actions", loading: true });
-    const [isGuest, setGuest] = reactExports.useState(false);
-    const [isSelf, setSelf] = reactExports.useState(false);
+    const [isGuest, setIsGuest] = reactExports.useState(false);
+    const [isSelf, setIsSelf] = reactExports.useState(false);
     const [blocked, setBlocked] = reactExports.useState(false);
     const [connected, setConnected] = reactExports.useState(false);
     reactExports.useEffect(() => {
-      setGuest(data.type == "guest");
-      setSelf(data.type == "self");
+      if (!data) return;
+      setIsGuest(data.type == "guest");
+      setIsSelf(data.type == "self");
       setConnected(data.type == "friend");
       isBlocked(data.id).then(setBlocked);
     }, [data]);
+    if (!data) return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { className: "v-actions", loading: true });
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(Board, { as: "ul", className: "v-actions", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        TipItem,
-        {
-          as: "li",
-          className: "v-home",
-          tip: "主页",
-          onClick: () => goHome(data.id),
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgHome, {})
-        }
-      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "li", className: "v-home", tip: "主页", onClick: () => goHome(data.id), children: /* @__PURE__ */ jsxRuntimeExports.jsx(SvgHome, {}) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         TipItem,
         {
@@ -12902,8 +12797,7 @@
           className: "v-pm",
           tip: "私信",
           onClick: () => {
-            if (isGuest)
-              return confirm("暂未登录，是否打开登录页面") && goLogin();
+            if (isGuest) return confirm("暂未登录，是否打开登录页面") && goLogin();
             if (isSelf) return alert("这是自己");
             goPm(data.nid);
           },
@@ -12917,8 +12811,7 @@
           className: "v-friend",
           tip: connected ? "解除好友" : "加好友",
           onClick: async () => {
-            if (isGuest)
-              return confirm("暂未登录，是否打开登录页面") && goLogin();
+            if (isGuest) return confirm("暂未登录，是否打开登录页面") && goLogin();
             if (isSelf) return alert("这是自己");
             const action = connected ? disconnect : connect;
             const ret = await action(data.nid, data.gh);
@@ -12943,17 +12836,25 @@
       )
     ] });
   }
+  function Switch({ defaultEnabled, onEnable, onDisable }) {
+    const [enabled, setEnabled] = reactExports.useState(defaultEnabled);
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "v-switch",
+        "data-enabled": enabled ? "enabled" : "disabled",
+        onClick: () => {
+          const curr = !enabled;
+          setEnabled(curr);
+          if (curr) onEnable?.();
+          else onDisable?.();
+        }
+      }
+    );
+  }
   function Stats({ data }) {
     if (!data) return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { className: "v-stats", loading: true });
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { as: "ul", className: "v-stats", children: data.map(({ type, value, name }) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-      TipItem,
-      {
-        as: "li",
-        className: cn("v-stat", "v-" + type),
-        tip: name,
-        children: value
-      }
-    )) });
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { as: "ul", className: "v-stats", children: data.map(({ type, value, name }) => /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { as: "li", className: cn("v-stat", "v-" + type), tip: name, children: value }, type)) });
   }
   function Chart({ data }) {
     if (!data) return /* @__PURE__ */ jsxRuntimeExports.jsx(Board, { className: "v-chart", loading: true });
@@ -12966,7 +12867,7 @@
           width: (value / max * 100).toFixed(2) + "%"
         }
       }
-    ) })) });
+    ) }, label)) });
   }
   function NamedBoard({ name, children, ...props }) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(Board, { as: "fieldset", ...props, children: [
@@ -12974,6 +12875,7 @@
       children
     ] });
   }
+  const SvgUser = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 1 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM10.5 5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z" }));
   function Bio({ data }) {
     const ref = reactExports.useRef(null);
     reactExports.useEffect(() => {
@@ -13000,27 +12902,16 @@
       }
     );
   }
-  function ActionsBoard({
-    actions,
-    className,
-    children,
-    ...props
-  }) {
+  function ActionsBoard({ actions, className, children, ...props }) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(NamedBoard, { className: cn("v-actions-board", className), ...props, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "v-actions-list", children: actions?.map(({ icon, tip, action }) => /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { tip, onClick: action, children: icon })) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "v-actions-list", children: actions?.map(({ icon, tip, action }, i) => /* @__PURE__ */ jsxRuntimeExports.jsx(TipItem, { tip, onClick: action, children: icon }, i)) }),
       children
     ] });
   }
   const SvgEdit = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z" }));
   const SvgConfirm = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "3 3 18 18", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M19.3,5.3L9,15.6l-4.3-4.3l-1.4,1.4l5,5L9,18.4l0.7-0.7l11-11L19.3,5.3z" }));
   const SvgClose = (props) => /* @__PURE__ */ reactExports.createElement("svg", { viewBox: "4 4 16 16", xmlns: "http://www.w3.org/2000/svg", width: "14px", height: "14px", fill: "currentColor", ...props }, /* @__PURE__ */ reactExports.createElement("path", { d: "M5.6,4.2L4.2,5.6l6.4,6.4l-6.4,6.4l1.4,1.4l6.4-6.4l6.4,6.4l1.4-1.4L13.4,12l6.4-6.4l-1.4-1.4L12,10.6L5.6,4.2z" }));
-  function EditableBoard({
-    value = "",
-    onSave,
-    actions = [],
-    children,
-    ...props
-  }) {
+  function EditableBoard({ value = "", onSave, actions = [], children, ...props }) {
     const [editing, setEditing] = reactExports.useState(false);
     const [editValue, setEditValue] = reactExports.useState(value);
     const acts = [...actions];
@@ -13054,19 +12945,13 @@
       });
     }
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(ActionsBoard, { actions: acts, ...props, children: [
-      editing && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "textarea",
-        {
-          value: editValue,
-          onChange: (e) => setEditValue(e.target.value)
-        }
-      ),
+      editing && /* @__PURE__ */ jsxRuntimeExports.jsx("textarea", { value: editValue, onChange: (e) => setEditValue(e.target.value) }),
       children
     ] });
   }
   function TagList({ tags, children, className, ...props }) {
     const lis = [];
-    for (const tag of tags ?? []) lis.push(/* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: tag }));
+    for (const tag of tags ?? []) lis.push(/* @__PURE__ */ jsxRuntimeExports.jsx("li", { children: tag }, tag));
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("ul", { className: cn("v-tag-list", className), ...props, children: [
       children,
       lis
@@ -13259,9 +13144,7 @@
       const element = document.createElement("html");
       element.innerHTML = html.replace(/<(img|script|link)/g, "<noload");
       const friends = /* @__PURE__ */ new Set();
-      for (const a of element.querySelectorAll(
-        "#memberUserList a.avatar"
-      )) {
+      for (const a of element.querySelectorAll("#memberUserList a.avatar")) {
         const id2 = a.href.split("/").pop() ?? "";
         friends.add(id2);
       }
@@ -13272,8 +13155,7 @@
       if (!user) return /* @__PURE__ */ new Set();
       const id = user.id;
       const cache = await db.get("friends", id);
-      if (cache && cache.timestamp > Date.now() - 36e5)
-        return cache.friends;
+      if (cache && cache.timestamp > Date.now() - 36e5) return cache.friends;
       const friends = await net(id);
       await db.put("friends", { id, friends, timestamp: Date.now() });
       return friends;
@@ -13373,13 +13255,6 @@
   function commentEnhance(props) {
     rootPortal(/* @__PURE__ */ jsxRuntimeExports.jsx(CommentEnhance, { ...props }), props.comment);
   }
-  async function dock() {
-    const dock2 = await waitElement(document, "#dock");
-    if (!dock2) return;
-    const robotBtn = await waitElement(dock2, "#showrobot");
-    if (!robotBtn) return;
-    replaceDock(dock2);
-  }
   async function commentList() {
     const commentList2 = await waitElement(document, "#comment_list");
     if (!commentList2) return;
@@ -13389,21 +13264,15 @@
     observeChildren(commentList2, async (comment2) => {
       commentEnhance({ comment: comment2, owner });
       const floor = comment2.getAttribute("data-item-user");
-      const subReply = await waitElement(
-        comment2,
-        "#topic_reply_" + comment2.id.substring(5)
-      );
+      const subReply = await waitElement(comment2, "#topic_reply_" + comment2.id.substring(5));
       if (!subReply) return;
-      observeChildren(
-        subReply,
-        (comment3) => commentEnhance({ comment: comment3, owner, floor })
-      );
+      observeChildren(subReply, (comment3) => commentEnhance({ comment: comment3, owner, floor }));
     });
   }
   async function replyWrapper() {
     stickyIt(await waitElement(document, "#reply_wrapper"));
   }
   await( updateDatabase());
-  await( Promise.all([dock(), commentList(), replyWrapper()]));
+  await( Promise.all([commentList(), replyWrapper()]));
 
 })();

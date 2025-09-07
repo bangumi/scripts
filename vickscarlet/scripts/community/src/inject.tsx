@@ -1,14 +1,5 @@
 import { waitElement, observeChildren } from '@b38dev/dom'
 import { commentEnhance, stickyIt } from '@/components'
-// import { replaceDock, commentEnhance, stickyIt } from '@/components'
-
-// export async function dock() {
-//     const dock = await waitElement<HTMLElement>(document, '#dock')
-//     if (!dock) return
-//     const robotBtn = await waitElement<HTMLElement>(dock, '#showrobot')
-//     if (!robotBtn) return
-//     replaceDock(dock)
-// }
 
 export async function commentList() {
     const commentList = await waitElement(document, '#comment_list')

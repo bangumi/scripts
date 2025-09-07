@@ -15,9 +15,9 @@ import Detail from '@b38dev/icon/svg/detail.svg?react'
 import './CommentEnhance.css'
 
 export interface Props {
-    comment: Element
-    owner?: string | null
-    floor?: string | null
+    readonly comment: Element
+    readonly owner?: string | null
+    readonly floor?: string | null
 }
 
 export function CommentEnhance({ comment, owner, floor }: Props) {
@@ -31,7 +31,7 @@ export function CommentEnhance({ comment, owner, floor }: Props) {
         if (!menuRef.current) return
         if (!actions) return menuRef.current.remove()
         if (actions.children.length < 2) actions.append(menuRef.current)
-        else actions.insertBefore(menuRef.current, actions.lastElementChild!)
+        else actions.insertBefore(menuRef.current, actions.lastElementChild)
     }, [menuRef.current, actions])
     useEffect(() => {
         if (user === whoami()?.id) comment.classList.add('v-self')

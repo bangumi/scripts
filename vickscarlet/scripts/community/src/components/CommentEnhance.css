@@ -103,7 +103,7 @@
     }
     .clearit.v-collapse:after {
         content: '';
-        mask: url(../../../../common/svg/collapse.svg);
+        mask: url(@b38dev/icon/svg/collapse.svg);
         width: 14px;
         height: 14px;
         position: absolute;
@@ -134,6 +134,7 @@
             align-items: center;
             cursor: pointer;
             gap: 5px;
+            padding: 6px;
         }
     }
 

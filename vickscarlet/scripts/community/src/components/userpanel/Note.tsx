@@ -5,8 +5,8 @@ import { EditableBoard } from './common'
 import NoteIcon from '@b38dev/icon/svg/note.svg?react'
 
 export interface Props {
-    id: string
-    onChange?: () => void
+    readonly id: string
+    readonly onChange?: () => void
 }
 
 export function Note({ id, onChange }: Props) {
@@ -23,7 +23,7 @@ export function Note({ id, onChange }: Props) {
         })
     }, [id])
     useEffect(() => {
-        resize(ref.current!)
+        resize(ref.current)
         onChange?.()
     }, [content])
     return (

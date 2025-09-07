@@ -12,17 +12,12 @@ export type Props = NamedBoardProps & {
     actions?: Action[]
 }
 
-export function ActionsBoard({
-    actions,
-    className,
-    children,
-    ...props
-}: Props) {
+export function ActionsBoard({ actions, className, children, ...props }: Props) {
     return (
         <NamedBoard className={cn('v-actions-board', className)} {...props}>
             <ul className="v-actions-list">
-                {actions?.map(({ icon, tip, action }) => (
-                    <TipItem tip={tip} onClick={action}>
+                {actions?.map(({ icon, tip, action }, i) => (
+                    <TipItem key={i} tip={tip} onClick={action}>
                         {icon}
                     </TipItem>
                 ))}

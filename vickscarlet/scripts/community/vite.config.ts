@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import monkey, { MonkeyUserScript } from 'vite-plugin-monkey'
+import svgr from 'vite-plugin-svgr'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import pkg from './package.json'
 
@@ -7,6 +8,7 @@ import pkg from './package.json'
 export default defineConfig({
     plugins: [
         tsconfigPaths(),
+        svgr(),
         monkey({
             entry: pkg.main,
             build: {

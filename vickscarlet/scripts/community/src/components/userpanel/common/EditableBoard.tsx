@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { ActionsBoard, type Action, type Props as ActionsBoardProps } from './ActionsBoard'
+import { useState } from 'react'
+import { ActionsBoard, type Props as ActionsBoardProps } from './ActionsBoard'
 import Edit from '@b38dev/icon/svg/edit.svg?react'
 import Confirm from '@b38dev/icon/svg/confirm.svg?react'
 import Close from '@b38dev/icon/svg/close.svg?react'

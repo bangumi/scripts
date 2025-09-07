@@ -6,8 +6,8 @@ import History from '@b38dev/icon/svg/history.svg?react'
 import './TagListBoard.css'
 
 export interface Props {
-    id: string
-    onChange?: () => void
+    readonly id: string
+    readonly onChange?: () => void
 }
 
 export function UsedName({ id, onChange }: Props) {

@@ -2,9 +2,9 @@ import { useState } from 'react'
 import './Switch.css'
 
 export interface Props {
-    defaultEnabled: boolean
-    onEnable?: () => void
-    onDisable?: () => void
+    readonly defaultEnabled: boolean
+    readonly onEnable?: () => void
+    readonly onDisable?: () => void
 }
 
 export function Switch({ defaultEnabled, onEnable, onDisable }: Props) {

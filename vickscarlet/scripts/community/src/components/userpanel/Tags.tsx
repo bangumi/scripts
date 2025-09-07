@@ -6,8 +6,8 @@ import Tag from '@b38dev/icon/svg/tag.svg?react'
 import './TagListBoard.css'
 
 export interface Props {
-    id: string
-    onChange?: () => void
+    readonly id: string
+    readonly onChange?: () => void
 }
 
 export function Tags({ id, onChange }: Props) {
@@ -24,7 +24,7 @@ export function Tags({ id, onChange }: Props) {
         })
     }, [id])
     useEffect(() => {
-        resize(ref.current!)
+        resize(ref.current)
         onChange?.()
     }, [content])
     return (

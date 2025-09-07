@@ -6,7 +6,7 @@ import './Stats.css'
 export type Data = Stat[]
 
 export interface Props {
-    data?: Data | null
+    readonly data?: Data | null
 }
 
 export function Stats({ data }: Props) {
@@ -14,11 +14,7 @@ export function Stats({ data }: Props) {
     return (
         <Board as="ul" className="v-stats">
             {data.map(({ type, value, name }) => (
-                <TipItem
-                    as="li"
-                    className={cn('v-stat', 'v-' + type)}
-                    tip={name}
-                >
+                <TipItem key={type} as="li" className={cn('v-stat', 'v-' + type)} tip={name}>
                     {value}
                 </TipItem>
             ))}

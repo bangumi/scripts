@@ -8,14 +8,14 @@ export interface Data {
 }
 
 export interface Props {
-    data?: Data | null
+    readonly data?: Data | null
 }
 
 export function Avatar({ data }: Props) {
     if (!data) return <Board className="v-avatar" loading />
     return (
         <Board className="v-avatar">
-            <img src={data.src} />
+            <img src={data.src} alt="头像" />
             <TextSVG text={data.name} className="v-serif" />
             <span>{data.id}</span>
         </Board>

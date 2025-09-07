@@ -12,8 +12,8 @@ import { Note } from './Note'
 import './index.css'
 
 export interface UserPanelProps {
-    id: string
-    onClose?: () => PromiseLike<void> | void
+    readonly id: string
+    readonly onClose?: () => PromiseLike<void> | void
 }
 
 export function UserPanel({ id, onClose }: UserPanelProps) {

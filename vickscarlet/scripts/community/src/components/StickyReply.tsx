@@ -5,8 +5,8 @@ import { Switch } from '@/components/common'
 import './StickyReply.css'
 
 export interface Props {
-    wrapper: Element
-    before: Element
+    readonly wrapper: Element
+    readonly before: Element
 }
 
 function isSticky() {

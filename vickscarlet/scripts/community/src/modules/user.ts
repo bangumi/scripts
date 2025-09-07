@@ -76,11 +76,11 @@ export async function usednames(id: string) {
         const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`)
         const html = await res.text()
         const names = Array.from(
-            html.matchAll(/从 \<strong\>(?<from>.*?)\<\/strong\> 改名为/g),
+            html.matchAll(/从 <strong>(?<from>.*?)<\/strong> 改名为/g),
             (m) => m.groups?.from ?? ''
         )
         const tmls = Array.from(
-            html.matchAll(/\<h4 class="Header"\>(?<tml>\d{4}\-\d{1,2}\-\d{1,2})\<\/h4\>/g),
+            html.matchAll(/<h4 class="Header">(?<tml>\d{4}-\d{1,2}-\d{1,2})<\/h4>/g),
             (m) => m.groups?.tml ?? ''
         )
         if (!tml) tml = tmls[0]
@@ -165,12 +165,12 @@ export async function homepage(id: string) {
     const name = nameSingle!.querySelector<HTMLElement>('.name a')!.innerText
     const src = nameSingle!
         .querySelector<HTMLElement>('.headerAvatar .avatar span')!
-        .style!.backgroundImage.replace('url("', '')
+        .style.backgroundImage.replace('url("', '')
         .replace('")', '')
     // const pinnedLayout = element.querySelector('#pinnedLayout')
     const pinnedLayout = element.querySelector('#userStats_all')
     const stats = Array.from(pinnedLayout!.querySelectorAll('.gridStats > .item'), (e) => {
-        const name = (e!.lastElementChild! as HTMLElement).innerText
+        const name = (e.lastElementChild! as HTMLElement).innerText
         let type
         switch (name) {
             case '收藏':
@@ -195,13 +195,13 @@ export async function homepage(id: string) {
         return {
             type,
             name,
-            value: (e!.firstElementChild! as HTMLElement).innerText,
+            value: (e.firstElementChild! as HTMLElement).innerText,
         } as Stat
     })
     const chart = Array.from(pinnedLayout!.querySelectorAll('#ChartWarpper li > a'), (e) => {
         return {
-            label: (e!.firstElementChild! as HTMLElement).innerText,
-            value: parseInt((e!.lastElementChild! as HTMLElement).innerText.replace(/[\(\)]/g, '')),
+            label: (e.firstElementChild! as HTMLElement).innerText,
+            value: parseInt((e.lastElementChild! as HTMLElement).innerText.replace(/[()]/g, '')),
         } as Chart
     })
     if (me!.nid == 0) return { type: 'guest', name, src, bio, stats, chart } as HomePage

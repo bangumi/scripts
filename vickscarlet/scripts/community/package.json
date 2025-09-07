@@ -1,7 +1,7 @@
 {
   "name": "@b38dev/community",
   "author": "神戸小鳥 @vickscarlet",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "社区助手预览版 with React",
   "license": "MIT",
   "main": "src/index.tsx",

@@ -11,7 +11,7 @@ export interface Data {
 }
 
 export interface Props {
-    data?: Data | null
+    readonly data?: Data | null
 }
 
 export function Bio({ data }: Props) {

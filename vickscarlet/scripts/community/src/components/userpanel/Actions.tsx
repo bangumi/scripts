@@ -20,28 +20,29 @@ import {
 import './Actions.css'
 
 export interface Data {
-    type: 'normal' | 'self' | 'friend' | 'guest'
-    id: string
-    nid?: string
-    gh?: string
+    readonly type: 'normal' | 'self' | 'friend' | 'guest'
+    readonly id: string
+    readonly nid?: string
+    readonly gh?: string
 }
 
 export interface Props {
-    data?: Data | null
+    readonly data?: Data | null
 }
 
 export function Actions({ data }: Props) {
-    if (!data) return <Board className="v-actions" loading />
-    const [isGuest, setGuest] = useState(false)
-    const [isSelf, setSelf] = useState(false)
+    const [isGuest, setIsGuest] = useState(false)
+    const [isSelf, setIsSelf] = useState(false)
     const [blocked, setBlocked] = useState(false)
     const [connected, setConnected] = useState(false)
     useEffect(() => {
-        setGuest(data.type == 'guest')
-        setSelf(data.type == 'self')
+        if (!data) return
+        setIsGuest(data.type == 'guest')
+        setIsSelf(data.type == 'self')
         setConnected(data.type == 'friend')
         isBlocked(data.id).then(setBlocked)
     }, [data])
+    if (!data) return <Board className="v-actions" loading />
 
     return (
         <Board as="ul" className="v-actions">
