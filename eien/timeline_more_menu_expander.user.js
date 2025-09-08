@@ -4,9 +4,12 @@
 // @version      0.0.1
 // @description  把更多里的选项全部移动到了一级菜单
 // @author       默沨
-// @match        bangumi.tv/*
-// @match        bgm.tv/*
-// @match        chii.in/*
+// @match        https://bangumi.tv/
+// @match        https://bgm.tv/
+// @match        https://chii.in/
+// @match        https://bangumi.tv/user/*/timeline*
+// @match        https://bgm.tv/user/*/timeline*
+// @match        https://chii.in/user/*/timeline*
 // @grant        none
 // ==/UserScript==
 
@@ -138,5 +141,10 @@
         const type = window.location.href.match(/type=([^&]+)/)?.[1] || 'all';
         tab_highlight(type);
     });
+
+    (function init() {
+        const type = window.location.href.match(/type=([^&]+)/)?.[1] || 'all';
+        tab_highlight(type);
+    })();
 
 })();

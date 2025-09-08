@@ -1,12 +1,15 @@
 // ==UserScript ==
 // @name         移除卡片
 // @namespace    https://bgm.tv/group/topic/388766
-// @version      0.1
+// @version      0.1.1
 // @description  移除所有 .card 元素
 // @author       默沨
-// @match        https://bangumi.tv/*
-// @match        https://bgm.tv/*
-// @match        https://chii.in/*
+// @match        https://bangumi.tv/
+// @match        https://bgm.tv/
+// @match        https://chii.in/
+// @match        https://bangumi.tv/user/*/timeline*
+// @match        https://bgm.tv/user/*/timeline*
+// @match        https://chii.in/user/*/timeline*
 // @grant        none
 // ==/UserScript==
 
