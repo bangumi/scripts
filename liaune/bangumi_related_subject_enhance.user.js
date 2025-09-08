@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.5
+// @version      0.6.6
 // @description  显示条目页面关联条目的收藏情况，显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -216,7 +216,7 @@ height: 100%;
 
     const toggleButton = createElement("a", "collect-toggle", "javascript:;");
     let isCollected = state.collectStatus[subjectId] === "collect";
-    const avatarNeue = element.querySelector("span.avatarNeue");
+    const coverNeue = element.querySelector("span.coverNeue");
 
     toggleButton.style.backgroundPosition = isCollected
       ? "bottom left"
@@ -224,7 +224,7 @@ height: 100%;
 
     toggleButton.addEventListener("click", () => {
       isCollected = !isCollected;
-      updateCollectStatus(subjectId, isCollected, avatarNeue, toggleButton);
+      updateCollectStatus(subjectId, isCollected, coverNeue, toggleButton);
     });
 
     element.querySelector("a.avatar").append(toggleButton);
@@ -234,7 +234,7 @@ height: 100%;
   const updateCollectStatus = (
     subjectId,
     isCollected,
-    avatarNeue,
+    coverNeue,
     toggleButton
   ) => {
     const statusClass = "collect-status--collect";
@@ -242,7 +242,7 @@ height: 100%;
     if (isCollected) {
       toggleButton.style.backgroundPosition = "bottom left";
       state.collectStatus[subjectId] = "collect";
-      avatarNeue.classList.add("collect-status", statusClass);
+      coverNeue.classList.add("collect-status", statusClass);
 
       fetch(`/subject/${subjectId}/interest/update?gh=${state.securityCode}`, {
         method: "POST",
@@ -254,7 +254,7 @@ height: 100%;
     } else {
       toggleButton.style.backgroundPosition = "top left";
       delete state.collectStatus[subjectId];
-      avatarNeue.classList.remove("collect-status", statusClass);
+      coverNeue.classList.remove("collect-status", statusClass);
 
       fetch(`/subject/${subjectId}/remove?gh=${state.securityCode}`, {
         method: "POST",
@@ -283,8 +283,8 @@ height: 100%;
 
     const statusClass = statusMap[interest];
     if (statusClass) {
-      const avatarNeue = element.querySelector("span.avatarNeue");
-      avatarNeue.classList.add("collect-status", statusClass);
+      const coverNeue = element.querySelector("span.coverNeue");
+      coverNeue.classList.add("collect-status", statusClass);
     }
     state.collectFetchCount++;
   };
@@ -630,12 +630,12 @@ height: 100%;
         const element = volumeSubjects[volumeIndex];
         const { href } = element.querySelector("a.avatar");
         const subjectId = href.split("/subject/")[1];
-        const avatarNeue = element.querySelector("span.avatarNeue");
+        const coverNeue = element.querySelector("span.coverNeue");
         const statusClass = "collect-status--collect";
 
         if (state.isAllCollected) {
           state.collectStatus[subjectId] = "collect";
-          avatarNeue.classList.add("collect-status", statusClass);
+          coverNeue.classList.add("collect-status", statusClass);
 
           fetch(
             `/subject/${subjectId}/interest/update?gh=${state.securityCode}`,
@@ -649,7 +649,7 @@ height: 100%;
           );
         } else {
           delete state.collectStatus[subjectId];
-          avatarNeue.classList.remove("collect-status", statusClass);
+          coverNeue.classList.remove("collect-status", statusClass);
 
           fetch(`/subject/${subjectId}/remove?gh=${state.securityCode}`, {
             method: "POST",
