@@ -200,6 +200,7 @@
             if (!response.ok) throw new Error('API request failed');
             let { type, tags, meta_tags: metaTags } = await response.json();
             metaTags = [...new Set(metaTags)];
+            // eslint-disable-next-line no-sparse-arrays
             type = ['book', 'anime', 'music', 'game', , 'real'][type - 1];
             tags = tags.map(tag => tag.name);
             const tagCounts = tags.reduce((acc, { name, count }) => {

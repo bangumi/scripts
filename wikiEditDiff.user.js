@@ -28,7 +28,6 @@ const diff2htmlUIScript = document.createElement('script');
 diff2htmlUIScript.src = 'https://unpkg.com/diff2html/bundles/js/diff2html-ui.min.js';
 document.head.appendChild(diff2htmlUIScript);
 
-const wcodeContainer = document.getElementById('subject_infobox');
 const summaryContainer = document.getElementById('subject_summary');
 const tagsContainer = document.getElementById('tags');
 
@@ -42,49 +41,6 @@ const submitButton = document.querySelector('input.inputBtn[value="提交"]');
 const compareButton = submitButton.cloneNode(true);
 compareButton.value = '比较差异';
 submitButton.parentNode.insertBefore(compareButton, submitButton.nextSibling);
-
-function getWcode() {
-    if (nowmode === 'wcode') {
-        return document.getElementById('subject_infobox').value;
-    } else if (nowmode === 'normal') {
-        info = new Array();
-        ids = new Object();
-        props = new Object();
-        input_num = $("#infobox_normal input.id").length;
-        ids = $("#infobox_normal input.id");
-        props = $("#infobox_normal input.prop");
-        for (i = 0; i < input_num; i++) {
-            id = $(ids).get(i);
-            prop = $(props).get(i);
-            if ($(id).hasClass('multiKey')) {
-                multiKey = $(id).val();
-                info[multiKey] = new Object();
-                var subKey = 0;
-                i++;
-                id = $(ids).get(i);
-                prop = $(props).get(i);
-                while (($(id).hasClass('multiSubKey') || $(prop).hasClass('multiSubVal')) && i < input_num) {
-                    if (isNaN($(id).val())) {
-                        info[multiKey][subKey] = {
-                            key: $(id).val(),
-                            value: $(prop).val()
-                        };
-                    } else {
-                        info[multiKey][subKey] = $(prop).val();
-                    }
-                    subKey++;
-                    i++;
-                    id = $(ids).get(i);
-                    prop = $(props).get(i);
-                }
-                i--;
-            } else if ($.trim($(id).val()) != "") {
-                info[$(id).val()] = $(prop).val();
-            }
-        }
-        return WCODEDump(info);
-    }
-}
 
 // 创建差异显示函数
 function createDiffSection(container, fileName, oldValue, newValue) {
@@ -129,3 +85,47 @@ compareButton.onclick = function (e) {
         diffContainer.innerHTML += '<p>没有检测到变化</p>';
     }
 };
+
+/* eslint no-undef: "off" */
+function getWcode() {
+    if (nowmode === 'wcode') {
+        return document.getElementById('subject_infobox').value;
+    } else if (nowmode === 'normal') {
+        info = new Array();
+        ids = new Object();
+        props = new Object();
+        input_num = $("#infobox_normal input.id").length;
+        ids = $("#infobox_normal input.id");
+        props = $("#infobox_normal input.prop");
+        for (i = 0; i < input_num; i++) {
+            id = $(ids).get(i);
+            prop = $(props).get(i);
+            if ($(id).hasClass('multiKey')) {
+                multiKey = $(id).val();
+                info[multiKey] = new Object();
+                var subKey = 0;
+                i++;
+                id = $(ids).get(i);
+                prop = $(props).get(i);
+                while (($(id).hasClass('multiSubKey') || $(prop).hasClass('multiSubVal')) && i < input_num) {
+                    if (isNaN($(id).val())) {
+                        info[multiKey][subKey] = {
+                            key: $(id).val(),
+                            value: $(prop).val()
+                        };
+                    } else {
+                        info[multiKey][subKey] = $(prop).val();
+                    }
+                    subKey++;
+                    i++;
+                    id = $(ids).get(i);
+                    prop = $(props).get(i);
+                }
+                i--;
+            } else if ($.trim($(id).val()) != "") {
+                info[$(id).val()] = $(prop).val();
+            }
+        }
+        return WCODEDump(info);
+    }
+}

@@ -14,6 +14,7 @@
 // @gadget       https://bgm.tv/dev/app/3341
 // ==/UserScript==
 
+/* global bbcodeToHtml */
 (async function () {
 
     const colors = {
@@ -221,6 +222,7 @@
                 clone.classList.add('cloned_mine');
 
                 // 初始化贴贴
+                /* eslint-disable */
                 $(clone).find('div.likes_grid').tooltip({
                     animation: true,
                     offset: 0,
@@ -264,11 +266,13 @@
                             return false;
                         });
                     }
-                })
+                });
+                /* eslint-enable */
 
                 clone.querySelectorAll('[id]').forEach(e => e.id += '_clone'); // 楼中楼回复
 
                 clone.querySelectorAll('.erase_post').forEach(e => { // 添加原删除事件
+                    /* eslint-disable */
                     $(e).click(function () {
                         if (confirm(AJAXtip['eraseReplyConfirm'])) {
                             var post_id = $(this).attr('id').split('_')[1];
@@ -287,6 +291,7 @@
                         }
                         return false;
                     });
+                    /* eslint-enable */
                 });
 
                 return clone;
@@ -295,6 +300,7 @@
             saveRepliesHTMLFromDOM(document.title.split(' ')[0], id, replies);
 
             // 修改贴贴方法
+            /* eslint-disable */
             chiiLib.likes.updateGridWithRelatedID = function (related_id, data, is_live = false) {
                 var $container = $('#likes_grid_' + related_id);
                 var $container_clone = $('#likes_grid_' + related_id + '_clone'); // edited
@@ -341,9 +347,11 @@
                     });
                 }
             };
+            /* eslint-enable */
 
             // 同步克隆和本体的回复变化
             // 修改添加回复方法
+            /* eslint-disable */
             chiiLib.ajax_reply.insertSubComments = function (list_id, json) {
                 if (json.posts.sub) {
                     var posts = json.posts.sub,
@@ -372,6 +380,7 @@
                     });
                 }
             }
+            /* eslint-enable */
 
             // 劫持删除回复请求
             const originalAjax = $.ajax;
@@ -389,6 +398,7 @@
                     const post_id = matchResult ? matchResult[1] : null;
                     const originalSuccess = options.success;
 
+                    /* eslint-disable */
                     options.success = function (html) {
                         if (post_id) { // 同步删除克隆
                             $('#post_' + post_id + '_clone').fadeOut(500, function () {
@@ -409,6 +419,7 @@
                             originalSuccess.apply(this, arguments);
                         }
                     };
+                    /* eslint-enable */
                 }
 
                 return originalAjax.call(this, options);

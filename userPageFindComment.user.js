@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         时光机查询特定条目评价
 // @namespace    https://bgm.tv/group/topic/411925
-// @version      0.2.0
+// @version      0.2.1
 // @description  经济的同步率查询
 // @author       mmv
 // @match        https://bgm.tv/http*://bgm.tv/user/*
@@ -263,55 +263,7 @@
         }
     }
 
-    async function encryptData(data, key) {
-        const encoder = new TextEncoder();
-        const encodedData = encoder.encode(data); // 将字符串转换为 Uint8Array
-
-        const iv = crypto.getRandomValues(new Uint8Array(12)); // 生成随机初始化向量 (IV)
-        const cryptoKey = await crypto.subtle.importKey(
-            'raw', // 密钥格式
-            encoder.encode(key), // 将密钥转换为 Uint8Array
-            { name: 'AES-GCM' }, // 使用 AES-GCM 算法
-            false, // 是否可导出
-            ['encrypt', 'decrypt'] // 密钥用途
-        );
-
-        const encryptedData = await crypto.subtle.encrypt(
-            {
-                name: 'AES-GCM',
-                iv,
-            },
-            cryptoKey,
-            encodedData
-        );
-
-        return { iv, encryptedData };
-    }
-
-    async function decryptData(encryptedData, key, iv) {
-        const encoder = new TextEncoder();
-        const cryptoKey = await crypto.subtle.importKey(
-            'raw',
-            encoder.encode(key),
-            { name: 'AES-GCM' },
-            false,
-            ['encrypt', 'decrypt']
-        );
-
-        const decryptedData = await crypto.subtle.decrypt(
-            {
-                name: 'AES-GCM',
-                iv,
-            },
-            cryptoKey,
-            encryptedData
-        );
-
-        const decoder = new TextDecoder();
-        return decoder.decode(decryptedData);
-    }
-
-    let accessToken = localStorage.getItem('incheijs_access_token');
+    let accessToken;
     async function getUserCollection(subject_id) {
         try {
             const headers = {};
@@ -345,7 +297,7 @@
                 message = '个人令牌认证失败';
             }
             if (!accessToken || data.auth_failed) {
-                message += '<br>试试<a class="l" href="https://next.bgm.tv/demo/access-token/create" target="_blank">创建个人令牌</a>并<a class="l" href="javascript:" id="incheiat">填写</a>后再试一遍？';
+                message += '<br>试试<a class="l" href="javascript:" id="incheiat">填写</a>个人令牌后再试一遍？你可以在<a class="l" href="https://next.bgm.tv/demo/access-token/create" target="_blank">这里</a>创建个人令牌';
             }
             container.innerHTML = message;
             container.querySelector('#incheiat')?.addEventListener('click', () => {
@@ -356,8 +308,6 @@
                     alert('格式错误，请重新填写');
                     return;
                 }
-                const secret = prompt('请填写自定义密钥');
-                localStorage.setItem('incheijs_access_token', accessToken);
             });
             return;
         }

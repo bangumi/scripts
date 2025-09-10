@@ -14,6 +14,7 @@
 
 // ==/UserScript==
 
+/* global hljs */
 (async function () {
     'use strict';
 
@@ -160,7 +161,7 @@
 
     // 初始化 highlight.js
     async function initializeHighlightJS() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             document.querySelectorAll('.codeHighlight').forEach(blockWrapper => {
                 blockWrapper.innerHTML = blockWrapper.innerHTML.replace('<pre><br>', '<pre>');
                 const block = blockWrapper.querySelector('pre');

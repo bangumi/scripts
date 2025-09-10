@@ -20,7 +20,6 @@
 // @gadget       https://bgm.tv/dev/app/3526
 // ==/UserScript==
 
-/* global $ */
 /*
  * 兼容性：
  * - [加载更多](https://bgm.tv/dev/app/432)

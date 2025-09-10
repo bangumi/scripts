@@ -378,7 +378,7 @@
 
     function parseWcode(wcode) {
         const result = {};
-        const lines = wcode.split('\n').map(l => l.trim().replace(/^[|\[]/, '').replace(/]$/, ''))
+        const lines = wcode.split('\n').map(l => l.trim().replace(/^[|[]/, '').replace(/]$/, ''))
             .filter(l => !['', '{{', '}}'].includes(l));
 
         let currentKey = null;
@@ -460,6 +460,7 @@
     }
 })();
 
+/* eslint no-undef: "off" */
 function getWcode() {
     if (nowmode === 'wcode') {
         return document.getElementById('subject_infobox').value;

@@ -35,8 +35,6 @@
 // @gadget       https://bgm.tv/dev/app/3372
 // ==/UserScript==
 
-/* global chiiLib, tb_init, tb_remove, $ */
-
 (function () {
     'use strict';
 
@@ -611,6 +609,7 @@
                     // 激活修改功能
                     tb_init(modifyBtn);
                     // from chiiLib.user_index.manage
+                    /* eslint-disable */
                     $(modifyBtn).click(function () {
                         var $rlt_id = $(this).attr('id').split('_')[1],
                             $order = $(this).attr('order'),
@@ -638,6 +637,7 @@
                         }
                         return false;
                     });
+                    /* eslint-enable */
 
                     added.scrollIntoView({ behavior: 'smooth' });
                     added.style.boxShadow = '0 0 8px #0084b4';
