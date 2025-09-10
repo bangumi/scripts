@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         班固米右上角快速搜索
 // @namespace    https://bgm.tv/group/topic/409735
-// @version      0.1.5
+// @version      0.1.6
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
-// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/.*
+// @include      http*://bgm.tv/*
+// @include      http*://bangumi.tv/*
+// @include      http*://chii.in/*
 // @grant        none
 // @license      MIT
 // @greasy       https://greasyfork.org/zh-CN/scripts/517607
