@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.6
+// @version      0.6.7
 // @description  显示条目页面关联条目的收藏情况，显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -208,9 +208,11 @@ height: 100%;
     return element;
   };
 
+  const isGuest = document.querySelector("div.guest");
+
   // 添加收藏切换按钮
   const addCollectToggleButton = (element, subjectId) => {
-    if (element.querySelector("a.collect-toggle")) {
+    if (isGuest || element.querySelector("a.collect-toggle")) {
       return;
     }
 
@@ -334,7 +336,7 @@ height: 100%;
         }
       })
       .catch((error) => {
-        console.error("Error fetching collect data:", error);
+        console.error(`Error fetching collect data: ${url}`, error);
         state.collectFetchCount++;
       });
   };
@@ -524,7 +526,7 @@ height: 100%;
   // DOM 选择器
   const selectors = {
     related:
-      "#columnSubjectHomeB ul.browserCoverMedium li:not(:has(a.thumbTipSmall))",
+      "#columnSubjectHomeB ul.browserCoverMedium:not(.crtList) li:not(:has(a.thumbTipSmall))",
     recommended: "#columnSubjectHomeB ul.coversSmall li",
     volume: "#columnSubjectHomeB ul.browserCoverMedium li:has(a.thumbTipSmall)",
     logoutLinks: "#badgeUserPanel a",
@@ -566,20 +568,24 @@ height: 100%;
 
   // 添加更新按钮到页面
   if (itemsList.length > 0) {
-    const clearitElements = document.querySelectorAll(
-      "#columnSubjectHomeB .subject_section .clearit"
-    );
-    const targetElement = volumeSubjects.length
-      ? clearitElements[1]
-      : clearitElements[0];
-    targetElement?.append(updateBtn);
+    const relatedSubjectSection = Array.from(
+      document.querySelectorAll("#columnSubjectHomeB .subject_section .clearit")
+    ).find((el) => {
+      const subtitleText = el.querySelector("h2.subtitle")?.textContent;
+      return (
+        subtitleText &&
+        (subtitleText.includes("关联条目") ||
+          subtitleText.includes("大概会喜欢"))
+      );
+    });
+    relatedSubjectSection?.append(updateBtn);
   }
 
   // 初始化加载数据
   processMainListItems(false);
 
   // 初始化单行本控制面板
-  if (volumeSubjects.length) {
+  if (!isGuest && volumeSubjects.length > 0) {
     const mangaControlPanel = document.createElement("div");
     mangaControlPanel.className = "manga-control-panel";
 
@@ -664,9 +670,8 @@ height: 100%;
     // 组装控制面板
     mangaControlPanel.append(privateLabel, allCollectButton);
 
-    const clearitElement = document.querySelector(
-      "#columnSubjectHomeB .subject_section .clearit"
-    );
-    clearitElement?.parentNode.insertBefore(mangaControlPanel, clearitElement);
+    const volumeListContainer = volumeSubjects[0].parentElement;
+    const volumeSectionContainer = volumeListContainer.parentElement;
+    volumeSectionContainer.insertBefore(mangaControlPanel, volumeListContainer);
   }
 })();
