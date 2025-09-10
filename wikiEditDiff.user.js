@@ -5,8 +5,11 @@
 // @description  在Bangumi编辑页面显示编辑前后的差异对比
 // @author       You
 // @match        https://bgm.tv/subject/*/edit_detail
+// @match        https://bangumi.tv/subject/*/edit_detail
+// @match        https://chii.in/subject/*/edit_detail
 // @icon         https://bgm.tv/img/favicon.ico
 // @grant        none
+
 // ==/UserScript==
 
 // 加载所需CSS

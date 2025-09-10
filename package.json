@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "meta": "node genMeta.js",
-    "readme": "node genReadme.js"
+    "readme": "node genReadme.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
@@ -13,5 +15,9 @@
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
     "userscript-meta": "^1.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.35.0",
+    "eslint-plugin-userscripts": "^0.5.6"
   }
 }

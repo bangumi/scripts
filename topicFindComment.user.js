@@ -4,17 +4,15 @@
 // @version      1.1.3
 // @description  也可以干别的
 // @author       mmv
-// @match        http*://bgm.tv/subject/topic/*
-// @match        http*://bgm.tv/blog/*
-// @match        http*://bgm.tv/ep/*
-// @match        http*://bgm.tv/character/*
-// @match        http*://bgm.tv/person/*
-// @match        http*://bgm.tv/group/topic/*
+// @match        https://bgm.tv/http*://bgm.tv/subject/topic/*
+// @match        https://bangumi.tv/http*://bgm.tv/subject/topic/*
+// @match        https://chii.in/http*://bgm.tv/subject/topic/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @license      MIT
 // @grant        none
 // @greasy       https://greasyfork.org/zh-CN/scripts/520506
 // @gadget       https://bgm.tv/dev/app/3437
+
 // ==/UserScript==
 
 (function () {

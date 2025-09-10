@@ -4,12 +4,15 @@
 // @version      0.2.0
 // @description  经济的同步率查询
 // @author       mmv
-// @match        http*://bgm.tv/user/*
+// @match        https://bgm.tv/http*://bgm.tv/user/*
+// @match        https://bangumi.tv/http*://bgm.tv/user/*
+// @match        https://chii.in/http*://bgm.tv/user/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @license      MIT
 // @grant        none
 // @greasy       https://greasyfork.org/zh-CN/scripts/520607
 // @gadget       https://bgm.tv/dev/app/3438
+
 // ==/UserScript==
 
 (function () {
