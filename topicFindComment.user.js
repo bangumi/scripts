@@ -4,7 +4,12 @@
 // @version      1.1.3
 // @description  也可以干别的
 // @author       mmv
-// @include      /^https?://(bangumi\.tv|bgm\.tv|chii\.in)/(subject/topic|blog|ep|character|person|group/topic)/*
+// @match        http*://bgm.tv/subject/topic/*
+// @match        http*://bgm.tv/blog/*
+// @match        http*://bgm.tv/ep/*
+// @match        http*://bgm.tv/character/*
+// @match        http*://bgm.tv/person/*
+// @match        http*://bgm.tv/group/topic/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @license      MIT
 // @grant        none

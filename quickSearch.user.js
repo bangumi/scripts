@@ -4,9 +4,9 @@
 // @version      0.1.6
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
-// @include      http*://bgm.tv/*
-// @include      http*://bangumi.tv/*
-// @include      http*://chii.in/*
+// @match        http*://bgm.tv/*
+// @match        http*://bangumi.tv/*
+// @match        http*://chii.in/*
 // @grant        none
 // @license      MIT
 // @greasy       https://greasyfork.org/zh-CN/scripts/517607

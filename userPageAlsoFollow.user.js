@@ -3,12 +3,12 @@
 // @version      0.0.1
 // @description  好友页看共同好友
 // @author       ooo
-// @include      http*://bgm.tv/user/*/friends
-// @include      http*://bgm.tv/user/*/rev_friends
-// @include      http*://chii.in/user/*/friends
-// @include      http*://chii.in/user/*/rev_friends
-// @include      http*://bangumi.tv/user/*/friends
-// @include      http*://bangumi.tv/user/*/rev_friends
+// @match        http*://bgm.tv/user/*/friends
+// @match        http*://bgm.tv/user/*/rev_friends
+// @match        http*://chii.in/user/*/friends
+// @match        http*://chii.in/user/*/rev_friends
+// @match        http*://bangumi.tv/user/*/friends
+// @match        http*://bangumi.tv/user/*/rev_friends
 // @license      MIT
 // ==/UserScript==
 

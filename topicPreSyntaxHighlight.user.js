@@ -4,8 +4,13 @@
 // @version      1.8
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
-// @include     /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/(group|subject)\/topic\/*/
-// @include     /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/(ep|person|character|blog|pm)\/*/
+// @match        http*://bgm.tv/group/topic/*
+// @match        http*://bgm.tv/subject/topic/*
+// @match        http*://bgm.tv/ep/*
+// @match        http*://bgm.tv/person/*
+// @match        http*://bgm.tv/character/*
+// @match        http*://bgm.tv/blog/*
+// @match        http*://bgm.tv/pm/*
 // @grant        none
 // @license      MIT
 // @greasy       https://greasyfork.org/zh-CN/scripts/516547

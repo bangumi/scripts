@@ -1,0 +1,22 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      userscript-meta:
+        specifier: ^1.0.1
+        version: 1.0.1
+
+packages:
+
+  userscript-meta@1.0.1:
+    resolution: {integrity: sha512-jgfve+ZReUyo+t7pmu9sQPyLzsU5qVWW30tYp5iXQsW2BZg78ezOCZU7jMxkyN2BKnsDeaYKMfisU/JerXXCbg==}
+
+snapshots:
+
+  userscript-meta@1.0.1: {}

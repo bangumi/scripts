@@ -4,7 +4,7 @@
 // @version      0.2.0
 // @description  经济的同步率查询
 // @author       mmv
-// @include      /^https?:\/\/(((fast\.)?bgm\.tv)|chii\.in|bangumi\.tv)\/user\/[^/]+$/
+// @match        http*://bgm.tv/user/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @license      MIT
 // @grant        none

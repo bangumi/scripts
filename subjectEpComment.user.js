@@ -4,9 +4,9 @@
 // @version      0.5.4
 // @description  章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 // @author       oo
-// @include      http*://bgm.tv/*
-// @include      http*://chii.in/*
-// @include      http*://bangumi.tv/*
+// @match        http*://bgm.tv/*
+// @match        http*://chii.in/*
+// @match        http*://bangumi.tv/*
 // @grant        GM_xmlhttpRequest
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT

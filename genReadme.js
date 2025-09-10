@@ -1,5 +1,28 @@
 const fs = require('fs');
 const path = require('path');
+const { parse } = require('userscript-meta');
+const { exec } = require('child_process');
+
+// 跨平台自动打开文件（支持 Windows/macOS/Linux）
+const openFile = (filePath) => {
+    let command;
+    // 根据系统平台选择对应命令
+    switch (process.platform) {
+        case 'win32': // Windows 系统
+            command = `start "" "${filePath}"`; // start 命令需空引号处理路径空格
+            break;
+        case 'darwin': // macOS 系统
+            command = `open "${filePath}"`;
+            break;
+        default: // Linux 系统（如 Ubuntu）
+            command = `xdg-open "${filePath}"`;
+            break;
+    }
+
+    // 执行系统命令打开文件
+    exec(command);
+};
+
 
 // 读取当前目录下所有 .user.js 文件
 const getUserScripts = () => {
@@ -10,58 +33,72 @@ const getUserScripts = () => {
 
 // 解析 user.js 元数据（包括@greasy和@gadget）
 const parseUserScript = (filePath) => {
-    const content = fs.readFileSync(filePath, 'utf8');
-    const meta = {};
+    try {
+        const content = fs.readFileSync(filePath, 'utf8');
 
-    // 匹配 UserScript 元数据块
-    const metaMatch = content.match(/\/\/ ==UserScript==([\s\S]*?)\/\/ ==\/UserScript==/);
-    if (!metaMatch) return null;
+        // 匹配 UserScript 元数据块
+        const metaBlockRegex = /\/\/ ==UserScript==([\s\S]*?)\/\/ ==\/UserScript==/;
+        const metaMatch = content.match(metaBlockRegex);
+        if (!metaMatch) return null;
 
-    const metaLines = metaMatch[1].split('\n');
-    const getMatch = (line, tag) => {
-        const regex = new RegExp(`@${tag}\\s+(.+)`);
-        const match = line.match(regex);
-        return match ? match[1].trim() : null;
+        // 使用userscript-meta包解析元数据
+        const meta = parse(metaMatch[1]);
+
+        // 提取所需字段（直接使用解析结果，不做[0]截断）
+        return {
+            name: meta.name ? String(meta.name).trim() : null,
+            description: meta.description ? String(meta.description).trim() : null,
+            namespace: meta.namespace ? String(meta.namespace).trim() : null,
+            greasy: meta.greasy ? String(meta.greasy).trim() : null,
+            gadget: meta.gadget ? String(meta.gadget).trim() : null,
+            filename: path.basename(filePath)
+        };
+    } catch (error) {
+        console.warn(`解析 ${path.basename(filePath)} 出错:`, error.message);
+        return null;
     }
-    const metaToGet = ['version', 'name', 'description', 'namespace', 'greasy', 'gadget'];
-    metaLines.forEach(line => {
-        metaToGet.forEach(tag => {
-            const value = getMatch(line, tag);
-            if (value) meta[tag] = value;
-        });
-    });
-
-    meta.filename = path.basename(filePath);
-    return meta;
 };
 
-// 提取链接最后的数字（支持多种链接格式）
+// 提取链接最后的数字
 const getLinkNumber = (url) => {
     if (!url) return '';
-    // 匹配链接中最后一段的数字（如ID）
+    // 匹配链接中最后一段的数字（支持多种格式）
     const match = url.match(/(\d+)\/*$/);
     return match ? match[1] : '链接';
 };
 
-// 生成 README.md 内容（表格形式展示链接）
+// 生成 README.md 内容
 const generateREADME = (scripts) => {
     let content = `# [inchei](https://bgm.tv/user/inchei)\n\n`;
+
+    if (scripts.length === 0) {
+        content += `暂无脚本，请添加 .user.js 文件后重新生成。\n`;
+        return content;
+    }
 
     scripts.forEach(script => {
         if (!script.name) return;
 
         const githubUrl = `https://github.com/bangumi/scripts/blob/master/inchei/${script.filename}?raw=true`;
-        const githubNum = script.filename;
+        const githubNum = getLinkNumber(githubUrl);
         const greasyNum = script.greasy ? getLinkNumber(script.greasy) : '未发布';
         const gadgetNum = script.gadget ? getLinkNumber(script.gadget) : '无';
 
-        content += `## ${script.name} \`${script.version}\`\n`;
-        if (script.description) content += `${script.description}\n`;
-        if (script.namespace?.includes('/group/topic')) content += `- 讨论页：${script.namespace}\n`;
+        // 添加脚本标题
+        content += `## ${script.name}\n`;
 
-        // 表格展示链接
-        content += `\n`;
-        content += `| 载点 | 链接 |\n`;
+        // 添加描述
+        if (script.description) {
+            content += `${script.description}\n\n`;
+        }
+
+        // 添加讨论页
+        if (script.namespace?.includes('/group/topic')) {
+            content += `- 讨论页：${script.namespace}\n\n`;
+        }
+
+        // 添加链接表格
+        content += `| 类型 | 链接 |\n`;
         content += `|------|------|\n`;
         content += `| GitHub | [${githubNum}](${githubUrl}) |\n`;
         content += `| Greasy Fork | ${script.greasy ? `[${greasyNum}](${script.greasy})` : greasyNum} |\n`;
@@ -78,8 +115,11 @@ const main = () => {
         .filter(Boolean);  // 过滤解析失败的脚本
 
     const readmeContent = generateREADME(scripts);
-    fs.writeFileSync(path.join(__dirname, 'README.md'), readmeContent, 'utf8');
-    console.log('README.md 生成成功！');
+    const readmePath = path.join(__dirname, 'README.md');
+    fs.writeFileSync(readmePath, readmeContent, 'utf8');
+    console.log(`README.md 生成成功！共处理 ${scripts.length} 个脚本`);
+
+    openFile(readmePath);
 };
 
 main();

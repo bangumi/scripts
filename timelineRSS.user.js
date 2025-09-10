@@ -4,15 +4,15 @@
 // @version      0.2.2
 // @description  在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 // @author       oov
-// @include      http*://bgm.tv/
-// @include      http*://chii.in/
-// @include      http*://bangumi.tv/
-// @match        https://bangumi.tv/user/*/timeline*
-// @match        https://bgm.tv/user/*/timeline*
-// @match        https://chii.in/user/*/timeline*
-// @match        https://bangumi.tv/user/*$
-// @match        https://bgm.tv/user/*$
-// @match        https://chii.in/user/*$
+// @match        http*://bgm.tv/
+// @match        http*://chii.in/
+// @match        http*://bangumi.tv/
+// @match        http*://bangumi.tv/user/*/timeline*
+// @match        http*://bgm.tv/user/*/timeline*
+// @match        http*://chii.in/user/*/timeline*
+// @match        http*://bangumi.tv/user/*
+// @match        http*://bgm.tv/user/*
+// @match        http*://chii.in/user/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @grant        none
 // @license      MIT
