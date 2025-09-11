@@ -1,9 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const { parse } = require('userscript-meta');
-const { exec } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import process from 'process';
+import { parse } from 'userscript-meta';
+import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
 
-// 跨平台自动打开文件（支持 Windows/macOS/Linux）
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const openFile = (filePath) => {
     let command;
     // 根据系统平台选择对应命令
@@ -22,7 +26,6 @@ const openFile = (filePath) => {
     // 执行系统命令打开文件
     exec(command);
 };
-
 
 // 读取当前目录下所有 .user.js 文件
 const getUserScripts = () => {
@@ -48,6 +51,7 @@ const parseUserScript = (filePath) => {
         return {
             name: meta.name ? String(meta.name).trim() : null,
             description: meta.description ? String(meta.description).trim() : null,
+            version: meta.version ? String(meta.version).trim() : null,
             namespace: meta.namespace ? String(meta.namespace).trim() : null,
             greasy: meta.greasy ? String(meta.greasy).trim() : null,
             gadget: meta.gadget ? String(meta.gadget).trim() : null,
@@ -80,12 +84,12 @@ const generateREADME = (scripts) => {
         if (!script.name) return;
 
         const githubUrl = `https://github.com/bangumi/scripts/blob/master/inchei/${script.filename}?raw=true`;
-        const githubNum = getLinkNumber(githubUrl);
+        const githubNum = script.filename;
         const greasyNum = script.greasy ? getLinkNumber(script.greasy) : '未发布';
         const gadgetNum = script.gadget ? getLinkNumber(script.gadget) : '无';
 
         // 添加脚本标题
-        content += `## ${script.name}\n`;
+        content += `## ${script.name} \`${script.version}\`\n`;
 
         // 添加描述
         if (script.description) {
@@ -98,7 +102,7 @@ const generateREADME = (scripts) => {
         }
 
         // 添加链接表格
-        content += `| 类型 | 链接 |\n`;
+        content += `| 载点 | 链接 |\n`;
         content += `|------|------|\n`;
         content += `| GitHub | [${githubNum}](${githubUrl}) |\n`;
         content += `| Greasy Fork | ${script.greasy ? `[${greasyNum}](${script.greasy})` : greasyNum} |\n`;

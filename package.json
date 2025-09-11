@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "readme": "node genReadme.js",
+    "readme": "node gen-readme.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -13,14 +13,11 @@
   "author": "",
   "license": "MIT",
   "packageManager": "pnpm@10.14.0",
-  "dependencies": {
-    "userscript-meta": "^1.0.1"
-  },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "eslint": "^9.35.0",
-    "eslint-plugin-rulesdir": "^0.2.2",
     "eslint-plugin-userscripts": "^0.5.6",
-    "globals": "^16.4.0"
+    "globals": "^16.4.0",
+    "userscript-meta": "^1.0.1"
   }
 }

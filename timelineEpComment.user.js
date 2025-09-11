@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         进度时间线显示评论
 // @namespace    https://bgm.tv/group/topic/
-// @version      0.1.4
+// @version      0.1.5
 // @description  在班固米显示动画进度时间线的对应评论
 // @author       oov
 // @match        https://bangumi.tv/
@@ -13,6 +13,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
+// @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT
 // @greasy       https://greasyfork.org/zh-CN/scripts/529610
 // @gadget       https://bgm.tv/dev/app/3654
@@ -434,68 +435,6 @@
     // https://github.com/bangumi/api/issues/242
     if (!data.length) throw new Error(`未找到 ${subjectId} ep${epNum}`);
     return data[0].id;
-  }
-
-  function bbcodeToHtml(bbcode, depth = 0, maxDepth = 10) {
-    if (!depth) {
-      const gifIds = new Set([11, 23, 500, 501, 505, 515, 516, 517, 518, 519, 521, 522, 523]);
-      bbcode = bbcode
-        .replace(/\(bgm(\d+)\)/g, (_, n) => {
-          const num = +n;
-          const url = num < 23
-            ? `/img/smiles/bgm/${num}.${gifIds.has(num) ? 'gif' : 'png'}`
-            : num < 200
-              ? `/img/smiles/tv/${(num - 23).toString().padStart(2, '0')}.gif`
-              : num < 500
-                ? `/img/smiles/tv_vs/bgm_${num}.png`
-                : `/img/smiles/tv_500/bgm_${num}.${gifIds.has(num) ? 'gif' : 'png'}`;
-          return `<img src="${url}" smileid="${num + 16}" alt="(bgm${num})"${[124, 125].includes(num) ? ' width="21"' : ''}>`;
-        })
-        .replace(/\[img(?:=(\d+),(\d+))?\]([^[]+)\[\/img\]/g, (_, w, h, url) =>
-          `<img class="code" src="${url.trim()}" rel="noreferrer" referrerpolicy="no-referrer" alt="${url.trim()}" loading="lazy"${w && h ? ` width="${w}" height="${h}"` : ''}>`
-        )
-        .replace(/\[photo\]([^[]+)\[\/photo\]/g, (_, c) =>
-          `<img class="code" src="//lain.bgm.tv/pic/photo/l/${c}" rel="noreferrer" referrerpolicy="no-referrer" alt="photo" loading="lazy">`
-        )
-        .replace(/\n/g, '<br>');
-    }
-
-    if (depth >= maxDepth) return bbcode;
-
-    const tags = {
-      'float': (v, c) => `<span style="float:${v}">${c}</span>`,
-      'size': (v, c) => `<span style="font-size:${v}px">${c}</span>`,
-      'url': (v, c) => `<a class="l" href="${v}" target="_blank" rel="nofollow external noopener noreferrer">${c}</a>`,
-      'align': (v, c) => `<p align="${v}">${c}</p>`,
-      'b': c => `<span style="font-weight:bold">${c}</span>`,
-      'i': c => `<span style="font-style:italic">${c}</span>`,
-      'u': c => `<span style="text-decoration:underline">${c}</span>`,
-      's': c => `<span style="text-decoration:line-through">${c}</span>`,
-      'mask': c => `<span class="text_mask" style="color:#555;background:#555">${c}</span>`,
-      'quote': c => `<div class="quote"><q>${c}</q></div>`,
-      'left': c => `<p style="text-align:left">${c}</p>`,
-      'right': c => `<p style="text-align:right">${c}</p>`,
-      'center': c => `<p style="text-align:center">${c}</p>`
-    };
-
-    let updated = false;
-    const processed = bbcode
-      .replace(/\[([a-z]+)=([^\]]+)\]([\s\S]*?)\[\/\1\]/gi, (m, t, v, c) => {
-        if (tags[t]) {
-          updated = true;
-          return tags[t](v, bbcodeToHtml(c, depth + 1, maxDepth));
-        }
-        return m;
-      })
-      .replace(/\[([a-z]+)\]([\s\S]*?)\[\/\1\]/gi, (m, t, c) => {
-        if (tags[t]) {
-          updated = true;
-          return tags[t](bbcodeToHtml(c, depth + 1, maxDepth));
-        }
-        return m;
-      });
-
-    return updated ? bbcodeToHtml(processed, depth + 1, maxDepth) : processed;
   }
 
   function getDataLikesList(mainID, reactions) {
