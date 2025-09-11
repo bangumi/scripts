@@ -4,9 +4,11 @@
 // @version      1.8
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
-// @match        https://bgm.tv/http*://bgm.tv/group/topic/*
-// @match        https://bangumi.tv/http*://bgm.tv/group/topic/*
-// @match        https://chii.in/http*://bgm.tv/group/topic/*
+// @match        http*://bgm.tv/group/topic/*
+// @match        http*://bgm.tv/group/topic/*
+// @match        http*://bgm.tv/group/topic/*
+// @match        http*://bangumi.tv/group/topic/*
+// @match        http*://chii.in/group/topic/*
 // @grant        none
 // @license      MIT
 // @greasy       https://greasyfork.org/zh-CN/scripts/516547

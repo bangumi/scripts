@@ -18,6 +18,9 @@ importers:
       eslint:
         specifier: ^9.35.0
         version: 9.35.0
+      eslint-plugin-rulesdir:
+        specifier: ^0.2.2
+        version: 0.2.2
       eslint-plugin-userscripts:
         specifier: ^0.5.6
         version: 0.5.6(eslint@9.35.0)
@@ -150,6 +153,10 @@ packages:
   escape-string-regexp@4.0.0:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
+
+  eslint-plugin-rulesdir@0.2.2:
+    resolution: {integrity: sha512-qhBtmrWgehAIQeMDJ+Q+PnOz1DWUZMPeVrI0wE9NZtnpIMFUfh3aPKFYt2saeMSemZRrvUtjWfYwepsC8X+mjQ==}
+    engines: {node: '>=4.0.0'}
 
   eslint-plugin-userscripts@0.5.6:
     resolution: {integrity: sha512-/DXb8UKyEkNCzXOA6j4E4rCWn2mLCUw2TMxrzSoz3spi4cyANlE0JNmtRleAmzc1HTUmZXr5fIMCQxyLS73DZQ==}
@@ -493,6 +500,8 @@ snapshots:
   deep-is@0.1.4: {}
 
   escape-string-regexp@4.0.0: {}
+
+  eslint-plugin-rulesdir@0.2.2: {}
 
   eslint-plugin-userscripts@0.5.6(eslint@9.35.0):
     dependencies:

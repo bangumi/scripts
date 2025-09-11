@@ -3,9 +3,17 @@ import globals from "globals";
 import { defineConfig } from "eslint/config";
 import userscripts from "eslint-plugin-userscripts";
 
+const requireBangumiDomains = await import("./eslint-rules/require-bangumi-domains.mjs")
+  .then(m => m.default)
+  .catch(error => {
+    console.error("Failed to load rule:", error);
+    return { meta: {}, create: () => ({}) };
+  });
+
 export default defineConfig([
   { files: ["**/*.{js,mjs,cjs}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.browser } },
   { files: ["**/*.js"], languageOptions: { sourceType: "script" } },
+  { files: ["**/*.mjs"], languageOptions: { sourceType: "module" } },
   {
     ignores: [
       'g/'
@@ -16,6 +24,11 @@ export default defineConfig([
     plugins: {
       userscripts: {
         rules: userscripts.rules
+      },
+      local: {
+        rules: {
+          "require-all-bangumi-domains": requireBangumiDomains
+        }
       }
     },
     languageOptions: {
@@ -32,7 +45,8 @@ export default defineConfig([
       ...userscripts.configs.recommended.rules,
       "userscripts/no-invalid-headers": ["error", {
         allowed: ["greasy", "gadget"]
-      }]
+      }],
+      "local/require-all-bangumi-domains": "error",
     },
     settings: {
       userscriptVersions: {
