@@ -7,7 +7,7 @@
 // @match        http*://chii.in/*
 // @match        http*://bangumi.tv/*
 // @license      MIT
-// @grant        unsafeWindow
+// @grant        none
 // @namespace    https://greasyfork.org/users/1337615
 // @gf           https://greasyfork.org/zh-CN/scripts/513954
 // @gadget       https://bgm.tv/dev/app/3344
