@@ -4,9 +4,9 @@
 // @version      0.0.3
 // @description  将关于好友的描述修改为关注
 // @author       oom
-// @include      http*://bgm.tv/
-// @include      http*://chii.in/
-// @include      http*://bangumi.tv/
+// @match        http*://bgm.tv/
+// @match        http*://chii.in/
+// @match        http*://bangumi.tv/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @grant        none
 // @license      MIT
