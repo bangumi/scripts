@@ -9,7 +9,7 @@
 // @match        http*://chii.in/*
 // @grant        none
 // @license      MIT
-// @greasy       https://greasyfork.org/zh-CN/scripts/517607
+// @gf           https://greasyfork.org/zh-CN/scripts/517607
 // @gadget       https://bgm.tv/dev/app/3391
 // ==/UserScript==
 

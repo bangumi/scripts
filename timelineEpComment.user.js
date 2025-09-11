@@ -15,10 +15,11 @@
 // @grant        GM_xmlhttpRequest
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT
-// @greasy       https://greasyfork.org/zh-CN/scripts/529610
+// @gf           https://greasyfork.org/zh-CN/scripts/529610
 // @gadget       https://bgm.tv/dev/app/3654
 // ==/UserScript==
 
+/* global bbcodeToHtml */
 /*
  * 兼容性：
  * - [加载更多](https://bgm.tv/dev/app/432)

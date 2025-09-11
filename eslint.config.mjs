@@ -44,7 +44,7 @@ export default defineConfig([
     rules: {
       ...userscripts.configs.recommended.rules,
       "userscripts/no-invalid-headers": ["error", {
-        allowed: ["greasy", "gadget"]
+        allowed: ["gf", "gadget"]
       }],
       "local/require-all-bangumi-domains": "error",
     },

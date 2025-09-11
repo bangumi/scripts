@@ -10,7 +10,7 @@
 // @grant        GM_xmlhttpRequest
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT
-// @greasy       https://greasyfork.org/zh-CN/scripts/516402
+// @gf           https://greasyfork.org/zh-CN/scripts/516402
 // @gadget       https://bgm.tv/dev/app/3341
 // ==/UserScript==
 

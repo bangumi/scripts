@@ -11,7 +11,7 @@
 // @match        http*://chii.in/group/topic/*
 // @grant        none
 // @license      MIT
-// @greasy       https://greasyfork.org/zh-CN/scripts/516547
+// @gf           https://greasyfork.org/zh-CN/scripts/516547
 // @gadget       https://bgm.tv/dev/app/3377
 
 // ==/UserScript==

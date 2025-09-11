@@ -9,7 +9,7 @@
 // @license      MIT
 // @grant        unsafeWindow
 // @namespace    https://greasyfork.org/users/1337615
-// @greasy       https://greasyfork.org/zh-CN/scripts/513954
+// @gf           https://greasyfork.org/zh-CN/scripts/513954
 // @gadget       https://bgm.tv/dev/app/3344
 // ==/UserScript==
 

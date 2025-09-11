@@ -4,12 +4,12 @@
 // @version      1.3
 // @description  在用户页面显示收藏状态分布彩色条
 // @author       owho
-// @match        *://bgm.tv/user/*
-// @match        *://bangumi.tv/user/*
-// @match        *://chii.in/user/*
+// @match        http*://bgm.tv/user/*
+// @match        http*://bangumi.tv/user/*
+// @match        http*://chii.in/user/*
 // @grant        none
 // @license      MIT
-// @greasy       https://greasyfork.org/zh-CN/scripts/534247
+// @gf           https://greasyfork.org/zh-CN/scripts/534247
 // @gadget       https://bgm.tv/dev/app/3773
 // ==/UserScript==
 

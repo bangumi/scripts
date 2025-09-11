@@ -34,7 +34,7 @@ const getUserScripts = () => {
         .map(file => path.join(__dirname, file));
 };
 
-// 解析 user.js 元数据（包括@greasy和@gadget）
+// 解析 user.js 元数据（包括@gf    和@gadget）
 const parseUserScript = (filePath) => {
     try {
         const content = fs.readFileSync(filePath, 'utf8');
@@ -53,7 +53,9 @@ const parseUserScript = (filePath) => {
             description: meta.description ? String(meta.description).trim() : null,
             version: meta.version ? String(meta.version).trim() : null,
             namespace: meta.namespace ? String(meta.namespace).trim() : null,
-            greasy: meta.greasy ? String(meta.greasy).trim() : null,
+            homepage: meta.homepage ? String(meta.homepage).trim() : null,
+            support: meta.support ? String(meta.support).trim() : null,
+            gf: meta.gf ? String(meta.gf).trim() : null,
             gadget: meta.gadget ? String(meta.gadget).trim() : null,
             filename: path.basename(filePath)
         };
@@ -85,7 +87,7 @@ const generateREADME = (scripts) => {
 
         const githubUrl = `https://github.com/bangumi/scripts/blob/master/inchei/${script.filename}?raw=true`;
         const githubNum = script.filename;
-        const greasyNum = script.greasy ? getLinkNumber(script.greasy) : '未发布';
+        const gfNum = script.gf ? getLinkNumber(script.gf) : '未发布';
         const gadgetNum = script.gadget ? getLinkNumber(script.gadget) : '无';
 
         // 添加脚本标题
@@ -96,16 +98,17 @@ const generateREADME = (scripts) => {
             content += `${script.description}\n\n`;
         }
 
-        // 添加讨论页
-        if (script.namespace?.includes('/group/topic')) {
-            content += `- 讨论页：${script.namespace}\n\n`;
+        // 添加讨论页;
+        const topicUrl = [script.namespace, script.homepage, script.support].find(url => url?.includes('/group/topic'));
+        if (topicUrl) {
+            content += `- 讨论页：${topicUrl}\n\n`;
         }
 
         // 添加链接表格
         content += `| 载点 | 链接 |\n`;
         content += `|------|------|\n`;
         content += `| GitHub | [${githubNum}](${githubUrl}) |\n`;
-        content += `| Greasy Fork | ${script.greasy ? `[${greasyNum}](${script.greasy})` : greasyNum} |\n`;
+        content += `| Greasy Fork | ${script.gf ? `[${gfNum}](${script.gf})` : gfNum} |\n`;
         content += `| 组件 | ${script.gadget ? `[${gadgetNum}](${script.gadget})` : gadgetNum} |\n\n`;
     });
 

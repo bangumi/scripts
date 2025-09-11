@@ -1,5 +1,16 @@
 # [inchei](https://bgm.tv/user/inchei)
 
+## bangumi 可拖动弹框 `2.0.2`
+使 bangumi 的 thickbnox 可拖动
+
+- 讨论页：https://bgm.tv/group/topic/345086
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [draggableThickbox.user.js](https://github.com/bangumi/scripts/blob/master/inchei/draggableThickbox.user.js?raw=true) |
+| Greasy Fork | 未发布 |
+| 组件 | [130](https://bgm.tv/dev/app/130) |
+
 ## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.1`
 为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 
@@ -10,6 +21,17 @@
 | GitHub | [indexSearch.user.js](https://github.com/bangumi/scripts/blob/master/inchei/indexSearch.user.js?raw=true) |
 | Greasy Fork | [516479](https://greasyfork.org/zh-CN/scripts/516479) |
 | 组件 | [3372](https://bgm.tv/dev/app/3372) |
+
+## “好友”改为“关注” `0.0.3`
+将关于好友的描述修改为关注
+
+- 讨论页：https://bgm.tv/group/topic/410150
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [itsNotFriends.user.js](https://github.com/bangumi/scripts/blob/master/inchei/itsNotFriends.user.js?raw=true) |
+| Greasy Fork | [518358](https://greasyfork.org/zh-CN/scripts/518358) |
+| 组件 | 无 |
 
 ## 班固米右上角快速搜索 `0.1.6`
 右上角搜索框输入文字后快速显示部分搜索结果

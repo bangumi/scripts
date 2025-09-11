@@ -31,7 +31,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
 // @grant        none
 // @license      MIT
-// @greasy       https://greasyfork.org/zh-CN/scripts/516479
+// @gf           https://greasyfork.org/zh-CN/scripts/516479
 // @gadget       https://bgm.tv/dev/app/3372
 // ==/UserScript==
 
