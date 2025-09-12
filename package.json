@@ -5,9 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "readme": "node gen-readme.mjs",
+    "readme": "node scripts/gen-readme.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "push": "node scripts/check-userscript-versions.mjs && git push"
   },
   "keywords": [],
   "author": "",
