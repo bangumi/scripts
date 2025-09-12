@@ -150,6 +150,15 @@
 | Greasy Fork | [547546](https://greasyfork.org/zh-CN/scripts/547546) |
 | 组件 | [3401](https://bgm.tv/dev/app/3401) |
 
+## BGM 关联书籍排序工具 `0.1`
+自动提取关联书籍的数字并按顺序排序
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiAutoOrder.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiAutoOrder.user.js?raw=true) |
+| Greasy Fork | 未发布 |
+| 组件 | 无 |
+
 ## Bangumi 编辑对比工具 `0.1`
 在Bangumi编辑页面显示编辑前后的差异对比
 
