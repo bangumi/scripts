@@ -1,7 +1,7 @@
 ;(() => {
     chiiLib.ukagaka.addGeneralConfig({
         title: '打上贴贴',
-        name: 'myCustomSetting',
+        name: 'likes-firework-autoplay',
         type: 'radio',
         defaultValue: 'default',
         getCurrentValue: () => localStorage.getItem('likes-firework-autoplay') || 'no',
