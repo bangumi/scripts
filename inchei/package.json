@@ -1,0 +1,28 @@
+{
+  "name": "bangumi-scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "create": "node scripts/create-script.mjs",
+    "readme": "node scripts/gen-readme.mjs",
+    "version": "node scripts/check-userscript-versions.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "publish:gadget": "node scripts/publish-gadget.mjs",
+    "publish:gf": "npm run readme && npm run version && git push",
+    "publish:all": "npm run publish:gadget && npm run publish:gf"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.16.0",
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "eslint": "^9.35.0",
+    "eslint-plugin-userscripts": "^0.5.6",
+    "globals": "^16.4.0",
+    "userscript-meta": "^1.0.1"
+  }
+}
