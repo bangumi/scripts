@@ -10,6 +10,7 @@
 // @match        http*://bangumi.tv/user/*/friends
 // @match        http*://bangumi.tv/user/*/rev_friends
 // @license      MIT
+// @gadget       https://bgm.tv/dev/app/3565
 // ==/UserScript==
 
 (async function () {
