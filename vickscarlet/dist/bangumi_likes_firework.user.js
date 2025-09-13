@@ -3,13 +3,13 @@
 // @namespace    b38.dev
 // @version      1.0.0
 // @author       神戸小鳥 @vickscarlet
-// @description  Bangumi Playground
+// @description  Bangumi 打上贴贴，让贴贴有趣起来
 // @license      MIT
 // @icon         https://bgm.tv/img/favicon.ico
 // @homepage     https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/likes_firework
-// @match        *://bgm.tv/group/topic/*
-// @match        *://chii.in/group/topic/*
-// @match        *://bangumi.tv/group/topic/*
+// @match        *://bgm.tv/*
+// @match        *://chii.in/*
+// @match        *://bangumi.tv/*
 // ==/UserScript==
 
 (function () {
@@ -28,13 +28,13 @@
         { value: "no", label: "不自动播放" }
       ]
     });
-    const likes = Array.from(document.querySelectorAll(".postTopic .likes_grid a.item")).map(
-      (e) => {
-        const url = e.querySelector(".emoji").style.backgroundImage.split('"')[1];
-        const count = Number(e.querySelector(".num").innerText);
-        return [url, count];
-      }
-    );
+    const likes = Array.from(
+      document.querySelectorAll("#columnInSubjectA > .clearit .likes_grid a.item")
+    ).map((e) => {
+      const url = e.querySelector(".emoji").style.backgroundImage.split('"')[1];
+      const count = Number(e.querySelector(".num").innerText);
+      return [url, count];
+    });
     if (!likes.length) return;
     const rand = (min, max) => ~~(Math.random() * (max - min + 1) + min);
     const displacement = (v0, a, t) => v0 * t + a * t * t / 2;
@@ -148,7 +148,7 @@
         this.gap += dt / 10;
         this.pixel += dt / 40;
         this.alpha -= 0.01;
-        if (this.alpha < 0.05) {
+        if (this.alpha < 0.05 || this.gap > 3) {
           return this.end();
         }
         const data = Like.get(this.url);
@@ -331,7 +331,9 @@
       time = Date.now();
       timeout = 0;
       constructor() {
-        const actions = document.querySelector(".postTopic .topic_actions .post_actions");
+        const actions = document.querySelector(
+          "#columnInSubjectA > .clearit .topic_actions .post_actions"
+        );
         const btn = document.createElement("div");
         btn.classList.add("action");
         const a = document.createElement("a");
@@ -359,14 +361,11 @@
       }
       async init(likes2) {
         await Like.init(likes2.map(([url]) => url));
-        for (let [url, count] of likes2) {
-          for (let i = 0; i < count; i++) {
-            const delay = Math.min(rand(10, 50) * count, 5e3);
-            setTimeout(() => {
-              this.launch(url);
-            }, delay);
-          }
-        }
+        likes2.map(([url, count]) => new Array(count).fill(url)).flat().sort(() => rand(-10, 10)).forEach((url, i) => {
+          setTimeout(() => {
+            this.launch(url);
+          }, Math.min(rand(20, 100) * i, 15e3));
+        });
       }
       launch(url) {
         const target = [rand(50, this.cw - 50), rand(50, this.ch / 2) - 50];

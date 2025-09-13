@@ -2,7 +2,7 @@
   "name": "@b38dev/likes-firework",
   "author": "神戸小鳥 @vickscarlet",
   "version": "1.0.0",
-  "description": "Bangumi Playground",
+  "description": "Bangumi 打上贴贴，让贴贴有趣起来",
   "license": "MIT",
   "main": "src/index.ts",
   "out": "bangumi_likes_firework.user.js",
@@ -12,9 +12,9 @@
     "icon": "https://bgm.tv/img/favicon.ico",
     "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/likes_firework",
     "match": [
-      "*://bgm.tv/group/topic/*",
-      "*://chii.in/group/topic/*",
-      "*://bangumi.tv/group/topic/*"
+      "*://bgm.tv/*",
+      "*://chii.in/*",
+      "*://bangumi.tv/*"
     ]
   },
   "scripts": {

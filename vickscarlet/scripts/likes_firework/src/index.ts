@@ -11,15 +11,13 @@
             { value: 'no', label: '不自动播放' },
         ],
     })
-    const likes = Array.from(document.querySelectorAll('.postTopic .likes_grid a.item')).map(
-        (e) => {
-            const url = e
-                .querySelector<HTMLSpanElement>('.emoji')!
-                .style.backgroundImage.split('"')[1]
-            const count = Number(e.querySelector<HTMLSpanElement>('.num')!.innerText)
-            return [url, count] as [string, number]
-        }
-    )
+    const likes = Array.from(
+        document.querySelectorAll('#columnInSubjectA > .clearit .likes_grid a.item')
+    ).map((e) => {
+        const url = e.querySelector<HTMLSpanElement>('.emoji')!.style.backgroundImage.split('"')[1]
+        const count = Number(e.querySelector<HTMLSpanElement>('.num')!.innerText)
+        return [url, count] as [string, number]
+    })
     if (!likes.length) return
 
     const rand = (min: number, max: number) => ~~(Math.random() * (max - min + 1) + min)
@@ -175,7 +173,7 @@
             this.gap += dt / 10
             this.pixel += dt / 40
             this.alpha -= 0.01
-            if (this.alpha < 0.05) {
+            if (this.alpha < 0.05 || this.gap > 3) {
                 return this.end()
             }
             const data = Like.get(this.url)!
@@ -379,7 +377,9 @@
         time = Date.now()
         timeout = 0
         constructor() {
-            const actions = document.querySelector('.postTopic .topic_actions .post_actions')
+            const actions = document.querySelector(
+                '#columnInSubjectA > .clearit .topic_actions .post_actions'
+            )
             const btn = document.createElement('div')
             btn.classList.add('action')
             const a = document.createElement('a')
@@ -407,14 +407,15 @@
         }
         async init(likes: [string, number][]) {
             await Like.init(likes.map(([url]) => url))
-            for (let [url, count] of likes) {
-                for (let i = 0; i < count; i++) {
-                    const delay = Math.min(rand(10, 50) * count, 5000)
+            likes
+                .map(([url, count]) => new Array(count).fill(url))
+                .flat()
+                .sort(() => rand(-10, 10))
+                .forEach((url, i) => {
                     setTimeout(() => {
                         this.launch(url)
-                    }, delay)
-                }
-            }
+                    }, Math.min(rand(20, 100) * i, 15000))
+                })
         }
         launch(url: string) {
             const target = [rand(50, this.cw - 50), rand(50, this.ch / 2) - 50] as Pos
