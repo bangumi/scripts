@@ -346,8 +346,7 @@
         return result.data;
     };
 
-    // const myUsername = document.querySelector('#dock a').href.split('/').pop();
-    const myUsername = 'uks_ask';
+    const myUsername = document.querySelector('#dock a').href.split('/').pop();
     let formhash;
     const getFormhash = async () => {
         if (!formhash) { // 非目录页且过去未创建过目录时
