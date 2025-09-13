@@ -1,31 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import process from 'process';
 import { parse } from 'userscript-meta';
-import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
+import openFile from './utils.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(path.dirname(__filename));
-
-const openFile = (filePath) => {
-    let command;
-    // 根据系统平台选择对应命令
-    switch (process.platform) {
-        case 'win32': // Windows 系统
-            command = `start "" "${filePath}"`; // start 命令需空引号处理路径空格
-            break;
-        case 'darwin': // macOS 系统
-            command = `open "${filePath}"`;
-            break;
-        default: // Linux 系统（如 Ubuntu）
-            command = `xdg-open "${filePath}"`;
-            break;
-    }
-
-    // 执行系统命令打开文件
-    exec(command);
-};
 
 // 读取当前目录下所有 .user.js 文件
 const getUserScripts = () => {
@@ -87,7 +67,7 @@ const generateREADME = (scripts) => {
 
         const githubUrl = `https://github.com/bangumi/scripts/blob/master/inchei/${script.filename}?raw=true`;
         const githubNum = script.filename;
-        const gfNum = script.gf ? getLinkNumber(script.gf) : '未发布';
+        const gfNum = script.gf ? getLinkNumber(script.gf) : '无';
         const gadgetNum = script.gadget ? getLinkNumber(script.gadget) : '无';
 
         // 添加脚本标题

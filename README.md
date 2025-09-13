@@ -8,7 +8,7 @@
 | 载点 | 链接 |
 |------|------|
 | GitHub | [draggableThickbox.user.js](https://github.com/bangumi/scripts/blob/master/inchei/draggableThickbox.user.js?raw=true) |
-| Greasy Fork | 未发布 |
+| Greasy Fork | 无 |
 | 组件 | [130](https://bgm.tv/dev/app/130) |
 
 ## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.2`
@@ -32,6 +32,15 @@
 | GitHub | [itsNotFriends.user.js](https://github.com/bangumi/scripts/blob/master/inchei/itsNotFriends.user.js?raw=true) |
 | Greasy Fork | [518358](https://greasyfork.org/zh-CN/scripts/518358) |
 | 组件 | 无 |
+
+## 下滑隐藏顶栏，上滑显示顶栏 `0.0.1`
+下滑隐藏顶栏，上滑显示顶栏
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [partialPersistentNav.user.js](https://github.com/bangumi/scripts/blob/master/inchei/partialPersistentNav.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [4701](https://bgm.tv/dev/app/4701) |
 
 ## 班固米右上角快速搜索 `0.1.6`
 右上角搜索框输入文字后快速显示部分搜索结果
@@ -114,8 +123,8 @@
 | 载点 | 链接 |
 |------|------|
 | GitHub | [userPageAlsoFollow.user.js](https://github.com/bangumi/scripts/blob/master/inchei/userPageAlsoFollow.user.js?raw=true) |
-| Greasy Fork | 未发布 |
-| 组件 | 无 |
+| Greasy Fork | 无 |
+| 组件 | [3565](https://bgm.tv/dev/app/3565) |
 
 ## Bangumi 不同类型收藏状态比例条图 `1.3`
 在用户页面显示收藏状态分布彩色条
@@ -156,7 +165,7 @@
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiAutoOrder.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiAutoOrder.user.js?raw=true) |
-| Greasy Fork | 未发布 |
+| Greasy Fork | 无 |
 | 组件 | 无 |
 
 ## Bangumi 编辑对比工具 `0.1`
@@ -165,6 +174,6 @@
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiEditDiff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEditDiff.user.js?raw=true) |
-| Greasy Fork | 未发布 |
+| Greasy Fork | 无 |
 | 组件 | 无 |
 

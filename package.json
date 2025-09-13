@@ -5,15 +5,19 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "create": "node scripts/create-script.mjs",
     "readme": "node scripts/gen-readme.mjs",
+    "version": "node scripts/check-userscript-versions.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "push": "node scripts/check-userscript-versions.mjs && git push"
+    "publish:gadget": "node scripts/publish-gadget.mjs",
+    "publish:gf": "npm run readme && npm run version && git push",
+    "publish:all": "npm run publish:gadget && npm run publish:gf"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "packageManager": "pnpm@10.14.0",
+  "packageManager": "pnpm@10.16.0",
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "eslint": "^9.35.0",
