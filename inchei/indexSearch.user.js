@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序
 // @namespace    https://bgm.tv/group/topic/409246
-// @version      0.6.2
+// @version      0.6.3
 // @description  为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 // @author       mmm
 // @match        http*://bgm.tv/index/*
@@ -40,7 +40,7 @@
 
     // #region 样式
     const style = document.createElement('style');
-    style.textContent = `
+    style.textContent = /* css */`
         ul.ajaxSubjectList li {
             ul.prg_list li {
                 border-bottom: none;
@@ -107,6 +107,24 @@
             cursor: pointer;
         }
         /* 搜索选择器样式 */
+        html[data-theme="dark"] #indexSelectorWrapper {
+            .dropdown-icon::before,
+            .dropdown-icon::after {
+                background-color: #aaa;
+            }
+            .dropdown-menu {
+                background: rgba(80, 80, 80, 0.7);
+                color: rgba(255, 255, 255, .7);
+            }
+            .search-box {
+                border-bottom-color: #444;
+            }
+            .search-box input {
+                background-color: #202122;
+                color: #e0e0e0;
+                border-color: #5c5c5c;
+            }
+        }
         #indexSelectorWrapper {
             .custom-select {
                 width: 100%;
@@ -133,10 +151,6 @@
                 background-color: #666;
                 border-radius: 1px;
                 transition: background-color 0.2s;
-            }
-            html[data-theme="dark"] .dropdown-icon::before,
-            html[data-theme="dark"] .dropdown-icon::after {
-                background-color: #aaa;
             }
             .dropdown-icon::before {
                 transform: rotate(45deg);
@@ -168,19 +182,12 @@
                 backdrop-filter: blur(5px);
                 color: rgba(0, 0, 0, .7);
             }
-            html[data-theme="dark"] .dropdown-menu {
-                background: rgba(80, 80, 80, 0.7);
-                color: rgba(255, 255, 255, .7);
-            }
             .dropdown-menu.show {
                 display: block;
             }
             .search-box {
                 padding: 8px;
                 border-bottom: 1px solid #eee;
-            }
-            html[data-theme="dark"] .search-box {
-                border-bottom-color: #444;
             }
             .search-box input {
                 width: 100%;
@@ -189,11 +196,6 @@
                 border-radius: 3px;
                 box-sizing: border-box;
                 font-size: 15px;
-            }
-            html[data-theme="dark"] .search-box input {
-                background-color: #202122;
-                color: #e0e0e0;
-                border-color: #5c5c5c;
             }
             .option-list {
                 list-style: none;
@@ -344,7 +346,8 @@
         return result.data;
     };
 
-    const myUsername = document.querySelector('#dock a').href.split('/').pop();
+    // const myUsername = document.querySelector('#dock a').href.split('/').pop();
+    const myUsername = 'uks_ask';
     let formhash;
     const getFormhash = async () => {
         if (!formhash) { // 非目录页且过去未创建过目录时
@@ -371,7 +374,7 @@
                 const html = await fetchGet(currentUrl);
                 const doc = getDoc(html);
 
-                const indexLinks = [...doc.querySelectorAll('#timeline a')];
+                const indexLinks = [...doc.querySelectorAll('#timeline ul a')];
                 const currentPageIndices = indexLinks.map(a => ({
                     title: a.textContent.trim(),
                     id: a.href.split('/')[4]
