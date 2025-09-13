@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
-// @version      0.5.1
+// @version      0.5.2
 // @description  自动生成Bangumi编辑摘要
 // @author       You
 // @match        https://bgm.tv/subject/*/edit_detail
@@ -175,14 +175,14 @@
 
             const newPros = getPros?.();
             const proChanges = genArrChanges(initialPros, newPros, '职业');
-            if (proChanges.length > 0) changes.push(...proChanges);
+            if (proChanges.length) changes.push(...proChanges);
 
             if (initialSeries !== seriesCheckbox?.checked) {
                 changes.push(seriesCheckbox?.checked ? '标记为系列' : '取消系列标记');
             }
 
             const wcodeChanges = genWcodeChanges(initialWcode, newWcode);
-            if (wcodeChanges.length > 0) {
+            if (wcodeChanges.length) {
                 changes.push(...wcodeChanges);
             }
 
@@ -196,7 +196,7 @@
 
             const tagsToArr = tags => tags ? tags.split(/\s+/).filter(t => t) : [];
             const tagChanges = genArrChanges(tagsToArr(initialTags), tagsToArr(newTags), '标签');
-            if (tagChanges.length > 0) changes.push(...tagChanges);
+            if (tagChanges.length) changes.push(...tagChanges);
 
             if (document.querySelector('input[type=file]')?.value) {
                 changes.push('新肖像');
@@ -211,7 +211,7 @@
                 if (initialItem) {
                     const currentItem = getRelItemData(li);
                     const modifyChanges = genRelModifyChanges(initialItem, currentItem);
-                    if (modifyChanges.length > 0) {
+                    if (modifyChanges.length) {
                         changes.push(...modifyChanges);
                     }
                 }
@@ -230,7 +230,7 @@
             });
         }
 
-        if (editSummaryInput && changes.length > 0) {
+        if (editSummaryInput && changes.length) {
             if (!editSummaryInput.dataset.userModified || editSummaryInput.value === '') {
                 editSummaryInput.value = [...new Set(changes)].join('；');
             }
@@ -309,7 +309,7 @@
         const changes = [];
         const moves = { from: new Set(), to: new Set() };
         const movedKeys = new Set();
-        const oldValueDel = (k, v) => v ? (`删除${k}${isObject(v) ? '' : `（${short(v)}）`}`) : '';
+        const oldValueDel = (k, v) => `删除${k}${isObject(v) || v === null ? '' : `（${short(v)}）`}`;
 
         for (const key in oldData) {
             const oldValue = oldData[key];
@@ -341,7 +341,7 @@
                 if (oldValue === newValue) continue;
 
                 if (oldValue === null) {
-                    changes.push(`添加${key}`); // 纯值字段
+                    changes.push(`添加${key}`);
                 } else {
                     const splitValue = value =>
                         value.split(SPLIT_RULE).flatMap(v => {
@@ -362,12 +362,13 @@
             }
         }
 
-        return changes;
+        return changes.filter(change => change);
     }
 
     function getNewKey(oldData, newData, key) {
         const oldValue = oldData[key];
         if (!oldValue) return null;
+        if (oldValue === newData[key]) return null;
         for (const newKey in newData) {
             if (newKey !== key && newData[newKey] === oldValue && oldValue !== oldData[newKey]) {
                 return newKey;
@@ -406,9 +407,9 @@
                     if (!result[currentKey]) result[currentKey] = {};
                     if (subValue) {
                         result[currentKey][subKey.trim()] = subValue;
-                    } else { // 纯值子段
+                    } else if (!subValueParts.length) { // 纯值子段
                         result[currentKey][subKey.trim()] = null;
-                    }
+                    } // 无值但有 | 的无效字段不计入
                     continue;
                 }
             }
