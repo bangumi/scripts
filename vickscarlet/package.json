@@ -20,6 +20,8 @@
     "build:unified": "pnpm --filter @b38dev/unified build",
     "dev:calendar": "pnpm --filter @b38dev/calendar dev",
     "build:calendar": "pnpm --filter @b38dev/calendar build",
+    "dev:likes-firework": "pnpm --filter @b38dev/likes-firework dev",
+    "build:likes-firework": "pnpm --filter @b38dev/likes-firework build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },

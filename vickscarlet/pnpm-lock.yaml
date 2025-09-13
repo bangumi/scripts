@@ -179,11 +179,56 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1
 
+  scripts/likes_firework:
+    devDependencies:
+      '@b38dev/bangumi':
+        specifier: workspace:*
+        version: link:../../packages/bangumi
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
   scripts/necrobumping_detector:
     dependencies:
       '@b38dev/dom':
         specifier: workspace:^
         version: link:../../packages/dom
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.2.6
+        version: 6.2.6
+      vite-plugin-monkey:
+        specifier: ^5.0.8
+        version: 5.0.8(vite@6.2.6)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.3.0(rollup@4.40.0)(typescript@5.8.3)(vite@6.2.6)
+      vite-tsconfig-paths:
+        specifier: ^5.1.4
+        version: 5.1.4(typescript@5.8.3)(vite@6.2.6)
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1
+
+  scripts/playground:
     devDependencies:
       typescript:
         specifier: ^5.8.3
