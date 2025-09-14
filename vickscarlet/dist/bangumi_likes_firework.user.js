@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 打上贴贴
 // @namespace    b38.dev
-// @version      1.0.0
+// @version      1.0.1
 // @author       神戸小鳥 @vickscarlet
 // @description  Bangumi 打上贴贴，让贴贴有趣起来
 // @license      MIT
@@ -138,17 +138,21 @@
       size = 21;
       pixel = 0.5;
       gap = 1;
-      alpha = 0.5;
+      alpha = 1;
+      max = rand(3, 4);
+      speed = 10 / (this.max - 1);
       constructor({ center, url, end }) {
         this.center = Array.from(center);
         this.url = url;
         this.end = end;
       }
       update(ctx, dt) {
-        this.gap += dt / 10;
-        this.pixel += dt / 40;
-        this.alpha -= 0.01;
-        if (this.alpha < 0.05 || this.gap > 3) {
+        if (this.gap < this.max) {
+          this.gap += dt / this.speed;
+          this.pixel += dt / this.speed / 2.2;
+        }
+        this.alpha *= 0.85;
+        if (this.alpha < 1e-5) {
           return this.end();
         }
         const data = Like.get(this.url);
@@ -167,7 +171,7 @@
             const [r, g, b, a] = data[h * this.size + w];
             const alpha = a * this.alpha;
             ctx.closePath();
-            ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+            ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + alpha * 0.1 + ")";
             ctx.fill();
           }
         }
@@ -353,18 +357,25 @@
         this.canvas.style.height = "100vh";
         this.canvas.style.pointerEvents = "none";
         this.canvas.style.zIndex = "999999";
+        this.canvas.style.transition = "opacity 1s";
         this.canvas.width = this.cw;
         this.canvas.height = this.ch;
         this.ctx.lineCap = "round";
         this.ctx.lineJoin = "round";
         document.body.append(this.canvas);
+        window.addEventListener("resize", () => {
+          this.cw = window.innerWidth;
+          this.ch = window.innerHeight;
+          this.canvas.width = this.cw;
+          this.canvas.height = this.ch;
+        });
       }
       async init(likes2) {
         await Like.init(likes2.map(([url]) => url));
         likes2.map(([url, count]) => new Array(count).fill(url)).flat().sort(() => rand(-10, 10)).forEach((url, i) => {
           setTimeout(() => {
             this.launch(url);
-          }, Math.min(rand(20, 100) * i, 15e3));
+          }, Math.min(rand(50, 150) * i, 2e4));
         });
       }
       launch(url) {
@@ -379,19 +390,21 @@
             if (!this.fireworks.size) {
               clearTimeout(this.timeout);
               this.timeout = setTimeout(() => {
-                this.canvas.style.display = "none";
+                this.canvas.style.opacity = "0";
                 this._loop = false;
-              }, 5e3);
+              }, 1e3);
             }
           }
         });
         this.fireworks.add(firework);
         firework.launch();
-        if (this.fireworks.size == 1) {
-          this.canvas.style.display = "block";
-          this._loop = true;
-          this.loop();
-        }
+        if (this.fireworks.size < 1) return;
+        clearTimeout(this.timeout);
+        if (this._loop) return;
+        this.canvas.style.opacity = "1";
+        this._loop = true;
+        this.time = Date.now();
+        this.loop();
       }
       loop() {
         if (!this._loop) return;
