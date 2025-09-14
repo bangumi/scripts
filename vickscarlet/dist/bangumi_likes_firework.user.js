@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 打上贴贴
 // @namespace    b38.dev
-// @version      1.0.1
+// @version      1.0.2
 // @author       神戸小鳥 @vickscarlet
 // @description  Bangumi 打上贴贴，让贴贴有趣起来
 // @license      MIT
@@ -20,8 +20,8 @@
       title: "打上贴贴",
       name: "likes-firework-autoplay",
       type: "radio",
-      defaultValue: "default",
-      getCurrentValue: () => localStorage.getItem("likes-firework-autoplay") || "no",
+      defaultValue: "yes",
+      getCurrentValue: () => localStorage.getItem("likes-firework-autoplay") || "yes",
       onChange: (value) => localStorage.setItem("likes-firework-autoplay", value),
       options: [
         { value: "yes", label: "自动播放" },
@@ -421,7 +421,7 @@
       }
     }
     const fireworks = new Fireworks();
-    if (localStorage.getItem("likes-firework-autoplay") != "yes") return;
+    if (localStorage.getItem("likes-firework-autoplay") == "no") return;
     fireworks.init(likes);
   })();
 

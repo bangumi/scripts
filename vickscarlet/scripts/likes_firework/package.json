@@ -1,7 +1,7 @@
 {
   "name": "@b38dev/likes-firework",
   "author": "神戸小鳥 @vickscarlet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bangumi 打上贴贴，让贴贴有趣起来",
   "license": "MIT",
   "main": "src/index.ts",
