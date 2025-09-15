@@ -12,12 +12,13 @@ const gadgets = [];
 
 function getModifiedUserScriptFiles() {
     try {
-        const output = execSync('git diff --name-only --diff-filter=AM origin/main...HEAD', {
+        const output = execSync('git diff --name-only --diff-filter=AM origin/master...HEAD', {
             encoding: 'utf8'
         });
-        return output.split('\n')
-            .filter(file => file.endsWith('.user.js') && existsSync(file))
-            .map(file => resolve(file));
+        const files = output.split('\n')
+            .filter(file => file.startsWith('inchei/') && file.endsWith('.user.js'))
+            .map(file => resolve(file.slice(7))).filter(file => existsSync(file));
+        return files;
     } catch (error) {
         console.error('获取修改文件错误:', error.message);
         return [];
@@ -60,6 +61,10 @@ for (const file of modifiedFiles) {
     } catch (error) {
         console.error('解析文件错误:', file, error.message);
     }
+}
+
+if (!gadgets.length) {
+    process.exit(0);
 }
 
 const server = createServer((req, res) => {

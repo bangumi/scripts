@@ -5,6 +5,7 @@ import { execSync } from 'child_process';
 import process from 'process';
 import readline from 'readline';
 import userscript from 'userscript-meta';
+import { resolve } from 'path';
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -21,11 +22,10 @@ function prompt(question) {
 
 function getModifiedUserScriptFiles() {
     try {
-        const output = execSync('git diff --name-only --diff-filter=M origin/main...HEAD', { encoding: 'utf8' });
-        return output
-            .split('\n')
-            .filter(file => file.endsWith('.user.js'))
-            .filter(file => fs.existsSync(file));
+        const output = execSync('git diff --name-only --diff-filter=M origin/master...HEAD', { encoding: 'utf8' });
+        return output.split('\n')
+            .filter(file => file.startsWith('inchei/') && file.endsWith('.user.js'))
+            .map(file => resolve(file.slice(7))).filter(file => fs.existsSync(file));
     } catch (error) {
         console.error('Error getting modified files:', error);
         return [];
@@ -44,7 +44,7 @@ function checkVersionUpdated(filePath) {
 
         let oldVersion = null;
         try {
-            const oldContent = execSync(`git show origin/main:${filePath}`, { encoding: 'utf8' });
+            const oldContent = execSync(`git show origin/master:${filePath}`, { encoding: 'utf8' });
             const oldMeta = userscript.parse(oldContent);
             oldVersion = oldMeta?.version;
         } catch {
