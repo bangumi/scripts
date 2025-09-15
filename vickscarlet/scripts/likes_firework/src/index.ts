@@ -340,6 +340,9 @@
                 return this
             }
             switch (this.state.type) {
+                case 'idle':
+                    this.launch()
+                    break
                 case 'launch':
                 case 'explosion':
                     this.state.item.update(ctx, dt)
@@ -454,7 +457,6 @@
                 },
             })
             this.fireworks.add(firework)
-            firework.launch()
             if (this.fireworks.size < 1) return
             if (this._loop) return
             this.canvas.style.opacity = '1'
