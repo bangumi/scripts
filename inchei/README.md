@@ -177,3 +177,14 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
+## 条目页快捷创建角色并关联 `0.0.1`
+条目角色页添加创建按钮，创建后自动跳转到关联页面并将新角色列入其中
+
+- 讨论页：https://bgm.tv/group/topic/435747
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiNewCharRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiNewCharRelate.user.js?raw=true) |
+| Greasy Fork | [549613](https://greasyfork.org/zh-CN/scripts/549613) |
+| 组件 | [3465](https://bgm.tv/dev/app/3465) |
+
