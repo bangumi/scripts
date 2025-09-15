@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 打上贴贴
 // @namespace    b38.dev
-// @version      1.0.2
+// @version      1.0.3
 // @author       神戸小鳥 @vickscarlet
 // @description  Bangumi 打上贴贴，让贴贴有趣起来
 // @license      MIT
@@ -277,16 +277,22 @@
       url;
       start;
       target;
+      delay;
       endCallback;
       state = { type: "idle" };
       hue = rand(0, 360);
-      constructor({ url, start, target, end }) {
+      constructor({ url, start, target, delay, end }) {
         this.url = url;
         this.start = Array.from(start);
         this.target = Array.from(target);
+        this.delay = delay ?? 0;
         this.endCallback = end;
       }
       update(ctx, dt) {
+        if (this.delay) {
+          this.delay--;
+          return this;
+        }
         switch (this.state.type) {
           case "launch":
           case "explosion":
@@ -333,7 +339,6 @@
       fireworks = /* @__PURE__ */ new Set();
       _loop = false;
       time = Date.now();
-      timeout = 0;
       constructor() {
         const actions = document.querySelector(
           "#columnInSubjectA > .clearit .topic_actions .post_actions"
@@ -372,34 +377,36 @@
       }
       async init(likes2) {
         await Like.init(likes2.map(([url]) => url));
-        likes2.map(([url, count]) => new Array(count).fill(url)).flat().sort(() => rand(-10, 10)).forEach((url, i) => {
-          setTimeout(() => {
-            this.launch(url);
-          }, Math.min(rand(50, 150) * i, 2e4));
-        });
+        const delays = new Array(likes2.map(([_, c]) => c).reduce((t, c) => t + c, 0)).fill(0).map((_) => Math.ceil(rand(0, 9)));
+        for (let i = 1; i < delays.length; i++) delays[i] += delays[i - 1];
+        delays.sort(() => Math.random() - 0.5);
+        let total = 0;
+        for (const [url, count] of likes2) {
+          let i = count;
+          while (i--) {
+            this.launch(url, Math.min(Math.ceil(delays[total++]), 1200));
+          }
+        }
       }
-      launch(url) {
+      launch(url, delay) {
         const target = [rand(50, this.cw - 50), rand(50, this.ch / 2) - 50];
         const dx = rand(30, 200);
         const firework = new Firework({
           url,
+          delay,
           start: [target[0] > this.cw / 2 ? target[0] - dx : target[0] + dx, this.ch],
           target,
           end: () => {
             this.fireworks.delete(firework);
             if (!this.fireworks.size) {
-              clearTimeout(this.timeout);
-              this.timeout = setTimeout(() => {
-                this.canvas.style.opacity = "0";
-                this._loop = false;
-              }, 1e3);
+              this.canvas.style.opacity = "0";
+              this._loop = false;
             }
           }
         });
         this.fireworks.add(firework);
         firework.launch();
         if (this.fireworks.size < 1) return;
-        clearTimeout(this.timeout);
         if (this._loop) return;
         this.canvas.style.opacity = "1";
         this._loop = true;

@@ -27,6 +27,7 @@
         url: string
         start: Pos
         target: Pos
+        delay?: number
         end: () => void
     }
     interface LaunchProps {
@@ -320,18 +321,24 @@
         url: string
         start: Pos
         target: Pos
+        delay: number
         endCallback: () => void
         state: FireworkState = { type: 'idle' }
         hue = rand(0, 360)
 
-        constructor({ url, start, target, end }: FireworkProps) {
+        constructor({ url, start, target, delay, end }: FireworkProps) {
             this.url = url
             this.start = Array.from(start) as Pos
             this.target = Array.from(target) as Pos
+            this.delay = delay ?? 0
             this.endCallback = end
         }
 
         update(ctx: CanvasRenderingContext2D, dt: number) {
+            if (this.delay) {
+                this.delay--
+                return this
+            }
             switch (this.state.type) {
                 case 'launch':
                 case 'explosion':
@@ -379,7 +386,6 @@
         fireworks = new Set<Firework>()
         _loop = false
         time = Date.now()
-        timeout = 0
         constructor() {
             const actions = document.querySelector(
                 '#columnInSubjectA > .clearit .topic_actions .post_actions'
@@ -418,38 +424,38 @@
         }
         async init(likes: [string, number][]) {
             await Like.init(likes.map(([url]) => url))
-            likes
-                .map(([url, count]) => new Array(count).fill(url))
-                .flat()
-                .sort(() => rand(-10, 10))
-                .forEach((url, i) => {
-                    setTimeout(() => {
-                        this.launch(url)
-                    }, Math.min(rand(50, 150) * i, 20000))
-                })
+            const delays = new Array(likes.map(([_, c]) => c).reduce((t, c) => t + c, 0))
+                .fill(0)
+                .map((_) => Math.ceil(rand(0, 9)))
+            for (let i = 1; i < delays.length; i++) delays[i] += delays[i - 1]
+            delays.sort(() => Math.random() - 0.5)
+            let total = 0
+            for (const [url, count] of likes) {
+                let i = count
+                while (i--) {
+                    this.launch(url, Math.min(Math.ceil(delays[total++]), 1200))
+                }
+            }
         }
-        launch(url: string) {
+        launch(url: string, delay: number) {
             const target = [rand(50, this.cw - 50), rand(50, this.ch / 2) - 50] as Pos
             const dx = rand(30, 200)
             const firework = new Firework({
                 url,
+                delay,
                 start: [target[0] > this.cw / 2 ? target[0] - dx : target[0] + dx, this.ch],
                 target,
                 end: () => {
                     this.fireworks.delete(firework)
                     if (!this.fireworks.size) {
-                        clearTimeout(this.timeout)
-                        this.timeout = setTimeout(() => {
-                            this.canvas.style.opacity = '0'
-                            this._loop = false
-                        }, 1000)
+                        this.canvas.style.opacity = '0'
+                        this._loop = false
                     }
                 },
             })
             this.fireworks.add(firework)
             firework.launch()
             if (this.fireworks.size < 1) return
-            clearTimeout(this.timeout)
             if (this._loop) return
             this.canvas.style.opacity = '1'
             this._loop = true
