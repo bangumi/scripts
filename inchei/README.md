@@ -73,7 +73,7 @@
 | Greasy Fork | [516402](https://greasyfork.org/zh-CN/scripts/516402) |
 | 组件 | [3341](https://bgm.tv/dev/app/3341) |
 
-## 进度时间线显示评论 `0.1.5`
+## 进度时间线显示评论 `0.1.6`
 在班固米显示动画进度时间线的对应评论
 
 - 讨论页：https://bgm.tv/group/topic/
@@ -95,7 +95,7 @@
 | Greasy Fork | [524603](https://greasyfork.org/zh-CN/scripts/524603) |
 | 组件 | [3526](https://bgm.tv/dev/app/3526) |
 
-## 条目讨论页显示用户评价 `1.1.4`
+## 条目讨论页显示用户评价 `1.1.5`
 也可以干别的
 
 - 讨论页：https://bgm.tv/group/topic/411796

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RSS订阅班友收藏
 // @namespace    https://bgm.tv/group/topic/414787
-// @version      0.2.2
+// @version      0.2.3
 // @description  在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 // @author       oov
 // @match        http*://bgm.tv/
@@ -29,6 +29,14 @@
 
 (async function () {
   'use strict';
+
+  const cloudList = chiiApp.cloud_settings.get('list');
+  if (!cloudList && localStorage.getItem('incheijs_rss_list')) { // upgrade
+    localStorage.removeItem('incheijs_rss_list');
+    chiiApp.cloud_settings.update({ list: localStorage.getItem('incheijs_rss_list') });
+    chiiApp.cloud_settings.save();
+    alert('RSS订阅班友收藏提示：订阅列表已迁移到 bangumi 云端。\n如果你在其他地方的浏览器有不同的列表，为防止丢失，请立刻导出数据，停用组件，并到其他浏览器导出数据，整合完毕后再启用并导入。\n由于 bangumi 会在组件停用后删除数据，若之后想停用本组件并保留数据，也请记得导出。');
+  }
 
   const style = document.createElement('style');
   style.textContent = /* css */`
@@ -195,7 +203,7 @@
   const menu = document.querySelector('#timelineTabs');
   const tmlContent = document.querySelector('#tmlContent');
 
-  const RSS_LIST = locUserId ? [locUserId] : JSON.parse(localStorage.getItem('incheijs_rss_list') || '[]');
+  const RSS_LIST = locUserId ? [locUserId] : JSON.parse(cloudList || localStorage.getItem('incheijs_rss_list') || '[]');
   const CONCURRENCY_LIMIT = 3;
   const TTL = 720; // 默认缓存时间（分钟）
 
@@ -553,7 +561,7 @@
   if (locUser) { // 时光机或时间胶囊
     document.querySelector('a[href^="/feed/"]').addEventListener('click', e => {
       e.preventDefault();
-      saveRSSList([...new Set(JSON.parse(localStorage.getItem('incheijs_rss_list') || '[]')).add(locUserId)]);
+      saveRSSList([...new Set(JSON.parse(cloudList || localStorage.getItem('incheijs_rss_list') || '[]')).add(locUserId)]);
       window.chiiLib.ukagaka.presentSpeech('订阅成功！', true);
     });
   }
@@ -631,6 +639,8 @@
 
   // #region 工具函数
   function saveRSSList(list = RSS_LIST) {
+    chiiApp.cloud_settings.update({ list: JSON.stringify(list) });
+    chiiApp.cloud_settings.save();
     localStorage.setItem('incheijs_rss_list', JSON.stringify(list));
   }
 
