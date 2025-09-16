@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name         进度时间线显示评论
 // @namespace    https://bgm.tv/group/topic/
-// @version      0.1.5
+// @homepage     https://bgm.tv/group/topic/418549
+// @homepageURL  https://bgm.tv/group/topic/418549
+// @version      0.1.6
 // @description  在班固米显示动画进度时间线的对应评论
 // @author       oov
 // @match        https://bangumi.tv/
@@ -15,6 +17,7 @@
 // @grant        GM_xmlhttpRequest
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT
+// @connect      bgm.tv
 // @gf           https://greasyfork.org/zh-CN/scripts/529610
 // @gadget       https://bgm.tv/dev/app/3654
 // ==/UserScript==
@@ -53,7 +56,7 @@
     "132": "93"
   };
 
-  const dontNetabare = localStorage.getItem('incheijs_eptl_nonetabare') === 'true';
+  const shouldntNetabare = localStorage.getItem('incheijs_eptl_nonetabare') === 'true';
   const style = document.createElement('style');
   style.textContent = /* css */`
     .skeleton {
@@ -95,27 +98,24 @@
       max-height: 200px;
       overflow: auto;
       scrollbar-width: thin;
-      ${dontNetabare ? /* css */`
-      .netabare-comment {
-        filter: blur(4px);
-        transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
-        img:not([smileid]) {
-          filter: blur(3em);
-          clip-path: inset(0);
-          transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
-        }
-      }` : ''}
     }
-    .netabare-comment-container:hover,
-    .netabare-comment-container:focus {
-      ${dontNetabare ? /* css */`
-      .netabare-comment {
-        filter: blur(0);
-        img:not([smileid]) {
-          filter: blur(0);
-        }
-      }` : ''}
+    ${shouldntNetabare ? /* css */`
+    .netabare-comment-container .netabare-comment {
+      filter: blur(4px);
+      transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
     }
+    .netabare-comment-container .netabare-comment img:not([smileid]) {
+      filter: blur(3em);
+      clip-path: inset(0);
+      transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
+    }` : ''}
+    ${shouldntNetabare ? /* css */`
+    .netabare-comment-container:is(:hover, :focus) .netabare-comment {
+      filter: blur(0);
+    }
+    .netabare-comment-container:is(:hover, :focus) .netabare-comment img:not([smileid]) {
+      filter: blur(0);
+    }` : ''}
     .comment.comment-failed {
       opacity: .4;
     }
