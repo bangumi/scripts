@@ -79,7 +79,7 @@
             border-radius: 5px;
             padding: 5px;
             max-width: 250px;
-            width: auto;
+            width: max-content;
             z-index: 1000;
             font-weight: normal;
             font-size: 12px;
