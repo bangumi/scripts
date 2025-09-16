@@ -20,7 +20,7 @@ export default defineConfig([
     ]
   },
   {
-    files: ['*.user.js'],
+    files: ['*.{user,gadget}.js'],
     plugins: {
       userscripts: {
         rules: userscripts.rules
@@ -33,8 +33,6 @@ export default defineConfig([
     },
     languageOptions: {
       globals: {
-        GM_xmlhttpRequest: "readonly",
-        unsafeWindow: "readonly",
         $: "readonly",
         chiiLib: "readonly",
         tb_init: "readonly",
@@ -52,6 +50,26 @@ export default defineConfig([
       userscriptVersions: {
         violentmonkey: '*'
       }
+    }
+  },
+  {
+    files: ['*.user.js'],
+    languageOptions: {
+      globals: {
+        GM_xmlhttpRequest: "readonly",
+        unsafeWindow: "readonly"
+      }
+    }
+  },
+  {
+    files: ['*.gadget.js'],
+    languageOptions: {
+      globals: {
+        chiiApp: "readonly"
+      }
+    },
+    rules: {
+      "userscripts/filename-user": "off"
     }
   }
 ]);
