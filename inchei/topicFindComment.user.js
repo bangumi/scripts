@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
-// @version      1.1.3
+// @version      1.1.4
 // @description  也可以干别的
 // @author       mmv
 // @match        http*://bgm.tv/subject/topic/*
@@ -122,8 +122,8 @@
 
     } else if (location.pathname.startsWith('/blog')) {
 
-        userLinks = [document.querySelector('#pageHeader a'), ...document.querySelectorAll('#columnA .inner strong a')];
-        const relatedSubjects = document.querySelectorAll('#related_subject_list .ll a');
+        userLinks = [document.querySelector('.title a'), ...document.querySelectorAll('#columnA .inner strong a')];
+        const relatedSubjects = document.querySelectorAll('.entry-related-subjects .title a');
         if (!userLinks || !relatedSubjects) return;
         multiSubjectsRender(userLinks, relatedSubjects);
 

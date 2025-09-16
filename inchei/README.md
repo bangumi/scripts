@@ -95,7 +95,7 @@
 | Greasy Fork | [524603](https://greasyfork.org/zh-CN/scripts/524603) |
 | 组件 | [3526](https://bgm.tv/dev/app/3526) |
 
-## 条目讨论页显示用户评价 `1.1.3`
+## 条目讨论页显示用户评价 `1.1.4`
 也可以干别的
 
 - 讨论页：https://bgm.tv/group/topic/411796
