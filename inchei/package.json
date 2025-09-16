@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "publish:gadget": "node scripts/publish-gadget.mjs",
-    "publish:gf": "npm run readme && npm run version && git push",
+    "publish:gf": "npm run version && git push",
     "publish:all": "npm run publish:gadget && npm run publish:gf"
   },
   "keywords": [],

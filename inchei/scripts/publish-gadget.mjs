@@ -8,6 +8,7 @@ import { parse } from 'userscript-meta';
 import process from 'process';
 
 const PORT = 3000;
+const dir = 'inchei/';
 const gadgets = [];
 
 function getModifiedUserScriptFiles() {
@@ -15,9 +16,12 @@ function getModifiedUserScriptFiles() {
         const output = execSync('git diff --name-only --diff-filter=AM origin/master...HEAD', {
             encoding: 'utf8'
         });
-        const files = output.split('\n')
-            .filter(file => file.startsWith('inchei/') && file.endsWith('.user.js'))
-            .map(file => resolve(file.slice(7))).filter(file => existsSync(file));
+        const files = output.split('\n').filter(file => file.startsWith(dir) && file.endsWith('.user.js'))
+            .map(file => resolve(file.slice(dir.length))).filter(file => existsSync(file))
+            .filter(file => {
+                const gadget = file.replace('.user.js', '.gadget.js');
+                return existsSync(gadget) ? gadget : file;
+            });
         return files;
     } catch (error) {
         console.error('获取修改文件错误:', error.message);
