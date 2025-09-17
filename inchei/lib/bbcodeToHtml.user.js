@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi BBCode to HTML
 // @namespace    bbcode.bangumi
-// @version      1.0.0
+// @version      1.0.1
 // @description  将 bangumi BBCode 转为 HTML
 // @author       you
 // @license      MIT
@@ -47,7 +47,7 @@
             'i': c => `<span style="font-style:italic">${c}</span>`,
             'u': c => `<span style="text-decoration:underline">${c}</span>`,
             's': c => `<span style="text-decoration:line-through">${c}</span>`,
-            'mask': c => `<span class="text_mask" style="color:#555;background:#555">${c}</span>`,
+            'mask': c => `<span class="text_mask" style="background-color:#555;color:#555;border:1px solid #555;"><span class="inner">${c}</span></span>`,
             'quote': c => `<div class="quote"><q>${c}</q></div>`,
             'left': c => `<p style="text-align:left">${c}</p>`,
             'right': c => `<p style="text-align:right">${c}</p>`,
