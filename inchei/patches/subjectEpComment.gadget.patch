@@ -1,0 +1,73 @@
+--- subjectEpComment.user.js	2025-09-17 11:17:02.743251400 +0800
++++ subjectEpComment.gadget.js	2025-09-17 12:26:00.269637800 +0800
+@@ -7,14 +7,11 @@
+ // @match        http*://bgm.tv/*
+ // @match        http*://chii.in/*
+ // @match        http*://bangumi.tv/*
+-// @grant        GM_xmlhttpRequest
+-// @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
+ // @license      MIT
+ // @gf           https://greasyfork.org/zh-CN/scripts/516402
+ // @gadget       https://bgm.tv/dev/app/3341
+ // ==/UserScript==
+ 
+-/* global bbcodeToHtml */
+ (async function () {
+ 
+     const colors = {
+@@ -137,23 +134,16 @@
+     refreshStyle();
+     document.head.appendChild(style);
+ 
+-    async function getEpComments(episodeId) {
+-        return new Promise((resolve, reject) => {
+-            GM_xmlhttpRequest({
+-                method: 'GET',
+-                url: `https://next.bgm.tv/p1/episodes/${episodeId}/comments`,
+-                onload: function (response) {
+-                    if (response.status >= 200 && response.status < 300) {
+-                        resolve(JSON.parse(response.responseText));
+-                    } else {
+-                        reject(new Error(`请求失败，状态码: ${response.status}`));
+-                    }
+-                },
+-                onerror: function (error) {
+-                    reject(new Error(`请求出错: ${error}`));
+-                }
+-            });
+-        });
++    async function getDOM(url) {
++        try {
++            const response = await fetch(url);
++            if (!response.ok) throw new Error('HTTP request failed');
++            const html = await response.text();
++            const dom = new DOMParser().parseFromString(html, 'text/html');
++            return dom;
++        } catch (error) {
++            console.error('章节讨论置顶自己的吐槽: Error fetching and parsing page:', error);
++        }
+     }
+ 
+     const cacheHandler = {
+@@ -209,8 +199,6 @@
+ 
+     const saveRepliesHTMLFromDOM = saveRepliesHTML((reply) => reply.querySelector('.message').innerHTML.trim());
+ 
+-    const saveRepliesHTMLFromJSON = saveRepliesHTML((reply) => bbcodeToHtml(reply.content));
+-
+     // 章节讨论页
+     if (location.pathname.startsWith('/ep')) {
+         let replies = getRepliesFromDOM(document);
+@@ -582,9 +570,9 @@
+                     return;
+                 } else if (shouldFetch(epData)) {
+                     try {
+-                        const data = await retryAsyncOperation(() => getEpComments(epData.epId));
+-                        const comments = data.filter(comment => comment.user.username === myUsername && comment.content);
+-                        if (comments.length) saveRepliesHTMLFromJSON(epData.epName, epData.epId, comments);
++                        const dom = await retryAsyncOperation(() => getDOM(epElem.href));
++                        const comments = getRepliesFromDOM(dom);
++                        if (comments.length) saveRepliesHTMLFromDOM(epData.epName, epData.epId, comments);
+                         onSuccess(epData, comments);
+                     } catch (error) {
+                         console.error(`Failed to fetch ${epElem.href}:`, error);

@@ -507,6 +507,7 @@
                 [...inner.querySelectorAll('.section_line')].pop()?.remove();
             });
             checkRest.addEventListener('click', async (e) => {
+                expandInd.hidden = true;
                 e.target.remove();
                 prgList.classList.add('load-all');
                 await renderRest();

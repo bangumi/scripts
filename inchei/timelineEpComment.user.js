@@ -56,74 +56,75 @@
     "132": "93"
   };
 
-  const shouldntNetabare = localStorage.getItem('incheijs_eptl_nonetabare') === 'true';
   const style = document.createElement('style');
-  style.textContent = /* css */`
-    .skeleton {
-      background-color: #e0e0e0;
-      border-radius: 4px;
-      position: relative;
-      overflow: hidden;
-    }
-    .skeleton::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-      animation: shimmer 1.5s infinite;
-    }
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-    html[data-theme="dark"] .skeleton {
-      background-color: #333;
-    }
-    html[data-theme="dark"] .skeleton::after {
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    }
-    .comment-skeleton {
-      max-width: 500px;
-      height: 32.4px;
-      margin-top: 5px;
-      margin-bottom: 5px;
-      border-radius: 5px;
-      border: 1px solid transparent;
-    }
+  function updateStyle(shouldntNetabare) {
+    style.textContent = /* css */`
+      .skeleton {
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+      .skeleton::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+        animation: shimmer 1.5s infinite;
+      }
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+      html[data-theme="dark"] .skeleton {
+        background-color: #333;
+      }
+      html[data-theme="dark"] .skeleton::after {
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      }
+      .comment-skeleton {
+        max-width: 500px;
+        height: 32.4px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        border: 1px solid transparent;
+      }
 
-    .netabare-comment-container {
-      max-height: 200px;
-      overflow: auto;
-      scrollbar-width: thin;
-    }
-    ${shouldntNetabare ? /* css */`
-    .netabare-comment-container .netabare-comment {
-      filter: blur(4px);
-      transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
-    }
-    .netabare-comment-container .netabare-comment img:not([smileid]) {
-      filter: blur(3em);
-      clip-path: inset(0);
-      transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
-    }` : ''}
-    ${shouldntNetabare ? /* css */`
-    .netabare-comment-container:is(:hover, :focus) .netabare-comment {
-      filter: blur(0);
-    }
-    .netabare-comment-container:is(:hover, :focus) .netabare-comment img:not([smileid]) {
-      filter: blur(0);
-    }` : ''}
-    .comment.comment-failed {
-      opacity: .4;
-    }
-    .comment.comment-failed:hover,
-    .comment.comment-failed:focus {
-      opacity: 1;
-    }
-  `;
+      .netabare-comment-container {
+        max-height: 200px;
+        overflow: auto;
+        scrollbar-width: thin;
+      }
+      ${shouldntNetabare ? /* css */`
+      .netabare-comment-container .netabare-comment {
+        filter: blur(4px);
+        transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
+      }
+      .netabare-comment-container .netabare-comment img:not([smileid]) {
+        filter: blur(3em);
+        clip-path: inset(0);
+        transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
+      }` : ''}
+      ${shouldntNetabare ? /* css */`
+      .netabare-comment-container:is(:hover, :focus) .netabare-comment {
+        filter: blur(0);
+      }
+      .netabare-comment-container:is(:hover, :focus) .netabare-comment img:not([smileid]) {
+        filter: blur(0);
+      }` : ''}
+      .comment.comment-failed {
+        opacity: .4;
+      }
+      .comment.comment-failed:is(:hover, :focus) {
+        opacity: 1;
+      }
+    `;
+  }
+  updateStyle(localStorage.getItem('incheijs_eptl_nonetabare') === 'true')
   document.head.appendChild(style);
 
   class LocalStorageWithExpiry {
@@ -349,12 +350,12 @@
       footer.insertAdjacentHTML('afterbegin', /* html */`
         <div class="action dropdown dropdown_right">
         <a href="javascript:void(0);" class="icon like_dropdown"
-            data-like-type="11"
-            data-like-main-id="${epId}"
-            data-like-related-id="${id}"
-            data-like-tpl-id="likes_reaction_menu">
-            <span class="ico ico_like">&nbsp;</span>
-            <span class="title">贴贴</span>
+          data-like-type="11"
+          data-like-main-id="${epId}"
+          data-like-related-id="${id}"
+          data-like-tpl-id="likes_reaction_menu">
+          <span class="ico ico_like">&nbsp;</span>
+          <span class="title">贴贴</span>
         </a>
         </div>
       `);
@@ -483,7 +484,7 @@
       }
 
       while (activeRequests.size >= maxConcurrency) {
-        console.log(`Max concurrency(${maxConcurrency}) reached, waiting...`);
+        console.log(`Max concurrency (${maxConcurrency}) reached, waiting...`);
         await Promise.race([...activeRequests]);
       }
 
@@ -502,9 +503,9 @@
             } catch (error) {
               retries++;
               if (retries > maxRetries) {
-                throw new Error(`Request to ${key} failed after ${maxRetries} retries: ${error}`);
+                throw new Error(`Request to ${key} failed after ${maxRetries} retries: ${error.message}`);
               }
-              console.log(`Request to ${key} failed: ${error}, retrying(${retries} / ${maxRetries})...`);
+              console.log(`Request to ${key} failed: ${error.message}, retrying(${retries} / ${maxRetries})...`);
               await new Promise((resolve) => setTimeout(resolve, retryDelay));
             }
           }

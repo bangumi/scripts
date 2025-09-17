@@ -1,0 +1,224 @@
+--- timelineEpComment.user.js	2025-09-17 11:12:25.012029800 +0800
++++ timelineEpComment.gadget.js	2025-09-17 12:26:00.582838900 +0800
+@@ -13,16 +13,12 @@
+ // @match        https://bgm.tv/user/*/timeline*
+ // @match        https://chii.in/user/*/timeline*
+ // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+-// @grant        unsafeWindow
+-// @grant        GM_xmlhttpRequest
+-// @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
+ // @license      MIT
+ // @connect      bgm.tv
+ // @gf           https://greasyfork.org/zh-CN/scripts/529610
+ // @gadget       https://bgm.tv/dev/app/3654
+ // ==/UserScript==
+ 
+-/* global bbcodeToHtml */
+ /*
+  * 兼容性：
+  * - [加载更多](https://bgm.tv/dev/app/432)
+@@ -31,30 +27,21 @@
+ (async function () {
+   'use strict';
+ 
+-  const FACE_KEY_GIF_MAPPING = {
+-    "0": "44",
+-    "140": "101",
+-    "80": "41",
+-    "54": "15",
+-    "85": "46",
+-    "104": "65",
+-    "88": "49",
+-    "62": "23",
+-    "79": "40",
+-    "53": "14",
+-    "122": "83",
+-    "92": "53",
+-    "118": "79",
+-    "141": "102",
+-    "90": "51",
+-    "76": "37",
+-    "60": "21",
+-    "128": "89",
+-    "47": "08",
+-    "68": "29",
+-    "137": "98",
+-    "132": "93"
+-  };
++  chiiLib.ukagaka.addGeneralConfig({
++    title: '进度时间线模糊防剧透',
++    name: 'eptlNetabare',
++    type: 'radio',
++    defaultValue: 'netabare',
++    getCurrentValue: () => chiiApp.cloud_settings.get('eptlNetabare') || 'on',
++    onChange: v => {
++      chiiApp.cloud_settings.update({ eptlNetabare: v });
++      updateStyle(v === 'off');
++    },
++    options: [
++      { value: 'on', label: '关闭' },
++      { value: 'off', label: '开启' }
++    ]
++  });
+ 
+   const style = document.createElement('style');
+   function updateStyle(shouldntNetabare) {
+@@ -124,7 +111,7 @@
+       }
+     `;
+   }
+-  updateStyle(localStorage.getItem('incheijs_eptl_nonetabare') === 'true')
++  updateStyle(chiiApp.cloud_settings.get('eptlNetabare') === 'off');
+   document.head.appendChild(style);
+ 
+   class LocalStorageWithExpiry {
+@@ -184,7 +171,8 @@
+     const subjectOrEpLink = li.querySelector(`a.l[href^="${location.origin}/subject/"]`);
+     return subjectOrEpLink?.href.includes('/ep/') || subjectOrEpLink?.previousSibling.textContent.trim() === '完成了'; // 主页和时光机前后空格不同
+   }
+-  const superGetEpComments = beDistinctConcurrentRetryCached(getEpComments, { cacheMap: epCommentsCache });
++  const parseHTML = html => new DOMParser().parseFromString(html, 'text/html');
++  const superGetDOM = beDistinctConcurrentRetryCached(getDOM, { cacheMap: epCommentsCache });
+   const superGetSubjectEpId = beDistinctConcurrentRetryCached(getSubjectEpId, { maxCacheSize: 10, cacheMap: subjectEpIdCache, genKey: (subjectId, epNum) => `${subjectId}_${epNum}` });
+   let loading = false; // 兼容加载更多，避免连续点击导致重复
+ 
+@@ -201,7 +189,7 @@
+ 
+     let toObserve, getLis;
+     if (['下一页 ››', '‹‹上一页'].includes(text)) {
+-      superGetEpComments.abortAll();
++      superGetDOM.abortAll();
+       toObserve = tmlContent;
+       getLis = addedNodes => [...addedNodes].find((node) => node.id === 'timeline')?.querySelectorAll('li');
+     } else if (['加载更多', '再来点'].includes(text)) {
+@@ -245,7 +233,7 @@
+   menu.addEventListener('click', async (e) => {
+     loadedObserver?.disconnect();
+     if (e.target.tagName !== 'A' || !epExists(e.target)) return;
+-    superGetEpComments.abortAll();
++    superGetDOM.abortAll();
+     await (new Promise(resolve => {
+       currentResolve = resolve;
+       initLoadedObserver();
+@@ -328,17 +316,18 @@
+     try {
+       if (!comment || epCommentsCache.has(epId)
+         || Object.keys(comment).length === 1 && Object.keys(comment)[0] === 'epId') {
+-        const data = await superGetEpComments(epId);
+-        const rawComment = data.find(comment => comment.user.username === userId && comment.content);
+-        if (!rawComment) {
++        const dom = await superGetDOM(epUrl);
++        const commentEle = getUserCommentFromDom(userId, dom);
++        if (!commentEle) {
+           storage.setItem(tl.id, { inexist: true, ...(isWcl && { epId }) });
+           throw new Error('No comment found');
+         }
+-        const { content, id, reactions } = rawComment;
++        const html = commentEle.querySelector('.message').innerHTML.trim();
++        const id = commentEle.id.slice(5); // "post_".length
+         comment = {
+-          html: bbcodeToHtml(content),
++          html,
+           id,
+-          tietie: reactions?.length ? getDataLikesList(epId, reactions) : null,
++          tietie: getTietieFromDom(id, dom),
+           ...(isWcl && { epId })
+         };
+         storage.setItem(tl.id, comment);
+@@ -359,8 +348,8 @@
+         </a>
+         </div>
+       `);
+-      unsafeWindow.chiiLib.likes.updateGridWithRelatedID(id, tietie);
+-      unsafeWindow.chiiLib.likes.init();
++      window.chiiLib.likes.updateGridWithRelatedID(id, tietie);
++      window.chiiLib.likes.init();
+     } catch (error) {
+       if (error.message !== 'No comment found') {
+         console.error(tl, error);
+@@ -388,25 +377,6 @@
+     return btn;
+   }
+ 
+-  async function getEpComments(episodeId) {
+-    return new Promise((resolve, reject) => {
+-      GM_xmlhttpRequest({
+-        method: 'GET',
+-        url: `https://next.bgm.tv/p1/episodes/${episodeId}/comments`,
+-        onload: function (response) {
+-          if (response.status >= 200 && response.status < 300) {
+-            resolve(JSON.parse(response.responseText));
+-          } else {
+-            reject(new Error(`请求 ${episodeId} 评论区失败，状态码: ${response.status}`));
+-          }
+-        },
+-        onerror: function (e) {
+-          reject(new Error(`请求出错: ${e.status}`));
+-        }
+-      });
+-    });
+-  }
+-
+   function getSubjectEpIdFromDOM(subjectId, epNum) {
+     if (location.pathname.includes('/user/')) return null;
+     try {
+@@ -439,27 +409,33 @@
+     return data[0].id;
+   }
+ 
+-  function getDataLikesList(mainID, reactions) {
+-    return reactions.reduce((acc, i) => {
+-      acc[i.value] = {
+-        type: 11,
+-        main_id: mainID,
+-        value: i.value,
+-        total: i.users.length,
+-        emoji: FACE_KEY_GIF_MAPPING[i.value],
+-        users: i.users,
+-        selected: i.users.some(user => user.id === unsafeWindow.CHOBITS_UID)
+-      };
+-      return acc;
+-    }, {})
++  function getUserCommentFromDom(userId, dom) {
++    return [...dom.querySelectorAll('#comment_list .row_reply')].find((comment) => comment.dataset.itemUser === userId && !comment.querySelector('.message .tip_collapsed'));
++  }
++
++  function getTietieFromDom(postId, dom) {
++    const PRE = 22; /* "var data_likes_list = ".length */
++    let data_likes_list = dom.querySelector('#likes_reaction_grid_item + script').textContent.trim();
++    if (data_likes_list) {
++      data_likes_list = data_likes_list.slice(PRE, -1);
++      return JSON.parse(data_likes_list)[postId];
++    }
++  }
++
++  async function getDOM(url) {
++    const response = await fetch(url);
++    if (!response.ok) throw new Error('HTTP request failed');
++    const html = await response.text();
++    const dom = parseHTML(html);
++    return dom;
+   }
+ 
+   function beDistinctConcurrentRetryCached(requestFunction, options = {}) {
+     const {
+       maxConcurrency = 3,
+-      maxRetries = 3,
++      maxRetries = 2,
+       retryDelay = 1000,
+-      maxCacheSize = 5,
++      maxCacheSize = 3,
+       cacheMap, // ep comments 缓存会在外部调用
+       genKey = (arg1) => arg1,
+     } = options;
+@@ -543,8 +519,8 @@
+   }, true);
+ 
+   // 保存贴贴变化
+-  const originalReq = unsafeWindow.chiiLib.likes.req;
+-  unsafeWindow.chiiLib.likes.req = (ele) => {
++  const originalReq = window.chiiLib.likes.req;
++  window.chiiLib.likes.req = (ele) => {
+     const tlId = ele.closest('.tml_item').id;
+     const comment = storage.getItem(tlId);
+     if (!comment) return originalReq.call(this, ele);

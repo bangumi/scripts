@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RSS订阅班友收藏
 // @namespace    https://bgm.tv/group/topic/414787
-// @version      0.2.2
+// @version      0.2.3
 // @description  在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 // @author       oov
 // @match        http*://bgm.tv/
