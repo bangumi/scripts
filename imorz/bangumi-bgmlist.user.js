@@ -21,13 +21,12 @@ function getOnAirYearMonth() {
   if (date == undefined) throw "on-air date not found";
   let [_, year, month] = date.parentElement.textContent
     .match(/(\d{4})年(\d{1,2})月/);
-  month = month.padStart(2, '0');
-  return [year, month];
+  return [+year, +month];
 }
 
 // return full bgm list on given on-air date
 async function getBgmList(year, month) {
-  const url = BGMLIST_URL.replace('$Y', year).replace('$M', month);
+  const url = BGMLIST_URL.replace('$Y', year.toString()).replace('$M', month.toString().padStart(2, '0'));
   const resp = await fetch(url, FETCH_PARAMS);
   if (!resp.ok) throw "fail to fetch bgmlist: " + resp.status;
   let list = await resp.json();
@@ -70,7 +69,7 @@ function addInfoRow(title, links) {
 }
 
 function addOnAirSites(bgm, sites) {
-  const links = bgm.sites.map(({site, id, url}) => {
+  const links = bgm.sites.map(({ site, id, url }) => {
     const info = sites[site];
     if (!info) return;
     if (!url)
@@ -87,10 +86,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     const bgmId = location.pathname.match(/\/subject\/(\d+)/)[1];
     const [year, month] = getOnAirYearMonth();
-    const bgm = (await getBgmList(year, month)).get(bgmId);
+    let bgm = (await getBgmList(year, month)).get(bgmId)
+      ?? (await getBgmList(year, month - 1)).get(bgmId)
+      ?? (await getBgmList(year, month + 1)).get(bgmId);
 
     if (!bgm)
-      throw `#${bgmId} not found in bgmlist-${year}-${month}`;
+      throw `#${bgmId} not found in bgmlist-${year}-${month}|${month - 1}|${month + 1}`;
 
     const sites = await getSiteInfo();
     addOnAirSites(bgm, sites);
