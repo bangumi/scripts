@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.35
+// @version     0.4.36
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -1314,6 +1314,14 @@ const arrDict$1 = [
         name: '剧本',
         key: ['シナリオ', '剧情'],
     },
+    // {
+    //   name: '声优',
+    //   key: ['声優', '声优'],
+    // },
+    // {
+    //   name: '音乐',
+    //   key: ['音乐', '音楽'],
+    // },
 ];
 const configArr$3 = arrDict$1.map((obj) => {
     const r = {
@@ -1428,6 +1436,16 @@ const dmmGameCharaModel = {
         {
             selector: '#title',
         },
+        // {
+        //   selector: '#if_view',
+        //   isIframe: true,
+        //   subSelector: 'body',
+        //   nextSelector: {
+        //     selector: '.guide-content',
+        //     subSelector: 'guide-capt',
+        //     keyWord: 'キャラクター',
+        //   },
+        // },
     ],
     itemList: [],
 };
@@ -1992,6 +2010,8 @@ const configs = {
 const charaModelDict = {
     [dlsiteGameCharaModel.key]: dlsiteGameCharaModel,
     [dmmGameCharaModel.key]: dmmGameCharaModel,
+    // @TODO getchu chara
+    // [getchuCharaModel.key]: getchuCharaModel,
 };
 function findModelByHost(host) {
     const keys = Object.keys(configs);
@@ -2065,13 +2085,13 @@ function genRandomStr(len) {
 function formatDate(time, fmt = 'yyyy-MM-dd') {
     const date = new Date(time);
     const components = {
-        'M+': date.getMonth() + 1,
-        'd+': date.getDate(),
-        'h+': date.getHours(),
-        'm+': date.getMinutes(),
-        's+': date.getSeconds(),
-        'q+': Math.floor((date.getMonth() + 3) / 3),
-        S: date.getMilliseconds(),
+        'M+': date.getMonth() + 1, // Month
+        'd+': date.getDate(), // Day
+        'h+': date.getHours(), // Hour
+        'm+': date.getMinutes(), // Minute
+        's+': date.getSeconds(), // Second
+        'q+': Math.floor((date.getMonth() + 3) / 3), // Quarter
+        S: date.getMilliseconds(), // Millisecond
     };
     // Replace year
     fmt = fmt.replace(/(y+)/i, (_, yearMatch) => (date.getFullYear() + '').slice(4 - yearMatch.length));
@@ -2084,10 +2104,10 @@ function formatDate(time, fmt = 'yyyy-MM-dd') {
 function dealDate(input) {
     // Regular expressions to match various date formats
     const regexPatterns = [
-        { pattern: /(\d{4})年(\d{1,2})月(\d{1,2})日?/, format: '$1-$2-$3' },
-        { pattern: /(\d{4})年(\d{1,2})月/, format: '$1-$2' },
-        { pattern: /(\d{4})[/-](\d{1,2})$/, format: '$1-$2' },
-        { pattern: /.*?(\d{4})\/(\d{1,2})\/(\d{1,2}).*?/, format: '$1-$2-$3' },
+        { pattern: /(\d{4})年(\d{1,2})月(\d{1,2})日?/, format: '$1-$2-$3' }, // yyyy年mm月dd日
+        { pattern: /(\d{4})年(\d{1,2})月/, format: '$1-$2' }, // yyyy年mm月
+        { pattern: /(\d{4})[/-](\d{1,2})$/, format: '$1-$2' }, // yyyy/mm
+        { pattern: /.*?(\d{4})\/(\d{1,2})\/(\d{1,2}).*?/, format: '$1-$2-$3' }, // mixed with other text
     ];
     for (const { pattern, format } of regexPatterns) {
         const match = input.replace(/\s/g, '').match(pattern);
@@ -2295,7 +2315,7 @@ const amazonUtils = {
         const textList = [
             '\\([^0-9]+?\\)$',
             '（[^0-9]+?）$',
-            '\\(.+?\\d+.+?\\)$',
+            '\\(.+?\\d+.+?\\)$', // 中间包含数字
             '（.+?\\d+.+?）$',
         ]; // 去掉多余的括号信息
         str = str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
@@ -3301,6 +3321,9 @@ const steamTools = {
             return {
                 payload: {
                     disableDate: true,
+                    // auxSite: {
+                    //   url: getSteamdbURL(window.location.href),
+                    // },
                 },
             };
         },
@@ -3344,6 +3367,9 @@ const steamdbTools = {
             return {
                 payload: {
                     disableDate: true,
+                    // auxSite: {
+                    //   url: getSteamURL(window.location.href),
+                    // },
                 },
             };
         },
@@ -4839,6 +4865,7 @@ const notyf = new Notyf({
     types: [
         {
             type: 'success',
+            // background: '#F09199',
         },
         {
             type: 'info',
@@ -5549,7 +5576,10 @@ function initContainer($target) {
     <br>
     <input id="e-wiki-cover-slider-radius" type="range" value="20" name="radius" min="1" max="100">
     <br>
-    <a href="javascript:void(0)" id="e-wiki-cover-reset">reset</a>
+    <div class="canvas-btn-container" style="display: flex; align-items: center; gap: 10px; margin-top: 10px">
+      <input class="inputBtn reset-btn" value="重置" type="button">
+      <input class="inputBtn clear-btn" value="清除" type="button">
+    </div>
     <img class="preview" src="" alt="" style="display:none;">
   `;
     const $info = document.createElement('div');
@@ -5640,7 +5670,7 @@ async function dealImageWidget($form, base64Data) {
     const $file = $form.querySelector('input[type = file]');
     previewFileImage($file, $canvas, $img);
     blur($canvas);
-    document.querySelector('#e-wiki-cover-reset').addEventListener('click', (e) => {
+    document.querySelector('.e-wiki-cover-container .canvas-btn-container > .reset-btn').addEventListener('click', (e) => {
         // wiki 填表按钮
         const $fillForm = document.querySelector('.e-wiki-fill-form');
         if (base64Data) {
@@ -5652,7 +5682,13 @@ async function dealImageWidget($form, base64Data) {
         else if ($fillForm) {
             $fillForm.dispatchEvent(new Event('click'));
         }
+        e.preventDefault();
     }, false);
+    document.querySelector('.e-wiki-cover-container .canvas-btn-container > .clear-btn').addEventListener('click', (e) => {
+        $canvas.width = 0;
+        $canvas.height = 0;
+        e.preventDefault();
+    });
     const $inputBtn = document.querySelector('.e-wiki-cover-container .inputBtn');
     if ($file) {
         $inputBtn.addEventListener('click', async (e) => {
@@ -5850,7 +5886,9 @@ function hasCategory(info, category) {
     if (info.category === category) {
         return true;
     }
-    return info.category && info.category.includes(',') && info.category.split(',').includes(category);
+    return (info.category &&
+        info.category.includes(',') &&
+        info.category.split(',').includes(category));
 }
 /**
  * 转换 wiki 模式下 infobox 内容
@@ -6120,32 +6158,32 @@ function initNewSubject(wikiInfo) {
             const $canvas = $q('#e-wiki-cover-preview');
             $clonedInput.addEventListener('click', async (e) => {
                 e.preventDefault();
-                if ($canvas.width > 8 && $canvas.height > 10) {
-                    const $el = e.target;
-                    $el.style.display = 'none';
-                    $clonedInput.style.display = 'none';
-                    const $loading = insertLoading($el);
-                    try {
-                        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-                        $wikiMode && $wikiMode.click();
-                        await sleep(200);
-                        const url = await sendForm($form);
-                        const subjectId = getSubjectId(url);
-                        if (subjectId) {
+                const $el = e.target;
+                $el.style.display = 'none';
+                $clonedInput.style.display = 'none';
+                const $loading = insertLoading($el);
+                try {
+                    const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                    $wikiMode && $wikiMode.click();
+                    await sleep(200);
+                    const url = await sendForm($form);
+                    const subjectId = getSubjectId(url);
+                    if (subjectId) {
+                        if ($canvas.clientWidth > 8 && $canvas.clientHeight > 10) {
                             await uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
                         }
-                        await sleep(200);
-                        await addMusicEp(subjectId, wikiInfo, (str) => {
-                            insertLogInfo($el, str);
-                        });
-                        $loading.remove();
-                        $el.style.display = '';
-                        $clonedInput.style.display = '';
-                        location.assign(url);
                     }
-                    catch (e) {
-                        console.log('send form err: ', e);
-                    }
+                    await sleep(200);
+                    await addMusicEp(subjectId, wikiInfo, (str) => {
+                        insertLogInfo($el, str);
+                    });
+                    $loading.remove();
+                    $el.style.display = '';
+                    $clonedInput.style.display = '';
+                    location.assign(url);
+                }
+                catch (e) {
+                    console.log('send form err: ', e);
                 }
             });
         }, 300);
