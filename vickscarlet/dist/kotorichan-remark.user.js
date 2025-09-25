@@ -1,132 +1,20 @@
 // ==UserScript==
 // @name         Bangumi 用户备注与屏蔽
 // @icon         https://kotorichan.me/favicon.ico
-// @namespace    kotorichan_app.remark
-// @version      0.1.0
+// @namespace    bgm_app.kotorichan.me
+// @version      0.1.2
 // @description  给用户添加备注，防止改名不认识
-// @author       Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>
-// @include      *://bgm.tv/*
-// @include      *://bangumi.tv/*
-// @include      *://chii.in/*
-// @grant        none
+// @author       Vick Scarlet ([BGM] 神戸小鳥＠vickscarlet)
+// @include      /^https?://(bgm.tv|bangumi.tv|chii.in)*
+// @require      https://code.jquery.com/jquery-3.4.1.min.js
+// @grant        GM_addStyle
 // ==/UserScript==
 
-const target = (function(){
-    // jshint -W067
-    return this || (0, eval)('this');
-})();
-const namespace = `kotorichan_app`;
-(function(namespace) {
-"use struct";
+var kotorichan_app;
 
-namespace.author = `Vick Scarlet <[BGM] 神戸小鳥＠vickscarlet> <https://github.com/VickScarlet> <scarlet_vick@outlook.com>`;
-
-(function(){
-function $(fn, ...args) {
-    return fn instanceof Function? fn(...args): void 0;
-}
-
-$.keys = function(o) {
-    if(o==null) return;
-    if(!o) return [];
-    if(o.keys instanceof Function) {
-        const keysI = o.keys();
-        if(keysI) {
-            if(keysI.next) {
-                const ks = [];
-                let key;
-                while(!(key=keysI.next()).done) ks.push(key.value);
-                return ks;
-            }
-            return keysI;
-        }
-    }
-    if(Object.values) return Object.values(o);
-    const keys = [];
-    for(const key in o) keys.push(key);
-    return keys;
-};
-
-$.values = function(o) {
-    if(o==null) return;
-    if(!o) return [];
-    if(o.values instanceof Function) {
-        const valuesI = o.values();
-        if(valuesI) {
-            if(valuesI.next) {
-                const vs = [];
-                let value;
-                while(!(value=valuesI.next()).done) vs.push(value.value);
-                return vs;
-            }
-            return valuesI;
-        }
-    }
-    if(Object.values) return Object.values(o);
-    const values = [];
-    for(const key in o) values.push(o[key]);
-    return values;
-};
-
-$.random = function(n) {
-    // jshint -W014
-    return Number.isFinite(n)
-        ? Math.random() * n
-        : Math.random()
-        ;
-};
-
-$.pick = function(o) {
-    const values = $.values(o);
-    if(!values) return;
-    return values[Math.floor($.random(values.length))%values.length];
-};
-
-$.call = function(fn, thisArgs, ...argsArray) {
-    return fn instanceof Function? fn.call(thisArgs, argsArray): void 0;
-};
-
-$.ready = (()=>{
-    let funcs = document.readyState === 'complete'? null: [];
-    if(!!funcs) {
-        const handler = e=>{
-            if(!funcs) return;
-            if(e.type === 'onreadystatechange' && document.readyState !== 'complete') return;
-            const fns = funcs;
-            funcs = null;
-            fns.forEach(fn=>$.call(fn, document));
-        };
-
-        if(document.addEventListener) {
-            document.addEventListener('DOMContentLoaded', handler, false);
-            document.addEventListener('readystatechange', handler, false);
-            window.addEventListener('load', handler, false);
-        } else if(document.attachEvent) {
-            document.attachEvent('onreadystatechange', handler);
-            window.attachEvent('onload', handler);
-        }
-    }
-    // jshint -W030
-    return fn => { !funcs? $.call(fn, document): funcs.push(fn); };
-})();
-
-$.addStyle = function(style) {
-    const styleElement = document.createElement("style");
-    styleElement.innerHTML = style||"";
-    document.head.append(styleElement);
-};
-
-$.global = function() {
-    return (function(){
-        // jshint -W067
-        return this || (0, eval)('this');
-    })();
-};
-
-namespace.$ = namespace.common = $;
-})();
-
-namespace.$.addStyle(`
+(function(app){
+'use strict';
+GM_addStyle(`
 /* 最外层 */
 #kotorichan_app_remark_main_window {
   display: block;
@@ -458,59 +346,43 @@ html[data-theme='dark'] #kotorichan_app_remark_block_mask {
   line-height: 50px;
 }
 `);
-
-(function(app){
-
-(function(){
-class AppBase {
-    constructor() {
-        const initRet = this.init();
-        if(initRet instanceof Promise) {
-            initRet.then(async()=>await this.enter());
-        } else {
-            this.enter();
-        }
-    }
-    static get version() {return "1.0.0";}
-    static get ver() {return this.version;}
-    static get v() {return this.version;}
-    get version() {return this.constructor.version;}
-    get ver() {return this.constructor.version;}
-    get v() {return this.constructor.version;}
-    async init() {}
-    async enter() {}
-}
-
-app.AppBase = AppBase;
-})();
-
-(function(){
-const common = namespace.common;
-
+const $ = window.$;
+const VERSION = "0.1.0";
 /**
  * 备注插件
  * @class Remark
- * @module Remark
- * @extends app.AppBase
- * @version 0.1.0
- * @namespace kotorichan_app
+ * @data m_remarks {
+ *      relationship_emui:{
+ *          FRIEND:0,
+ *          UNFAMILIAR:1,
+ *      },
+ *      people:{
+ *          $id$: {
+ *              m: remark
+ *              u: usedName
+ *          }
+ *      },
+ *      blocks:{}
+ * }
  */
-// jshint -W107
-class Remark extends app.AppBase {
+class Remark {
     constructor() {
-        super();
+        this.m_remarks = null;
+        this.m_changes = null;
     }
-    static get version() {return "0.1.0";}
+
     /**
      * 初始化
      */
-    enter() {
-        this.m_remarks = this.__getRemarks()||{};
+    init() {
+        // console.log($,$$);
         if(typeof $ == "undefined"){
             // console.log('kotorichan remark init error');
             return false;
         }
         // delete localStorage.kotorichan_remarks;
+        this.m_remarks = this.__getRemarks()||{};
+        this.m_changes = {};
         this.checkLoop();
         this.__initUI();
         this.__startParsePage();
@@ -731,26 +603,10 @@ class Remark extends app.AppBase {
         console.log('主页');
         $('#timeline ul li').each((idx, target) => {
             let block = $(target);
-            let nameTarget = $(block.find('span.info a')[0]);
-            if(nameTarget.length<1) return;
-            if(nameTarget.find('img').length>0){
-                nameTarget = $(block.find('span.info a')[1]);
-                if(nameTarget.length<1) return;
-            }
-            let userid = nameTarget.attr('href').split('/').pop();
-            if(this.__getBlock(userid)){
-                block.remove();
-                return;
-            } else if(this.__getFriend(userid)) {
-                nameTarget.addClass('kotorichan_app_remark_a_friend');
-            }
-            let hover;
+            let userid = block.attr('data-item-user');
             let head = block.find('span.avatar a');
-            if(head.length > 0){
-                hover = $(head[0]);
-            } else {
-                hover = nameTarget;
-            }
+            if(head.length != 1) return
+            let hover = $(head[0]);
             this.__onHoverShow(userid,hover,0,()=>{
                 block.remove();
             });
@@ -759,11 +615,9 @@ class Remark extends app.AppBase {
 
         $('ul.sideTpcList li').each((idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let head = $(block.find('a.avatar')[0]);
             if(head.length<1) return;
-            let match = $(head.find('img')[0]).attr('src').match(/.*\/([0-9]+)\.jpg.*/);
-            if(!match || match.length < 2) return;
-            let userid = match[1];
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -782,8 +636,8 @@ class Remark extends app.AppBase {
         console.log('用户页');
         $('#headerProfile').each((idx, target) => {
             let block = $(target);
-            let nameTarget = $(block.find('.nameSingle div.inner a')[0]);
             let userid = nameTarget.attr('href').split('/').pop();
+            let nameTarget = $(block.find('.nameSingle div.inner a')[0]);
             if(this.__getBlock(userid)){
                 this.__showBlockMask(userid);
                 // block.remove();
@@ -812,8 +666,8 @@ class Remark extends app.AppBase {
         console.log('频道/日志');
         $('#news_list .item').each((idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('.time a')[0]);
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -836,8 +690,8 @@ class Remark extends app.AppBase {
         $('.topic_list tr').each((idx, target) => {
             if(idx == 0) return;
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $($(block.find('td')[1]).find('a')[0]);
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -858,8 +712,8 @@ class Remark extends app.AppBase {
         console.log('类似讨论页的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('strong a')[0]);
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -889,8 +743,8 @@ class Remark extends app.AppBase {
         console.log('类似吐槽箱的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('div.text a')[0]);
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -919,8 +773,8 @@ class Remark extends app.AppBase {
         console.log('类似评论的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('div.entry div.time span.tip_j a')[0]);
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -949,9 +803,9 @@ class Remark extends app.AppBase {
         console.log('类似讨论版的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('td a')[1]);
             if(nameTarget.length<1) return;
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -974,9 +828,9 @@ class Remark extends app.AppBase {
         console.log('类似目录的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('span.tip_i a')[0]);
             if(nameTarget.length<1) return;
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -1005,9 +859,9 @@ class Remark extends app.AppBase {
         console.log('类似小组话题的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('td small.sub_title a')[0]);
             if(nameTarget.length<1) return;
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -1036,9 +890,9 @@ class Remark extends app.AppBase {
         console.log('类似小组的页面');
         let process = (idx, target) => {
             let block = $(target);
+            let userid = block.attr('data-item-user');
             let nameTarget = $(block.find('td.author a')[0]);
             if(nameTarget.length<1) return;
-            let userid = nameTarget.attr('href').split('/').pop();
             if(this.__getBlock(userid)){
                 block.remove();
                 return;
@@ -1221,7 +1075,7 @@ class Remark extends app.AppBase {
 
                 let userid = userContent.find('strong a').attr('href').split('/').pop();
                 let username = userContent.find('strong').text().trim();
-                let img = userContent.find('img').attr('src');
+                let img = userContent.find('span.avatarNeue').attr('style').match(/\('(.*)'\)/)[1];
 
                 let item = $(`<li class="${tabParams.itemClass}"></li>`);
                 let num = $(`<small>${idx+1}</small>`);
@@ -1718,18 +1572,22 @@ class Remark extends app.AppBase {
      */
     __getRemarks() {
         // console.log("kotorichan_app.Remark.__getRemarks");
-        return localStorage.kotorichan_remarks
-            ? JSON.parse(localStorage.kotorichan_remarks)
-            : {
-                relationship_emui:{
-                    FRIEND:0,
-                    UNFAMILIAR:1,
-                },
-                people:{},  // 用户信息
-                friends:[], // 好友列表
-                blocks:[],  // 屏蔽列表
-                v: this.v
-            };
+        if(localStorage.kotorichan_remarks == undefined) localStorage.kotorichan_remarks = JSON.stringify({
+            relationship_emui:{
+                FRIEND:0,
+                UNFAMILIAR:1,
+            },
+            people:{},  // 用户信息
+            friends:[], // 好友列表
+            blocks:[],  // 屏蔽列表
+            v:VERSION
+        });
+        let obj = JSON.parse(localStorage.kotorichan_remarks);
+        if(!obj.v || obj.v != VERSION){
+            obj = this.__convertOldData(obj);
+            localStorage.kotorichan_remarks = JSON.stringify(obj);
+        }
+        return obj;
     }
 
     /**
@@ -1739,12 +1597,49 @@ class Remark extends app.AppBase {
         // console.log("kotorichan_app.Remark.__saveRemarks");
         localStorage.kotorichan_remarks=JSON.stringify(this.m_remarks);
     }
+
+    /**
+     * 转换旧版本数据
+     * @param {object} obj 旧版本数据
+     */
+    __convertOldData(obj) {
+        let newData = {
+            relationship_emui:{
+                FRIEND:0,
+                UNFAMILIAR:1,
+            },
+            people:{},  // 用户信息
+            friends:[], // 好友列表
+            blocks:[],  // 屏蔽列表
+            v:VERSION
+        };
+
+        if(obj.people) {
+            for(const id in obj.people){
+                const oldPeople = obj.people[id];
+                const newPeople = {
+                    u: [oldPeople.n],  // 曾用名列表
+                };
+                if(oldPeople.n != oldPeople.m) newPeople.m = oldPeople.m;
+                newData.people[id] = newPeople;
+            }
+        }
+
+        if(obj.blocks) {
+            newData.blocks = Object.keys(obj.blocks);
+        }
+
+        return newData;
+    }
+
 }
 
-app.Remark = Remark;
-common.ready(()=>new Remark());
-})();
+// 导出一个实例
+let instance;
+instance = new Remark();
+instance.init();
+app.Remark = instance;
 
-})(namespace.app||(namespace.app={}));
+})(kotorichan_app||(kotorichan_app = {}));
 
-})(target[namespace]||(target[namespace]={}));
+console.log(kotorichan_app);
