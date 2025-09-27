@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         班固米代码高亮
 // @namespace    https://bgm.tv/group/topic/409276
-// @version      1.8
+// @version      1.8.1
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
+// @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/group/topic/*
 // @match        http*://bgm.tv/group/topic/*
 // @match        http*://bgm.tv/group/topic/*

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         时光机查询特定条目评价
 // @namespace    https://bgm.tv/group/topic/411925
-// @version      0.2.1
+// @version      0.2.2
 // @description  经济的同步率查询
 // @author       mmv
 // @match        http*://bgm.tv/user/*
 // @match        http*://bangumi.tv/user/*
 // @match        http*://chii.in/user/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+// @icon         https://bgm.tv/img/favicon.ico
 // @license      MIT
 // @grant        none
 // @gf           https://greasyfork.org/zh-CN/scripts/520607

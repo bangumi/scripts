@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         章节讨论吐槽加强
 // @namespace    https://bgm.tv/group/topic/408098
-// @version      0.5.4
+// @version      0.5.5
 // @description  章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 // @author       oo
+// @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/*
 // @match        http*://chii.in/*
 // @match        http*://bangumi.tv/*

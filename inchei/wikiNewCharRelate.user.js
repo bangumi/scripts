@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         条目页快捷创建角色并关联
 // @namespace    https://bgm.tv/group/topic/435747
-// @version      0.0.1
+// @version      0.0.2
 // @description  条目角色页添加创建按钮，创建后自动跳转到关联页面并将新角色列入其中
 // @author       you
+// @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/subject/*
 // @match        http*://bgm.tv/subject/*/characters
 // @match        http*://bgm.tv/character/new

@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         加入或修改收藏时标签功能加强
-// @version      0.3.0
+// @version      0.3.1
 // @description  加入或修改收藏时高亮或自动填充自己与他人的共同标签，高亮其中的元标签，点击展开所有标签
 // @author       ooo
+// @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/*
 // @match        http*://chii.in/*
 // @match        http*://bangumi.tv/*

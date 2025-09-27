@@ -3,7 +3,7 @@
 // @namespace    https://bgm.tv/group/topic/
 // @homepage     https://bgm.tv/group/topic/418549
 // @homepageURL  https://bgm.tv/group/topic/418549
-// @version      0.1.6
+// @version      0.1.7
 // @description  在班固米显示动画进度时间线的对应评论
 // @author       oov
 // @match        https://bangumi.tv/
@@ -12,7 +12,7 @@
 // @match        https://bangumi.tv/user/*/timeline*
 // @match        https://bgm.tv/user/*/timeline*
 // @match        https://chii.in/user/*/timeline*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+// @icon         https://bgm.tv/img/favicon.ico
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js

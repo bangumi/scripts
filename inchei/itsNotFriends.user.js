@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         “好友”改为“关注”
 // @namespace    https://bgm.tv/group/topic/410150
-// @version      0.0.3
+// @version      0.0.4
 // @description  将关于好友的描述修改为关注
 // @author       oom
 // @match        http*://bgm.tv/
 // @match        http*://chii.in/
 // @match        http*://bangumi.tv/
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+// @icon         https://bgm.tv/img/favicon.ico
 // @grant        none
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/518358

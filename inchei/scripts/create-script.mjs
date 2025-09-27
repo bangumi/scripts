@@ -28,6 +28,7 @@ const scriptContent = `// ==UserScript==
 // @version      0.0.1
 // @description  ${scriptName}
 // @author       you
+// @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/*
 // @match        http*://chii.in/*
 // @match        http*://bangumi.tv/*

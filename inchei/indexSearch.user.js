@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序
 // @namespace    https://bgm.tv/group/topic/409246
-// @version      0.6.3
+// @version      0.6.4
 // @description  为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 // @author       mmm
 // @match        http*://bgm.tv/index/*
@@ -28,7 +28,7 @@
 // @match        http*://bgm.tv/blog/*
 // @match        http*://chii.in/blog/*
 // @match        http*://bangumi.tv/blog/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+// @icon         https://bgm.tv/img/favicon.ico
 // @grant        none
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/516479

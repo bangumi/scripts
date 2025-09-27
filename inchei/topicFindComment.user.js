@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
-// @version      1.1.5
+// @version      1.1.6
 // @description  也可以干别的
 // @author       mmv
 // @match        http*://bgm.tv/subject/topic/*
@@ -22,7 +22,7 @@
 // @match        http*://chii.in/character/*
 // @match        http*://chii.in/person/*
 // @match        http*://chii.in/group/topic/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+// @icon         https://bgm.tv/img/favicon.ico
 // @license      MIT
 // @grant        none
 // @gf           https://greasyfork.org/zh-CN/scripts/520506

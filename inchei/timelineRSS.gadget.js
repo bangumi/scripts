@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RSS订阅班友收藏
 // @namespace    https://bgm.tv/group/topic/414787
-// @version      0.2.3
+// @version      0.2.4
 // @description  在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 // @author       oov
 // @match        http*://bgm.tv/
@@ -13,7 +13,7 @@
 // @match        http*://bangumi.tv/user/*
 // @match        http*://bgm.tv/user/*
 // @match        http*://chii.in/user/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+// @icon         https://bgm.tv/img/favicon.ico
 // @grant        none
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/524603

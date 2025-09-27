@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
-// @version      0.5.2
+// @version      0.5.3
 // @description  自动生成Bangumi编辑摘要
 // @author       You
+// @icon         https://bgm.tv/img/favicon.ico
 // @match        https://bgm.tv/subject/*/edit_detail
 // @match        https://bgm.tv/character/*/edit
 // @match        https://bgm.tv/person/*/edit
