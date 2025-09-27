@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
-// @version      1.1.6
+// @version      1.1.7
 // @description  也可以干别的
 // @author       mmv
 // @match        http*://bgm.tv/subject/topic/*
@@ -78,7 +78,7 @@
             backdrop-filter: blur(5px);
             border-radius: 5px;
             padding: 5px;
-            max-width: 250px;
+            max-width: 20em;
             width: max-content;
             z-index: 1000;
             font-weight: normal;
@@ -296,18 +296,20 @@
                     popupBtn.append(popup);
                     wrapper.append(popupBtn);
 
-                    popupBtn.addEventListener('mouseenter', () => {
+                    // waiting for CSS Anchor Positioning
+                    const adjustPos = () => {
                         const rect = popupBtn.getBoundingClientRect();
                         const popupRect = popup.getBoundingClientRect();
                         const windowWidth = window.innerWidth;
                         if (rect.left + popupRect.width > windowWidth) {
-                            popup.style.left = 'auto';
-                            popup.style.right = '0';
+                            popup.style.left = `${windowWidth - rect.left - popupRect.width}px`;
                         } else {
                             popup.style.left = '0';
                             popup.style.right = 'auto';
                         }
-                    });
+                    };
+                    popupBtn.addEventListener('mouseenter', adjustPos);
+                    popupBtn.addEventListener('click', adjustPos);
                 }
             }
 
