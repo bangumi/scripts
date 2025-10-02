@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序
 // @namespace    https://bgm.tv/group/topic/409246
-// @version      0.6.4
+// @version      0.6.5
 // @description  为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 // @author       mmm
 // @match        http*://bgm.tv/index/*
@@ -476,10 +476,8 @@
     // #region 目录页
     if (location.pathname.startsWith('/index/')) {
         formhash = document.querySelector('input[name="formhash"]')?.value;
-        const addBtn = document.querySelector('a.add.primary');
-        if (!formhash || !addBtn) return;
+        if (!formhash) return;
 
-        addBtn.href = '#TB_inline?tb&height=300&width=450&inlineId=newIndexRelated';
         const indexId = location.pathname.split('/')[2];
         const boxes = document.querySelectorAll('.newIndexSection');
 
@@ -603,7 +601,12 @@
                                 document.querySelector('#columnSubjectBrowserA').append(line, header, parent);
                             } else { // subject
                                 const segmentBar = document.querySelector('.segment-container');
-                                segmentBar.after(parent);
+                                if (segmentBar) {
+                                    segmentBar.after(parent);
+                                } else { // 空目录
+                                    const newIdxAnchor = document.querySelector('.emptyIndex');
+                                    newIdxAnchor.before(parent);
+                                }
                             }
                         }
                     }
@@ -654,6 +657,10 @@
 
             });
         });
+
+        // 增加弹框高度
+        const addBtn = document.querySelector('a.add.primary');
+        if (addBtn) addBtn.href = '#TB_inline?tb&height=300&width=450&inlineId=newIndexRelated';
 
         // #region 兼容“目录批量添加与编辑”
         monitorElement('.bibeBox', bibeBox => {
