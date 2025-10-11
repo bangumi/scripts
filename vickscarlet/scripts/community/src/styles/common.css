@@ -1,29 +1,31 @@
 /* 圆形头像 */
-#timeline .tml_item,
-#home_grp_tpc,
-#home_subject_tpc,
-#headerNeue2,
-#comment_list,
-#reply_wrapper,
-#comment_box,
-#subjectPanelIndex,
-#subjectPanelCollect,
-#columnB .SidePanel .side_port,
-#memberUserList,
-.postTopic 
-{ 
-    .userImage,
-    .avatar { 
-        img, .avatarNeue { 
-            border-radius: 50% !important; 
+html[data-avatar-size="default"] {
+    #timeline .tml_item,
+    #home_grp_tpc,
+    #home_subject_tpc,
+    #headerNeue2,
+    #comment_list,
+    #reply_wrapper,
+    #comment_box,
+    #subjectPanelIndex,
+    #subjectPanelCollect,
+    #columnB .SidePanel .side_port,
+    #memberUserList,
+    .postTopic 
+    { 
+        .userImage,
+        .avatar { 
+            img, .avatarNeue { 
+                border-radius: 50% !important; 
+            } 
+            img.avatar_mn {
+                width: 28px !important;
+                height: 28px !important;
+                padding: 0 !important;
+                border: none !important;
+            }
         } 
-        img.avatar_mn {
-            width: 28px !important;
-            height: 28px !important;
-            padding: 0 !important;
-            border: none !important;
-        }
-    } 
+    }
 }
 
 .prg_list {
