@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi Related Subject Enhance
 // @namespace    https://github.com/bangumi/scripts/liaune
-// @version      0.6.7
+// @version      0.6.8
 // @description  显示条目页面关联条目的收藏情况，显示关联条目的排名，单行本设为全部已读/取消全部已读
 // @author       Liaune
 // @include     /^https?:\/\/((bangumi|bgm)\.tv|chii.in)\/subject\/\d+$/
@@ -54,7 +54,7 @@ border-color: #5a5855;
 .collect-toggle {
 display: block;
 top: -20px;
-opacity: 0.5;
+opacity: 0.8;
 position: relative;
 padding: 0 5px;
 width: 16px;
