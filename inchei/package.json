@@ -18,15 +18,20 @@
     "publish:gf": "npm run version && git push",
     "publish:all": "npm run publish:gadget && npm run publish:gf"
   },
+  "pre-commit": [
+    "readme",
+    "lint"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
   "packageManager": "pnpm@10.16.1",
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
-    "eslint": "^9.35.0",
+    "@eslint/js": "^9.36.0",
+    "eslint": "^9.36.0",
     "eslint-plugin-userscripts": "^0.5.6",
     "globals": "^16.4.0",
+    "pre-commit": "^1.2.2",
     "userscript-meta": "^1.0.1"
   }
 }

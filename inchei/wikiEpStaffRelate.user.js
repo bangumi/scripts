@@ -7,14 +7,18 @@
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/ep/*
 // @match        http*://bgm.tv/subject/*/add_related/person*
+// @match        http*://bangumi.tv/ep/*
+// @match        http*://bangumi.tv/subject/*/add_related/person*
 // @match        http*://chii.in/ep/*
 // @match        http*://chii.in/subject/*/add_related/person*
-// @match        http*://bangumi.tv/ep/*
-// @match        http*://bangumi.tv/*/add_related/person*
 // @grant        none
 // @license      MIT
 // ==/UserScript==
 
+/* global OpenCC */
+
+// https://bgm.tv/dev/app/3265 MIT
+// window.personAliasQuery
 const regexes_per = {
     "脚本": /(?<=[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
     "分镜": /(?<=[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
@@ -65,6 +69,33 @@ const regexes_role_per = {
     "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
     "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
 };
+const regexes_role = {
+    "脚本": /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "分镜": /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "演出": /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "构图": /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "作画监督":  /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "总作画监督": /(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "动作作画监督": /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "作画监督助理":  /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|＆|=|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "CG 导演":/(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "美术监督":/(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "背景美术":/(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|･|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "制作进行":/(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "制作管理":/(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        //以下为bangumi没有的职位
+    "总作画监督助理":  /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+};
+const regex_sym = /[\uff1a\u003A【】\/／、、＆\u0026♦◆■=]/g;
 
 // 缓存章节数据（key: subjectId, value: {epLabel: 章节详情}）
 const epsCache = {};
@@ -103,13 +134,13 @@ const epsCache = {};
         const epDesc = document.querySelector('.epDesc')?.textContent;
         if (!epDesc) return;
 
-        const personRoleMap = parsePersonRoleMap(epDesc);
-        const personRoleJson = JSON.stringify(personRoleMap);
-        if (personRoleJson === '{}') return;
+        const [sfaffInfo] = extractStaffInfo({ [epLabel]: epDesc });
+        const staffJSON = JSON.stringify(sfaffInfo);
+        if (staffJSON === '{}') return;
 
         document.querySelector('.title').insertAdjacentHTML(
             'beforeend',
-            `<small><a class="l staff-link" href="/subject/${subjectId}/add_related/person?epLabel=${encodeURIComponent(epLabel)}&personRoles=${encodeURIComponent(personRoleJson)}">[关联制作人员参与]</a></small>`
+            `<small><a class="l staff-link" href="/subject/${subjectId}/add_related/person?staffs=${encodeURIComponent(staffJSON)}">[关联制作人员参与]</a></small>`
         );
 
     } else if (location.pathname.match(/^\/subject\/\d+\/add_related\/person$/)) {
@@ -123,36 +154,21 @@ const epsCache = {};
                 btn.textContent = '获取章节中……';
                 const eps = await getEps(subjectId);
                 if (!eps.length) throw new Error('未获取到章节数据');
-                epsCache[subjectId] = eps.reduce((cache, ep) => {
+                const epData = {}, epDescs = {};
+                for (const ep of eps) {
                     const epTypes = ['', 'SP', 'OP', 'ED'];
                     const epLabel = `${epTypes[ep.type]}${ep.sort}`;
-                    cache[epLabel] = ep;
-                    return cache;
-                }, {});
+
+                    epData[epLabel] = ep;
+                    epDescs[epLabel] = ep.desc;
+                }
+                epsCache[subjectId] = epData;
 
                 btn.textContent = '解析参与中……';
-                const epLabelRoleMap = {};
-                const allEpsWithDesc = [];
-                const epsWithNoMatches = [];
+                const [staffInfo, noStaffEps] = extractStaffInfo(epDescs);
 
-                for (const ep of eps) {
-                    const { desc, sort, type } = ep;
-                    if (!desc) continue;
-
-                    const epTypes = ['', 'SP', 'OP', 'ED'];
-                    const epLabel = `${epTypes[type]}${sort}`;
-                    allEpsWithDesc.push(epLabel);
-
-                    const personRoleMap = parsePersonRoleMap(desc);
-                    if (Object.keys(personRoleMap).length) {
-                        epLabelRoleMap[epLabel] = personRoleMap;
-                    } else {
-                        epsWithNoMatches.push(epLabel);
-                    }
-                }
-
-                if (Object.keys(epLabelRoleMap).length || epsWithNoMatches.length) {
-                    updAppearEps(epLabelRoleMap, subjectId, epsWithNoMatches);
+                if (Object.keys(staffInfo).length || noStaffEps.length) {
+                    await updAppearEps(staffInfo, subjectId, noStaffEps);
                 } else {
                     throw new Error('未解析到任何集数的人员信息');
                 }
@@ -380,7 +396,6 @@ const epsCache = {};
 
         const toStr = num => Number.isInteger(num) ? num.toString() : num.toFixed(1).replace(/\.0$/, '');
 
-        // 解析、去重、排序主逻辑
         return Array.from(
             new Set(
                 input.split(',')
@@ -410,7 +425,7 @@ const epsCache = {};
         });
     }
 
-    async function updAppearEps(epLabelRoleMap, subjectId, epsWithNoMatches) {
+    async function updAppearEps(staffInfo, subjectId, noStaffEps) {
         const groupedRecords = {
             new: {},         // 本次新增的参与记录
             existing: {},    // 已存在的参与记录
@@ -418,67 +433,73 @@ const epsCache = {};
         };
         const crtLiList = [...document.querySelectorAll('#crtRelateSubjects li')];
 
-        const epLabelRoleMapEntries = Object.entries(epLabelRoleMap);
-        for (const [epLabel, personRoleMap] of epLabelRoleMapEntries) {
-            for (const [originalName, roles] of Object.entries(personRoleMap)) {
-                for (const role of roles) {
-                    const matchLi = name => crtLiList.find(li => {
-                        const displayName = li.querySelector('.title a').textContent;
-                        const selectedRole = li.querySelector('[name$="[prsnPos]"] option[selected]')?.textContent.split(' /')[0] || '';
-                        return displayName === name && selectedRole === role;
-                    });
-                    let matchedLi, name = originalName;
+        const staffInfoEntries = Object.entries(staffInfo);
+        for (const [originalName, roles] of staffInfoEntries) {
+            for (const [role, epLabels] of Object.entries(roles)) {
+                const matchLi = name => crtLiList.find(li => {
+                    const displayName = li.querySelector('.title a').textContent;
+                    const selectedRole = li.querySelector('[name$="[prsnPos]"] option[selected]')?.textContent.split(' /')[0] || '';
+                    return displayName === name && selectedRole === role;
+                });
+                let matchedLi, name = originalName;
 
-                    async function* candidateNames() {
-                        yield originalName;
-                        const nameWithoutBrackets = originalName.replace(/\([^)]*\)|\{[^}]*\}|\[[^\]]*\]|（[^）]*）|［[^］]*］/g, '').trim();
-                        yield nameWithoutBrackets;
+                let aliased = false;
+                async function* candidateNames() {
+                    yield originalName;
 
-                        const _alias = await window.personAliasQuery?.(originalName);
-                        if (_alias) yield _alias;
+                    aliased = true;
+                    const nameWithoutBrackets = originalName.replace(/\([^)]*\)|\{[^}]*\}|\[[^\]]*\]|（[^）]*）|［[^］]*］/g, '').trim();
+                    yield nameWithoutBrackets;
 
-                        const __alias = await window.personAliasQuery?.(nameWithoutBrackets);
-                        if (__alias) yield __alias;
+                    const _alias = (await window.personAliasQuery?.(originalName))?.name;
+                    if (_alias) yield _alias;
 
-                        for (const name of await getConvertedNames(nameWithoutBrackets)) yield name;
-                        for (const name of await getConvertedNames(originalName)) yield name;
-                    }
+                    const __alias = (await window.personAliasQuery?.(nameWithoutBrackets))?.name;
+                    if (__alias) yield __alias;
 
-                    for await (const candidate of candidateNames()) {
-                        matchedLi = matchLi(candidate);
-                        if (!matchedLi) continue;
-                        name = candidate;
-                        break;
-                    }
-                    const groupKey = `${name}-${role}`;
+                    for (const name of await getConvertedNames(nameWithoutBrackets)) yield name;
+                    for (const name of await getConvertedNames(originalName)) yield name;
+                }
 
-                    if (matchedLi) {
-                        const liId = `staff-${name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
-                        matchedLi.id = liId;
+                for await (const candidate of candidateNames()) {
+                    matchedLi = matchLi(candidate);
+                    if (!matchedLi) continue;
+                    name = candidate;
+                    break;
+                }
+                const groupKey = `${name}-${role}`;
 
-                        const input = matchedLi.querySelector('[name$="[appear_eps]"]');
-                        const existingSet = new Set(parseAppearEps(input.value));
+                if (matchedLi) {
+                    const liId = `staff-${name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
+                    matchedLi.id = liId;
+
+                    const input = matchedLi.querySelector('[name$="[appear_eps]"]');
+                    const existingSet = new Set(parseAppearEps(input.value));
+
+                    for (const epLabel of epLabels) {
                         const wasExisting = existingSet.has(epLabel);
-
-                        // 仅添加不存在的集数
                         if (!wasExisting) {
                             input.value = [input.value.trim(), epLabel].filter(Boolean).join(',');
                             matchedLi.style.background = 'rgba(255, 248, 165, 0.2)';
                         }
 
-                        // 区分新增和已有记录
                         const targetGroup = wasExisting ? 'existing' : 'new';
                         groupedRecords[targetGroup][groupKey] ||= {
                             name,
                             role,
                             epLabels: new Set(),
+                            aliases: {},
                             liId
                         };
-                        groupedRecords[targetGroup][groupKey].epLabels.add(epLabel);
-                    } else {
-                        groupedRecords.unmatched[groupKey] ||= { name: originalName, role, epLabels: new Set() };
-                        groupedRecords.unmatched[groupKey].epLabels.add(epLabel);
+                        const record = groupedRecords[targetGroup][groupKey];
+                        record.epLabels.add(epLabel);
+                        if (aliased) {
+                            record.aliases[originalName] ||= [];
+                            record.aliases[originalName].push(epLabel);
+                        }
                     }
+                } else {
+                    groupedRecords.unmatched[groupKey] ||= { name: originalName, role, epLabels: new Set(epLabels) };
                 }
             }
         }
@@ -502,15 +523,15 @@ const epsCache = {};
             formatRecords(groupedRecords.existing),
             formatRecords(groupedRecords.unmatched),
             subjectId,
-            epsWithNoMatches
+            noStaffEps
         );
 
         const editSummaryInput = document.querySelector('#editSummary');
-        const epLabelsStr = epLabelRoleMapEntries.length > 1 ? '' : epLabelRoleMapEntries[0][0];
+        const epLabelsStr = staffInfoEntries.length > 1 ? '' : staffInfoEntries[0][0];
         editSummaryInput.value = `根据${epLabelsStr}章节简介填写参与`;
     }
 
-    function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, subjectId, epsWithNoMatches) {
+    function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, subjectId, noStaffEps) {
         document.querySelector('.staff-tip-box')?.remove();
 
         const tipBox = document.createElement('div');
@@ -524,9 +545,9 @@ const epsCache = {};
         tipBox.append(dragHandle, contentBox);
 
         contentBox.innerHTML = `
-    ${epsWithNoMatches?.length ? `<div class="staff-warning-section">
-        <div class="staff-warning-title">以下${epsWithNoMatches.length}个集数未匹配到任何制作人员信息：</div>
-        ${epsWithNoMatches.map(ep => `<span title="${escapeAttr(epsCache[subjectId]?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache[subjectId]?.[ep]?.id}">${ep}</a></span>`).join(',')}
+    ${noStaffEps?.length ? `<div class="staff-warning-section">
+        <div class="staff-warning-title">以下${noStaffEps.length}个集数未匹配到任何制作人员信息：</div>
+        ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache[subjectId]?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache[subjectId]?.[ep]?.id}">${ep}</a></span>`).join(',')}
         </div>` : ''}
     ${recordSection(newRecords, '新增参与（点击跳转）', 'new')}
     ${recordSection(existingRecords, '已有参与（点击跳转）', 'existing')}
@@ -538,9 +559,17 @@ const epsCache = {};
             return `
         <div class="staff-record-list">
             <h4 class="staff-tip-title ${className}">${text}</h4>
-            ${records.map(({ name, role, epLabels, liId }) => `
+            ${records.map(({ name, role, epLabels, aliases, liId }) => `
                 <a class="staff-record-item ${className}" ${liId ? `href="#${escapeAttr(liId)}"` : ''}>
-                    <span class="staff-person-name">${name}</span>（${role}）-
+                    <span class="staff-person-name">${name}</span>
+                    ${ (() => {
+                        if (!aliases) return '';
+                        const aliasesEntries = Object.entries(aliases);
+                        return aliasesEntries.length ? `[${aliasesEntries.map(([alias, eps]) => {
+                            return `<span title="${eps.join(',')}">${alias}</span>`;
+                        }).join('、')}]` : '';
+                    })() }
+                    （${role}）-
                     ${epLabels.map(ep => `<span title="${escapeAttr(epsCache[subjectId]?.[ep]?.desc || '')}">${ep}</span>`).join(',')}
                 </a>`).join('')}
         </div>`;
@@ -577,110 +606,111 @@ const epsCache = {};
     }
 
     /**
-     * 从文本提取人物-职位
-     * @param {string} text - 单集简介文本
-     * @returns {Object} 人物-职位映射表
+     * 从动画章节简介中提取制作人员信息
+     * @param {Object.<string, string>} epDescs - 章节数据，键为集数名，值为简介文本
+     * @returns {Array} 提取结果数组
+     * @returns {Object.<string, Object.<string, string[]>>} 0 - 制作人员信息，结构为 {人物: {职位: [集数]}}
+     * @returns {string[]} 1 - 未匹配到任何人员的集数名数组
      */
-    function parsePersonRoleMap(text) {
-        // 预处理文本
-        const processedText = text.replaceAll("\r", "").replaceAll(/[\uff1a\u003A【】\/／、、＆\u0026♦◆■=]/g, "、");
+    function extractStaffInfo(epDescs) {
+        const result = {};
+        const noStaffEps = [];
 
-        // 按职位顺序解析
-        const regexes = Object.entries(regexes_per).sort((a, b) => {
-            const posA = processedText.search(a[1]);
-            const posB = processedText.search(b[1]);
-            return posA < 0 ? 1 : posB < 0 ? -1 : posA - posB;
-        });
+        for (const [epLabel, desc] of Object.entries(epDescs)) {
+            let processedDesc = desc.replaceAll("\r", "").replaceAll(regex_sym, "、");
 
-        // 初始化结果对象 - 人物:职位数组
-        const personRoleMap = {};
-
-        // 第一轮解析：提取各职位对应的人物
-        const rolePersonMap = {};
-        regexes.forEach(([role, regex]) => {
-            const matches = processedText.match(regex);
-            // 清理之前职位中可能包含当前职位名称的部分
-            for (const existingRole in rolePersonMap) {
-                rolePersonMap[existingRole] = rolePersonMap[existingRole].map(person =>
-                    trimCommas(person.replaceAll(regexes_role_per[role], ""))
-                );
-            }
-
-            rolePersonMap[role] = matches ? matches.map(x => trimCommas(x)) : [];
-        });
-
-        // 第二轮解析：进一步清理职位名称残留
-        regexes.forEach(([role, regex]) => {
-            for (const existingRole in rolePersonMap) {
-                rolePersonMap[existingRole] = rolePersonMap[existingRole].map(person =>
-                    trimCommas(person.replaceAll(regexes_role_per[role], ""))
-                );
-            }
-        });
-
-        // 去重处理并构建人物:职位映射
-        for (const [role, persons] of Object.entries(rolePersonMap)) {
-            const uniquePersons = [...new Set(persons.filter(name => name.trim() !== ''))];
-
-            uniquePersons.forEach(personGroup => {
-                // 按顿号分割多个姓名
-                const individualPersons = splitPersonGroup(personGroup);
-
-                individualPersons.forEach(person => {
-                    // 修正姓名中间的空格
-                    const cleanPerson = removeSpacesFromName(person);
-
-                    if (!personRoleMap[cleanPerson]) {
-                        personRoleMap[cleanPerson] = [];
-                    }
-                    if (!personRoleMap[cleanPerson].includes(role)) {
-                        personRoleMap[cleanPerson].push(role);
-                    }
-                });
+            // 按正则表达式位置排序，确保先匹配长的职位名称
+            const regexes = Object.entries(regexes_per).sort((a, b) => {
+                const posA = processedDesc.search(a[1]);
+                const posB = processedDesc.search(b[1]);
+                return posA < 0 ? 1 : posB < 0 ? -1 : posA - posB;
             });
-        }
 
-        return personRoleMap;
-    }
+            const episodeStaff = {};
+            regexes.forEach(([role, regex]) => {
+                const matches = processedDesc.match(regex);
 
-    // 辅助函数 - 分割姓名组（按顿号分隔）
-    function splitPersonGroup(personGroup) {
-        if (typeof personGroup !== 'string') return [personGroup];
-
-        // 按顿号分割，但排除括号内的顿号
-        const persons = [];
-        let currentPerson = '';
-        let inBrackets = false;
-
-        for (let i = 0; i < personGroup.length; i++) {
-            const char = personGroup[i];
-
-            if (char === '（' || char === '(') {
-                inBrackets = true;
-                currentPerson += char;
-            } else if (char === '）' || char === ')') {
-                inBrackets = false;
-                currentPerson += char;
-            } else if (char === '、' && !inBrackets) {
-                // 顿号且不在括号内，分割
-                if (currentPerson.trim()) {
-                    persons.push(currentPerson.trim());
+                // 清理之前已匹配的人员名称中的职位前缀
+                for (const existingRole in episodeStaff) {
+                    episodeStaff[existingRole] = episodeStaff[existingRole].map(name => {
+                        const replaced = trimCommas(name.replaceAll(regexes_role_per[role], ""));
+                        if (replaced[0] !== name[0]) {
+                            return trimCommas(name.replaceAll(regexes_role[role], ""));
+                        } else {
+                            return replaced;
+                        }
+                    });
                 }
-                currentPerson = '';
-            } else {
-                currentPerson += char;
+
+                episodeStaff[role] = [];
+                if (matches) {
+                    episodeStaff[role] = matches.map(name => trimCommas(name));
+                }
+            });
+
+            regexes.forEach(([role]) => {
+                for (const existingRole in episodeStaff) {
+                    episodeStaff[existingRole] = episodeStaff[existingRole].map(name => {
+                        const replaced = trimCommas(name.replaceAll(regexes_role_per[role], ""));
+                        if (replaced[0] !== name[0]) {
+                            return trimCommas(name.replaceAll(regexes_role[role], ""));
+                        } else {
+                            return replaced;
+                        }
+                    });
+                }
+            });
+
+            for (const role in episodeStaff) {
+                const seenNames = new Set();
+
+                const newStaffList = [];
+                for (const name of episodeStaff[role]) {
+                    if (name.includes('、')) {
+                        const names = name.split('、').map(singleName => trimCommas(singleName));
+                        names.forEach(singleName => {
+                            if (singleName && singleName !== ' ') {
+                                newStaffList.push(singleName);
+                            }
+                        });
+                    } else {
+                        newStaffList.push(name);
+                    }
+                }
+
+                episodeStaff[role] = newStaffList;
+
+                episodeStaff[role] = episodeStaff[role].filter(name => {
+                    if (seenNames.has(name) || !name || name === ' ') {
+                        return false;
+                    }
+                    seenNames.add(name);
+                    return true;
+                });
             }
+
+            let hasStaff = false;
+            for (const [role, staffList] of Object.entries(episodeStaff)) {
+                for (const name of staffList) {
+                    // eslint-disable-next-line no-irregular-whitespace
+                    const staffName = name.replace(/([\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]{1,3})[ 　]([\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]{1,3})/g, '$1$2');
+                    result[staffName] ||= {};
+                    result[staffName][role] ||= [];
+                    if (!result[staffName][role].includes(epLabel)) {
+                        result[staffName][role].push(epLabel);
+                        hasStaff = true;
+                    }
+                }
+            }
+
+            if (!hasStaff) noStaffEps.push(epLabel);
         }
 
-        // 添加最后一个姓名
-        if (currentPerson.trim()) {
-            persons.push(currentPerson.trim());
-        }
-
-        return persons;
+        // 返回结果和没有匹配到人员的集数数组
+        return [ result, noStaffEps ];
     }
 
-    // 辅助函数 - 去除首尾顿号和空格
+    // 辅助函数
     function trimCommas(x) {
         if (typeof x === 'string') {
             x = x.trim();
@@ -694,18 +724,4 @@ const epsCache = {};
         return x;
     }
 
-    // 辅助函数 - 移除姓名中间的空格
-    function removeSpacesFromName(name) {
-        if (typeof name !== 'string') return name;
-
-        // 移除所有空格（半角和全角）
-        let cleanName = name.replace(/[ 　]/g, '');
-
-        // 如果移除空格后是2-5个字符的日文名，使用这个版本
-        if (cleanName.length >= 2 && cleanName.length <= 5) {
-            return cleanName;
-        }
-
-        return name;
-    }
 })();

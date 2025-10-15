@@ -96,5 +96,6 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-    execSync(`"C:\\Program Files\\Mozilla Firefox\\firefox.exe" "${gadgets[0].url}"`);
+    // execSync(`"C:\\Program Files\\Mozilla Firefox\\firefox.exe" "${gadgets[0].url}"`);
+    execSync(`"/mnt/c/Program Files/Mozilla Firefox/firefox.exe" "${gadgets[0].url}"`);
 });
