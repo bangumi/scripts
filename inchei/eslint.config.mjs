@@ -36,7 +36,9 @@ export default defineConfig([
         $: "readonly",
         chiiLib: "readonly",
         tb_init: "readonly",
-        tb_remove: "readonly"
+        tb_remove: "readonly",
+        subjectList: "readonly",
+        addRelateSubject: "readonly",
       }
     },
     rules: {

@@ -17,88 +17,14 @@
 
 /* global OpenCC */
 
-// https://bgm.tv/dev/app/3265 MIT
 // window.personAliasQuery
-const regexes_per = {
-    "脚本": /(?<=[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "分镜": /(?<=[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "演出": /(?<=[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "构图": /(?<=[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "作画监督": /(?<=[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "总作画监督": /(?<=(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "动作作画监督": /(?<=(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "机械作画监督": /(?<=(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "特效作画监督": /(?<=(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "原画": /(?<=(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "作画监督助理": /(?<=[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "演出助理": /(?<=(演出|(?<!作画)監督)(補佐|补佐|协力|協力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "剪辑": /(?<=(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "CG 导演": /(?<=(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "美术监督": /(?<=(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "背景美术": /(?<=(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|･|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "制作进行": /(?<=(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "设定制作": /(?<=(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "制作管理": /(?<=(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "制作协力": /(?<=[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "总作画监督助理": /(?<=(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "色彩演出": /(?<=(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    "氛围稿": /(?<=(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-};
-const regexes_role_per = {
-    "脚本": /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "分镜": /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "演出": /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "构图": /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "作画监督": /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "总作画监督": /(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "动作作画监督": /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|=|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|･|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "作画监督助理": /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|協力|协力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|協力|协力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "CG 导演": /(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "美术监督": /(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "背景美术": /(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|、|･|＆|\u0026|•|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "制作进行": /(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "制作管理": /(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "总作画监督助理": /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-};
-const regexes_role = {
-    "脚本": /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "分镜": /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "演出": /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "构图": /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "作画监督":  /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "总作画监督": /(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "动作作画监督": /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "作画监督助理":  /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|＆|=|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "CG 导演":/(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "美术监督":/(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "背景美术":/(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|･|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "制作进行":/(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "制作管理":/(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-        //以下为bangumi没有的职位
-    "总作画监督助理":  /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-    "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-};
-const regex_sym = /[\uff1a\u003A【】\/／、、＆\u0026♦◆■=]/g;
 
 // 缓存章节数据（key: subjectId, value: {epLabel: 章节详情}）
 const epsCache = {};
+const roleIdMap = [...document.querySelectorAll('#prsnPos_0 option')].reduce((map, option) => {
+    map[option.textContent.split(' /')[0]] = option.value;
+    return map;
+}, {});
 
 (async function () {
     'use strict';
@@ -152,6 +78,7 @@ const epsCache = {};
             try {
                 btn.disabled = true;
                 btn.textContent = '获取章节中……';
+                btn.id = 'epDescStaff';
                 const eps = await getEps(subjectId);
                 if (!eps.length) throw new Error('未获取到章节数据');
                 const epData = {}, epDescs = {};
@@ -182,13 +109,12 @@ const epsCache = {};
         document.querySelector('#indexCatBox').after(btn);
 
         const params = new URLSearchParams(location.search);
-        if (params.has('epLabel') && params.has('personRoles')) {
+        if (params.has('staffs')) {
             try {
-                const epLabel = params.get('epLabel');
-                const personRoleMap = JSON.parse(params.get('personRoles'));
+                const staffInfo = params.get('staffs');
                 const subjectId = location.pathname.split('/')[2];
 
-                updAppearEps({ [epLabel]: personRoleMap }, subjectId, []);
+                updAppearEps(staffInfo, subjectId, []);
             } catch (e) {
                 console.error(`参数解析错误：${e.message}`);
             }
@@ -431,46 +357,114 @@ const epsCache = {};
             existing: {},    // 已存在的参与记录
             unmatched: {}    // 未匹配记录
         };
-        const crtLiList = [...document.querySelectorAll('#crtRelateSubjects li')];
+        const oldLis = [...document.querySelectorAll('#crtRelateSubjects li')];
 
+        const indicator = document.querySelector('#epDescStaff');
         const staffInfoEntries = Object.entries(staffInfo);
+        const total = staffInfoEntries.length;
+        let i = 0;
         for (const [originalName, roles] of staffInfoEntries) {
+            i++;
+            indicator.textContent = `解析参与中（${i}/${total}）……`;
             for (const [role, epLabels] of Object.entries(roles)) {
-                const matchLi = name => crtLiList.find(li => {
-                    const displayName = li.querySelector('.title a').textContent;
-                    const selectedRole = li.querySelector('[name$="[prsnPos]"] option[selected]')?.textContent.split(' /')[0] || '';
-                    return displayName === name && selectedRole === role;
-                });
-                let matchedLi, name = originalName;
+                const roleId = roleIdMap[role];
+                if (!roleId) continue;
 
                 let aliased = false;
+                const sameRole = li => li.querySelector('select').value === roleId;
+                const sameName = name => li => {
+                    const liName = li.querySelector('.title a').textContent;
+                    return liName === name;
+                }
+                const sameId = id => li => {
+                    const liId = li.querySelector('.title a').href.split('/').pop();
+                    return liId === id;
+                }
+                const matchOldLi = name => oldLis.find(li => sameName(name)(li) && sameRole(li));
+                let matchedLi, name = originalName;
+
                 async function* candidateNames() {
-                    yield originalName;
+                    const yielded = new Set();
+                    const yieldUnique = v => {
+                        if (yielded.has(v)) return false;
+                        yielded.add(v);
+                        return true;
+                    }
 
+                    const nameNoBracket = originalName.replace(/\([^)]*\)|\{[^}]*\}|\[[^\]]*\]|（[^）]*）|［[^］]*］/g, '').trim();
+                    const brackets = nameNoBracket !== name;
+                    if (brackets) {
+                        aliased = true;
+                        if (yieldUnique(nameNoBracket)) yield nameNoBracket;
+                    } else {
+                        if (yieldUnique(originalName)) yield originalName;
+                        aliased = true;
+                    }
+
+                    const _aliased = await window.personAliasQuery?.(nameNoBracket);
+                    if (_aliased) {
+                        const aliasedName = _aliased.name;
+                        if (yieldUnique(aliasedName)) yield aliasedName;
+                    }
+
+                    for (const name of await getConvertedNames(nameNoBracket)) {
+                        if (yieldUnique(name)) yield name;
+                    }
+
+                    if (!brackets) return;
+
+                    aliased = false;
+                    if (yieldUnique(originalName)) yield originalName;
                     aliased = true;
-                    const nameWithoutBrackets = originalName.replace(/\([^)]*\)|\{[^}]*\}|\[[^\]]*\]|（[^）]*）|［[^］]*］/g, '').trim();
-                    yield nameWithoutBrackets;
 
-                    const _alias = (await window.personAliasQuery?.(originalName))?.name;
-                    if (_alias) yield _alias;
+                    const __aliased = (await window.personAliasQuery?.(originalName));
+                    if (__aliased) {
+                        const aliasedName = __aliased.name;
+                        if (yieldUnique(aliasedName)) yield aliasedName;
+                    }
 
-                    const __alias = (await window.personAliasQuery?.(nameWithoutBrackets))?.name;
-                    if (__alias) yield __alias;
-
-                    for (const name of await getConvertedNames(nameWithoutBrackets)) yield name;
-                    for (const name of await getConvertedNames(originalName)) yield name;
+                    for (const name of await getConvertedNames(originalName)) {
+                        if (yieldUnique(name)) yield name;
+                    }
                 }
 
                 for await (const candidate of candidateNames()) {
-                    matchedLi = matchLi(candidate);
+                    matchedLi = matchOldLi(candidate);
                     if (!matchedLi) continue;
                     name = candidate;
                     break;
                 }
+
+                let matchedLis;
+                if (!matchedLi) {
+                    aliased = false;
+                    for await (const candidate of candidateNames()) {
+                        const searchResult = await autoSearchAndRelate(candidate, role);
+                        if (!searchResult) continue;
+                        const { ids, name: resultName } = searchResult;
+                        const newLiList = [...document.querySelectorAll('#crtRelateSubjects li:not(.old)')];
+
+                        if (ids.length === 1) {
+                            matchedLi = newLiList.find(li => sameId(ids[0])(li) && sameRole(li));
+                        } else {
+                            matchedLis = newLiList.filter(li => ids.some(id => sameId(id)(li)) && sameRole(li));
+                        }
+
+                        name = resultName;
+                        break;
+                    }
+                }
                 const groupKey = `${name}-${role}`;
+                const liId = `staff-${name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
 
                 if (matchedLi) {
-                    const liId = `staff-${name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
+                    handleMatched(matchedLi);
+                } else {
+                    matchedLis?.forEach(handleMatched);
+                    groupedRecords.unmatched[groupKey] ||= { name: originalName, role, epLabels: new Set(epLabels) };
+                }
+
+                function handleMatched(matchedLi) {
                     matchedLi.id = liId;
 
                     const input = matchedLi.querySelector('[name$="[appear_eps]"]');
@@ -480,7 +474,9 @@ const epsCache = {};
                         const wasExisting = existingSet.has(epLabel);
                         if (!wasExisting) {
                             input.value = [input.value.trim(), epLabel].filter(Boolean).join(',');
-                            matchedLi.style.background = 'rgba(255, 248, 165, 0.2)';
+                            if (matchedLi.classList.contains('old')) {
+                                matchedLi.style.background = 'rgba(255, 248, 165, 0.2)';
+                            }
                         }
 
                         const targetGroup = wasExisting ? 'existing' : 'new';
@@ -498,25 +494,9 @@ const epsCache = {};
                             record.aliases[originalName].push(epLabel);
                         }
                     }
-                } else {
-                    groupedRecords.unmatched[groupKey] ||= { name: originalName, role, epLabels: new Set(epLabels) };
                 }
             }
         }
-
-        // 格式化记录（排序集数）
-        const formatRecords = (records) => Object.values(records).map(item => ({
-            ...item,
-            epLabels: Array.from(item.epLabels).sort((a, b) => {
-                const typeOrder = { '': 0, 'SP': 1, 'OP': 2, 'ED': 3 };
-                const aType = a.match(/^(SP|OP|ED)/)?.[0] || '';
-                const bType = b.match(/^(SP|OP|ED)/)?.[0] || '';
-                if (aType !== bType) return typeOrder[aType] - typeOrder[bType];
-                const aNum = parseFloat(a.replace(/[A-Za-z]/g, '')) || 0;
-                const bNum = parseFloat(b.replace(/[A-Za-z]/g, '')) || 0;
-                return aNum - bNum;
-            })
-        }));
 
         createDraggableTipBox(
             formatRecords(groupedRecords.new),
@@ -527,8 +507,23 @@ const epsCache = {};
         );
 
         const editSummaryInput = document.querySelector('#editSummary');
-        const epLabelsStr = staffInfoEntries.length > 1 ? '' : staffInfoEntries[0][0];
+        const epLabelsStr = staffInfoEntries.length === 1 ? staffInfoEntries[0][0] : '';
         editSummaryInput.value = `根据${epLabelsStr}章节简介填写参与`;
+    }
+
+    // 格式化记录（排序集数）
+    function formatRecords(records) {
+        return Object.values(records).map(item => ({
+        ...item,
+        epLabels: Array.from(item.epLabels).sort((a, b) => {
+            const typeOrder = { '': 0, 'SP': 1, 'OP': 2, 'ED': 3 };
+            const aType = a.match(/^(SP|OP|ED)/)?.[0] || '';
+            const bType = b.match(/^(SP|OP|ED)/)?.[0] || '';
+            if (aType !== bType) return typeOrder[aType] - typeOrder[bType];
+            const aNum = parseFloat(a.replace(/[A-Za-z]/g, '')) || 0;
+            const bNum = parseFloat(b.replace(/[A-Za-z]/g, '')) || 0;
+            return aNum - bNum;
+        })}));
     }
 
     function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, subjectId, noStaffEps) {
@@ -547,7 +542,11 @@ const epsCache = {};
         contentBox.innerHTML = `
     ${noStaffEps?.length ? `<div class="staff-warning-section">
         <div class="staff-warning-title">以下${noStaffEps.length}个集数未匹配到任何制作人员信息：</div>
-        ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache[subjectId]?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache[subjectId]?.[ep]?.id}">${ep}</a></span>`).join(',')}
+        ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache[subjectId]?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache[subjectId]?.[ep]?.id}" target="_blank">${ep}</a></span>`).join(',')}
+        </div>` : ''}
+    ${repeatSet.size ? `<div class="staff-warning-section">
+        <div class="staff-warning-title">以下${repeatSet.size}个新关联的同名制作人员需要检查：</div>
+        ${[...repeatSet].map(repeat => `<a class="l" href="#staff-${repeat}">${repeat.replace(/-(.+)$/, '（$1）')}</a>`).join('、')}
         </div>` : ''}
     ${recordSection(newRecords, '新增参与（点击跳转）', 'new')}
     ${recordSection(existingRecords, '已有参与（点击跳转）', 'existing')}
@@ -605,6 +604,7 @@ const epsCache = {};
         return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    // #region https://bgm.tv/dev/app/3265 MIT modified
     /**
      * 从动画章节简介中提取制作人员信息
      * @param {Object.<string, string>} epDescs - 章节数据，键为集数名，值为简介文本
@@ -723,5 +723,242 @@ const epsCache = {};
         }
         return x;
     }
+
+    var regexes_per = {
+        "脚本": /(?<=[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "分镜": /(?<=[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "演出": /(?<=[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "构图": /(?<=[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "作画监督": /(?<=[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "总作画监督": /(?<=(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "动作作画监督": /(?<=(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "机械作画监督": /(?<=(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "特效作画监督": /(?<=(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "原画": /(?<=(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "作画监督助理": /(?<=[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "演出助理": /(?<=(演出|(?<!作画)監督)(補佐|补佐|协力|協力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "剪辑": /(?<=(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "CG 导演": /(?<=(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "美术监督": /(?<=(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "背景美术": /(?<=(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|･|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "制作进行": /(?<=(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "设定制作": /(?<=(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "制作管理": /(?<=(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "制作协力": /(?<=[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "总作画监督助理": /(?<=(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "色彩演出": /(?<=(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "氛围稿": /(?<=(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+    };
+    var regexes_role_per = {
+        "脚本": /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "分镜": /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "演出": /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "构图": /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "作画监督": /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "总作画监督": /(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "动作作画监督": /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|=|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|･|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "作画监督助理": /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|協力|协力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|協力|协力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "CG 导演": /(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "美术监督": /(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "背景美术": /(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|、|･|＆|\u0026|•|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "制作进行": /(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "制作管理": /(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "总作画监督助理": /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+    };
+    var regexes_role = {
+        "脚本": /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "分镜": /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "演出": /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "构图": /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "作画监督":  /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "总作画监督": /(総|总)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "动作作画监督": /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "作画监督助理":  /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|＆|=|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "CG 导演":/(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "美术监督":/(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "背景美术":/(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|･|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "制作进行":/(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "制作管理":/(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+            //以下为bangumi没有的职位
+        "总作画监督助理":  /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+    };
+    var regex_sym = /[\uff1a\u003A【】\/／、、＆\u0026♦◆■=]/g;
+    // #endregion
+
+    // #region https://bgm.tv/dev/app/2827 MIT modified
+    var staffSet = new Set(), repeatSet = new Set();
+    var bgmIdMap = {
+        "KADOKAWA": 19306,
+        "斉藤壮馬": 14604,
+        "週刊ビッグコミックスピリッツ": 7620,
+        "あきやまえんま": 30863
+    };
+
+    /**
+     * 自动搜索人物并关联到条目
+     * @param {string} name - 要搜索的人物名称
+     * @param {number} job - 职位ID
+     */
+    async function autoSearchAndRelate(name, role) {
+        try {
+            const bgmIdMap = getLastestMap();
+            const searchResult = await searchPerson(name);
+            let ids = new Set();
+            let displayName;
+
+            if (searchResult && Object.keys(searchResult).length > 0) {
+                for (let id in searchResult) {
+                    const resultName = searchResult[id].name;
+                    if (name.toLowerCase() === resultName.toLowerCase() || bgmIdMap[name] == id
+                    || (await window.personAliasQuery?.(name))?.id === id) {
+                        await addPersonToRelate(role, resultName, id, searchResult[id]);
+                        ids.add(id);
+                        displayName ||= resultName;
+                    }
+                }
+            }
+
+            if (!displayName) return;
+            return { ids: [...ids], name: displayName };
+        } catch (error) {
+            console.error('autoSearchAndRelate failed:', error);
+        }
+    }
+
+    function getLastestMap() {
+        let json = localStorage.getItem('localPrsnMap');
+        let mergedMap = {...bgmIdMap};
+
+        try {
+            if (json) {
+                let obj = JSON.parse(json);
+                mergedMap = {...mergedMap, ...obj};
+            }
+        } catch (e) {
+            console.warn('Failed to parse localPrsnMap:', e);
+        }
+
+        return mergedMap;
+    }
+
+    var failedRequests = new Map();
+    var RETRY_INTERVAL = 500;
+    var MAX_RETRIES = 2;
+
+    function searchPerson(query) {
+        return new Promise(resolve => {
+            const q = trans(query);
+            const key = q;
+
+            const execute = () => {
+                $.ajax({
+                    type: "GET",
+                    url: `/json/search-person/${encodeURIComponent(q)}`,
+                    dataType: 'json',
+                    success: res => {
+                        failedRequests.delete(key);
+                        resolve(res || {});
+                    },
+                    error: (xhr, status, error) => {
+                        console.error('请求错误:', error, '查询:', query);
+                        const retries = (failedRequests.get(key) || 0) + 1;
+
+                        if (retries > MAX_RETRIES) {
+                            failedRequests.delete(key);
+                            resolve(null);
+                            return;
+                        }
+
+                        failedRequests.set(key, retries);
+                        console.log(`"${query}" 将于 ${RETRY_INTERVAL}ms 后重试(${retries}/${MAX_RETRIES})`);
+                        setTimeout(execute, RETRY_INTERVAL);
+                    }
+                });
+            };
+
+            execute();
+        });
+    }
+
+    function trans(staff) {
+        let id = bgmIdMap[staff];
+        return id ? ('bgm_id=' + id) : staff;
+    }
+
+    async function addPersonToRelate(role, name, personId, personData) {
+        const roleId = roleIdMap[role];
+        if (!staffSet.has(roleId + '/' + personId)) {
+            staffSet.add(roleId + '/' + personId);
+            staffSet.has(roleId + name) ? repeatSet.add(name + '-' + role) : staffSet.add(roleId + name);
+
+            subjectList[personId] = personData;
+            addRelateSubject(personId, 'searchResult');
+            $('#crtRelateSubjects select').eq(0).val(roleId);
+            addSbjListener();
+            colorSbjList();
+            return true;
+        }
+        return false;
+    }
+
+    function colorSbjList(item) {
+        let map = new Map();
+        $('#crtRelateSubjects .clearit').each(function(idx) {
+            let job = $(this).find('select').val();
+            let staff = $(this).find('.l').text();
+            let key = job + staff;
+            map.get(key) instanceof Array ? map.get(key).push(idx) : map.set(key, [idx]);
+
+            if (!item) {
+                let arr = map.get(key);
+                let len = arr.length;
+                if (len == 2) {
+                    colorItem(arr[0], true);
+                    colorItem(arr[1], true);
+                } else if (len > 2) {
+                    colorItem(arr[len - 1], true);
+                }
+            }
+        });
+        if (item && map.get(item).length == 2) {
+            colorItem(map.get(item)[0]);
+            colorItem(map.get(item)[1]);
+            repeatSet.delete(item);
+        }
+    }
+
+    function colorItem(idx, flag) {
+        $('#crtRelateSubjects .clearit').eq(idx).css('background-color', flag ? '#eef4c9' : '');
+    }
+
+    function addSbjListener() {
+        $('#crtRelateSubjects .rr').off('click').on('click', function() {
+            let li = $(this).parents('li.clearit');
+            let job = li.find('option:checked').text().split(' /')[0];
+            let staff = li.find('.l').text();
+            let item = staff + '-' + job;
+            colorSbjList(item);
+            li.remove();
+        });
+    }
+    // #endregion
 
 })();
