@@ -660,7 +660,7 @@
                         }).join('、')}]` : '';
                     })() }
                     （${role}）-
-                    ${epLabels.map(ep => `<span title="${escapeAttr(epsCache[subjectId]?.[ep]?.desc || '')}">${ep}</span>`).join(',')}
+                    ${epLabels.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}">${ep}</span>`).join(',')}
                     ${ className === 'unmatched' ? `→ <a class="l" href="/person/new?name=${escapeAttr(name)}" target="blank">创建</a>` : ''}
                 </${ itemTag }>`).join('')}
         </div>`;

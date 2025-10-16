@@ -58,6 +58,10 @@ export default defineConfig([
     files: ['*.user.js'],
     languageOptions: {
       globals: {
+        GM_getValue: "readonly",
+        GM_setValue: "readonly",
+        GM_registerMenuCommand: "readonly",
+        GM_unregisterMenuCommand: "readonly",
         GM_xmlhttpRequest: "readonly",
         unsafeWindow: "readonly"
       }
