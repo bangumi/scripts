@@ -1,0 +1,45 @@
+{
+  "name": "@b38dev/wiki-editor",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "1.0.1",
+  "description": "维基语法高亮与查错",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "out": "bangumi_wiki_editor.user.js",
+  "userscript": {
+    "name": "Bangumi 维基编辑器",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/wiki_editor",
+    "match": [
+      "*://bgm.tv/subject/*/edit*",
+      "*://bgm.tv/character/*/edit*",
+      "*://bgm.tv/person/*/edit*",
+      "*://bangumi.tv/subject/*/edit*",
+      "*://bangumi.tv/character/*/edit*",
+      "*://bangumi.tv/person/*/edit*",
+      "*://chii.in/subject/*/edit*",
+      "*://chii.in/character/*/edit*",
+      "*://chii.in/person/*/edit*"
+    ]
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@b38dev/bangumi": "workspace:^",
+    "@b38dev/dom": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "7.1.10",
+    "vite-plugin-monkey": "7.1.4",
+    "vite-plugin-svgr": "^4.3.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.1.1",
+    "monaco-editor": "0.54.0"
+  }
+}

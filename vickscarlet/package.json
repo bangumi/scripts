@@ -22,6 +22,8 @@
     "build:calendar": "pnpm --filter @b38dev/calendar build",
     "dev:likes-firework": "pnpm --filter @b38dev/likes-firework dev",
     "build:likes-firework": "pnpm --filter @b38dev/likes-firework build",
+    "dev:wiki-editor": "pnpm --filter @b38dev/wiki-editor dev",
+    "build:wiki-editor": "pnpm --filter @b38dev/wiki-editor build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },
