@@ -1,7 +1,7 @@
 {
   "name": "@b38dev/wiki-editor",
   "author": "神戸小鳥 @vickscarlet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "维基语法高亮与查错",
   "license": "MIT",
   "main": "src/index.ts",
@@ -15,12 +15,26 @@
       "*://bgm.tv/subject/*/edit*",
       "*://bgm.tv/character/*/edit*",
       "*://bgm.tv/person/*/edit*",
+      "*://bgm.tv/new_subject/*",
+      "*://bgm.tv/persion/new",
+      "*://bgm.tv/character/new",
+      "*://bgm.tv/subject/*/ep/create",
+
       "*://bangumi.tv/subject/*/edit*",
       "*://bangumi.tv/character/*/edit*",
       "*://bangumi.tv/person/*/edit*",
+      "*://bangumi.tv/new_subject/*",
+      "*://bangumi.tv/persion/new",
+      "*://bangumi.tv/character/new",
+      "*://bangumi.tv/subject/*/ep/create",
+
       "*://chii.in/subject/*/edit*",
       "*://chii.in/character/*/edit*",
-      "*://chii.in/person/*/edit*"
+      "*://chii.in/person/*/edit*",
+      "*://chii.in/new_subject/*",
+      "*://chii.in/persion/new",
+      "*://chii.in/character/new",
+      "*://chii.in/subject/*/ep/create"
     ]
   },
   "scripts": {

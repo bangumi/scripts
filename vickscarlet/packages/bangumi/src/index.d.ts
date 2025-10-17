@@ -1,3 +1,4 @@
+/// <reference types="@types/jquery" />
 // chiiLib.d.ts
 
 /* ================================
@@ -484,6 +485,7 @@ declare namespace ChiiLib {
         config?: OptionSection[] | null
         /** 仅当 type 为 custom 使用：静态 HTML 或生成函数 */
         customContent?: string | (() => string)
+        onInit?: (tabSelector: string, $tabSelector: JQuery) => void
     }
 
     /* ---------- 模块声明 ---------- */

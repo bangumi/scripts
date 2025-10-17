@@ -105,3 +105,5 @@ export const loadScript = (() => {
         return p
     }
 })()
+
+export * as dom from './dom'

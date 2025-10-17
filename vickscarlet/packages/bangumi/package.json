@@ -5,5 +5,7 @@
   "main": "./src/index.ts",
   "author": "Vick Scarlet(vick@syaro.io)",
   "license": "MIT",
-  "dependencies": {}
+  "devDependencies": {
+    "@types/jquery": "^3.5.32"
+  }
 }
