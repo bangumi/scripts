@@ -1,5 +1,5 @@
 import { callNow, callWhenDone } from '@b38dev/util'
-import { create, append, AppendParams, CreateParams } from '@b38dev/dom/js'
+import { dom } from '@b38dev/dom'
 import { addStyle, removeAllChildren } from '@b38dev/dom'
 import { Event } from '@b38dev/event'
 import { database, db } from './database'
@@ -15,8 +15,8 @@ const PRG = ['|', '/', '-', '\\']
 
 async function showCanvas(element: Element) {
     const canvas = await element2Canvas(element)
-    const close = create('div', { style: { height: canvas.style.height } })!
-    const main = create('div', { id: 'kotori-report-canvas' }, close, canvas)!
+    const close = dom.create('div', { style: { height: canvas.style.height } })!
+    const main = dom.create('div', { id: 'kotori-report-canvas' }, close, canvas)!
     close.addEventListener('click', () => main.remove())
     document.body.appendChild(main)
 }
@@ -37,11 +37,11 @@ interface BTO {
 }
 
 /** 生成题头时间统计 **/
-function buildTotalTime({ total, normal, guess, unknown }: BTO): AppendParams {
+function buildTotalTime({ total, normal, guess, unknown }: BTO): dom.AppendParams {
     const list = [total, normal, guess, unknown].sort((a, b) => b.time - a.time)
     const format = ({ name, count, time }: FormatItem) =>
         `${timeFormat(time, true)} (${count})${name}`
-    const buildItem = (item: FormatItem): AppendParams => [
+    const buildItem = (item: FormatItem): dom.AppendParams => [
         'li',
         ['div', format(item)],
         ['div', ['div', pw(item.time, total.time)]],
@@ -57,31 +57,32 @@ function buildIncludes(list: Iterable<[SubTypes, number]>, type: Types) {
     l.unshift(['总计', total])
     l.sort((a, b) => b[1] - a[1])
     const format = (k: string, v: number) => k + ':' + ('' + v).padStart(5, ' ') + Types[type].unit
-    const buildItem = ([k, v]: FormattedItem): AppendParams => [
+    const buildItem = ([k, v]: FormattedItem): dom.AppendParams => [
         'li',
         ['div', format(k, v)],
         ['div', ['div', pw(v, total)]],
     ]
-    return ['ul', { class: ['includes', 'bars', 'lb'] }, ...l.map(buildItem)] as AppendParams
+    return ['ul', { class: ['includes', 'bars', 'lb'] }, ...l.map(buildItem)] as dom.AppendParams
 }
 
 type BarItem = [number, string | number, number]
 /** 生成条形图 **/
-function buildBarList(list: Iterable<BarItem>) {
+function buildBarList(list: Iterable<BarItem>): dom.AppendParams {
     const l = Array.from(list).sort(([, , a], [, , b]) => a - b)
     const m = Math.max(...l.map(([v]) => v))
-    const buildItem = ([v, t]: BarItem) => ['li', ['span', t], ['span', v], ['div', pw(v, m)]]
-    return ['ul', { class: 'bars' }, ...l.map(buildItem)]
+    const buildItem = ([v, t]: BarItem) =>
+        ['li', ['span', t], ['span', v], ['div', pw(v, m)]] as dom.AppendParams
+    return ['ul', { class: 'bars' }, ...l.map(buildItem)] as dom.AppendParams
 }
 
 /** 生成封面列表 **/
-function buildCoverList(list: database.PageItem[], type: Types) {
+function buildCoverList(list: database.PageItem[], type: Types): dom.AppendParams {
     let last = -1
-    const covers = [] as AppendParams[]
+    const covers = [] as dom.AppendParams[]
     for (const { img, month, star } of list) {
-        const childs = [['img', { src: img }]] as AppendParams[]
+        const childs = [['img', { src: img }]] as dom.AppendParams[]
         if (month != last) {
-            childs.push(['span', month + 1 + '月'] as AppendParams)
+            childs.push(['span', month + 1 + '月'] as dom.AppendParams)
             last = month
         }
         if (star)
@@ -90,10 +91,10 @@ function buildCoverList(list: database.PageItem[], type: Types) {
                 { class: 'star' },
                 ['img', { src: Star }],
                 ['span', star],
-            ] as AppendParams)
-        covers.push(['li', ...childs] as AppendParams)
+            ] as dom.AppendParams)
+        covers.push(['li', ...childs])
     }
-    return ['ul', { class: 'covers', type }, ...covers] as AppendParams
+    return ['ul', { class: 'covers', type }, ...covers]
 }
 
 interface LTR {
@@ -111,33 +112,33 @@ async function buildLifeTimeReport({ type, tag, subTypes, totalTime: ttt }: LTR)
     const time = ttt ? await totalTime(list) : null
 
     const buildYearCover = ([year, l]: [number, database.PageItem[]]) =>
-        ['li', ['h2', year + '年', ['span', l.length]], buildCoverList(l, type)] as AppendParams
+        ['li', ['h2', year + '年', ['span', l.length]], buildCoverList(l, type)] as dom.AppendParams
     const banner = [
         'div',
         { class: 'banner' },
         ['h1', `Bangumi ${Types[type].name}生涯总览`],
         ['span', { class: 'uid' }, '@' + uid],
         buildIncludes(groupCount<SubTypes>(list, 'subType').entries(), type),
-    ] as CreateParams
+    ] as dom.CreateParams
     if (time) banner.push(buildTotalTime(time))
     const countList = buildBarList(
         groupCount<number>(list, 'month', countMap(12))
             .entries()
             .map(([k, v]) => [v, k + 1 + '月', k])
-    ) as AppendParams
+    )
     const starList = buildBarList(
         groupCount<number>(list, 'star', countMap(11))
             .entries()
             .map(([k, v]) => [v, k ? k + '星' : '未评分', k])
-    ) as AppendParams
-    const barGroup = ['div', { class: 'bar-group' }, countList, starList] as AppendParams
+    )
+    const barGroup = ['div', { class: 'bar-group' }, countList, starList] as dom.AppendParams
     const yearCover = [
         'ul',
         { class: 'year-cover' },
         ...groupBy<number>(list, 'year').entries().map(buildYearCover),
-    ] as AppendParams
+    ] as dom.AppendParams
 
-    return create('div', { class: 'content' }, banner, barGroup, yearCover)
+    return dom.create('div', { class: 'content' }, banner, barGroup, yearCover)
 }
 
 interface YR {
@@ -161,21 +162,21 @@ async function buildYearReport({ year, type, tag, subTypes, totalTime: t }: YR) 
         ['h1', `${year}年 Bangumi ${Types[type].name}年鉴`],
         ['span', { class: 'uid' }, '@' + uid],
         buildIncludes(groupCount(list, 'subType').entries(), type),
-    ] as CreateParams
+    ] as dom.CreateParams
     if (time) banner.push(buildTotalTime(time))
     const countList = buildBarList(
         groupCount(list, 'month', countMap(12))
             .entries()
             .map(([k, v]) => [v, k + 1 + '月', k])
-    ) as AppendParams
+    ) as dom.AppendParams
     const starList = buildBarList(
         groupCount(list, 'star', countMap(11))
             .entries()
             .map(([k, v]) => [v, k ? k + '星' : '未评分', k])
-    ) as AppendParams
-    const barGroup = ['div', { class: 'bar-group' }, countList, starList] as AppendParams
+    ) as dom.AppendParams
+    const barGroup = ['div', { class: 'bar-group' }, countList, starList] as dom.AppendParams
 
-    return create('div', { class: 'content' }, banner, barGroup, buildCoverList(list, type))
+    return dom.create('div', { class: 'content' }, banner, barGroup, buildCoverList(list, type))
 }
 
 /**
@@ -190,10 +191,10 @@ async function buildReport(options: YR & LTR & { isLifeTime: boolean }) {
         ? buildLifeTimeReport(options)
         : buildYearReport(options))
     Event.emit('process', { type: 'done' })
-    const close = create('div', { class: 'close' }) as HTMLDivElement
-    const scroll = create('div', { class: 'scroll' }, content!) as HTMLDivElement
-    const save = create('div', { class: 'save' }) as HTMLDivElement
-    const report = create('div', { id: 'kotori-report' }, close, scroll, save) as HTMLDivElement
+    const close = dom.create('div', { class: 'close' })
+    const scroll = dom.create('div', { class: 'scroll' }, content!)
+    const save = dom.create('div', { class: 'save' })
+    const report = dom.create('div', { id: 'kotori-report' }, close, scroll, save)
 
     const saveFn = async () => {
         save.onclick = null
@@ -255,52 +256,48 @@ function buildMenu() {
     const year = new Date().getFullYear()
     const yearSelectOptions = new Array(year - 2007)
         .fill(0)
-        .map((_, i) => ['option', { value: year - i }, year - i] as CreateParams)
-    const lifeTimeCheck = create('input', {
+        .map((_, i) => ['option', { value: '' + (year - i) }, year - i] as dom.CreateParams)
+    const lifeTimeCheck = dom.create('input', {
         type: 'checkbox',
         id: 'lftc',
-    }) as HTMLInputElement
-    const totalTimeCheck = create('input', {
+    })
+    const totalTimeCheck = dom.create('input', {
         type: 'checkbox',
         id: 'tltc',
-    }) as HTMLInputElement
-    const yearSelect = create('select', {}, ...yearSelectOptions) as HTMLSelectElement
-    const typeSelect = create(
+    })
+    const yearSelect = dom.create('select', {}, ...yearSelectOptions)
+    const typeSelect = dom.create(
         'select',
         {},
         ...Object.entries(Types).map(
-            ([_, { value, name }]) => ['option', { value }, name] as CreateParams
+            ([_, { value, name }]) => ['option', { value }, name] as dom.CreateParams
         )
-    ) as HTMLSelectElement
-    const tagSelect = create('select', ['option', { value: '' }, '不筛选']) as HTMLSelectElement
-    const btnGo = create('div', { class: ['v-report-btn', 'primary'] }, '生成') as HTMLDivElement
-    const btnClr = create(
-        'div',
-        { class: ['v-report-btn', 'v-report', 'warning'] },
-        '清理缓存'
-    ) as HTMLDivElement
-    const btnGroup = ['div', { class: 'btn-group' }, btnGo, btnClr] as AppendParams
+    )
+    const tagSelect = dom.create('select', ['option', { value: '' }, '不筛选'])
+    const btnGo = dom.create('div', { class: ['v-report-btn', 'primary'] }, '生成')
+    const btnClr = dom.create('div', { class: ['v-report-btn', 'v-report', 'warning'] }, '清理缓存')
+    const btnGroup = ['div', { class: 'btn-group' }, btnGo, btnClr] as dom.AppendParams
     const additionField = [
         'fieldset',
         ['legend', '附加选项'],
-        ['div', lifeTimeCheck, ['label', { for: 'lftc' }, '生涯报告']],
-        ['div', totalTimeCheck, ['label', { for: 'tltc' }, '看过时长(耗时)']],
-    ] as AppendParams
+        ['div', lifeTimeCheck, ['label', { htmlFor: 'lftc' }, '生涯报告']],
+        ['div', totalTimeCheck, ['label', { htmlFor: 'tltc' }, '看过时长(耗时)']],
+    ] as dom.AppendParams
     const ytField = [
         'fieldset',
         ['legend', '选择年份与类型'],
         yearSelect,
         typeSelect,
-    ] as AppendParams
-    const tagField = ['fieldset', ['legend', '选择过滤标签'], tagSelect] as AppendParams
-    const subtypeField = create(
+    ] as dom.AppendParams
+    const tagField = ['fieldset', ['legend', '选择过滤标签'], tagSelect] as dom.AppendParams
+    const subtypeField = dom.create(
         'fieldset',
         ['legend', '选择包括的状态'],
         ...Object.entries(SubTypes).map(
             ([_, { value, name, checked }]) =>
                 [
                     'div',
-                    { value },
+                    { 'data-value': value },
                     [
                         'input',
                         {
@@ -311,12 +308,12 @@ function buildMenu() {
                             checked,
                         },
                     ],
-                    ['label', { for: 'yst_' + value }, name],
-                ] as CreateParams
+                    ['label', { htmlFor: 'yst_' + value }, name],
+                ] as dom.CreateParams
         )
-    ) as HTMLFieldSetElement
-    const eventInfo = create('li') as HTMLLIElement
-    const menu = create(
+    )
+    const eventInfo = dom.create('li')
+    const menu = dom.create(
         'ul',
         { id: 'kotori-report-menu' },
         ['li', additionField],
@@ -325,7 +322,7 @@ function buildMenu() {
         ['li', subtypeField],
         ['li', btnGroup],
         eventInfo
-    )!
+    )
 
     Event.on(
         'process',
@@ -402,7 +399,7 @@ function buildMenu() {
             if (!type) return
             totalTimeCheck.disabled = type !== 'anime'
             subtypeField.querySelectorAll<HTMLDivElement>('div').forEach((e) => {
-                const name = formatSubType(e.getAttribute('value') as SubTypes, type)
+                const name = formatSubType(e.getAttribute('data-value') as SubTypes, type)
                 e.querySelector('input')!.setAttribute('name', name)
                 e.querySelector('label')!.innerText = name
             })
@@ -410,8 +407,11 @@ function buildMenu() {
             if (type != typeSelect.value) return
             const last = tagSelect.value
             removeAllChildren(tagSelect)
-            tagSelect.append(create('option', { value: '' }, '不筛选')!)
-            append(tagSelect, ...tags.map((t) => ['option', { value: t }, t] as AppendParams))
+            tagSelect.append(dom.create('option', { value: '' }, '不筛选'))
+            dom.append(
+                tagSelect,
+                ...tags.map((t) => ['option', { value: t }, t] as dom.AppendParams)
+            )
             if (tags.includes(last)) tagSelect.value = last
         })
     )
@@ -444,10 +444,10 @@ function buildMenu() {
     )
 
     document.body.appendChild(menu)
-    return menu as HTMLDivElement
+    return menu
 }
 
-let menu: HTMLDivElement | null = null
+let menu: HTMLElement | null = null
 /**
  * 切换菜单显隐
  */
@@ -458,10 +458,11 @@ function menuToggle() {
 // MENU END
 ;(async () => {
     await db.init()
-    const btn = create('a', { class: 'chiiBtn', href: 'javascript:void(0)', title: '生成年鉴' }, [
-        'span',
-        '生成年鉴',
-    ])!
+    const btn = dom.create(
+        'a',
+        { class: 'chiiBtn', href: 'javascript:void(0)', title: '生成年鉴' },
+        ['span', '生成年鉴']
+    )!
     btn.addEventListener('click', menuToggle)
     document.querySelector('#headerProfile .actions')!.append(btn)
 })()

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 年鉴
 // @namespace    syaro.io
-// @version      1.3.16
+// @version      1.3.17
 // @author       神戸小鳥 @vickscarlet
 // @description  根据Bangumi的时光机数据生成年鉴
 // @license      MIT
@@ -28,39 +28,47 @@
     fn();
     return fn;
   }
+  const svgTags = [
+    "svg",
+    "rect",
+    "circle",
+    "ellipse",
+    "line",
+    "polyline",
+    "polygon",
+    "path",
+    "text",
+    "g",
+    "defs",
+    "use",
+    "symbol",
+    "image",
+    "clipPath",
+    "mask",
+    "pattern"
+  ];
   function setEvents(element, events) {
-    for (const [event, listener] of events) {
+    for (const [event, listener] of Object.entries(events)) {
       element.addEventListener(event, listener);
     }
     return element;
   }
   function setProps(element, props) {
     if (!props || typeof props !== "object") return element;
-    const events = [];
     for (const [key, value] of Object.entries(props)) {
-      if (typeof value === "boolean") {
-        element[key] = value;
-        continue;
-      }
+      if (value == null) continue;
       if (key === "events") {
-        if (Array.isArray(value)) {
-          events.push(...value);
-        } else {
-          for (const event in value) {
-            events.push([event, value[event]]);
-          }
-        }
+        setEvents(element, value);
       } else if (key === "class") {
         addClass(element, value);
       } else if (key === "style" && typeof value === "object") {
         setStyle(element, value);
-      } else if (key.startsWith("on")) {
-        events.push([key.slice(2).toLowerCase(), value]);
+      } else if (key.startsWith("data-")) {
+        element.setAttribute(key, String(value));
       } else {
-        element.setAttribute(key, value);
+        element[key] = value;
       }
     }
-    setEvents(element, events);
     return element;
   }
   function addClass(element, value) {
@@ -69,26 +77,37 @@
   }
   function setStyle(element, styles) {
     for (let [k, v] of Object.entries(styles)) {
-      if (v && typeof v === "number" && !["zIndex", "fontWeight"].includes(k)) v += "px";
+      if (typeof v === "number" && v !== 0 && !["zIndex", "fontWeight"].includes(k)) {
+        v = v + "px";
+      }
       element.style[k] = v;
     }
     return element;
   }
   function create(name, props, ...childrens) {
     if (name == null) return null;
-    if (name === "svg") return createSVG(name, props, ...childrens);
+    const isSVG = name === "svg" || typeof name === "string" && svgTags.includes(name);
+    if (isSVG) return createSVG(name, props, ...childrens);
     const element = name instanceof Element ? name : document.createElement(name);
     if (props === void 0) return element;
-    if (Array.isArray(props) || props instanceof Node || typeof props !== "object")
+    if (Array.isArray(props) || props instanceof Node || typeof props !== "object") {
       return append(element, props, ...childrens);
+    }
     return append(setProps(element, props), ...childrens);
   }
   function append(element, ...childrens) {
-    if (element.name === "svg") return appendSVG(element, ...childrens);
+    const tag = element.tagName.toLowerCase();
+    if (svgTags.includes(tag)) {
+      return appendSVG(element, ...childrens);
+    }
     for (const child of childrens) {
-      if (Array.isArray(child)) element.append(create(...child));
-      else if (child instanceof Node) element.appendChild(child);
-      else element.append(document.createTextNode(child));
+      if (Array.isArray(child)) {
+        element.append(create(...child));
+      } else if (child instanceof Node) {
+        element.appendChild(child);
+      } else {
+        element.append(document.createTextNode(String(child)));
+      }
     }
     return element;
   }
@@ -96,15 +115,20 @@
     const element = document.createElementNS("http://www.w3.org/2000/svg", name);
     if (name === "svg") element.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
     if (props === void 0) return element;
-    if (Array.isArray(props) || props instanceof Node || typeof props !== "object")
-      return append(element, props, ...childrens);
+    if (Array.isArray(props) || props instanceof Node || typeof props !== "object") {
+      return appendSVG(element, props, ...childrens);
+    }
     return appendSVG(setProps(element, props), ...childrens);
   }
   function appendSVG(element, ...childrens) {
     for (const child of childrens) {
-      if (Array.isArray(child)) element.append(createSVG(...child));
-      else if (child instanceof Node) element.appendChild(child);
-      else element.append(document.createTextNode(child));
+      if (Array.isArray(child)) {
+        element.append(createSVG(...child));
+      } else if (child instanceof Node) {
+        element.appendChild(child);
+      } else {
+        element.append(document.createTextNode(String(child)));
+      }
     }
     return element;
   }
@@ -869,7 +893,7 @@
   }
   function buildMenu() {
     const year = (/* @__PURE__ */ new Date()).getFullYear();
-    const yearSelectOptions = new Array(year - 2007).fill(0).map((_, i) => ["option", { value: year - i }, year - i]);
+    const yearSelectOptions = new Array(year - 2007).fill(0).map((_, i) => ["option", { value: "" + (year - i) }, year - i]);
     const lifeTimeCheck = create("input", {
       type: "checkbox",
       id: "lftc"
@@ -888,17 +912,13 @@
     );
     const tagSelect = create("select", ["option", { value: "" }, "不筛选"]);
     const btnGo = create("div", { class: ["v-report-btn", "primary"] }, "生成");
-    const btnClr = create(
-      "div",
-      { class: ["v-report-btn", "v-report", "warning"] },
-      "清理缓存"
-    );
+    const btnClr = create("div", { class: ["v-report-btn", "v-report", "warning"] }, "清理缓存");
     const btnGroup = ["div", { class: "btn-group" }, btnGo, btnClr];
     const additionField = [
       "fieldset",
       ["legend", "附加选项"],
-      ["div", lifeTimeCheck, ["label", { for: "lftc" }, "生涯报告"]],
-      ["div", totalTimeCheck, ["label", { for: "tltc" }, "看过时长(耗时)"]]
+      ["div", lifeTimeCheck, ["label", { htmlFor: "lftc" }, "生涯报告"]],
+      ["div", totalTimeCheck, ["label", { htmlFor: "tltc" }, "看过时长(耗时)"]]
     ];
     const ytField = [
       "fieldset",
@@ -913,7 +933,7 @@
       ...Object.entries(SubTypes).map(
         ([_, { value, name, checked }]) => [
           "div",
-          { value },
+          { "data-value": value },
           [
             "input",
             {
@@ -924,7 +944,7 @@
               checked
             }
           ],
-          ["label", { for: "yst_" + value }, name]
+          ["label", { htmlFor: "yst_" + value }, name]
         ]
       )
     );
@@ -1001,7 +1021,7 @@
         if (!type) return;
         totalTimeCheck.disabled = type !== "anime";
         subtypeField.querySelectorAll("div").forEach((e) => {
-          const name = formatSubType(e.getAttribute("value"), type);
+          const name = formatSubType(e.getAttribute("data-value"), type);
           e.querySelector("input").setAttribute("name", name);
           e.querySelector("label").innerText = name;
         });
@@ -1010,7 +1030,10 @@
         const last = tagSelect.value;
         removeAllChildren(tagSelect);
         tagSelect.append(create("option", { value: "" }, "不筛选"));
-        append(tagSelect, ...tags.map((t) => ["option", { value: t }, t]));
+        append(
+          tagSelect,
+          ...tags.map((t) => ["option", { value: t }, t])
+        );
         if (tags.includes(last)) tagSelect.value = last;
       })
     );
@@ -1051,10 +1074,11 @@
   }
   (async () => {
     await db.init();
-    const btn = create("a", { class: "chiiBtn", href: "javascript:void(0)", title: "生成年鉴" }, [
-      "span",
-      "生成年鉴"
-    ]);
+    const btn = create(
+      "a",
+      { class: "chiiBtn", href: "javascript:void(0)", title: "生成年鉴" },
+      ["span", "生成年鉴"]
+    );
     btn.addEventListener("click", menuToggle);
     document.querySelector("#headerProfile .actions").append(btn);
   })();

@@ -27,11 +27,17 @@ export type Events<E extends Element, Map = ElementEventMap<E>> = Partial<{
     [K in keyof Map]: (e: Map[K]) => void
 }>
 
-export type Props<E extends Element> = Partial<Omit<E, 'style' | 'class'>> & {
+type AddPrefix<T, P extends string> = {
+    [K in keyof T as `${P}${string & K}`]: T[K]
+}
+
+export type Props<E extends Element> = (Partial<Omit<E, 'style' | 'class'>> & {
     class?: string | string[]
     style?: Partial<CSSStyleDeclaration>
     events?: Events<E>
-}
+}) &
+    AddPrefix<Record<string, string>, 'data-'>
+
 export type KnownHTMLName = keyof HTMLElementTagNameMap
 export type KnownSvgTagName = keyof SVGElementTagNameMap
 export type KnownTagName = KnownHTMLName | KnownSvgTagName
@@ -104,20 +110,17 @@ export function setProps<E extends Element>(element: E, props: Props<E>): E {
     if (!props || typeof props !== 'object') return element
 
     for (const [key, value] of Object.entries(props)) {
-        if (typeof value === 'boolean') {
-            ;(element as any)[key] = value
-            continue
-        }
-
+        if (value == null) continue
         if (key === 'events') {
-            if (value == null) continue
             setEvents(element, value as Events<E>)
         } else if (key === 'class') {
             addClass(element, value as string | string[])
         } else if (key === 'style' && typeof value === 'object') {
             setStyle(element as unknown as HTMLElement, value as Styles)
-        } else {
+        } else if (key.startsWith('data-')) {
             element.setAttribute(key, String(value))
+        } else {
+            element[key as keyof E] = value as E[keyof E]
         }
     }
     return element
