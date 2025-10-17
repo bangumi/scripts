@@ -40,11 +40,11 @@
     "@b38dev/dom": "workspace:^"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "vite": "^6.2.6",
-    "vite-plugin-monkey": "^5.0.8",
-    "vite-plugin-svgr": "^4.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vite-plugin-monkey": "^7.1.4",
+    "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.1"
+    "vitest": "^3.2.4"
   }
 }

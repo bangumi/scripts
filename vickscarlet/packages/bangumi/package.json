@@ -6,6 +6,6 @@
   "author": "Vick Scarlet(vick@syaro.io)",
   "license": "MIT",
   "devDependencies": {
-    "@types/jquery": "^3.5.32"
+    "@types/jquery": "^3.5.33"
   }
 }

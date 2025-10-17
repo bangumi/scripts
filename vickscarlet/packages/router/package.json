@@ -6,6 +6,6 @@
   "author": "Vick Scarlet(vick@syaro.io)",
   "license": "MIT",
   "devDependencies": {
-    "vitest": "^3.1.1"
+    "vitest": "^3.2.4"
   }
 }

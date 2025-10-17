@@ -30,11 +30,11 @@
     "@b38dev/util": "workspace:^"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vite": "^7.1.10",
     "vite-plugin-monkey": "^7.1.4",
-    "vite-plugin-svgr": "^4.3.0",
+    "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.1"
+    "vitest": "^3.2.4"
   }
 }
