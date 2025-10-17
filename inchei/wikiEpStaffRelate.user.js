@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
-// @version      0.2.0
+// @version      0.2.1
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -33,9 +33,12 @@
         return map;
     }, {});
 
+    // #region
     const regions = ['cn', 'tw', 'hk', 'jp'];
     let converters = {}, loading;
+    // #endregion
 
+    // #region
     const regexes_per = {
         "脚本": /(?<=[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "分镜": /(?<=[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
@@ -47,8 +50,8 @@
         "机械作画监督": /(?<=(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "特效作画监督": /(?<=(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "原画": /(?<=(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-        "作画监督助理": /(?<=[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-        "演出助理": /(?<=(演出|(?<!作画)監督)(補佐|补佐|协力|協力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "作画监督助理": /(?<=[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "演出助理": /(?<=(演出|(?<!作画)監督)(補|補佐|补佐|协力|協力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "剪辑": /(?<=(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "CG 导演": /(?<=(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "美术监督": /(?<=(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
@@ -57,7 +60,7 @@
         "设定制作": /(?<=(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "制作管理": /(?<=(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "制作协力": /(?<=[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-        "总作画监督助理": /(?<=(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
+        "总作画监督助理": /(?<=(総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "色彩演出": /(?<=(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
         "氛围稿": /(?<=(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
     };
@@ -72,8 +75,8 @@
         "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|･|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-        "作画监督助理": /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|協力|协力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-        "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|協力|协力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "作画监督助理": /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|協力|协力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "演出助理": /(演出|(?<!作画)監督)(補|補佐|补佐|協力|协力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "CG 导演": /(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "美术监督": /(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
@@ -82,7 +85,7 @@
         "制作管理": /(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-        "总作画监督助理": /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
+        "总作画监督助理": /(総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
         "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
     };
@@ -97,8 +100,8 @@
         "机械作画监督": /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "特效作画监督": /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "原画": /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-        "作画监督助理":  /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
-        "演出助理": /(演出|(?<!作画)監督)(補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "作画监督助理":  /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "演出助理": /(演出|(?<!作画)監督)(補|補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "剪辑": /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|＆|=|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "CG 导演":/(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|=|・|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "美术监督":/(美術|美术|美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
@@ -108,12 +111,14 @@
         "设定制作": /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "制作协力": /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
             //以下为bangumi没有的职位
-        "总作画监督助理":  /(総|总)(作監|作画監督|作监|作画监督|作艦)(補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
+        "总作画监督助理":  /(総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
         "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|\s(?!:|：))/g,
     };
     const regex_sym = /[\uff1a\u003A【】\/／、、＆\u0026♦◆■=]/g;
+    // #endregion
 
+    // #region
     const staffSet = new Set(), repeatSet = new Set();
     const bgmIdMap = {
         "KADOKAWA": 19306,
@@ -123,8 +128,10 @@
     };
     const failedRequests = new Map();
     const failedKeywords = new Set();
+    const unmatchedKeywords = new Set();
     const RETRY_INTERVAL = 500;
     const MAX_RETRIES = 3;
+    // #endregion
     // #endregion
 
     if (location.pathname.match(/^\/ep\/\d+$/)) {
@@ -484,42 +491,19 @@
                 let matchedLi, name = originalName;
 
                 async function* candidateNames() {
-                    const yielded = new Set();
+                    const yielded = new Set([originalName]);
                     const yieldUnique = v => {
                         if (yielded.has(v)) return false;
                         yielded.add(v);
                         return true;
                     }
 
-                    const nameNoBracket = originalName.replace(/\([^)]*\)|\{[^}]*\}|\[[^\]]*\]|（[^）]*）|［[^］]*］/g, '').trim();
-                    const brackets = nameNoBracket !== name;
-                    if (brackets) {
-                        aliased = true;
-                        if (yieldUnique(nameNoBracket)) yield nameNoBracket;
-                    } else {
-                        if (yieldUnique(originalName)) yield originalName;
-                        aliased = true;
-                    }
-
-                    const _aliased = await window.personAliasQuery?.(nameNoBracket);
-                    if (_aliased) {
-                        const aliasedName = _aliased.name;
-                        if (yieldUnique(aliasedName)) yield aliasedName;
-                    }
-
-                    for (const name of await getConvertedNames(nameNoBracket)) {
-                        if (yieldUnique(name)) yield name;
-                    }
-
-                    if (!brackets) return;
-
-                    aliased = false;
-                    if (yieldUnique(originalName)) yield originalName;
+                    yield originalName;
                     aliased = true;
 
-                    const __aliased = (await window.personAliasQuery?.(originalName));
-                    if (__aliased) {
-                        const aliasedName = __aliased.name;
+                    const _aliased = await window.personAliasQuery?.(originalName);
+                    if (_aliased) {
+                        const aliasedName = _aliased.name;
                         if (yieldUnique(aliasedName)) yield aliasedName;
                     }
 
@@ -559,8 +543,9 @@
 
                 if (matchedLi) {
                     handleMatched(matchedLi);
+                } else if (matchedLis) {
+                    matchedLis.forEach(handleMatched);
                 } else {
-                    matchedLis?.forEach(handleMatched);
                     groupedRecords.unmatched[groupKey] ||= { name: originalName, role, epLabels: new Set(epLabels) };
                 }
 
@@ -602,7 +587,6 @@
             formatRecords(groupedRecords.new),
             formatRecords(groupedRecords.existing),
             formatRecords(groupedRecords.unmatched),
-            subjectId,
             noStaffEps
         );
 
@@ -611,22 +595,30 @@
         editSummaryInput.value = `根据${epLabelsStr}章节简介填写参与`;
     }
 
-    // 格式化记录（排序集数）
+    // 按照职位排序，集数排序
     function formatRecords(records) {
-        return Object.values(records).map(item => ({
-        ...item,
-        epLabels: Array.from(item.epLabels).sort((a, b) => {
-            const typeOrder = { '': 0, 'SP': 1, 'OP': 2, 'ED': 3 };
-            const aType = a.match(/^(SP|OP|ED)/)?.[0] || '';
-            const bType = b.match(/^(SP|OP|ED)/)?.[0] || '';
-            if (aType !== bType) return typeOrder[aType] - typeOrder[bType];
-            const aNum = parseFloat(a.replace(/[A-Za-z]/g, '')) || 0;
-            const bNum = parseFloat(b.replace(/[A-Za-z]/g, '')) || 0;
-            return aNum - bNum;
-        })}));
+        const processedRecords = Object.values(records).map(item => ({
+            ...item,
+            epLabels: Array.from(item.epLabels).sort((a, b) => {
+                const typeOrder = { '': 0, 'SP': 1, 'OP': 2, 'ED': 3 };
+                const aType = a.match(/^(SP|OP|ED)/)?.[0] || '';
+                const bType = b.match(/^(SP|OP|ED)/)?.[0] || '';
+                if (aType !== bType) return typeOrder[aType] - typeOrder[bType];
+                const aNum = parseFloat(a.replace(/[A-Za-z]/g, '')) || 0;
+                const bNum = parseFloat(b.replace(/[A-Za-z]/g, '')) || 0;
+                return aNum - bNum;
+            })
+        }));
+
+        return processedRecords.sort((a, b) => {
+            if (a.role === undefined || a.role === null) return -1;
+            if (b.role === undefined || b.role === null) return 1;
+            return a.role.localeCompare(b.role);
+        });
     }
 
-    function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, subjectId, noStaffEps) {
+
+    function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, noStaffEps) {
         document.querySelector('.staff-tip-box')?.remove();
 
         const tipBox = document.createElement('div');
@@ -640,25 +632,28 @@
         tipBox.append(dragHandle, contentBox);
 
         contentBox.innerHTML = `
-    ${noStaffEps?.length ? `<div class="staff-warning-section">
-        <div class="staff-warning-title">以下${noStaffEps.length}个集数未匹配到任何制作人员信息：</div>
-        ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache?.[ep]?.id}" target="_blank">${ep}</a></span>`).join(',')}
-        </div>` : ''}
-    ${repeatSet.size ? `<div class="staff-warning-section">
-        <div class="staff-warning-title">以下${repeatSet.size}个新关联的同名制作人员需要检查：</div>
-        ${[...repeatSet].map(repeat => `<a class="l" href="#staff-${repeat}">${repeat.replace(/-(.+)$/, '（$1）')}</a>`).join('、')}
-        </div>` : ''}
-    ${recordSection(newRecords, '新增参与（点击跳转）', 'new')}
-    ${recordSection(existingRecords, '已有参与（点击跳转）', 'existing')}
-    ${recordSection(unMatchedRecords, '未匹配', 'unmatched')}
-    ${ (() => {
-        if (!epsCache) return '';
-        const epCacheEntries = Object.entries(epsCache);
-        return `<details><summary>各集详情</summary>${epCacheEntries.map(([epLabel, { desc }]) => `
-            <details><summary>${epLabel}</summary>${desc.replaceAll('\n', '<br>')}</details>`
-        ).join('')}</details>`;
-    })() }
-    `;
+        ${noStaffEps?.length ? `<div class="staff-warning-section">
+            <div class="staff-warning-title">以下${noStaffEps.length}个集数未匹配到任何制作人员信息：</div>
+            ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache?.[ep]?.id}" target="_blank">${ep}</a></span>`).join(',')}
+            </div>` : ''}
+        ${repeatSet.size ? `<div class="staff-warning-section">
+            <div class="staff-warning-title">以下${repeatSet.size}个新关联的同名制作人员需要检查：</div>
+            ${[...repeatSet].map(repeat => `<a class="l" href="#staff-${repeat}">${repeat.replace(/-(.+)$/, '（$1）')}</a>`).join('、')}
+            </div>` : ''}
+        ${recordSection(newRecords, '新增参与（点击跳转）', 'new')}
+        ${recordSection(existingRecords, '已有参与（点击跳转）', 'existing')}
+        ${recordSection(unMatchedRecords, '未匹配', 'unmatched')}
+        ${ (() => {
+            if (!epsCache) return '';
+            const epCacheEntries = Object.entries(epsCache);
+            return `<details><summary>各集详情</summary>${epCacheEntries.map(([epLabel, { desc }]) => `
+                <details><summary>${epLabel}</summary>${desc.replaceAll('\n', '<br>')}</details>`
+            ).join('')}</details>`;
+        })() }`;
+        contentBox.querySelectorAll('.search-again').forEach(a => a.addEventListener('click', () => {
+            document.querySelector('#subjectName').value = a.dataset.keyword;
+            findSubjectFunc();
+        }));
 
         function recordSection(records, text, className) {
             if (!records.length) return '';
@@ -678,7 +673,9 @@
                     })() }
                     （${role}）-
                     ${epLabels.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}">${ep}</span>`).join(',')}
-                    ${ className === 'unmatched' ? `→ <a class="l" href="/person/new?name=${escapeAttr(name)}" target="blank">创建</a>${ failedKeywords.has(name) ? `<small>（自动搜索失败，可尝试手动搜索）</small>` : '' }` : ''}
+                    ${ className === 'unmatched' ? `→ <a class="l" href="/person/new?name=${escapeAttr(name)}" target="blank">创建</a>
+                    ${ failedKeywords.has(name) ? ` / 自动搜索失败，<a class="l search-again" data-keyword="${name}" href="javascript:">点击再次搜索</a>` : '' }
+                    ${ unmatchedKeywords.has(name) ? ` / <a class="l search-again" data-keyword="${name}" href="javascript:">查看搜索结果</a>` : '' }` : ''}
                 </${ itemTag }>`).join('')}
         </div>`;
         }
@@ -768,17 +765,19 @@
         if (!loading && !Object.keys(converters).length) {
             loading = new Promise(resolve => {
                 const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js';
+                script.src = 'https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js';
                 script.onload = () => {
                     regions.forEach(from => regions.forEach(to => {
                         if (from !== to) converters[`${from}-${to}`] = OpenCC.Converter({ from, to });
                     }));
-                    resolve();
+                    resolve(true);
                 };
+                script.onerror = () => resolve(false);
                 document.head.appendChild(script);
             });
         }
-        await loading;
+        const success = await loading;
+        if (!success) return [];
 
         const converted = new Set();
         regions.forEach(from => regions.forEach(to => {
@@ -849,7 +848,7 @@
 
                 const newStaffList = [];
                 for (const name of episodeStaff[role]) {
-                    let initialSeparators = ['、', ',', '，'];
+                    let initialSeparators = ['、', ',', '，','､'];
                     const japaneseRegex = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\u3005\u30fc]/;
                     const hasJapaneseCharacters = japaneseRegex.test(name);
 
@@ -872,8 +871,8 @@
                         if (isSeparator) {
                             // 检查分隔符前后是否都是英文字符
                             const isEnglishContext =
-                                (isEnglishChar(prevChar) || !prevChar) &&
-                                (isEnglishChar(nextChar) || !nextChar);
+                                (isPreservedChar(prevChar) || !prevChar) &&
+                                (isPreservedChar(nextChar) || !nextChar);
 
                             if (isEnglishContext) {
                                 // 英文上下文中的分隔符，不分割，保留分隔符
@@ -918,8 +917,8 @@
                                 if (char === ' ' || char === '　') {
                                     // 检查空格前后是否都是英文字符
                                     const isEnglishContext =
-                                        isEnglishChar(prevChar) &&
-                                        isEnglishChar(nextChar);
+                                        isPreservedChar(prevChar) &&
+                                        isPreservedChar(nextChar);
 
                                     if (isEnglishContext) {
                                         // 英文上下文中的空格，不分割
@@ -956,12 +955,6 @@
                             newStaffList.push(singleName);
                         }
                     });
-
-                    // 辅助函数：检查字符是否为英文字符
-                    function isEnglishChar(char) {
-                        if (!char) return false;
-                        return /[a-zA-Z]/.test(char);
-                    }
                 }
 
                 episodeStaff[role] = newStaffList;
@@ -994,6 +987,10 @@
 
         // 返回结果和没有匹配到人员的集数数组
         return [ result, noStaffEps ];
+    }
+
+    function isPreservedChar(char) {
+        return /[a-zA-Z\u30a0-\u30ff\u3005\u30fc]/.test(char);
     }
 
     // 辅助函数
@@ -1037,6 +1034,8 @@
                         await addPersonToRelate(role, resultName, id, searchResult[id]);
                         ids.add(id);
                         displayName ||= resultName;
+                    } else {
+                        unmatchedKeywords.add(name);
                     }
                 }
             }
