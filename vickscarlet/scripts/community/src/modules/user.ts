@@ -1,6 +1,8 @@
 import { db, database } from '@/modules/database'
 import { whoami } from '@b38dev/bangumi'
 import { newTab } from '@b38dev/dom'
+import { fetchUserNameHistory, isExpired } from '@/api/index'
+
 let blockeds: Set<string> | null = null
 
 export const getBlockeds = (() => {
@@ -64,37 +66,45 @@ export async function disconnect(nid: string, gh: string) {
     return ret.ok
 }
 
+// export async function usednames(id: string) {
+//     const data =
+//         (await db.get<database.UsedName>('usednames', id)) ||
+//         ({
+//             id,
+//             names: new Set(),
+//         } as database.UsedName)
+//     if (data.update < Date.now() - 3600_000) return data.names
+//     const getUsedNames = async (end: string, tml?: string, ret: string[] = [], page = 1) => {
+//         const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`)
+//         const html = await res.text()
+//         const names = Array.from(
+//             html.matchAll(/从 <strong>(?<from>.*?)<\/strong> 改名为/g),
+//             (m) => m.groups?.from ?? ''
+//         )
+//         const tmls = Array.from(
+//             html.matchAll(/<h4 class="Header">(?<tml>\d{4}-\d{1,2}-\d{1,2})<\/h4>/g),
+//             (m) => m.groups?.tml ?? ''
+//         )
+//         if (!tml) tml = tmls[0]
+//         ret.push(...names)
+//         if (tmls.includes(end) || !html.includes('>下一页 &rsaquo;&rsaquo;</a>'))
+//             return { ret, tml }
+//         return getUsedNames(end, tml, ret, page + 1)
+//     }
+//     const { ret, tml } = await getUsedNames(data.tml)
+//     const update = Date.now()
+//     const names = new Set(ret).union(data.names)
+//     names.delete('')
+//     await db.put('usednames', { id, names, update, tml })
+//     return names
+// }
+
 export async function usednames(id: string) {
-    const data =
-        (await db.get<database.UsedName>('usednames', id)) ||
-        ({
-            id,
-            names: new Set(),
-        } as database.UsedName)
-    if (data.update < Date.now() - 3600_000) return data.names
-    const getUsedNames = async (end: string, tml?: string, ret: string[] = [], page = 1) => {
-        const res = await fetch(`/user/${id}/timeline?type=say&ajax=1&page=${page}`)
-        const html = await res.text()
-        const names = Array.from(
-            html.matchAll(/从 <strong>(?<from>.*?)<\/strong> 改名为/g),
-            (m) => m.groups?.from ?? ''
-        )
-        const tmls = Array.from(
-            html.matchAll(/<h4 class="Header">(?<tml>\d{4}-\d{1,2}-\d{1,2})<\/h4>/g),
-            (m) => m.groups?.tml ?? ''
-        )
-        if (!tml) tml = tmls[0]
-        ret.push(...names)
-        if (tmls.includes(end) || !html.includes('>下一页 &rsaquo;&rsaquo;</a>'))
-            return { ret, tml }
-        return getUsedNames(end, tml, ret, page + 1)
-    }
-    const { ret, tml } = await getUsedNames(data.tml)
-    const update = Date.now()
-    const names = new Set(ret).union(data.names)
-    names.delete('')
-    await db.put('usednames', { id, names, update, tml })
-    return names
+    const data = await db.get<database.UsedName>('usednames', id)
+    if (data && !isExpired(data.state as any, data.update)) return data.names
+    const result = await fetchUserNameHistory(id)
+    await db.put('usednames', { id, ...result })
+    return result.names
 }
 
 interface StatWithValue {

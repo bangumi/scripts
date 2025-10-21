@@ -20,9 +20,9 @@ export namespace database {
     }
     export interface UsedName extends BaseData {
         id: string
+        state: string
         names: Set<string>
         update: number
-        tml: string
     }
     export interface UserV4 extends BaseData {
         id: string
