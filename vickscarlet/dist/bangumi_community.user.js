@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 社区助手 preview
 // @namespace    b38.dev
-// @version      0.1.18
+// @version      0.1.19
 // @author       神戸小鳥 @vickscarlet
 // @description  社区助手预览版 with React
 // @license      MIT
@@ -1061,10 +1061,10 @@
   }
   async function usednames(id) {
     const data = await db.get("usednames", id);
-    if (data && !isExpired(data.state, data.update)) return data.names;
+    if (data && !isExpired(data.state, data.update)) return data;
     const result = await fetchUserNameHistory(id);
     await db.put("usednames", { id, ...result });
-    return result.names;
+    return result;
   }
   async function homepage(id) {
     const res = await fetch("/user/" + id);
@@ -13182,6 +13182,14 @@
   function cn(...classList) {
     return classList.filter((className) => !!className).join(" ");
   }
+  function formatTime(time) {
+    const year = time.getFullYear();
+    const month = (time.getMonth() + 1).toString().padStart(2, "0");
+    const day = time.getDate().toString().padStart(2, "0");
+    const hours = time.getHours().toString().padStart(2, "0");
+    const minutes = time.getMinutes().toString().padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  }
   function AsElement({ as, ...other }) {
     const Type = as || "div";
     return jsxRuntimeExports.jsx(Type, { className: "tip-item", ...other });
@@ -13477,20 +13485,22 @@ jsxRuntimeExports.jsx("ul", { className: "v-actions-list", children: actions?.ma
   function UsedName({ id, onChange }) {
     const ref = reactExports.useRef(null);
     const [content, setContent] = reactExports.useState(null);
+    const [update, setUpdate] = reactExports.useState("");
     const [loading, setLoading] = reactExports.useState(true);
     reactExports.useEffect(() => {
       if (ref.current) it(ref.current);
     }, [ref.current]);
     reactExports.useEffect(() => {
-      usednames(id).then((content2) => {
+      usednames(id).then(({ names, update: update2 }) => {
         setLoading(false);
-        setContent(content2);
+        setContent(names);
+        setUpdate(formatTime(new Date(update2)));
         resize(ref.current);
         onChange?.();
       });
     }, [id]);
     return jsxRuntimeExports.jsx(
-      NamedBoard,
+      ActionsBoard,
       {
         className: "v-usedname",
         loading,
@@ -13499,6 +13509,12 @@ jsxRuntimeExports.jsx(SvgHistory, {}),
           " 曾用名"
         ] }),
         onResize: () => resize(ref.current),
+        actions: [
+          {
+            icon: jsxRuntimeExports.jsx("span", { children: update }),
+            tip: "数据最后更新时间"
+          }
+        ],
         children: jsxRuntimeExports.jsx(TagList, { className: "v-wrapper", tags: content, ref })
       }
     );

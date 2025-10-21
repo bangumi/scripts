@@ -101,10 +101,10 @@ export async function disconnect(nid: string, gh: string) {
 
 export async function usednames(id: string) {
     const data = await db.get<database.UsedName>('usednames', id)
-    if (data && !isExpired(data.state as any, data.update)) return data.names
+    if (data && !isExpired(data.state as any, data.update)) return data
     const result = await fetchUserNameHistory(id)
     await db.put('usednames', { id, ...result })
-    return result.names
+    return result
 }
 
 interface StatWithValue {
