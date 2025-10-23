@@ -146,7 +146,7 @@
 
         document.querySelector('.title').insertAdjacentHTML(
             'beforeend',
-            `<small><a class="l staff-link" href="/subject/${subjectId}/add_related/person?staffs=${encodeURIComponent(staffJSON)}">[关联制作人员参与]</a></small>`
+            `<small><a class="l staff-link" href="/subject/${subjectId}/add_related/person?source=${epLabel}&staffs=${encodeURIComponent(staffJSON)}">[关联制作人员参与]</a></small>`
         );
 
     } if (location.pathname.match(/^\/person\/new$/)) {
@@ -481,13 +481,20 @@
                 const sameRole = li => li.querySelector('select').value === roleId;
                 const sameName = name => li => {
                     const liName = li.querySelector('.title a').textContent;
-                    return liName === name;
+                    return normalize(liName) === normalize(name);
+                }
+                const similarName = name => li => {
+                    const liName = li.querySelector('.title a').textContent;
+                    return isSimilarOrContained(normalize(name), normalize(liName));
                 }
                 const sameId = id => li => {
                     const liId = li.querySelector('.title a').href.split('/').pop();
-                    return liId === id;
+                    return liId == id;
                 }
                 const matchOldLi = name => oldLis.find(li => sameName(name)(li) && sameRole(li));
+
+                let matchedLiFuzzy;
+                const memOldLiFuzzy = name => matchedLiFuzzy ||= oldLis.find(li => similarName(name)(li) && sameRole(li));
                 let matchedLi, name = originalName;
 
                 async function* candidateNames() {
@@ -514,9 +521,19 @@
 
                 for await (const candidate of candidateNames()) {
                     matchedLi = matchOldLi(candidate);
-                    if (!matchedLi) continue;
+                    if (!matchedLi) {
+                        memOldLiFuzzy(candidate);
+                        continue;
+                    }
                     name = candidate;
                     break;
+                }
+                if (!matchedLi) {
+                    if (matchedLiFuzzy) {
+                        matchedLi = matchedLiFuzzy;
+                        name = matchedLi.querySelector('.title a').textContent;
+                        aliased = true;
+                    }
                 }
 
                 let matchedLis;
@@ -534,6 +551,7 @@
                             matchedLis = newLiList.filter(li => ids.some(id => sameId(id)(li)) && sameRole(li));
                         }
 
+                        if (name !== resultName) aliased = true;
                         name = resultName;
                         break;
                     }
@@ -591,8 +609,14 @@
         );
 
         const editSummaryInput = document.querySelector('#editSummary');
-        const epLabelsStr = staffInfoEntries.length === 1 ? staffInfoEntries[0][0] : '';
+        const epLabelsStr = new URLSearchParams(location.search).get('source') || '';
         editSummaryInput.value = `根据${epLabelsStr}章节简介填写参与`;
+    }
+
+    function addRelatedPerson({ id, name }, roleId) {
+        subjectList[id] = { id, name, url_mod: 'person' }
+        addRelateSubject(id, 'submitForm');
+        $('#crtRelateSubjects select').eq(0).val(roleId);
     }
 
     // 按照职位排序，集数排序
@@ -786,6 +810,36 @@
         return Array.from(converted);
     }
 
+    function isSimilarOrContained(str1, str2) {
+        if (!str1 || !str2) return false;
+
+        str1 = str1.trim();
+        str2 = str2.trim();
+
+        // 包含关系
+        if (str2.includes(str1)) {
+            return true;
+        }
+
+        // 长度差大于1，直接返回false
+        if (Math.abs(str1.length - str2.length) > 1) {
+            return false;
+        }
+
+        // 计算差异字符数
+        let diff = 0;
+        for (let i = 0, j = 0; i < str1.length && j < str2.length; i++, j++) {
+            if (str1[i] !== str2[j]) {
+                diff++;
+                if (diff > 1) return false;
+                if (str1.length > str2.length) j--; // str1更长，str2指针回退
+                else if (str1.length < str2.length) i--; // str2更长，str1指针回退
+            }
+        }
+
+        return diff <= 1;
+    }
+
     // #region https://bgm.tv/dev/app/3265 MIT modified
     /**
      * 从动画章节简介中提取制作人员信息
@@ -845,122 +899,168 @@
 
             for (const role in episodeStaff) {
                 const seenNames = new Set();
-
                 const newStaffList = [];
+
                 for (const name of episodeStaff[role]) {
-                    let initialSeparators = ['、', ',', '，','､'];
-                    const japaneseRegex = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\u3005\u30fc]/;
-                    const hasJapaneseCharacters = japaneseRegex.test(name);
+                    if (!name || name.trim() === '') continue;
 
-                    if (hasJapaneseCharacters) {
-                        initialSeparators.push('・', '•', '·', '･');
-                    }
+                    // 定义三类分隔符
+                    const separatorGroups = [
+                        ['、', ',', '，', '､'],  // 第一类：始终作为分隔符
+                        ['・', '•', '·', '･'],  // 第二类：前后不都是preservedchar时作为分隔符
+                        ['　', ' ']             // 第三类：空格
+                    ];
 
-                    let potentialNames = [];
-                    let tempName = '';
+                    let currentNames = [name.trim()];
 
-                    // 逐个字符处理，检查分隔符上下文
-                    for (let i = 0; i < name.length; i++) {
-                        const char = name[i];
-                        const prevChar = i > 0 ? name[i - 1] : '';
-                        const nextChar = i < name.length - 1 ? name[i + 1] : '';
+                    // 按优先级处理三类分隔符
+                    for (let groupIndex = 0; groupIndex < separatorGroups.length; groupIndex++) {
+                        const separators = separatorGroups[groupIndex];
+                        const newNames = [];
 
-                        // 检查是否是分隔符
-                        const isSeparator = initialSeparators.includes(char);
-
-                        if (isSeparator) {
-                            // 检查分隔符前后是否都是英文字符
-                            const isEnglishContext =
-                                (isPreservedChar(prevChar) || !prevChar) &&
-                                (isPreservedChar(nextChar) || !nextChar);
-
-                            if (isEnglishContext) {
-                                // 英文上下文中的分隔符，不分割，保留分隔符
-                                tempName += char;
-                            } else {
-                                // 非英文上下文中的分隔符，进行分割
-                                if (tempName.trim()) {
-                                    potentialNames.push(trimCommas(tempName));
-                                }
-                                tempName = '';
+                        for (const currentName of currentNames) {
+                            // 如果当前名称已经被分割过（不是原始名称），且不是第一组分隔符，则跳过
+                            if (groupIndex > 0 && currentNames.length > 1) {
+                                newNames.push(currentName);
+                                continue;
                             }
-                        } else {
-                            tempName += char;
-                        }
-                    }
 
-                    // 添加最后一个名称
-                    if (tempName.trim()) {
-                        potentialNames.push(trimCommas(tempName));
-                    }
+                            // 对于空格分隔符，检查长度条件
+                            if (groupIndex === 2) {
+                                const japaneseRegex = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\u3005\u30fc]/;
+                                const hasJapaneseCharacters = japaneseRegex.test(currentName);
+                                const hasKana = /[\u3040-\u309F\u30A0-\u30FF]/.test(currentName);
 
-                    let finalNames = [];
+                                // 检查是否满足空格分割的长度条件
+                                const shouldSplitBySpace = hasJapaneseCharacters && (
+                                    hasKana ? currentName.length > 10 : currentName.length > 7
+                                );
 
-                    potentialNames.forEach(singleName => {
-                        if (!singleName || singleName === ' ') {
-                            return;
-                        }
+                                if (!shouldSplitBySpace) {
+                                    newNames.push(currentName);
+                                    continue;
+                                }
+                            }
 
-                        const hasKana = /[\u3040-\u309F\u30A0-\u30FF]/.test(singleName);
-                        if (hasJapaneseCharacters && (
-                            hasKana ? singleName.length > 10 : singleName.length > 7
-                          )) {
-                            // 处理空格分隔 - 同样检查上下文
-                            let spaceSplitNames = [];
-                            let tempWord = '';
+                            let tempName = '';
+                            const splitResult = [];
+                            let hasValidSeparator = false; // 标记是否有不满足跳过条件的分隔符
 
-                            for (let i = 0; i < singleName.length; i++) {
-                                const char = singleName[i];
-                                const prevChar = i > 0 ? singleName[i - 1] : '';
-                                const nextChar = i < singleName.length - 1 ? singleName[i + 1] : '';
+                            for (let i = 0; i < currentName.length; i++) {
+                                const char = currentName[i];
+                                const prevChar = i > 0 ? currentName[i - 1] : '';
+                                const nextChar = i < currentName.length - 1 ? currentName[i + 1] : '';
 
-                                if (char === ' ' || char === '　') {
-                                    // 检查空格前后是否都是英文字符
-                                    const isEnglishContext =
-                                        isPreservedChar(prevChar) &&
-                                        isPreservedChar(nextChar);
+                                const isSeparator = separators.includes(char);
 
-                                    if (isEnglishContext) {
-                                        // 英文上下文中的空格，不分割
-                                        tempWord += char;
-                                    } else {
-                                        // 非英文上下文中的空格，进行分割
-                                        if (tempWord.trim()) {
-                                            spaceSplitNames.push(trimCommas(tempWord));
+                                if (isSeparator) {
+                                    // 对于第一组分隔符，始终分割
+                                    if (groupIndex === 0) {
+                                        if (tempName.trim()) {
+                                            splitResult.push(trimCommas(tempName));
                                         }
-                                        tempWord = '';
+                                        tempName = '';
+                                        hasValidSeparator = true;
+                                    }
+                                    // 对于第二组分隔符，检查上下文
+                                    else if (groupIndex === 1) {
+                                        const isEnglishContext =
+                                            (isPreservedChar(prevChar) || !prevChar) &&
+                                            (isPreservedChar(nextChar) || !nextChar);
+
+                                        if (!isEnglishContext) {
+                                            // 非英文上下文，进行分割
+                                            if (tempName.trim()) {
+                                                splitResult.push(trimCommas(tempName));
+                                            }
+                                            tempName = '';
+                                            hasValidSeparator = true; // 标记有不满足跳过条件的分隔符
+                                        } else {
+                                            // 英文上下文，保留分隔符
+                                            tempName += char;
+                                        }
+                                    }
+                                    // 对于第三组分隔符（空格），检查上下文
+                                    else if (groupIndex === 2) {
+                                        const isEnglishContext =
+                                            isPreservedChar(prevChar) &&
+                                            isPreservedChar(nextChar);
+
+                                        if (!isEnglishContext) {
+                                            // 非英文上下文，进行分割
+                                            if (tempName.trim()) {
+                                                splitResult.push(trimCommas(tempName));
+                                            }
+                                            tempName = '';
+                                        } else {
+                                            // 英文上下文，保留空格
+                                            tempName += char;
+                                        }
                                     }
                                 } else {
-                                    tempWord += char;
+                                    tempName += char;
                                 }
                             }
 
-                            // 添加最后一个词
-                            if (tempWord.trim()) {
-                                spaceSplitNames.push(trimCommas(tempWord));
+                            // 添加最后一个名称片段
+                            if (tempName.trim()) {
+                                splitResult.push(trimCommas(tempName));
                             }
 
-                            spaceSplitNames.forEach(n => {
-                                if (n && n !== ' ') {
-                                    finalNames.push(n);
+                            // 如果没有被分割，保持原样
+                            if (splitResult.length === 0) {
+                                newNames.push(currentName);
+                            } else {
+                                newNames.push(...splitResult);
+
+                                // 对于第二类分隔符，如果有不满足跳过条件的分隔符，则重新处理所有片段
+                                if (groupIndex === 1 && hasValidSeparator) {
+                                    // 移除当前名称的所有片段
+                                    newNames.splice(newNames.length - splitResult.length, splitResult.length);
+
+                                    // 重新处理当前名称，忽略跳过条件
+                                    const reSplitResult = [];
+                                    let reTempName = '';
+
+                                    for (let i = 0; i < currentName.length; i++) {
+                                        const char = currentName[i];
+                                        const isSeparator = separators.includes(char);
+
+                                        if (isSeparator) {
+                                            if (reTempName.trim()) {
+                                                reSplitResult.push(trimCommas(reTempName));
+                                            }
+                                            reTempName = '';
+                                        } else {
+                                            reTempName += char;
+                                        }
+                                    }
+
+                                    // 添加最后一个名称片段
+                                    if (reTempName.trim()) {
+                                        reSplitResult.push(trimCommas(reTempName));
+                                    }
+
+                                    // 添加重新分割的结果
+                                    newNames.push(...reSplitResult.filter(n => n && n.trim() !== ''));
                                 }
-                            });
-                        } else {
-                            finalNames.push(singleName);
+                            }
                         }
-                    });
 
-                    finalNames.forEach(singleName => {
-                        if (singleName && singleName !== ' ') {
-                            newStaffList.push(singleName);
+                        currentNames = newNames.filter(n => n && n.trim() !== '');
+                    }
+
+                    // 添加到最终结果
+                    currentNames.forEach(singleName => {
+                        if (singleName && singleName.trim() !== '') {
+                            newStaffList.push(singleName.trim());
                         }
                     });
                 }
 
-                episodeStaff[role] = newStaffList;
-
-                episodeStaff[role] = episodeStaff[role].filter(name => {
-                    if (seenNames.has(name) || !name || name === ' ') {
+                // 去重处理
+                episodeStaff[role] = newStaffList.filter(name => {
+                    if (seenNames.has(name) || !name || name.trim() === '') {
                         return false;
                     }
                     seenNames.add(name);
@@ -1026,12 +1126,12 @@
                 return;
             }
 
-            if (Object.keys(searchResult).length > 0) {
+            if (Object.keys(searchResult).length) {
                 for (let id in searchResult) {
                     const resultName = searchResult[id].name;
-                    if (name.toLowerCase() === resultName.toLowerCase() || bgmIdMap[name] == id
-                    || (await window.personAliasQuery?.(name))?.id === id) {
-                        await addPersonToRelate(role, resultName, id, searchResult[id]);
+                    if (normalize(name) === normalize(resultName) || bgmIdMap[name] == id
+                    || (await window.personAliasQuery?.(name))?.id == id) {
+                        await addPersonToRelate(role, normalize(resultName), id, searchResult[id]);
                         ids.add(id);
                         displayName ||= resultName;
                     } else {
@@ -1046,6 +1146,18 @@
             console.error('autoSearchAndRelate failed:', error);
         }
     }
+
+    function normalize(name) {
+        return name
+            .replace(/\s/g, '').replaceAll('-', '')
+            .replace(/[\u30A1-\u30F6]/g, function(match) {
+                return String.fromCharCode(match.charCodeAt(0) - 0x60);
+            })
+            .replace(/[\uFF21-\uFF5A]/g, function(match) {
+                return String.fromCharCode(match.charCodeAt(0) - 0xfee0);
+            }).toLowerCase();
+    }
+
 
     function getLastestMap() {
         let json = localStorage.getItem('localPrsnMap');
@@ -1124,7 +1236,7 @@
         $('#crtRelateSubjects .clearit').each(function(idx) {
             let job = $(this).find('select').val();
             let staff = $(this).find('.l').text();
-            let key = job + staff;
+            let key = job + normalize(staff);
             map.get(key) instanceof Array ? map.get(key).push(idx) : map.set(key, [idx]);
 
             if (!item) {
