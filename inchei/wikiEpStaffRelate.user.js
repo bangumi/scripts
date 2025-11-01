@@ -195,7 +195,7 @@
                 const [staffInfo, noStaffEps] = extractStaffInfo(epDescs);
 
                 if (Object.keys(staffInfo).length || noStaffEps.length) {
-                    await updAppearEps(staffInfo, subjectId, noStaffEps);
+                    await updAppearEps(staffInfo, noStaffEps);
                 } else {
                     throw new Error('未解析到任何集数的人员信息');
                 }
@@ -212,11 +212,10 @@
         if (params.has('staffs')) {
             try {
                 const staffInfo = JSON.parse(params.get('staffs'));
-                const subjectId = location.pathname.split('/')[2];
 
                 btn.disabled = true;
                 btn.textContent = '解析参与中……';
-                await updAppearEps(staffInfo, subjectId, []);
+                await updAppearEps(staffInfo, []);
                 btn.textContent = '解析完成！点击获取全部章节';
                 btn.disabled = false;
             } catch (e) {
@@ -458,13 +457,16 @@
         });
     }
 
-    async function updAppearEps(staffInfo, subjectId, noStaffEps) {
+    async function updAppearEps(staffInfo, noStaffEps) {
         const groupedRecords = {
             new: {},         // 本次新增的参与记录
             existing: {},    // 已存在的参与记录
             unmatched: {}    // 未匹配记录
         };
         const oldLis = [...document.querySelectorAll('#crtRelateSubjects li')];
+
+        const allEpLabels = new Set();
+        const roleEpMap = {};
 
         const indicator = document.querySelector('#epDescStaff');
         const staffInfoEntries = Object.entries(staffInfo);
@@ -474,6 +476,10 @@
             i++;
             indicator.textContent = `解析参与中（${i}/${total}）……`;
             for (const [role, epLabels] of Object.entries(roles)) {
+                epLabels.forEach(ep => allEpLabels.add(ep));
+                if (!roleEpMap[role]) roleEpMap[role] = new Set();
+                epLabels.forEach(ep => roleEpMap[role].add(ep));
+
                 const roleId = roleIdMap[role];
                 if (!roleId) continue;
 
@@ -601,11 +607,25 @@
             }
         }
 
+        const roleMissingEps = {};
+        Object.entries(roleEpMap).forEach(([role, presentEps]) => {
+            const missingEps = [];
+            allEpLabels.forEach(ep => {
+                if (!presentEps.has(ep)) {
+                    missingEps.push(ep);
+                }
+            });
+            if (missingEps.length && missingEps.length < allEpLabels.size) {
+                roleMissingEps[role] = missingEps;
+            }
+        });
+
         createDraggableTipBox(
             formatRecords(groupedRecords.new),
             formatRecords(groupedRecords.existing),
             formatRecords(groupedRecords.unmatched),
-            noStaffEps
+            noStaffEps,
+            roleMissingEps
         );
 
         const editSummaryInput = document.querySelector('#editSummary');
@@ -642,7 +662,7 @@
     }
 
 
-    function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, noStaffEps) {
+    function createDraggableTipBox(newRecords, existingRecords, unMatchedRecords, noStaffEps, roleMissingEps) {
         document.querySelector('.staff-tip-box')?.remove();
 
         const tipBox = document.createElement('div');
@@ -657,9 +677,15 @@
 
         contentBox.innerHTML = `
         ${noStaffEps?.length ? `<div class="staff-warning-section">
-            <div class="staff-warning-title">以下${noStaffEps.length}个集数未匹配到任何制作人员信息：</div>
-            ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache?.[ep]?.id}" target="_blank">${ep}</a></span>`).join(',')}
-            </div>` : ''}
+        <div class="staff-warning-title">以下${noStaffEps.length}个集数未匹配到任何制作人员信息：</div>
+        ${noStaffEps.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache?.[ep]?.id}" target="_blank">${ep}</a></span>`).join(',')}
+        </div>` : ''}
+        ${Object.entries(roleMissingEps).map(([role, missingEps]) => `
+            <div class="staff-warning-section">
+                <div class="staff-warning-title">职位「${role}」在以下${missingEps.length}个集数中未出现：</div>
+                ${missingEps.map(ep => `<span title="${escapeAttr(epsCache?.[ep]?.desc || '')}"><a class="l" href="/ep/${epsCache?.[ep]?.id}" target="_blank">${ep}</a></span>`).join(',')}
+            </div>
+        `).join('')}
         ${repeatSet.size ? `<div class="staff-warning-section">
             <div class="staff-warning-title">以下${repeatSet.size}个新关联的同名制作人员需要检查：</div>
             ${[...repeatSet].map(repeat => `<a class="l" href="#staff-${repeat}">${repeat.replace(/-(.+)$/, '（$1）')}</a>`).join('、')}

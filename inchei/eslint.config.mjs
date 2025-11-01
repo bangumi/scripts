@@ -39,6 +39,7 @@ export default defineConfig([
         tb_remove: "readonly",
         subjectList: "readonly",
         addRelateSubject: "readonly",
+        findSubjectFunc: "readonly"
       }
     },
     rules: {
