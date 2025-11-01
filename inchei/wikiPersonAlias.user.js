@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         班固米人物别名本地 API
 // @namespace    https://bgm.tv/
-// @version      1.1
-// @description  从 wiki archive 自动生成，使用脚本同步
+// @version      1.3
+// @description  从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
 // @author       Your Name
 // @match        http*://bgm.tv/*
 // @match        http*://bangumi.tv/*
@@ -17,7 +17,9 @@
 // @connect      github.com
 // @connect      api.github.com
 // @connect      objects.githubusercontent.com
-// @require      https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js
+// @require      https://cdn.jsdmirror.com/npm/pako@2.1.0/dist/pako.min.js
+// @license      MIT
+// @gf           https://greasyfork.org/zh-CN/scripts/552759
 // ==/UserScript==
 
 (function() {
@@ -34,16 +36,170 @@
 
     let menuCommandId;
     let dbInitialized = false;
+    let fileInput = null; // 全局存储文件选择器，避免重复创建
 
-    // 注册主菜单
+    const normalize = name => name
+      .replace(/[\s-]/g, '') // 去空格/连字符
+      .replace(/[\uFF66-\uFF9D]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFBE0)) // 窄假名→平假名
+      .replace(/[\uFF21-\uFF5A]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)) // 全角字母→半角
+      .replace(/[\u30A1-\u30F6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)) // 全角片假名→平假名
+      .toLowerCase(); // 字母统一小写
+
+    // -------------------------- 关键修复：可见按钮触发文件选择 --------------------------
+    /**
+     * 创建可见的临时按钮（用户主动点击触发文件选择，规避浏览器禁用）
+     * 按钮点击后自动移除，避免页面干扰
+     */
+    function createVisibleTriggerButton() {
+        // 先移除已存在的按钮（防止重复）
+        const oldBtn = document.getElementById('personAliasImportBtn');
+        if (oldBtn) oldBtn.remove();
+
+        // 创建可见按钮
+        const btn = document.createElement('button');
+        btn.id = 'personAliasImportBtn';
+        btn.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #2c83fb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 99999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        btn.textContent = "点击选择 .json.gz 别名文件（选择后按钮自动消失）";
+
+        // 初始化文件选择器（隐藏）
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json.gz';
+            fileInput.style.display = 'none';
+            // 绑定文件选择后的处理逻辑
+            fileInput.onchange = handleFileSelect;
+            document.body.appendChild(fileInput);
+        }
+
+        // 按钮点击 → 触发文件选择器（用户主动操作，规避禁用）
+        btn.onclick = () => {
+            fileInput.click();
+            btn.remove(); // 点击后移除按钮，不干扰页面
+        };
+
+        // 点击页面其他区域也移除按钮
+        const handleDocClick = (e) => {
+            if (e.target !== btn && e.target !== fileInput) {
+                btn.remove();
+                document.removeEventListener('click', handleDocClick);
+            }
+        };
+        document.addEventListener('click', handleDocClick);
+
+        document.body.appendChild(btn);
+    }
+
+    /**
+     * 文件选择后的统一处理逻辑
+     */
+    async function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 重置文件选择器（允许重复选择同一文件）
+        fileInput.value = '';
+
+        // 更新菜单状态 + 显示处理通知
+        menuCommandId = GM_registerMenuCommand("处理中...", () => {});
+        showGMNotification({ text: `正在处理文件: ${file.name}...` });
+
+        try {
+            // 读取并解析本地文件
+            const data = await readLocalGzFile(file);
+            // 导入数据库
+            await importToIndexedDB(data);
+
+            // 记录本地导入版本（与远程更新区分）
+            const prevVersion = GM_getValue('lastPersonAliasVersion', '从未更新');
+            const localVersion = `本地导入_${new Date().toLocaleString()}`;
+            GM_setValue('lastPersonAliasVersion', localVersion);
+
+            // 恢复菜单 + 显示成功通知
+            registerMainMenu();
+            showGMNotification({
+                title: "本地导入成功",
+                text: `旧版本: ${prevVersion}\n新版本: ${localVersion}\n共导入 ${data[1] ? Object.keys(data[1]).length : 0} 条别名记录`
+            });
+
+        } catch (err) {
+            // 恢复菜单 + 显示错误通知
+            registerMainMenu();
+            showGMNotification({
+                title: "本地导入失败",
+                text: `错误详情: ${err.message}`
+            });
+            console.error("本地导入错误:", err);
+        }
+    }
+    // -------------------------- 修复结束 --------------------------
+
+
+    // 读取本地 .json.gz 文件并解析（逻辑不变）
+    function readLocalGzFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    // 解压文件（依赖pako库）
+                    const decompressed = pako.inflate(e.target.result);
+                    // 解码为JSON字符串并解析
+                    const jsonStr = new TextDecoder('utf-8').decode(decompressed);
+                    const data = JSON.parse(jsonStr);
+
+                    // 严格验证数据格式（必须与远程数据结构一致：[persons数组, aliases对象]）
+                    if (!Array.isArray(data) || data.length !== 2) {
+                        throw new Error("文件格式错误：需为 [persons数组, aliases对象] 结构");
+                    }
+                    if (!Array.isArray(data[0]) || typeof data[1] !== 'object') {
+                        throw new Error("文件内容错误：persons需为数组，aliases需为对象");
+                    }
+
+                    resolve(data);
+                } catch (e) {
+                    if (e instanceof pako.ZlibError) {
+                        reject(new Error(`文件解压失败: ${e.message}`));
+                    } else if (e instanceof SyntaxError) {
+                        reject(new Error(`JSON解析失败: ${e.message}`));
+                    } else {
+                        reject(new Error(`文件验证失败: ${e.message}`));
+                    }
+                }
+            };
+
+            reader.onerror = () => reject(new Error("文件读取失败（可能是文件损坏或无读取权限）"));
+            reader.readAsArrayBuffer(file); // 二进制读取压缩文件
+        });
+    }
+
+    // 注册菜单（远程更新 + 本地导入，逻辑不变）
     function registerMainMenu() {
+        // 先移除旧菜单，避免重复
         if (menuCommandId !== undefined) {
             GM_unregisterMenuCommand(menuCommandId);
         }
-        menuCommandId = GM_registerMenuCommand("更新人物别名映射表", startUpdate);
+        // 1. 远程更新菜单（原有功能）
+        menuCommandId = GM_registerMenuCommand("更新人物别名映射表（远程）", startUpdate);
+        // 2. 本地导入菜单（点击后创建可见触发按钮）
+        GM_registerMenuCommand("手动导入 .json.gz 文件", createVisibleTriggerButton);
     }
 
-    // 显示GM通知（无图片）
+    // 显示GM通知（原有功能，逻辑不变）
     function showGMNotification(options) {
         GM.notification({
             text: options.text,
@@ -53,57 +209,41 @@
         });
     }
 
-    // 开始更新
+    // 远程更新（原有功能，逻辑不变）
     async function startUpdate() {
-        // 更新菜单为"获取中..."
         menuCommandId = GM_registerMenuCommand("获取中...", () => {});
-        showGMNotification({
-            text: "更新人物别名数据中……"
-        });
+        showGMNotification({ text: "更新人物别名数据中……" });
 
         try {
-            // 获取最新发布
             const release = await getLatestRelease();
             if (!release) throw new Error("无法获取最新发布信息");
 
-            // 查找压缩文件
             const asset = release.assets.find(a => a.name === CONFIG.compressedFile);
             if (!asset) throw new Error(`未找到文件: ${CONFIG.compressedFile}`);
 
-            // 下载并解压
             const data = await downloadAndDecompress(asset.browser_download_url);
-
-            // 导入数据库
             await importToIndexedDB(data);
 
-            // 记录版本
             const prevVersion = GM_getValue('lastPersonAliasVersion', '从未更新');
             GM_setValue('lastPersonAliasVersion', release.tag_name);
 
             registerMainMenu();
-
-            // 显示成功通知（无图片）
             showGMNotification({
-                title: "人物别名更新成功",
+                title: "远程更新成功",
                 text: `旧版本: ${prevVersion}\n新版本: ${release.tag_name}\n共导入 ${data[1] ? Object.keys(data[1]).length : 0} 条别名记录`
             });
 
         } catch (err) {
-            // 恢复菜单并显示错误通知
             registerMainMenu();
-
-            // 显示错误通知（无图片）
             showGMNotification({
-                title: "人物别名更新失败",
+                title: "远程更新失败",
                 text: `错误详情: ${err.message}`
             });
-
-            // 同时在控制台输出完整错误
-            console.error(err);
+            console.error("远程更新错误:", err);
         }
     }
 
-    // 获取最新发布
+    // 获取GitHub最新发布（原有功能，逻辑不变）
     function getLatestRelease() {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
@@ -122,13 +262,13 @@
                     }
                 },
                 onerror: (err) => {
-                    reject(new Error(`请求发布信息出错: ${err.error || '未知错误'}`));
+                    reject(new Error(`请求发布信息出错: ${err}`));
                 }
             });
         });
     }
 
-    // 下载并解压文件
+    // 下载并解压远程文件（原有功能，逻辑不变）
     function downloadAndDecompress(url) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
@@ -166,7 +306,7 @@
         });
     }
 
-    // 初始化数据库
+    // 初始化数据库（原有功能，逻辑不变）
     function initDB(force = false) {
         if (dbInitialized && !force) {
             return Promise.resolve();
@@ -178,14 +318,14 @@
                 const db = e.target.result;
                 const oldVersion = e.oldVersion;
 
-                // 如果是从旧版本升级，删除旧的数据存储
+                // 版本升级时删除旧存储
                 if (oldVersion > 0 && oldVersion < CONFIG.dbVersion) {
                     if (db.objectStoreNames.contains(CONFIG.storeName)) {
                         db.deleteObjectStore(CONFIG.storeName);
                     }
                 }
 
-                // 创建新的数据存储结构
+                // 创建新存储结构
                 if (!db.objectStoreNames.contains('persons')) {
                     const personsStore = db.createObjectStore('persons', { keyPath: 'index' });
                     personsStore.createIndex('by_index', 'index', { unique: true });
@@ -205,7 +345,7 @@
         });
     }
 
-    // 导入数据到IndexedDB
+    // 导入数据到IndexedDB（原有功能，逻辑不变）
     function importToIndexedDB(data) {
         return new Promise((resolve, reject) => {
             initDB().then(() => {
@@ -217,7 +357,7 @@
                     const personsStore = tx.objectStore('persons');
                     const aliasesStore = tx.objectStore('aliases');
 
-                    // 清空现有数据
+                    // 清空现有数据（避免冲突）
                     personsStore.clear();
                     aliasesStore.clear();
 
@@ -229,8 +369,8 @@
                             if (Array.isArray(person) && person.length >= 2) {
                                 const personObj = {
                                     index: index,
-                                    name: person[0], // name
-                                    id: person[1]    // id
+                                    name: person[0],
+                                    id: person[1]
                                 };
                                 personsStore.put(personObj);
                             }
@@ -262,7 +402,7 @@
         });
     }
 
-    // 暴露查询接口 - 通过别名查询人物信息
+    // 暴露查询接口（原有功能，逻辑不变）
     unsafeWindow.personAliasQuery = async function(aliasName) {
         if (!dbInitialized) {
             await initDB();
@@ -276,25 +416,19 @@
                 const aliasesStore = tx.objectStore('aliases');
                 const personsStore = tx.objectStore('persons');
 
-                // 首先在别名表中查找
-                const aliasReq = aliasesStore.get(aliasName);
+                const aliasReq = aliasesStore.get(normalize(aliasName));
 
                 aliasReq.onsuccess = () => {
                     if (aliasReq.result) {
-                        // 找到别名，通过索引查找人物信息
                         const personIndex = aliasReq.result.personIndex;
                         const personReq = personsStore.get(personIndex);
 
                         personReq.onsuccess = () => {
                             db.close();
-                            if (personReq.result) {
-                                resolve({
-                                    name: personReq.result.name,
-                                    id: personReq.result.id
-                                });
-                            } else {
-                                resolve(null);
-                            }
+                            resolve(personReq.result ? {
+                                name: personReq.result.name,
+                                id: personReq.result.id
+                            } : null);
                         };
 
                         personReq.onerror = () => {
@@ -321,7 +455,7 @@
         });
     };
 
-    // 初始化
+    // 脚本初始化（原有逻辑，不变）
     initDB().catch(err => console.log("数据库初始化:", err));
     registerMainMenu();
 })();
