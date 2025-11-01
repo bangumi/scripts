@@ -37,7 +37,7 @@
 // @require      https://cdn.jsdelivr.net/npm/image-compressor.js@1.1.4/dist/image-compressor.min.js
 // @resource     cropperCSS https://cdn.jsdelivr.net/npm/cropperjs@1.5.12/dist/cropper.min.css
 // @license      MIT
-// @gf           
+// @gf           https://greasyfork.org/zh-CN/scripts/545636
 // ==/UserScript==
 
 (function () {

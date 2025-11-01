@@ -168,6 +168,15 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
+## Bangumi 关联人物职位查询 `0.1.0`
+在关联人物编辑页面快速查看人物最近参与的职位信息
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiCheckPersonPos.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiCheckPersonPos.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [4966](https://bgm.tv/dev/app/4966) |
+
 ## Bangumi 编辑对比工具 `0.1`
 在Bangumi编辑页面显示编辑前后的差异对比
 
@@ -177,7 +186,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 根据章节简介关联制作人员参与 `0.2.0`
+## 根据章节简介关联制作人员参与 `0.2.1`
 从章节页或人物关联页根据章节简介关联制作人员参与
 
 | 载点 | 链接 |
@@ -185,6 +194,15 @@
 | GitHub | [wikiEpStaffRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEpStaffRelate.user.js?raw=true) |
 | Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
 | 组件 | [4948](https://bgm.tv/dev/app/4948) |
+
+## NDL 添加条目到 bangumi `0.1`
+在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiImportNDL.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportNDL.user.js?raw=true) |
+| Greasy Fork | [552012](https://greasyfork.org/zh-CN/scripts/552012) |
+| 组件 | 无 |
 
 ## 条目页快捷创建角色并关联 `0.0.2`
 条目角色页添加创建按钮，创建后自动跳转到关联页面并将新角色列入其中
@@ -197,6 +215,15 @@
 | Greasy Fork | [549613](https://greasyfork.org/zh-CN/scripts/549613) |
 | 组件 | [3465](https://bgm.tv/dev/app/3465) |
 
+## 班固米人物别名本地 API `1.3`
+从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiPersonAlias.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonAlias.user.js?raw=true) |
+| Greasy Fork | [552759](https://greasyfork.org/zh-CN/scripts/552759) |
+| 组件 | 无 |
+
 ## Bangumi wiki 图片上传增强 `1.4.4`
 支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
 
@@ -205,6 +232,6 @@
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiUploadPic.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiUploadPic.user.js?raw=true) |
-| Greasy Fork | 无 |
+| Greasy Fork | [545636](https://greasyfork.org/zh-CN/scripts/545636) |
 | 组件 | 无 |
 

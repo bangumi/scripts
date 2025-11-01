@@ -61,9 +61,11 @@ export default defineConfig([
       globals: {
         GM_getValue: "readonly",
         GM_setValue: "readonly",
+        GM_deleteValue: "readonly",
         GM_registerMenuCommand: "readonly",
         GM_unregisterMenuCommand: "readonly",
         GM_xmlhttpRequest: "readonly",
+        GM_openInTab: "readonly",
         unsafeWindow: "readonly"
       }
     }
