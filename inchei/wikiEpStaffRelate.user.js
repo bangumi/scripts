@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
-// @version      0.2.1
+// @version      0.2.2
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -231,7 +231,7 @@
             }
 
             /* 提示框容器样式 */
-            .staff-tip-box {
+            #wikiEpRelate.staff-tip-box {
                 position: fixed;
                 width: min(380px, 100vw);
                 backdrop-filter: blur(10px);
@@ -246,7 +246,7 @@
             }
 
             /* 警告提示样式 */
-            .staff-warning-section {
+            #wikiEpRelate .staff-warning-section {
                 padding: 10px 12px;
                 margin: 0 0 16px;
                 background: rgba(255, 248, 225, 0.6);
@@ -255,13 +255,13 @@
                 color: #856404;
                 word-break: break-word;
             }
-            .staff-warning-title {
+            #wikiEpRelate .staff-warning-title {
                 font-size: 14px;
                 font-weight: 500;
             }
 
             /* 提示框拖动手柄 */
-            .staff-tip-handle {
+            #wikiEpRelate .staff-tip-handle {
                 height: 36px;
                 line-height: 36px;
                 padding: 0 16px;
@@ -277,7 +277,7 @@
             }
 
             /* 提示框内容容器 */
-            .staff-tip-content {
+            #wikiEpRelate .staff-tip-content {
                 padding: 12px 16px;
                 max-height: 400px;
                 overflow-y: auto;
@@ -285,19 +285,19 @@
             }
 
             /* 提示框标题 */
-            .staff-tip-title {
+            #wikiEpRelate .staff-tip-title {
                 margin: 0 0 8px;
                 padding-bottom: 4px;
                 border-bottom: 1px solid rgba(255, 255, 255, .2);
                 font-size: 14px;
                 color: inherit;
             }
-            .staff-tip-title.new { color: #0a6e1e; }
-            .staff-tip-title.existing { color: #0d5b68; }
-            .staff-tip-title.unmatched { color: #a0222e; }
+            #wikiEpRelate .staff-tip-title.new { color: #0a6e1e; }
+            #wikiEpRelate .staff-tip-title.existing { color: #0d5b68; }
+            #wikiEpRelate .staff-tip-title.unmatched { color: #a0222e; }
 
             /* 记录列表容器 */
-            .staff-record-list {
+            #wikiEpRelate .staff-record-list {
                 display: flex;
                 flex-direction: column;
                 gap: 4px;
@@ -305,7 +305,7 @@
             }
 
             /* 统一记录项基础样式 */
-            .staff-record-item {
+            #wikiEpRelate .staff-record-item {
                 padding: 8px 12px;
                 border-radius: 8px;
                 backdrop-filter: blur(5px);
@@ -317,25 +317,25 @@
             }
 
             /* 新增参与项 */
-            .staff-record-item.new {
+            #wikiEpRelate .staff-record-item.new {
                 background: rgba(240, 255, 244, .6);
                 border: 1px solid rgba(40, 167, 69, .2);
             }
-            .staff-record-item.new:hover {
+            #wikiEpRelate .staff-record-item.new:hover {
                 background: rgba(230, 255, 233, .8);
             }
 
             /* 已有参与项 */
-            .staff-record-item.existing {
+            #wikiEpRelate .staff-record-item.existing {
                 background: rgba(240, 248, 255, .6);
                 border: 1px solid rgba(23, 162, 184, .2);
             }
-            .staff-record-item.existing:hover {
+            #wikiEpRelate .staff-record-item.existing:hover {
                 background: rgba(230, 242, 255, .8);
             }
 
             /* 未匹配记录项 */
-            .staff-record-item.unmatched {
+            #wikiEpRelate .staff-record-item.unmatched {
                 padding: 8px 12px;
                 border-radius: 8px;
                 backdrop-filter: blur(5px);
@@ -344,62 +344,63 @@
                 border: 1px solid rgba(220, 53, 69, .2);
                 transition: background 0.2s ease;
             }
-            .staff-record-item.unmatched:hover {
+            #wikiEpRelate .staff-record-item.unmatched:hover {
                 background: rgba(255, 235, 235, .8);
             }
 
             /* 记录项名称强调 */
-            .staff-person-name {
+            #wikiEpRelate .staff-person-name {
                 font-weight: 500;
                 color: inherit;
             }
 
-            .staff-tip-content > details > details {
+            #wikiEpRelate .staff-tip-content > details > details {
                 margin-left: 1.5em;
             }
 
             /* 夜间模式适配 */
-            html[data-theme="dark"] .staff-tip-box {
+            html[data-theme="dark"] #wikiEpRelate.staff-tip-box {
                 background: rgba(40, 40, 40, .8);
                 color: #fff;
                 box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
             }
-            html[data-theme="dark"] .staff-warning-section {
+            html[data-theme="dark"] #wikiEpRelate .staff-warning-section {
                 background: rgba(60, 40, 0, 0.4);
                 border-color: rgba(255, 153, 0, 0.5);
                 color: #ffd700;
             }
-            html[data-theme="dark"] .staff-tip-handle {
+            html[data-theme="dark"] #wikiEpRelate .staff-tip-handle {
                 background: rgba(0, 0, 0, .2);
                 border-bottom-color: rgba(255, 255, 255, .05);
             }
-            html[data-theme="dark"] .staff-tip-title {
+            html[data-theme="dark"] #wikiEpRelate .staff-tip-title {
                 border-bottom-color: rgba(255, 255, 255, .05);
             }
-            html[data-theme="dark"] .staff-tip-title.new { color: #51cf66; }
-            html[data-theme="dark"] .staff-tip-title.existing { color: #4dd0e1; }
-            html[data-theme="dark"] .staff-tip-title.unmatched { color: #e57373; }
-            html[data-theme="dark"] .staff-record-item.new {
+            html[data-theme="dark"] #wikiEpRelate .staff-tip-title.new { color: #51cf66; }
+            html[data-theme="dark"] #wikiEpRelate .staff-tip-title.existing { color: #4dd0e1; }
+            html[data-theme="dark"] #wikiEpRelate .staff-tip-title.unmatched { color: #e57373; }
+            html[data-theme="dark"] #wikiEpRelate .staff-record-item.new {
                 background: rgba(25, 65, 35, 0.4);
                 border-color: rgba(76, 175, 80, 0.4);
             }
-            html[data-theme="dark"] .staff-record-item.new:hover {
+            html[data-theme="dark"] #wikiEpRelate .staff-record-item.new:hover {
                 background: rgba(25, 65, 35, 0.6);
             }
-            html[data-theme="dark"] .staff-record-item.existing {
+            html[data-theme="dark"] #wikiEpRelate .staff-record-item.existing {
                 background: rgba(30, 45, 65, 0.4);
                 border-color: rgba(33, 150, 243, 0.4);
             }
-            html[data-theme="dark"] .staff-record-item.existing:hover {
+            html[data-theme="dark"] #wikiEpRelate .staff-record-item.existing:hover {
                 background: rgba(30, 45, 65, 0.6);
             }
-            html[data-theme="dark"] .staff-record-item.unmatched {
+            html[data-theme="dark"] #wikiEpRelate .staff-record-item.unmatched {
                 background: rgba(65, 30, 35, 0.4);
                 border-color: rgba(244, 67, 54, 0.4);
             }
-            html[data-theme="dark"] .staff-record-item.unmatched:hover {
+            html[data-theme="dark"] #wikiEpRelate .staff-record-item.unmatched:hover {
                 background: rgba(65, 30, 35, 0.6);
             }
+
         `;
         document.head.appendChild(style);
     }
@@ -667,6 +668,7 @@
 
         const tipBox = document.createElement('div');
         tipBox.className = 'staff-tip-box';
+        tipBox.id = 'wikiEpRelate';
 
         const dragHandle = document.createElement('div');
         dragHandle.className = 'staff-tip-handle';

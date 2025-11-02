@@ -1,0 +1,37 @@
+--- wikiRelDiff.user.js	2025-11-02 19:44:59.462704000 +0800
++++ wikiRelDiff.gadget.js	2025-11-02 19:44:34.121230300 +0800
+@@ -23,6 +23,24 @@
+     const hasHistory = document.querySelector('.groupsLine [href*="?undo="]');
+     if (!hasHistory) return;
+ 
++    let outputFormat = chiiApp.cloud_settings.get('wikiRelDiffMode') || 'line-by-line';
++
++    chiiLib.ukagaka.addGeneralConfig({
++      title: '维基关联历史对比方式',
++      name: 'wikiRelDiffMode',
++      type: 'radio',
++      defaultValue: 'line-by-line',
++      getCurrentValue: () => chiiApp.cloud_settings.get('wikiRelDiffMode') || 'line-by-line',
++      onChange: v => {
++        chiiApp.cloud_settings.update({ wikiRelDiffMode: v });
++        outputFormat = v;
++      },
++      options: [
++        { value: 'line-by-line', label: '行对比' },
++        { value: 'side-by-side', label: '两列对比' }
++      ]
++    });
++
+     // 字段中文映射
+     const FIELD_MAPPING = {
+         "id": "ID",
+@@ -324,7 +342,8 @@
+                 fileListToggle: false,
+                 fileContentToggle: false,
+                 colorScheme: theme === 'dark' ? 'dark' : 'light',
+-                matching: 'lines'
++                matching: 'lines',
++                outputFormat
+             }).draw();
+ 
+         } catch (error) {
