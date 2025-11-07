@@ -1,18 +1,34 @@
 // ==UserScript==
 // @name         维基关联历史对比差异
 // @namespace    bgm.wiki.rel.diff
-// @version      0.1.0
-// @description  比较条目-人物/角色关联项目的增删修改
+// @version      0.2.0
+// @description  比较条目-人物/角色、人物-条目关联项目的增删修改
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/subject/*/add_related/person
 // @match        http*://bgm.tv/subject/*/add_related/character
+// @match        http*://bgm.tv/person/*/add_related/anime
+// @match        http*://bgm.tv/person/*/add_related/book
+// @match        http*://bgm.tv/person/*/add_related/music
+// @match        http*://bgm.tv/person/*/add_related/game
+// @match        http*://bgm.tv/person/*/add_related/real
 // @match        http*://bangumi.tv/subject/*/add_related/person
 // @match        http*://bangumi.tv/subject/*/add_related/character
+// @match        http*://bangumi.tv/person/*/add_related/anime
+// @match        http*://bangumi.tv/person/*/add_related/book
+// @match        http*://bangumi.tv/person/*/add_related/music
+// @match        http*://bangumi.tv/person/*/add_related/game
+// @match        http*://bangumi.tv/person/*/add_related/real
 // @match        http*://chii.in/subject/*/add_related/person
 // @match        http*://chii.in/subject/*/add_related/character
+// @match        http*://chii.in/person/*/add_related/anime
+// @match        http*://chii.in/person/*/add_related/book
+// @match        http*://chii.in/person/*/add_related/music
+// @match        http*://chii.in/person/*/add_related/game
+// @match        http*://chii.in/person/*/add_related/real
 // @grant        none
 // @license      MIT
+// @gf           https://greasyfork.org/zh-CN/scripts/554524
 // @gadget       https://bgm.tv/dev/app/5040
 // ==/UserScript==
 
@@ -25,9 +41,7 @@
 
     // 字段中文映射
     const FIELD_MAPPING = {
-        "id": "ID",
         "name": "名称",
-        // "url_mod": "类型",
         "crt_type": "角色类型",
         "prsn_position": "人员职位",
         "crt_spoiler": "剧透",
@@ -35,20 +49,51 @@
         "crt_order": "排序",
         "prsn_appear_eps": "参与集数"
     };
+    const TYPE_CN = {
+        anime: '动画',
+        book: '书籍',
+        music: '音乐',
+        game: '游戏',
+        real: '三次元',
+    }
 
-    // 页面配置（统一使用crtRelateSubjects选择器）
-    const pageType = window.location.pathname.includes('/person') ? 'person' : 'character';
-    const typeField = pageType === 'person' ? 'prsn_position' : 'crt_type'; // 对应数据字段名
-    const typeSelector = '#crtRelateSubjects li option'; // 统一选择器
+    // 页面配置
+    let pageType = '';
+    if (window.location.pathname.includes('/add_related/person')) {
+        pageType = 'person';
+    } else if (window.location.pathname.includes('/add_related/character')) {
+        pageType = 'character';
+    } else {
+        pageType = 'personSubject';
+    }
 
-    // 类型/职位中文映射（直接加载当前页面所需，无分类讨论）
+    const typeField = pageType === 'person' ? 'prsn_position' : (pageType === 'character' ? 'crt_type' : 'type');
+    const typeSelector = '#crtRelateSubjects li option';
+
+    // 类型/职位中文映射
     const typeMapping = {};
     document.querySelectorAll(typeSelector).forEach(option => {
         typeMapping[option.value] = option.textContent.split(' /')[0].trim();
     });
 
-    // 版本数据缓存（保留）
+    // 版本数据缓存
     const versionCache = new Map();
+
+    // 人物-条目关联数据提取函数
+    function getRelItemData(li) {
+        return {
+            name: li.querySelector('.title a').textContent || '',
+            id: li.querySelector('.title a').href.split('/').pop(),
+            infoName: li.querySelector('.info a')?.textContent || '',
+            infoId: li.querySelector('.info a')?.href.split('/').pop(),
+            type: li.querySelectorAll('option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
+            remark: li.querySelector('input[type=text]')?.value.trim() || '',
+            checkboxes: [...li.querySelectorAll('input[type=checkbox]')].map(checkbox => ({
+                checked: checkbox.checked,
+                title: checkbox.previousElementSibling.textContent.slice(0, -1).trim() || ''
+            }))
+        };
+    }
 
     // 加载依赖资源
     function loadDependencies() {
@@ -65,10 +110,10 @@
 
         // 加载diff2html UI库
         const diff2htmlUIScript = document.createElement('script');
-        diff2htmlUIScript.src = 'https://unpkg.com/diff2html/bundles/js/diff2html-ui.min.js';
+        diff2htmlUIScript.src = 'https://cdn.jsdmirror.com/npm/diff2html/bundles/js/diff2html-ui-base.min.js';
         document.head.appendChild(diff2htmlUIScript);
 
-        // 加载自定义样式（纯CSS控制单选框互斥和按钮状态）
+        // 加载自定义样式
         const style = document.createElement('style');
         style.textContent = `
             #wikiRelDiff {
@@ -112,7 +157,16 @@
                 color: #856404;
                 word-break: break-word;
             }
-            #wikiRelDiff .staff-warning-title {
+            #wikiRelDiff .staff-error-section {
+                padding: 10px 12px;
+                margin: 0 0 16px;
+                background: rgba(255, 224, 178, 0.6);
+                border: 1px solid rgba(255, 99, 71, 0.3);
+                border-radius: 8px;
+                color: #8B0000;
+                word-break: break-word;
+            }
+            #wikiRelDiff .staff-warning-title, #wikiRelDiff .staff-error-title {
                 font-size: 14px;
                 font-weight: 500;
             }
@@ -168,20 +222,26 @@
                 border-color: rgba(255, 153, 0, 0.5);
                 color: #ffd700;
             }
+            html[data-theme="dark"] #wikiRelDiff .staff-error-section {
+                background: rgba(80, 0, 0, 0.4);
+                border-color: rgba(255, 99, 71, 0.5);
+                color: #ffb6c1;
+            }
             html[data-theme="dark"] #wikiRelDiff .staff-tip-header {
                 border-bottom-color: rgba(255, 255, 255, .05);
             }
-            #wikiRelDiff .d2h-code-linenumber,
-            #wikiRelDiff .d2h-code-side-linenumber {
-                position: relative !important;
-                display: table-cell !important;
-            }
-            #wikiRelDiff .d2h-code-line,
-            #wikiRelDiff .d2h-code-side-line {
-                padding: 0 0.5em !important;
+
+            /* https://github.com/rtfpessoa/diff2html/issues/381 */
+            #wikiRelDiff .d2h-wrapper {
+                text-align: left;
+                transform: translateZ(0);
             }
             #wikiRelDiff .d2h-file-header.d2h-sticky-header {
                 display: none !important;
+            }
+
+            #wikiRelDiff .hljs {
+                background: unset; /* 解决与代码高亮冲突 */
             }
         `;
         document.head.appendChild(style);
@@ -195,15 +255,46 @@
 
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error('获取版本失败');
+            if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
             const html = await response.text();
-            const match = /^\s*var subjectCrtRelations = (.*?);\s*$/gm.exec(html);
-            const data = match ? match[1] : '[]';
-            versionCache.set(url, data); // 存入缓存
-            return data;
+
+            // 对于人物-条目关联，使用DOM解析方式提取数据
+            if (pageType === 'personSubject') {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // 提取cat信息
+                const catElement = doc.querySelector('.cat .selected');
+                if (!catElement) throw new Error('无法找到类型信息');
+
+                const cat = catElement.href;
+                if (!cat) throw new Error('类型信息为空');
+
+                // 提取关联数据
+                const items = doc.querySelectorAll('#crtRelateSubjects li.old');
+                const data = Array.from(items).map(getRelItemData);
+
+                const result = {
+                    cat: cat,
+                    data: data
+                };
+
+                const dataStr = JSON.stringify(result);
+                versionCache.set(url, dataStr);
+                return dataStr;
+            } else {
+                // 对于其他页面，使用原有的JSON提取方式
+                const match = /^\s*var subjectCrtRelations = (.*?);\s*$/gm.exec(html);
+                if (!match) throw new Error('无法找到 subjectCrtRelations 变量');
+
+                const data = match[1];
+                versionCache.set(url, data); // 存入缓存
+                return data;
+            }
         } catch (error) {
             console.error('版本数据提取失败:', error);
-            return '[]';
+            // 不隐藏错误，而是返回错误信息
+            throw error;
         }
     }
 
@@ -212,10 +303,37 @@
         try {
             const data = JSON.parse(rawDataStr);
 
+            // 对于personSubject类型，我们只需要格式化data部分
+            const actualData = pageType === 'personSubject' ? data.data : data;
+
             // 数组按ID排序
-            const sortedData = Array.isArray(data)
-                ? [...data].sort((a, b) => (Number(a.id) || a.id) - (Number(b.id) || b.id))
-                : data;
+            const sortedData = Array.isArray(actualData)
+                ? [...actualData].sort((a, b) => {
+                    // 先按id排序
+                    const idA = Number(a.id) || a.id;
+                    const idB = Number(b.id) || b.id;
+                    if (idA !== idB) {
+                        return idA - idB;
+                    }
+
+                    // id相等时，按typeField排序（兼容数字和字符串）
+                    const valA = a[typeField];
+                    const valB = b[typeField];
+                    
+                    // 判断是否为数字（排除NaN的情况）
+                    const isNumberA = typeof valA === 'number' && !isNaN(valA);
+                    const isNumberB = typeof valB === 'number' && !isNaN(valB);
+                    
+                    if (isNumberA && isNumberB) {
+                        // 都是数字，用减法比较
+                        return valA - valB;
+                    } else {
+                        // 至少有一个不是数字，转为字符串用localeCompare比较
+                        return String(valA).localeCompare(String(valB));
+                    }
+                    })
+                : actualData;
+
 
             // 递归格式化（替换键名和类型值）
             const formatItem = (item) => {
@@ -224,17 +342,49 @@
 
                 const formatted = {};
                 for (const key of Object.keys(item)) {
-                    if (key === 'url_mod') continue;
+                    // 处理人物-条目关联的特殊字段
+                    if (pageType === 'personSubject') {
+                        switch (key) {
+                            case 'name':
+                                formatted['标题'] = item[key];
+                                break;
+                            case 'type':
+                                formatted['职位'] = item[key];
+                                break;
+                            case 'remark':
+                                formatted['备注'] = item[key];
+                                break;
+                            case 'checkboxes':
+                                // 将checkboxes转换为单层JSON
+                                if (Array.isArray(item[key])) {
+                                    item[key].forEach(checkbox => {
+                                        if (checkbox.title) {
+                                            formatted[checkbox.title] = checkbox.checked;
+                                        }
+                                    });
+                                }
+                                break;
+                            case 'infoName':
+                            case 'infoId':
+                                // 不显示infoName和infoId
+                                break;
+                            default:
+                                formatted[key] = formatItem(item[key]);
+                        }
+                    } else {
+                        // 处理其他页面
+                        if (key === 'url_mod') continue;
 
-                    const chineseKey = FIELD_MAPPING[key] || key;
-                    let value = item[key];
+                        const chineseKey = FIELD_MAPPING[key] || key;
+                        let value = item[key];
 
-                    // 替换类型/职位ID为中文（根据页面类型匹配对应字段）
-                    if (key === typeField && typeMapping[value]) {
-                        value = typeMapping[value];
+                        // 替换类型/职位ID为中文（根据页面类型匹配对应字段）
+                        if (key === typeField && typeMapping[value]) {
+                            value = typeMapping[value];
+                        }
+
+                        formatted[chineseKey] = formatItem(value);
                     }
-
-                    formatted[chineseKey] = formatItem(value);
                 }
                 return formatted;
             };
@@ -242,7 +392,7 @@
             return JSON.stringify(formatItem(sortedData), null, 2);
         } catch (error) {
             console.error('数据格式化失败:', error);
-            return rawDataStr;
+            throw error;
         }
     }
 
@@ -251,11 +401,17 @@
         const existing = document.querySelector('#wikiRelDiff');
         if (existing) existing.remove();
 
+        let popupTitle = ({
+            person: '人物',
+            character: '角色',
+            personSubject: '条目',
+        })[pageType];
+
         const popup = document.createElement('div');
         popup.id = 'wikiRelDiff';
         popup.innerHTML = `
             <div class="staff-tip-header">
-                <h3 class="staff-tip-title">${pageType === 'person' ? '人物' : '角色'}关联历史对比</h3>
+                <h3 class="staff-tip-title">${popupTitle}关联历史对比</h3>
                 <button class="staff-tip-close">&times;</button>
             </div>
             <div class="staff-tip-content">
@@ -294,6 +450,27 @@
                 extractVersionData(versionBUrl)
             ]);
 
+            // 对于personSubject类型，需要先比较cat
+            if (pageType === 'personSubject') {
+                const dataA = JSON.parse(rawA);
+                const dataB = JSON.parse(rawB);
+
+                if (dataA.cat !== dataB.cat) {
+                    // 显示警告，不继续比对
+                    resultContainer.innerHTML = '';
+                    const warning = document.createElement('div');
+                    warning.className = 'staff-error-section';
+                    warning.innerHTML = `
+                        <div class="staff-error-title">错误</div>
+                        <p>版本类型不一致，无法进行对比。</p>
+                        <p>版本A类型: ${TYPE_CN[dataA.cat.split('/').pop()]}</p>
+                        <p>版本B类型: ${TYPE_CN[dataB.cat.split('/').pop()]}</p>
+                    `;
+                    resultContainer.appendChild(warning);
+                    return;
+                }
+            }
+
             // 格式化数据
             const formattedA = formatData(rawA);
             const formattedB = formatData(rawB);
@@ -315,12 +492,15 @@
 
             const theme = document.documentElement.dataset.theme || 'light';
             const diffStr = window.Diff.createPatch(
-                `${pageType === 'person' ? '人物' : '角色'}关联差异`,
+                '关联差异',
                 formattedA,
                 formattedB
             );
 
+            console.log(formattedA, formattedB)
+
             new window.Diff2HtmlUI(diffContainer, diffStr, {
+                highlight: false,
                 drawFileList: false,
                 fileListToggle: false,
                 fileContentToggle: false,
@@ -329,8 +509,17 @@
             }).draw();
 
         } catch (error) {
-            resultContainer.innerHTML = `对比失败: ${error.message}`;
-            console.error(error);
+            // 显示错误信息，不隐藏错误
+            resultContainer.innerHTML = '';
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'staff-error-section';
+            errorDiv.innerHTML = `
+                <div class="staff-error-title">错误</div>
+                <p>对比过程中遇到错误: ${error.message}</p>
+                <p>请刷新页面重试，或检查网络连接。</p>
+            `;
+            resultContainer.appendChild(errorDiv);
+            console.error('对比失败:', error);
         }
     }
 

@@ -3,7 +3,7 @@
 @@ -13,16 +13,12 @@
  // @match        https://bgm.tv/user/*/timeline*
  // @match        https://chii.in/user/*/timeline*
- // @icon         https://www.google.com/s2/favicons?sz=64&domain=bgm.tv
+ // @icon         https://bgm.tv/img/favicon.ico
 -// @grant        unsafeWindow
 -// @grant        GM_xmlhttpRequest
 -// @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
