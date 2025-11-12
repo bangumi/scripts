@@ -40,6 +40,8 @@
 // @gf           https://greasyfork.org/zh-CN/scripts/545636
 // ==/UserScript==
 
+/* global ImageCompressor Cropper */
+
 (function () {
     'use strict';
 

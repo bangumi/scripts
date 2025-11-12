@@ -22,6 +22,8 @@
 // @gf           https://greasyfork.org/zh-CN/scripts/552759
 // ==/UserScript==
 
+/* global pako */
+
 (function() {
     'use strict';
 
