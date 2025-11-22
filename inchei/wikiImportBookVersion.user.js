@@ -2,20 +2,32 @@
 // @name         从引进出版社网站获取班固米书籍版本
 // @namespace    wiki.import.book.version
 // @version      0.1
-// @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫
+// @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
 // @author       你
-// @match        https://www.tongli.com.tw/BooksDetail.aspx*
-// @match        https://www.egmanga.com.tw/comic/only.jsp*
-// @match        https://www.tohan.com.tw/product.php*
-// @match        https://www.kadokawa.com.tw/products/*
-// @match        https://www.ching-win.com.tw/product-detail/*
-// @match        https://www.spp.com.tw/SalePage/Index/*
-// @match        https://jd-intl.com/product/*
-// @match        https://book.douban.com/subject/*
-// @match        https://item.jd.com/*
-// @match        https://product.dangdang.com/*
-// @match        https://detail.tmall.com/item.htm?*
-// @grant        none
+// @match        https://www.tongli.com.tw/*
+// @match        https://www.egmanga.com.tw/*
+// @match        https://www.tohan.com.tw/*
+// @match        https://www.kadokawa.com.tw/*
+// @match        https://www.ching-win.com.tw/*
+// @match        https://www.spp.com.tw/*
+// @match        https://jd-intl.com/*
+// @match        https://*.douban.com/*
+// @match        https://*.jd.com/*
+// @match        https://*.dangdang.com/*
+// @match        https://*.tmall.com/*
+// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @connect      tongli.com.tw
+// @connect      egmanga.com.tw
+// @connect      tohan.com.tw
+// @connect      kadokawa.com.tw
+// @connect      ching-win.com.tw
+// @connect      spp.com.tw
+// @connect      jd-intl.com
+// @connect      book.douban.com
+// @connect      item.jd.com
+// @connect      product.dangdang.com
+// @connect      detail.tmall.com
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/556109
 // ==/UserScript==
@@ -53,10 +65,11 @@
         },
         /**
          * @param {string | HTMLElement} el
+         * @param {Document} [doc]
          * @returns {string}
          */
-        getText(el) {
-            if (typeof el === 'string') el = document.querySelector(el);
+        getText(el, doc = document) {
+            if (typeof el === 'string') el = doc.querySelector(el);
             if (!el) return '';
             el = el.cloneNode(true);
             // 当当 .t1
@@ -71,11 +84,19 @@
             btn.dataset.copyBtn = 'true';
             return btn;
         },
+        /**
+         * @param {HTMLElement} el
+         * @returns {string}
+         */
         getCleanTitle(el) {
             if (!el) return '';
             const clone = el.cloneNode(true);
             clone.querySelector('[data-copy-btn]')?.remove();
             return clone.textContent.trim() || '';
+        },
+        createDocFromHtml(html) {
+            const parser = new DOMParser();
+            return parser.parseFromString(html, 'text/html');
         }
     };
 
@@ -84,6 +105,7 @@
      * @param {object} params
      * @param {string} params.detailsText
      * @param {HTMLElement} params.anchorEl
+     * @param {Document} params.doc
      * @returns {string}
      */
     /**
@@ -106,17 +128,17 @@
     /** @type {Record<string, BookConfig>} */
     const configs = {
         '东立版': { // https://www.tongli.com.tw/BooksDetail.aspx?Bd=JC1146001
-            match: 'tongli.com.tw',
+            match: 'tongli.com.tw/BooksDetail.aspx',
             anchorSelector: '.bi_title',
             detailsSelector: '.bi_c',
             fields: {
-                '版本名': () => {
-                    const title = utils.getText('#ContentPlaceHolder1_CBookName');
-                    const seq = utils.getText('#ContentPlaceHolder1_SEQ');
+                '版本名': ({doc}) => {
+                    const title = utils.getText('#ContentPlaceHolder1_CBookName', doc);
+                    const seq = utils.getText('#ContentPlaceHolder1_SEQ', doc);
                     return seq ? `${title} ${seq}` : title;
                 },
-                '价格': () => {
-                    const price = utils.getText('#ContentPlaceHolder1_Price').replace(/\D/g, '');
+                '价格': ({doc}) => {
+                    const price = utils.getText('#ContentPlaceHolder1_Price', doc).replace(/\D/g, '');
                     return price ? `NT$${price}` : '';
                 },
                 '出版社': '東立出版社',
@@ -126,7 +148,7 @@
             }
         },
         '长鸿版': { // https://www.egmanga.com.tw/comic/only.jsp?id1=BH0396
-            match: 'egmanga.com.tw',
+            match: 'egmanga.com.tw/comic/only.jsp',
             anchorSelector: '.caption.col-xs-7 h4',
             detailsSelector: '.caption.col-xs-7',
             fields: {
@@ -138,36 +160,36 @@
             }
         },
         '东贩版': { // https://www.tohan.com.tw/product.php?act=view&cid=150&id=6658
-            match: 'tohan.com.tw',
+            match: 'tohan.com.tw/product.php',
             anchorSelector: '.book-name',
             detailsSelector: '.col.details',
             fields: {
                 '价格': /定價\n\n *([^ ]+)/,
                 '出版社': '台灣東販',
                 '发售日': /出版日期\n\n +([^ ]+)/,
-                '页数': () => utils.getByRegex(utils.getText('#menu3'), /頁數：(\d+)頁/),
+                '页数': ({doc}) => utils.getByRegex(utils.getText('#menu3', doc), /頁數：(\d+)頁/),
                 'ISBN': /ISBN\n\n *([^ ]+)/,
                 '译者': /譯者\n\n *([^ ]+)/
             }
         },
         '台角版': { // https://www.kadokawa.com.tw/products/9786264356435
-            match: 'kadokawa.com.tw',
+            match: 'kadokawa.com.tw/products/',
             anchorSelector: '.Product-title',
             detailsSelector: '.Product-summary',
             fields: {
-                '价格': () => utils.getText('.price-regular.js-price') || utils.getText('.js-price'),
+                '价格': ({doc}) => utils.getText('.price-regular.js-price', doc) || utils.getText('.js-price', doc),
                 '出版社': '台灣角川',
                 '发售日': /上市日期：\s*([^ ]+)/,
                 'ISBN': /ISBN：\s*([^ ]+)/
             }
         },
         '青文版': { // https://www.ching-win.com.tw/product-detail/10510315A
-            match: 'www.ching-win.com.tw',
+            match: 'www.ching-win.com.tw/product-detail/',
             anchorSelector: '.productTitle .title',
             detailsSelector: '.linebox',
             fields: {
-                '价格': () => {
-                    const priceEl = document.querySelector('.pricebox.line .font-red');
+                '价格': ({doc}) => {
+                    const priceEl = doc.querySelector('.pricebox.line .font-red');
                     if (!priceEl) return '';
 
                     const priceText = priceEl.textContent.trim();
@@ -189,11 +211,11 @@
             }
         },
         '尖端版': { // https://www.spp.com.tw/SalePage/Index/11300169
-            match: 'www.spp.com.tw',
+            match: 'www.spp.com.tw/SalePage/Index/',
             anchorSelector: '.salepage-title',
             detailsSelector: '.salepage-short-description',
             fields: {
-                '价格': () => utils.getText('.salepage-suggestprice'),
+                '价格': ({doc}) => utils.getText('.salepage-suggestprice', doc),
                 '出版社': '尖端出版',
                 '发售日': /上市日：\s*([^ ]+)/,
                 'ISBN': /條　碼：\s*([^ ]+)/,
@@ -201,7 +223,7 @@
             }
         },
         '玉皇朝版': { // https://jd-intl.com/product/%e9%9d%92%e4%b9%8b%e8%98%86%e8%91%a6-%e7%ac%ac40%e6%9c%9f-%e5%ae%8c/
-            match: 'jd-intl.com',
+            match: 'jd-intl.com/product/',
             anchorSelector: '.product_title',
             detailsSelector: '.woocommerce-product-details__short-description',
             fields: {
@@ -210,8 +232,8 @@
                     return priceNum ? `HK$${priceNum}` : '';
                 },
                 '出版社': '玉皇朝',
-                '发售日': () => {
-                    const metaEl = document.querySelector('meta[property="article:modified_time"]');
+                '发售日': ({doc}) => {
+                    const metaEl = doc.querySelector('meta[property="article:modified_time"]');
                     const dateStr = metaEl?.content || '';
                     const match = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
                     return match ? match[1] : '';
@@ -220,7 +242,7 @@
             }
         },
         '_豆瓣': { // https://book.douban.com/subject/36799715/
-            match: 'book.douban.com',
+            match: 'book.douban.com/subject/',
             anchorSelector: 'h1',
             detailsSelector: '#info',
             fields: {
@@ -249,12 +271,12 @@
             detailsSelector: '.messbox_info',
             fields: {
                 '语言': '简体中文',
-                '价格': () => utils.getText('#original-price') || utils.getText('#dd-price'),
+                '价格': ({doc}) => utils.getText('#original-price', doc) || utils.getText('#dd-price', doc),
                 '出品方': /，([^，]+)出品/,
                 '出版社': /出版社:\s*([^ \n]+)/,
                 '发售日': /出版时间:\s*([^ \n]+)/,
-                'ISBN': () => {
-                    const detail = utils.getText('#detail_describe');
+                'ISBN': ({doc}) => {
+                    const detail = utils.getText('#detail_describe', doc);
                     const isbn = utils.getByRegex(detail, /ISBN：([^ \n]+)/);
                     return isbn;
                 },
@@ -266,12 +288,12 @@
             anchorSelector: '#p-author',
             detailsSelector: '.goods-base',
             fields: {
-                '版本名': () => {
-                    return document.querySelector('.item.selected')?.dataset.value
-                    || document.querySelector('.sku-title-name')?.textContent || '';
+                '版本名': ({doc}) => {
+                    return doc.querySelector('.item.selected')?.dataset.value
+                    || doc.querySelector('.sku-title-name')?.textContent || '';
                 },
                 '语言': '简体中文',
-                '价格': () => utils.getText('#page_hx_price') || utils.getText('.p_price'),
+                '价格': ({doc}) => utils.getText('#page_hx_price', doc) || utils.getText('.p_price', doc),
                 '出品方': /品牌\s*([^ ]+)/,
                 '出版社': /出版社\s*([^ ]+)/,
                 '页数': /页数\s*([^ ]+)/,
@@ -284,19 +306,17 @@
             }
         },
         '_天猫': { // https://detail.tmall.com/item.htm?abbucket=7&id=952735079569
-            match: 'detail.tmall.com',
+            match: 'detail.tmall.com/item.htm',
             anchorSelector: '[class^="subTitleInnerWrap"]',
             detailsSelector: '.paramsInfoArea',
             fields: {
-                '版本名': () => {
-                    const shortDesc = utils.getText('.paramsInfoArea');
-                    const title = utils.getByRegex(shortDesc, /书名\n([^\n]+)/);
+                '版本名': ({detailsText}) => {
+                    const title = utils.getByRegex(detailsText, /书名\n([^\n]+)/);
                     return title;
                 },
                 '语言': '简体中文',
-                '价格': () => {
-                    const shortDesc = utils.getText('.paramsInfoArea');
-                    const priceNum = utils.getByRegex(shortDesc, /定价\n([^\n]+)/).replace('元', '');
+                '价格': ({detailsText}) => {
+                    const priceNum = utils.getByRegex(detailsText, /定价\n([^\n]+)/).replace('元', '');
                     return priceNum ? `￥${priceNum}` : '';
                 },
                 '出品方': /品牌\n([^\n]+)/,
@@ -309,68 +329,69 @@
         }
     };
 
-    const currentUrl = window.location.href;
-    const [version, config] = Object.entries(configs).find(([, c]) => currentUrl.includes(c.match)) || [];
+    /**
+     * @param {string} url - 目标URL
+     * @param {Document} doc - HTML文档对象
+     * @param {string} [versionKey] - 版本键名
+     * @param {BookConfig} [config] - 配置项
+     * @returns {string|null} 版本信息字符串，失败返回null
+     */
+    const coreExtractVersion = (url, doc, versionKey, config) => {
+        if (!versionKey || !config) {
+            [versionKey, config] = Object.entries(configs).find(([, c]) => url.includes(c.match)) || [];
+        }
+        if (!config) return null;
 
-    if (config) {
-        const generateOutput = (anchorEl) => {
-            const detailsText = config.detailsSelector
-                ? utils.getText(config.detailsSelector)
-                : '';
+        const anchorEl = doc.querySelector(config.anchorSelector);
+        if (!anchorEl) return null;
 
-            const baseFields = {
-                '版本名': '',
-                '别名': '',
-                '语言': '繁体中文',
-                '价格': '',
-                '出品方': '',
-                '出版社': '',
-                '页数': '',
-                'ISBN': '',
-                '译者': '',
-            };
-            const fields = {
-                ...baseFields,
-                ...config.fields,
-                // 版本名缺省：未配置时自动使用通用逻辑
-                '版本名': config.fields['版本名'] || (() => utils.getCleanTitle(anchorEl))
-            };
+        const detailsText = config.detailsSelector
+            ? utils.getText(config.detailsSelector, doc)
+            : '';
 
-            const rawValues = Object.fromEntries(
-                Object.entries(fields).map(([key, value]) => {
-                    let result = '';
-                    if (typeof value === 'function') {
-                        // 传递 anchorEl 参数（适配缺省逻辑和自定义逻辑）
-                        result = value({detailsText, anchorEl}) || '';
-                    } else if (value instanceof RegExp) {
-                        result = utils.getByRegex(detailsText, value);
-                    } else {
-                        result = value || '';
-                    }
-                    return [key, result.trim()];
-                })
-            );
-
-            return {
-                ...rawValues,
-                '发售日': utils.formatDate(rawValues['发售日']),
-                'ISBN': utils.formatISBN(rawValues['ISBN'])
-            };
+        const baseFields = {
+            '版本名': '',
+            '别名': '',
+            '语言': '繁体中文',
+            '价格': '',
+            '出品方': '',
+            '出版社': '',
+            '页数': '',
+            'ISBN': '',
+            '译者': '',
         };
 
-        const addButtonToElement = (anchorEl) => {
-            if (!anchorEl) return false;
+        const fields = {
+            ...baseFields,
+            ...config.fields,
+            '版本名': config.fields['版本名'] || (() => utils.getCleanTitle(anchorEl, doc))
+        };
 
-            if (anchorEl.querySelector('[data-copy-btn]')) return true;
+        const rawValues = Object.fromEntries(
+            Object.entries(fields).map(([key, value]) => {
+                let result = '';
+                if (typeof value === 'function') {
+                    result = value({detailsText, anchorEl, doc}) || '';
+                } else if (value instanceof RegExp) {
+                    result = utils.getByRegex(detailsText, value);
+                } else {
+                    result = value || '';
+                }
+                return [key, result.trim()];
+            })
+        );
 
-            const btn = utils.createBtn(`复制版本`);
-            anchorEl.appendChild(btn);
+        const values = {
+            ...rawValues,
+            '发售日': utils.formatDate(rawValues['发售日']),
+            'ISBN': utils.formatISBN(rawValues['ISBN'])
+        };
 
-            btn.addEventListener('click', () => {
-                const values = generateOutput(anchorEl);
-                const output = `|版本:${
-                    version.startsWith('_') ? `${values['出品方'] || values['出版社']}版` : version
-                }={
+        const versionName = versionKey.startsWith('_') 
+            ? `${values['出品方'] || values['出版社']}版` 
+            : versionKey;
+
+        return `|版本:${versionName}={
 [版本名|${values['版本名'].replace(/(完結?|\(完\)|END)$/, '').trim()}]
 [别名|${values['别名']}]
 [语言|${values['语言']}]
@@ -382,12 +403,105 @@
 [ISBN|${values['ISBN']}]
 [译者|${values['译者']}]
 }`;
+    };
 
-                navigator.clipboard.writeText(output).then(() => {
-                    const original = btn.textContent;
-                    btn.textContent = '已复制!';
-                    setTimeout(() => btn.textContent = original, 1500);
-                });
+    /**
+     * 从URL获取班固米版本信息
+     * @param {string} url - 书籍详情页URL
+     * @returns {Promise<string>}
+     */
+    unsafeWindow.getBgmVersion = function(url) {
+        return new Promise((resolve, reject) => {
+            if (!url || typeof url !== 'string') {
+                reject(new Error('无效的URL'));
+                return;
+            }
+
+            if (url === location.href) {
+                try {
+                    const result = coreExtractVersion(url, document);
+                    if (result) {
+                        resolve(result);
+                    } else {
+                        reject(new Error('无法从当前页面提取版本信息'));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+                return;
+            }
+
+            if (!url.startsWith('http')) {
+                url = (new URL(url, location.href)).toString();
+            }
+
+            const isSupported = Object.values(configs).some(config => url.includes(config.match));
+            if (!isSupported) {
+                reject(new Error('不支持该网站的版本提取'));
+                return;
+            }
+
+            // 使用GM_xmlhttpRequest跨域请求（需要@grant和@connect权限）
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                timeout: 10000,
+                onload: function(response) {
+                    if (response.status >= 200 && response.status < 300) {
+                        try {
+                            const doc = utils.createDocFromHtml(response.responseText);
+                            const result = coreExtractVersion(url, doc);
+                            if (result) {
+                                resolve(result);
+                            } else {
+                                reject(new Error('无法从页面内容提取版本信息'));
+                            }
+                        } catch (err) {
+                            reject(new Error(`解析页面失败: ${err.message}`));
+                        }
+                    } else {
+                        reject(new Error(`请求失败，状态码: ${response.status}`));
+                    }
+                },
+                onerror: function(error) {
+                    reject(new Error(`请求错误: ${error.message}`));
+                },
+                ontimeout: function() {
+                    reject(new Error('请求超时'));
+                }
+            });
+        });
+    };
+
+    const currentUrl = location.href;
+    const [versionKey, config] = Object.entries(configs).find(([, c]) => currentUrl.includes(c.match)) || [];
+
+    if (config) {
+        const addButtonToElement = (anchorEl) => {
+            if (!anchorEl) return false;
+
+            if (anchorEl.querySelector('[data-copy-btn]')) return true;
+
+            const text = '复制版本'
+            const btn = utils.createBtn(text);
+            anchorEl.appendChild(btn);
+
+            btn.addEventListener('click', () => {
+                const output = coreExtractVersion(currentUrl, document, versionKey, config);
+                if (output) {
+                    navigator.clipboard.writeText(output).then(() => {
+                        btn.textContent = '已复制!';
+                        setTimeout(() => btn.textContent = text, 1500);
+                    }).catch(err => {
+                        btn.textContent = '剪贴板复制失败!';
+                        console.error('剪贴板复制失败:', err);
+                    }).finally(() => {
+                        setTimeout(() => btn.textContent = text, 1500);
+                    });
+                } else {
+                    btn.textContent = '提取失败!';
+                    setTimeout(() => btn.textContent = text, 1500);
+                }
             });
             return true;
         };
@@ -404,6 +518,7 @@
             return allAdded;
         };
 
+        // 初始化按钮（找不到元素时轮询）
         if (!initButtons()) {
             const timer = setInterval(() => {
                 if (initButtons()) clearInterval(timer);
