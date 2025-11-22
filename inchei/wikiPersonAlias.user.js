@@ -106,9 +106,6 @@
         document.body.appendChild(btn);
     }
 
-    /**
-     * 文件选择后的统一处理逻辑
-     */
     async function handleFileSelect(e) {
         const file = e.target.files[0];
         if (!file) return;

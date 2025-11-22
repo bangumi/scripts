@@ -26,7 +26,7 @@
                                 : `/img/smiles/tv_500/bgm_${num}.${gifIds.has(num) ? 'gif' : 'png'}`;
                     return `<img src="${url}" smileid="${num + 16}" alt="(bgm${num})"${[124, 125].includes(num) ? ' width="21"' : ''}>`;
                 })
-                .replace(/\(bmo([A-Za-z0-9\-]+)\)/g, (_, code) => {
+                .replace(/\(bmo([A-Za-z0-9-]+)\)/g, (_, code) => {
                     return `<span class="bmo" data-code="(bmo${code})"><canvas class="bmoji-canvas" style="width: 21px; height: 21px;" width="63" height="63"></canvas></span>`;
                 })
                 .replace(/\[img(?:=(\d+),(\d+))?\]([^[]+)\[\/img\]/g, (_, w, h, url) =>

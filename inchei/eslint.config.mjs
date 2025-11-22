@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import jsdoc from "eslint-plugin-jsdoc"
 import globals from "globals";
 import { defineConfig } from "eslint/config";
 import userscripts from "eslint-plugin-userscripts";
@@ -11,7 +12,20 @@ const requireBangumiDomains = await import("./eslint-rules/require-bangumi-domai
   });
 
 export default defineConfig([
-  { files: ["**/*.{js,mjs,cjs}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.browser } },
+  { files: ["**/*.{js,mjs,cjs}"],
+    plugins: { js, jsdoc },
+    extends: [
+      "js/recommended",
+      jsdoc.configs['flat/recommended-error']
+    ],
+    languageOptions: { globals: globals.browser },
+    rules: {
+      "jsdoc/require-jsdoc": "off",
+      "jsdoc/require-property-description": "off",
+      "jsdoc/require-param-description": "off",
+      "jsdoc/require-returns-description": "off",
+    }
+  },
   { files: ["**/*.js"], languageOptions: { sourceType: "script" } },
   { files: ["**/*.mjs"], languageOptions: { sourceType: "module" } },
   {
@@ -59,16 +73,7 @@ export default defineConfig([
     files: ['*.user.js'],
     languageOptions: {
       globals: {
-        GM: "readonly",
-        GM_getValue: "readonly",
-        GM_setValue: "readonly",
-        GM_deleteValue: "readonly",
-        GM_registerMenuCommand: "readonly",
-        GM_unregisterMenuCommand: "readonly",
-        GM_xmlhttpRequest: "readonly",
-        GM_openInTab: "readonly",
-        GM_getResourceText: "readonly",
-        unsafeWindow: "readonly"
+        ...globals.greasemonkey,
       }
     }
   },

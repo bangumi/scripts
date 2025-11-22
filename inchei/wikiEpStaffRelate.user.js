@@ -115,7 +115,7 @@
         "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
         "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
     };
-    const regex_sym = /[\uff1a\u003A【】\/／、、＆\u0026♦◆■=]/g;
+    const regex_sym = /[\uff1a\u003A【】/／、、＆\u0026♦◆■=]/g;
     // #endregion
 
     // #region
@@ -634,11 +634,11 @@
         editSummaryInput.value = `根据${epLabelsStr}章节简介填写参与`;
     }
 
-    function addRelatedPerson({ id, name }, roleId) {
-        subjectList[id] = { id, name, url_mod: 'person' }
-        addRelateSubject(id, 'submitForm');
-        $('#crtRelateSubjects select').eq(0).val(roleId);
-    }
+    // function addRelatedPerson({ id, name }, roleId) {
+    //     subjectList[id] = { id, name, url_mod: 'person' }
+    //     addRelateSubject(id, 'submitForm');
+    //     $('#crtRelateSubjects select').eq(0).val(roleId);
+    // }
 
     // 按照职位排序，集数排序
     function formatRecords(records) {
@@ -871,10 +871,11 @@
     // #region https://bgm.tv/dev/app/3265 MIT modified
     /**
      * 从动画章节简介中提取制作人员信息
-     * @param {Object.<string, string>} epDescs - 章节数据，键为集数名，值为简介文本
-     * @returns {Array} 提取结果数组
-     * @returns {Object.<string, Object.<string, string[]>>} 0 - 制作人员信息，结构为 {人物: {职位: [集数]}}
-     * @returns {string[]} 1 - 未匹配到任何人员的集数名数组
+     * @param {Record<string, string>} epDescs - 章节数据，键为集数名（如 "1"），值为简介文本
+     * @returns {[
+     *   Record<string, Record<string, string[]>>,
+     *   string[]
+     * ]} [制作人员信息：{ 人物名称: { 职位名称: [对应集数名数组] } }, 未匹配到任何人员的集数名数组]
      */
     function extractStaffInfo(epDescs) {
         const result = {};
@@ -1140,7 +1141,8 @@
     /**
      * 自动搜索人物并关联到条目
      * @param {string} name - 要搜索的人物名称
-     * @param {number} job - 职位ID
+     * @param {number} role - 职位ID
+     * @returns {void}
      */
     async function autoSearchAndRelate(name, role) {
         try {
