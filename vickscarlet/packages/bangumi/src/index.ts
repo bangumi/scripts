@@ -12,26 +12,17 @@ export const whoami = (() => {
         // 超展开在 iframe 中， 可以用 window.parent 获得父级窗口
         let nid
         try {
-            nid =
-                window.CHOBITS_UID ??
-                window.parent.CHOBITS_UID ??
-                CHOBITS_UID ??
-                0
+            nid = window.CHOBITS_UID ?? window.parent.CHOBITS_UID ?? CHOBITS_UID ?? 0
         } catch (e) {
             nid = 0
         }
-        const dockA =
-            window.parent.document.querySelector<HTMLAnchorElement>(
-                '#dock li.first a'
-            )
+        const dockA = window.parent.document.querySelector<HTMLAnchorElement>('#dock li.first a')
         if (dockA) {
             const id = dockA.href.split('/').pop()!
             return (cache = { id, nid })
         }
         const bannerAvatar =
-            window.parent.document.querySelector<HTMLAnchorElement>(
-                '.idBadgerNeue> .avatar'
-            )
+            window.parent.document.querySelector<HTMLAnchorElement>('.idBadgerNeue> .avatar')
         if (bannerAvatar) {
             const id = bannerAvatar.href.split('/').pop()!
             return (cache = { id, nid })
@@ -42,4 +33,12 @@ export const whoami = (() => {
 export function isMe(id?: string | null) {
     if (!id) return false
     return id == whoami()?.id
+}
+export function getGh() {
+    return document
+        .querySelector<HTMLAnchorElement>(
+            'ul#badgeUserPanel > li > a[onclick="return confirm(\'登出 Bangumi 账户？\')"]'
+        )
+        ?.href.split('/')
+        .pop()
 }

@@ -1,0 +1,39 @@
+{
+  "name": "@b38dev/gadget-deprecated-notify",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "1.0.0",
+  "description": "组件弃用提醒",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "out": "gadget_deprecated_notify.user.js",
+  "userscript": {
+    "name": "Bangumi 组件弃用提醒",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/gadget_deprecated_notify",
+    "match": [
+      "*://bgm.tv/*",
+      "*://bangumi.tv/*",
+      "*://chii.in/*"
+    ]
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@b38dev/bangumi": "workspace:^",
+    "@b38dev/dom": "workspace:^",
+    "@b38dev/database": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vite-plugin-monkey": "^7.1.4",
+    "vite-plugin-svgr": "^4.5.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.13"
+  }
+}

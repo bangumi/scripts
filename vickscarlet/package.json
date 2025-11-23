@@ -24,6 +24,8 @@
     "build:likes-firework": "pnpm --filter @b38dev/likes-firework build",
     "dev:wiki-editor": "pnpm --filter @b38dev/wiki-editor dev",
     "build:wiki-editor": "pnpm --filter @b38dev/wiki-editor build",
+    "dev:gadget-deprecated-notify": "pnpm --filter @b38dev/gadget-deprecated-notify dev",
+    "build:gadget-deprecated-notify": "pnpm --filter @b38dev/gadget-deprecated-notify build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },
