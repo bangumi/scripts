@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
-// @version      0.2.2
+// @version      0.2.3
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -155,6 +155,8 @@
         const name = params.get('name');
         document.querySelector('#crt_name').value = name;
     } else if (location.pathname.match(/^\/subject\/\d+\/add_related\/person$/)) {
+        if (!document.querySelector('.focus').classList.contains('anime')) return;
+
         const subjectId = location.pathname.split('/')[2];
         const btn = document.createElement('button');
         btn.textContent = '获取章节简介填写参与';
