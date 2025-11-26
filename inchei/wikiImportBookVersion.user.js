@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         从引进出版社网站获取班固米书籍版本
 // @namespace    wiki.import.book.version
-// @version      0.1
+// @version      0.2.0
 // @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
 // @author       你
 // @match        https://www.tongli.com.tw/*
@@ -29,9 +29,11 @@
 // @connect      product.dangdang.com
 // @connect      detail.tmall.com
 // @license      MIT
+// @require      https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js
 // @gf           https://greasyfork.org/zh-CN/scripts/556109
 // ==/UserScript==
 
+/* global OpenCC */
 /* eslint-disable no-irregular-whitespace */
 
 (function() {
@@ -387,13 +389,21 @@
             'ISBN': utils.formatISBN(rawValues['ISBN'])
         };
 
+        values['版本名'] = values['版本名'].replace(/^[【(]限[)】]|(完結?|\(完\)|END)$/g, '').trim();
+
         const versionName = versionKey.startsWith('_') 
             ? `${values['出品方'] || values['出版社']}版` 
             : versionKey;
 
         return `|版本:${versionName}={
-[版本名|${values['版本名'].replace(/(完結?|\(完\)|END)$/, '').trim()}]
-[别名|${values['别名']}]
+[版本名|${values['版本名']}]
+[别名|${values['别名'] || (() => {
+    const converted = ({
+        '繁体中文': (() => OpenCC.Converter({ from: 'tw', to: 'cn' })(values['版本名']))(),
+        '简体中文': (() => OpenCC.Converter({ from: 'cn', to: 'tw' })(values['版本名']))(),
+    })[values['语言']];
+    return converted === values['版本名'] ? '' : converted;
+})()}]
 [语言|${values['语言']}]
 [价格|${values['价格']}]
 [出品方|${values['出品方']}]
