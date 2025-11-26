@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序
 // @namespace    https://bgm.tv/group/topic/409246
-// @version      0.6.5
+// @version      0.6.6
 // @description  为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 // @author       mmm
 // @match        http*://bgm.tv/index/*
@@ -449,7 +449,7 @@
                 }
             }
 
-            const toIdxAnchor = ` <a href="/index/${indexId}#:~:text=${encodeURIComponent(added.querySelector('a.l').textContent.trim())}" target="_blank" rel="nofollow external noopener noreferrer">点击查看</href>`;
+            const toIdxAnchor = ` <a href="/index/${indexId}#:~:text=${encodeURIComponent(added.querySelector('h3 > a.l').textContent.trim())}" target="_blank" rel="nofollow external noopener noreferrer">点击查看</href>`;
             const successTip = idxTitle ? `已收集至目录「${idxTitle}」～${toIdxAnchor}` : '添加成功！';
             const modifyFailedTip = `添加成功，但修改失败了T T${idxTitle ? toIdxAnchor : ''}`
             chiiLib.ukagaka.presentSpeech(modifyFailed ? modifyFailedTip : successTip, true);
