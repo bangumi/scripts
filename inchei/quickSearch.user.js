@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         班固米右上角快速搜索
 // @namespace    https://bgm.tv/group/topic/409735
-// @version      0.1.7
+// @version      0.1.8
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
 // @icon         https://bgm.tv/img/favicon.ico
@@ -67,6 +67,7 @@
             overflow-y: auto;
             max-height: 300px;
             scrollbar-width: thin;
+            overscroll-behavior: contain;
         }
 
         html[data-theme="dark"] #suggestionBox {
