@@ -1,6 +1,6 @@
 # [inchei](https://bgm.tv/user/inchei)
 
-## bangumi 可拖动弹框 `2.0.2`
+## bangumi 可拖动弹框 `2.1.0`
 使 bangumi 的 thickbnox 可拖动
 
 - 讨论页：https://bgm.tv/group/topic/345086
@@ -11,7 +11,7 @@
 | Greasy Fork | 无 |
 | 组件 | [130](https://bgm.tv/dev/app/130) |
 
-## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.5`
+## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.6`
 为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 
 - 讨论页：https://bgm.tv/group/topic/409246
@@ -42,7 +42,7 @@
 | Greasy Fork | 无 |
 | 组件 | [4701](https://bgm.tv/dev/app/4701) |
 
-## 班固米右上角快速搜索 `0.1.7`
+## 班固米右上角快速搜索 `0.1.8`
 右上角搜索框输入文字后快速显示部分搜索结果
 
 - 讨论页：https://bgm.tv/group/topic/409735
@@ -186,7 +186,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 根据章节简介关联制作人员参与 `0.2.1`
+## 根据章节简介关联制作人员参与 `0.2.3`
 从章节页或人物关联页根据章节简介关联制作人员参与
 
 | 载点 | 链接 |
@@ -194,6 +194,15 @@
 | GitHub | [wikiEpStaffRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEpStaffRelate.user.js?raw=true) |
 | Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
 | 组件 | [4948](https://bgm.tv/dev/app/4948) |
+
+## 从引进出版社网站获取班固米书籍版本 `0.2.0`
+支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiImportBookVersion.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportBookVersion.user.js?raw=true) |
+| Greasy Fork | [556109](https://greasyfork.org/zh-CN/scripts/556109) |
+| 组件 | 无 |
 
 ## NDL 添加条目到 bangumi `0.1`
 在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
@@ -223,6 +232,15 @@
 | GitHub | [wikiPersonAlias.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonAlias.user.js?raw=true) |
 | Greasy Fork | [552759](https://greasyfork.org/zh-CN/scripts/552759) |
 | 组件 | 无 |
+
+## 维基关联历史对比差异 `0.2.0`
+比较条目-人物/角色、人物-条目关联项目的增删修改
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiRelDiff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiRelDiff.user.js?raw=true) |
+| Greasy Fork | [554524](https://greasyfork.org/zh-CN/scripts/554524) |
+| 组件 | [5040](https://bgm.tv/dev/app/5040) |
 
 ## Bangumi wiki 图片上传增强 `1.4.4`
 支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览

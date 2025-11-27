@@ -3,6 +3,7 @@ import jsdoc from "eslint-plugin-jsdoc"
 import globals from "globals";
 import { defineConfig } from "eslint/config";
 import userscripts from "eslint-plugin-userscripts";
+import baselineJs from "eslint-plugin-baseline-js";
 
 const requireBangumiDomains = await import("./eslint-rules/require-bangumi-domains.mjs")
   .then(m => m.default)
@@ -36,6 +37,7 @@ export default defineConfig([
   {
     files: ['*.{user,gadget}.js'],
     plugins: {
+      "baseline-js": baselineJs,
       userscripts: {
         rules: userscripts.rules
       },
@@ -67,7 +69,8 @@ export default defineConfig([
       userscriptVersions: {
         violentmonkey: '*'
       }
-    }
+    },
+    ...baselineJs.configs.recommended({ available: "widely", level: "warn" })
   },
   {
     files: ['*.user.js'],

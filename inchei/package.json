@@ -29,6 +29,7 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "eslint": "^9.36.0",
+    "eslint-plugin-baseline-js": "^0.4.2",
     "eslint-plugin-jsdoc": "^61.4.0",
     "eslint-plugin-userscripts": "^0.5.6",
     "globals": "^16.4.0",
