@@ -38,6 +38,9 @@
 (function () {
     'use strict';
 
+    const formhash = () => document.querySelector('input[name="formhash"]')?.value;
+    if (!formhash) return;
+
     // #region 样式
     const style = document.createElement('style');
     style.textContent = /* css */`
@@ -347,23 +350,11 @@
     };
 
     const myUsername = document.querySelector('#dock a').href.split('/').pop();
-    let formhash;
-    const getFormhash = async () => {
-        if (!formhash) { // 非目录页且过去未创建过目录时
-            const html = await fetchGet('/index/create');
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            formhash = doc.querySelector('input[name="formhash"]').value;
-        }
-        return formhash;
-    }
 
     const getDoc = (html) => new DOMParser().parseFromString(html, 'text/html');
     const getIndices = async (forceRefresh = false) => {
         const cache = JSON.parse(sessionStorage.getItem('user_indices') || 'null');
-        if (!forceRefresh && cache?.formhash) {
-            formhash = cache.formhash;
-            return cache.data;
-        }
+        if (!forceRefresh && cache) return cache;
 
         const allIndices = [];
         let currentUrl = `/user/${myUsername}/index?add_related=1`;
@@ -381,8 +372,6 @@
 
                 allIndices.push(...currentPageIndices);
 
-                formhash ||= new URLSearchParams(indexLinks[0]?.href).get('gh');
-
                 const nextPageLink = doc.querySelector('.page_inner a:nth-last-child(1)');
                 if (nextPageLink) {
                     currentUrl = nextPageLink.href;
@@ -391,10 +380,7 @@
                 }
             }
 
-            sessionStorage.setItem('user_indices', JSON.stringify({
-                ...(formhash ? { formhash } : {}),
-                data: allIndices
-            }));
+            sessionStorage.setItem('user_indices', JSON.stringify(allIndices));
 
             return allIndices;
         } catch (e) {
@@ -408,14 +394,14 @@
 
     const addItem = async (add_related, indexId) => {
         const url = `/index/${indexId}/add_related`;
-        const body = { formhash: await getFormhash(), add_related, submit: '添加' };
+        const body = { formhash, add_related, submit: '添加' };
         const result = await fetchPost(url, body, body => new URLSearchParams(body));
         return result;
     };
 
     const modifyItem = async (id, content, order) => {
         const url = `/index/related/${id}/modify`;
-        const body = { formhash: await getFormhash(), content, order, submit: '提交' };
+        const body = { formhash, content, order, submit: '提交' };
         const result = await fetchPost(url, body, body => new URLSearchParams(body));
         return result;
     };
@@ -465,7 +451,7 @@
 
     const createIndex = async (title, desc) => {
         await fetchPost('/index/create', {
-            formhash: await getFormhash(),
+            formhash,
             title: title.trim(),
             desc: desc.trim(),
             submit: '创建目录'
@@ -475,9 +461,6 @@
 
     // #region 目录页
     if (location.pathname.startsWith('/index/')) {
-        formhash = document.querySelector('input[name="formhash"]')?.value;
-        if (!formhash) return;
-
         const indexId = location.pathname.split('/')[2];
         const boxes = document.querySelectorAll('.newIndexSection');
 
