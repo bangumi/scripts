@@ -24,8 +24,12 @@
     }
     const myUsername = document.querySelector('#dock a').href.split('/').pop();
     const style = document.createElement('style');
+    const css = (strings) => strings.join('');
     const refreshStyle = () => {
-        style.textContent = /* css */`
+        style.textContent = css`
+            .commented a.epBtnQueue {
+                background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
+            }
             a.load-epinfo.epBtnWatched,
             .prg_list.load-all a.epBtnAir,
             .prg_list.load-all a.epBtnQueue {
@@ -35,6 +39,13 @@
                 opacity: 1;
                 background: ${colors.watched};
             }
+            html[data-theme="dark"] .commented a.epBtnAir {
+                background: rgb(from ${colors.air} r g b / 90%);
+            }
+            html[data-theme="dark"] .commented a.epBtnQueue {
+                background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
+            }
+
             .uncommented a.load-epinfo.epBtnWatched,
             .prg_list.load-all .commented a.epBtnAir,
             .prg_list.load-all .commented a.epBtnQueue,
@@ -45,17 +56,8 @@
             .commented a.load-epinfo.epBtnAir {
                 background: ${colors.air};
             }
-            .commented a.epBtnQueue {
-                background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
-            }
             html[data-theme="dark"] .commented a.load-epinfo.epBtnWatched {
                 background: ${colors.watched};
-            }
-            html[data-theme="dark"] .commented a.epBtnAir {
-                background: rgb(from ${colors.air} r g b / 90%);
-            }
-            html[data-theme="dark"] .commented a.epBtnQueue {
-                background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
             }
             .cloned_mine{
                 display: block !important;
@@ -89,8 +91,8 @@
                 border-radius: 5px;
                 -moz-background-clip: padding;
                 -webkit-background-clip: padding-box;
-                background-clip: padding-box;
                 background: #FAFAFA;
+                background-clip: padding-box;
             }
             html[data-theme="dark"] .subject_my_comments_section {
                 background: #353535;

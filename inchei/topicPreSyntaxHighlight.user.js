@@ -38,7 +38,8 @@
 
         // 添加自定义样式
         const customStyles = document.createElement('style');
-        customStyles.textContent = /* css */`
+        const css = (strings) => strings.join('');
+        customStyles.textContent = css`
             .codeHighlight {
                 position: relative;
                 border: 1px solid #ddd;
@@ -53,6 +54,11 @@
                 border-radius: 0 0 5px 5px;
                 font-family: monospace;
                 scrollbar-width: thin;
+                counter-reset: line;
+                position: relative;
+                display: block;
+                max-height: 400px;
+                padding-right: 100px !important;
             }
             .codeHighlight .top-bar {
                 display: flex;
@@ -60,13 +66,6 @@
                 align-items: center;
                 padding: 5px 10px;
                 font-size: 12px;
-            }
-            .codeHighlight pre {
-                counter-reset: line;
-                position: relative;
-                display: block;
-                max-height: 400px;
-                padding-right: 100px !important;
             }
             .codeHighlight .copy-button {
                 position: absolute;
@@ -89,8 +88,8 @@
                 .codeHighlight .copy-button {
                     opacity: 0;
                 }
-                .codeHighlight:hover .copy-button,
-                .copy-button:focus {
+                .copy-button:focus, 
+                .codeHighlight:hover .copy-button {
                     opacity: 1;
                 }
             }

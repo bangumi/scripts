@@ -17,7 +17,8 @@
 
     // 添加样式
     const style = document.createElement('style');
-    style.textContent = `
+    const css = (strings) => strings.join('');
+    style.textContent = css`
         .position-helper-container {
             margin: 10px 0;
             display: flex;

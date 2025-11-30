@@ -19,44 +19,35 @@
     'use strict';
 
     const style = document.createElement('style');
-    style.innerHTML = `
-        div.userSynchronize.userSynchronizeSpecial {
-            #subjectList {
-                .tip {
-                    color: #666;
-                }
-                li:hover small {
-                    color: #EEE;
-                }
-                img.avatar {
-                    border-radius: 5px;
-                }
-            }
-            input[type=search]:focus {
-                &:focus {
-                    outline: none;
-                }
-            }
-            select {
-                color: #222;
-            }
+    const css = (strings) => strings.join('');
+    style.innerHTML = css`
+        div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
+            color: #666;
         }
-        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial {
-            #subjectList {
-                .tip {
-                    color: #d8d8d8;
-                }
-                small {
-                    color: #999;
-                }
-                li:hover small {
-                    color: #EEE;
-                }
-            }
-            select {
-                color: #e0e0e1;
-            }
+        div.userSynchronize.userSynchronizeSpecial #subjectList li:hover small {
+            color: #EEE;
         }
+        div.userSynchronize.userSynchronizeSpecial #subjectList img.avatar {
+            border-radius: 5px;
+        }
+        div.userSynchronize.userSynchronizeSpecial input[type=search]:focus {
+            outline: none;
+        }
+        div.userSynchronize.userSynchronizeSpecial select {
+            color: #222;
+        }
+        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
+            color: #d8d8d8;
+        }
+        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList small {
+            color: #999;
+        }
+        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList li:hover small {
+            color: #EEE;
+        }
+        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial select {
+            color: #e0e0e1;
+        }    
     `;
     document.body.append(style);
 

@@ -57,8 +57,9 @@
   };
 
   const style = document.createElement('style');
+  const css = (strings) => strings.join('');
   function updateStyle(shouldntNetabare) {
-    style.textContent = /* css */`
+    style.textContent = css`
       .skeleton {
         background-color: #e0e0e0;
         border-radius: 4px;
@@ -99,7 +100,7 @@
         overflow: auto;
         scrollbar-width: thin;
       }
-      ${shouldntNetabare ? /* css */`
+      ${shouldntNetabare ? css`
       .netabare-comment-container .netabare-comment {
         filter: blur(4px);
         transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
@@ -109,7 +110,7 @@
         clip-path: inset(0);
         transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
       }` : ''}
-      ${shouldntNetabare ? /* css */`
+      ${shouldntNetabare ? css`
       .netabare-comment-container:is(:hover, :focus) .netabare-comment {
         filter: blur(0);
       }

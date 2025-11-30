@@ -43,18 +43,8 @@
 
     // #region 样式
     const style = document.createElement('style');
-    style.textContent = /* css */`
-        ul.ajaxSubjectList li ul.prg_list li {
-            border-bottom: none;
-            border-top: none;
-            padding: 0;
-        }
-        ul.ajaxSubjectList li:hover ul.prg_list li a {
-            color: #06C;
-        }
-        ul.ajaxSubjectList li a.avatar {
-            transition: 0ms;
-        }
+    const css = (strings) => strings.join('');
+    style.textContent = css`
         #indexSelectorWrapper {
             display: flex;
             align-items: center;
@@ -108,22 +98,6 @@
             cursor: pointer;
         }
         /* 搜索选择器样式 */
-        html[data-theme="dark"] #indexSelectorWrapper .dropdown-icon::before,
-        html[data-theme="dark"] #indexSelectorWrapper .dropdown-icon::after {
-            background-color: #aaa;
-        }
-        html[data-theme="dark"] #indexSelectorWrapper .dropdown-menu {
-            background: rgba(80, 80, 80, 0.7);
-            color: rgba(255, 255, 255, .7);
-        }
-        html[data-theme="dark"] #indexSelectorWrapper .search-box {
-            border-bottom-color: #444;
-        }
-        html[data-theme="dark"] #indexSelectorWrapper .search-box input {
-            background-color: #202122;
-            color: #e0e0e0;
-            border-color: #5c5c5c;
-        }
         #indexSelectorWrapper .custom-select {
             width: 100%;
             position: relative;
@@ -183,10 +157,6 @@
         #indexSelectorWrapper .dropdown-menu.show {
             display: block;
         }
-        #indexSelectorWrapper .search-box {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
         #indexSelectorWrapper .search-box input {
             width: 100%;
             padding: 6px;
@@ -194,6 +164,10 @@
             border-radius: 3px;
             box-sizing: border-box;
             font-size: 15px;
+        }
+        #indexSelectorWrapper .search-box {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
         }
         #indexSelectorWrapper .option-list {
             list-style: none;
@@ -208,6 +182,22 @@
         #indexSelectorWrapper .option-item:hover {
             background-color: #e9f5ff;
             color: #007bff;
+        }
+        html[data-theme="dark"] #indexSelectorWrapper .dropdown-icon::before,
+        html[data-theme="dark"] #indexSelectorWrapper .dropdown-icon::after {
+            background-color: #aaa;
+        }
+        html[data-theme="dark"] #indexSelectorWrapper .dropdown-menu {
+            background: rgba(80, 80, 80, 0.7);
+            color: rgba(255, 255, 255, .7);
+        }
+        html[data-theme="dark"] #indexSelectorWrapper .search-box {
+            border-bottom-color: #444;
+        }
+        html[data-theme="dark"] #indexSelectorWrapper .search-box input {
+            background-color: #202122;
+            color: #e0e0e0;
+            border-color: #5c5c5c;
         }
         html[data-theme="dark"] #indexSelectorWrapper .option-item:hover {
             background-color: #2d3b4d;
@@ -252,6 +242,18 @@
             color: white !important;
         }
 
+        ul.ajaxSubjectList li ul.prg_list li {
+            border-bottom: none;
+            border-top: none;
+            padding: 0;
+        }
+        ul.ajaxSubjectList li:hover ul.prg_list li a {
+            color: #06C;
+        }
+        ul.ajaxSubjectList li a.avatar {
+            transition: 0ms;
+        }
+
         .custom-search-wrapper {
             width: fit-content;
             margin: auto;
@@ -266,7 +268,6 @@
             width: 120px;
             -webkit-appearance: none;
             -moz-appearance: none;
-            box-shadow: none;
             background: transparent !important;
             line-height: 20px;
             border: none;
@@ -292,7 +293,7 @@
         }
 
         .custom-search-btn {
-            text-wrap: nowrap;
+            white-space: nowrap;
             width: fit-content;
             height: fit-content;
             border: none;

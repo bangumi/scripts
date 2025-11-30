@@ -226,7 +226,8 @@
         }
 
         const style = document.createElement('style');
-        style.textContent = `
+        const css = (strings) => strings.join('');
+        style.textContent = css`
             #crtRelateSubjects li:target {
                 background-color: rgba(165, 255, 165, 0.4) !important;
                 scroll-margin-block-start: 60px;
@@ -255,7 +256,7 @@
                 border: 1px solid rgba(255, 153, 0, 0.3);
                 border-radius: 8px;
                 color: #856404;
-                word-break: break-word;
+                overflow-wrap: break-word;
             }
             #wikiEpRelate .staff-warning-title {
                 font-size: 14px;
@@ -314,7 +315,7 @@
                 color: inherit !important;
                 text-decoration: none;
                 transition: background 0.2s ease;
-                word-break: break-word;
+                overflow-wrap: break-word;
                 position: relative;
             }
 

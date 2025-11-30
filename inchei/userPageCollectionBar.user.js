@@ -27,7 +27,8 @@
 
     // 添加样式（包含tooltip样式）
     const style = document.createElement('style');
-    style.textContent = /* css */`
+    const css = (strings) => strings.join('');
+    style.textContent = css`
         html {
             --bar-bg-color: rgba(0, 0, 0, 0.05);
             --bar-color: #555;
@@ -42,6 +43,14 @@
             gap: 2px;
             margin-inline: 8px;
             margin-block: 5px;
+        }
+        .status-bar {
+            display: flex;
+            height: 10px;
+            border-radius: 3px;
+            overflow: hidden;
+            transition: width 0.3s;
+            min-width: 10px; /* 设置最小宽度，确保圆角显示 */
         }
         .category-container {
             display: flex;
@@ -63,14 +72,6 @@
         }
         .category-title {
             color: var(--bar-color);
-        }
-        .status-bar {
-            display: flex;
-            height: 10px;
-            border-radius: 3px;
-            overflow: hidden;
-            transition: width 0.3s;
-            min-width: 10px; /* 设置最小宽度，确保圆角显示 */
         }
         .status-segment {
             height: 100%;

@@ -41,7 +41,8 @@
     const sfwq = '，受限条目？';
 
     const styleSheet = document.createElement("style");
-    styleSheet.innerText = /* css */`
+    const css = (strings) => strings.join('');
+    styleSheet.innerText = css`
         .ccf-wrapper ~ .ccf-wrapper::before { /* 用 ~ 不用 + 避免与其他组件冲突 */
             content: "·";
             color: #999;
@@ -87,14 +88,14 @@
             cursor: text;
             display: none;
         }
+        html[data-theme="dark"] .ccf-comment-popup {
+            background: rgba(80, 80, 80, 0.7);
+            color: rgba(255, 255, 255, .7);
+        }
         .ccf-comment:hover .ccf-comment-popup,
         .ccf-comment:focus .ccf-comment-popup,
         .ccf-comment:active .ccf-comment-popup {
             display: block;
-        }
-        html[data-theme="dark"] .ccf-comment-popup {
-            background: rgba(80, 80, 80, 0.7);
-            color: rgba(255, 255, 255, .7);
         }
         .loader {
             margin-left: 5px;

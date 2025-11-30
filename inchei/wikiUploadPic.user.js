@@ -47,9 +47,11 @@
 
 // #region 样式与DOM元素初始化
     // 注入必要的CSS样式
-    const css = `
+    const css = (strings) => strings.join('');
+
+    const style = document.createElement('style');
+    style.textContent = css`
         .bgm-preview-container {
-            display: flex;
             gap: 15px;
             margin-bottom: 10px;
             flex-wrap: wrap;
@@ -163,9 +165,6 @@
             z-index: -1;
         }
     `;
-
-    const style = document.createElement('style');
-    style.textContent = css;
     document.head.appendChild(style);
 
     // 添加Cropper.js CSS

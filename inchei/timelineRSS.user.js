@@ -31,7 +31,8 @@
   'use strict';
 
   const style = document.createElement('style');
-  style.textContent = /* css */`
+  const css = (strings) => strings.join('');
+  style.textContent = css`
   .skeleton {
     background-color: #e0e0e0;
     border-radius: 4px;

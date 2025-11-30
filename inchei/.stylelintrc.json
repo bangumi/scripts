@@ -1,0 +1,16 @@
+{
+  "extends": "stylelint-config-recommended",
+  "customSyntax": "postcss-styled-syntax",
+  "defaultSeverity": "warning",
+  "files": ["*.{user,gadget}.js"],
+  "formatter": "compact",
+  "plugins": ["stylelint-plugin-use-baseline"],
+  "rules": {
+    "plugin/use-baseline": [
+      true,
+      {
+        "available": "widely"
+      }
+    ]
+  }
+}

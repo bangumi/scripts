@@ -33,7 +33,8 @@
     document.querySelector('#searchSuggestions')?.remove();
 
     const styleSheet = document.createElement("style");
-    styleSheet.innerText = /* css */`
+    const css = (strings) => strings.join('');
+    styleSheet.innerText = css`
         #searchOverlay {
             position: absolute;
             top: calc(100% + 5px);
