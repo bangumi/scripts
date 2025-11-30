@@ -420,7 +420,7 @@
             const parser = new DOMParser();
             const addedDOM = parser.parseFromString(addedHTML, 'text/html');
             let added = getAdded(cat, subjectId, addedDOM);
-            if (!added) throw Error('添加失败');
+            if (!added) throw Error('未找到添加的元素');
             let modifyFailed = false;
 
             if (content || !isNaN(order)) {
@@ -434,7 +434,7 @@
                 }
             }
 
-            const toIdxAnchor = ` <a href="/index/${indexId}#:~:text=${encodeURIComponent(added.querySelector('h3 > a.l').textContent.trim())}" target="_blank" rel="nofollow external noopener noreferrer">点击查看</href>`;
+            const toIdxAnchor = ` <a href="/index/${indexId}#:~:text=${encodeURIComponent(added.querySelector(`a.l[href="${add_related}"]`).textContent.trim())}" target="_blank" rel="nofollow external noopener noreferrer">点击查看</a>`;
             const successTip = idxTitle ? `已收集至目录「${idxTitle}」～${toIdxAnchor}` : '添加成功！';
             const modifyFailedTip = `添加成功，但修改失败了T T${idxTitle ? toIdxAnchor : ''}`
             chiiLib.ukagaka.presentSpeech(modifyFailed ? modifyFailedTip : successTip, true);
