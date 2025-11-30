@@ -38,7 +38,7 @@
 (function () {
     'use strict';
 
-    const formhash = () => document.querySelector('input[name="formhash"]')?.value;
+    const formhash = document.querySelector('input[name="formhash"]')?.value;
     if (!formhash) return;
 
     // #region 样式
@@ -407,6 +407,7 @@
         return result;
     };
 
+    const getAdded = (cat, subjectId, dom=document) => dom.querySelector(`[href="/${cat}/${subjectId}"]`)?.closest('[id^="item_"], [attr-index-related]');
     const addAndModify = async (cat, subjectId, indexId, content, order, idxTitle = '') => {
         const add_related = `/${cat}/${subjectId}`;
         const ukagaka = document.querySelector('#robot');
@@ -417,11 +418,8 @@
             const addedHTML = await addItem(add_related, indexId);
 
             const parser = new DOMParser();
-            const query = `[href="/${cat}/${subjectId}"]`;
-            const getAdded = dom => dom.querySelector(query)?.closest('[id^="item_"], [attr-index-related]');
-
             const addedDOM = parser.parseFromString(addedHTML, 'text/html');
-            let added = getAdded(addedDOM);
+            let added = getAdded(cat, subjectId, addedDOM);
             if (!added) throw Error('添加失败');
             let modifyFailed = false;
 
@@ -544,12 +542,11 @@
             input.after(makeTip('评价：'), document.createElement('br'), contentTextarea, document.createElement('br'), makeTip('排序：'), document.createElement('br'), orderInput);
 
             const newRelatedForm = box.querySelector('#newIndexRelatedForm');
-            newRelatedForm.addEventListener('submit', (e) => {
+            newRelatedForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
                 const ukagaka = document.querySelector('#robot');
                 ukagaka.style.zIndex = '103';
-                chiiLib.ukagaka.presentSpeech('添加中，请稍候...');
                 const v = input.value.trim();
                 let subjectId;
                 try {
@@ -561,7 +558,13 @@
                     subjectId = add_related.split('/').pop();
                 }
 
-                addAndModify(cat, subjectId, indexId, contentTextarea.value.trim(), parseInt(orderInput.value)).then(added => {
+                let added = getAdded(cat, subjectId);
+                if (added) {
+                    chiiLib.ukagaka.presentSpeech('已经添加过啦！', true);
+                    setTimeout(() => ukagaka.style.zIndex = '90', 3500);
+                } else {
+                    added = await addAndModify(cat, subjectId, indexId, contentTextarea.value.trim(), parseInt(orderInput.value));
+                    if (!added) return;
                     const neibourSelector = added.id ? candidate => `#${candidate.id}`
                         : candidate => `[attr-index-related="${candidate.getAttribute('attr-index-related')}"]`;
                     const modifyBtn = added.querySelector('a.tb_idx_rlt');
@@ -627,18 +630,17 @@
                         return false;
                     });
                     /* eslint-enable */
+                }
 
-                    added.scrollIntoView({ behavior: 'smooth' });
-                    added.style.boxShadow = '0 0 8px #0084b4';
-                    added.style.position = 'relative'; // subject 以外
-                    added.style.zIndex = '2'; // subject
-                    setTimeout(() => {
-                        added.style.boxShadow = '';
-                        added.style.position = '';
-                        added.style.zIndex = '';
-                    }, 3500);
-                });
-
+                added.scrollIntoView({ behavior: 'smooth' });
+                added.style.boxShadow = '0 0 8px #0084b4';
+                added.style.position = 'relative'; // subject 以外
+                added.style.zIndex = '2'; // subject
+                setTimeout(() => {
+                    added.style.boxShadow = '';
+                    added.style.position = '';
+                    added.style.zIndex = '';
+                }, 3500);
             });
         });
 
