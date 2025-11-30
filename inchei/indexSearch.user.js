@@ -45,6 +45,9 @@
     const style = document.createElement('style');
     const css = (strings) => strings.join('');
     style.textContent = css`
+        #browserItemList .item {
+            scroll-margin-block-start: 60px;
+        }
         #indexSelectorWrapper {
             display: flex;
             align-items: center;
@@ -633,6 +636,16 @@
                 }
 
                 added.scrollIntoView({ behavior: 'smooth' });
+                const checkTimer = setInterval(() => {
+                const rect = added.getBoundingClientRect();
+                    if (rect.bottom >= 0 && rect.bottom <= window.innerHeight - 60) {
+                        clearInterval(checkTimer);
+                    } else {
+                        added.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 200);
+                setTimeout(() => clearInterval(checkTimer), 10000);
+
                 added.style.boxShadow = '0 0 8px #0084b4';
                 added.style.position = 'relative'; // subject 以外
                 added.style.zIndex = '2'; // subject
