@@ -15,6 +15,7 @@
 // @icon         https://bgm.tv/img/favicon.ico
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
+// @connect      next.bgm.tv
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT
 // @connect      bgm.tv

@@ -9,6 +9,7 @@
 // @match        http*://chii.in/*
 // @match        http*://bangumi.tv/*
 // @grant        GM_xmlhttpRequest
+// @connect      next.bgm.tv
 // @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/516402
