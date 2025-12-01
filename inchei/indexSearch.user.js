@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序
 // @namespace    https://bgm.tv/group/topic/409246
-// @version      0.6.7
+// @version      0.6.8
 // @description  为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 // @author       mmm
 // @match        http*://bgm.tv/index/*
@@ -38,7 +38,7 @@
 (function () {
     'use strict';
 
-    const formhash = document.querySelector('input[name="formhash"]')?.value;
+    const formhash = document.querySelector('a.logout')?.href.split('/').pop();
     if (!formhash) return;
 
     // #region 样式
@@ -741,7 +741,7 @@
                 if (!tbContent) return;
                 const { cat, id: subjectId } = getCatAndId(location.href);
 
-                tbContent.innerHTML = `
+                tbContent.innerHTML = /* html */`
                 <div class="newIndexSection" style="padding: 10px;">
                     <div id="indexSelectorWrapper">
                         <span class="tip" style="min-width:5em">选择目录：</span>
