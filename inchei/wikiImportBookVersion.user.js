@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         从引进出版社网站获取班固米书籍版本
 // @namespace    wiki.import.book.version
-// @version      0.2.0
+// @version      0.2.1
 // @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
 // @author       你
 // @match        https://www.tongli.com.tw/*
@@ -149,14 +149,14 @@
                 '译者': /譯者：\s*([^ ]+)/,
             }
         },
-        '长鸿版': { // https://www.egmanga.com.tw/comic/only.jsp?id1=BH0396
-            match: 'egmanga.com.tw/comic/only.jsp',
-            anchorSelector: '.caption.col-xs-7 h4',
-            detailsSelector: '.caption.col-xs-7',
+        '长鸿版': { // https://www.egmanga.com.tw/products/ch0735
+            match: 'www.egmanga.com.tw/products/',
+            anchorSelector: '#product .product_info .product_content .product_title h1',
+            detailsSelector: '#product .product_info .product_content .product_brief',
             fields: {
-                '价格': /定價：\s*([^ \n]+)/,
+                '价格': ({doc}) => utils.getText('#price_title del', doc) || utils.getText('#price_title', doc),
                 '出版社': '長鴻出版社',
-                '发售日': /上市日期：\s*([^ \n]+)/,
+                '发售日': /出版日期：\s*([^ \n]+)/,
                 '页数': /頁數：\s*([^ \n]+)/,
                 'ISBN': /ISBN：\s*([^ \n]+)/
             }
