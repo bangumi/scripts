@@ -17,7 +17,7 @@
 // @connect      github.com
 // @connect      api.github.com
 // @connect      objects.githubusercontent.com
-// @require      https://cdn.jsdmirror.com/npm/pako@2.1.0/dist/pako.min.js
+// @require      https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/552759
 // ==/UserScript==

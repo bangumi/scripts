@@ -29,7 +29,7 @@
 // @connect      product.dangdang.com
 // @connect      detail.tmall.com
 // @license      MIT
-// @require      https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js
+// @require      https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js
 // @gf           https://greasyfork.org/zh-CN/scripts/556109
 // ==/UserScript==
 
