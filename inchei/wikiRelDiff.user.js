@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         维基关联历史对比差异
 // @namespace    bgm.wiki.rel.diff
-// @version      0.2.0
+// @version      0.2.1
 // @description  比较条目-人物/角色、人物-条目关联项目的增删修改
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -415,6 +415,10 @@
                 <button class="staff-tip-close">&times;</button>
             </div>
             <div class="staff-tip-content">
+                <div class="staff-warning-section">
+                    <div class="staff-warning-title">注意</div>
+                    <p>两次修订间差异不完全等于新修订造成的差异，期间反向关联带来的差异也会显示</p>
+                </div>
                 <div id="diff-results">请选择两个版本进行对比</div>
             </div>
         `;
