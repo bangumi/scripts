@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
-// @version      1.1.7
+// @version      1.1.8
 // @description  也可以干别的
 // @author       mmv
 // @match        http*://bgm.tv/subject/topic/*
@@ -96,6 +96,7 @@
         .ccf-comment:focus .ccf-comment-popup,
         .ccf-comment:active .ccf-comment-popup {
             display: block;
+            opacity: 0;
         }
         .loader {
             margin-left: 5px;
@@ -308,6 +309,7 @@
                             popup.style.left = '0';
                             popup.style.right = 'auto';
                         }
+                        popup.style.opacity = '1';
                     };
                     popupBtn.addEventListener('mouseenter', adjustPos);
                     popupBtn.addEventListener('click', adjustPos);
