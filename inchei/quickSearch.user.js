@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         班固米右上角快速搜索
 // @namespace    https://bgm.tv/group/topic/409735
-// @version      0.1.8
+// @version      0.1.9
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
 // @icon         https://bgm.tv/img/favicon.ico
@@ -30,11 +30,17 @@
     if (!searchInput || !headerSearch || !siteSearchSelect) return;
 
     const searchClass = headerSearch.querySelector('form').action.split('/').pop();
-    document.querySelector('#searchSuggestions')?.remove();
 
     const styleSheet = document.createElement("style");
     const css = (strings) => strings.join('');
     styleSheet.innerText = css`
+        #headerSearch .search-suggestions {
+            top: calc(100% + 5px);
+        }
+        #searchSuggestions:not(:has(.res-content)) {
+            display: none !important;
+        }
+
         #searchOverlay {
             position: absolute;
             top: calc(100% + 5px);
@@ -58,7 +64,7 @@
             max-height: 300px;
             overflow: hidden;
             background-color: rgba(254, 254, 254, 0.9);
-            box-shadow: inset 0 1px 1px hsla(0, 0%, 100%, 0.3), inset 0 -1px 0 hsla(0, 0%, 100%, 0.1), 0 2px 4px hsla(0, 0%, 0%, 0.2);
+            box-shadow: inset 0 1px 1px hsla(0,100%,100%,.3),inset 0 -1px 0 hsla(0,100%,100%,.1),0 3px 15px hsla(214,100%,0%,.2);
             backdrop-filter: blur(5px);
             border-radius: 15px;
             z-index: 90;
@@ -125,22 +131,35 @@
         if (!isComposing) handleInput();
     });
 
+    function isNativeCat() {
+        const type = siteSearchSelect.value;
+        return ['all', 'prsn', 'crt', 'person'].includes(type) || !isNaN(+type);
+    }
+
+    function hideBox() {
+        suggestionBox.style.display = 'none';
+        overlay.style.display = 'none';
+    }
+
     function handleInput() {
         clearTimeout(timeoutId);
 
         timeoutId = setTimeout(function () {
             const keyword = searchInput.value.trim();
-            if (keyword) {
+            if (keyword && isNativeCat()) {
                 fetchSearchSuggestions(keyword, ++currentRequestId); // 发出新请求时增加请求ID
             } else {
-                suggestionBox.style.display = 'none';
-                overlay.style.display = 'none';
+                hideBox();
             }
         }, debounceDelay);
     }
 
     siteSearchSelect.addEventListener('change', function () {
         const query = searchInput.value.trim();
+        if (!isNativeCat()) {
+            hideBox();
+            return;
+        }
         if (query) {
             fetchSearchSuggestions(query, ++currentRequestId);
         }
@@ -148,13 +167,12 @@
 
     document.addEventListener('click', function (event) {
         if (!headerSearch.contains(event.target)) {
-            suggestionBox.style.display = 'none';
-            overlay.style.display = 'none';
+            hideBox();
         }
     });
 
     searchInput.addEventListener('focus', function () {
-        if (suggestionBox.innerHTML.trim() !== '') {
+        if (suggestionBox.innerHTML.trim() !== '' && isNativeCat()) {
             suggestionBox.style.display = 'block';
         }
     });
@@ -162,8 +180,7 @@
     searchInput.addEventListener('keydown', function (event) {
         const suggestionItems = suggestionBox.querySelectorAll('li');
         if (event.key === 'Escape') {
-            suggestionBox.style.display = 'none';
-            overlay.style.display = 'none';
+            hideBox();
         } else if (event.key === 'ArrowDown') {
             event.preventDefault();
             if (selectedIndex < suggestionItems.length - 1) {
@@ -265,12 +282,11 @@
         selectedIndex = -1; // 重置选中索引
 
         if (data.length === 0) {
-            suggestionBox.style.display = 'none';
-            overlay.style.display = 'none';
+            hideBox();
             return;
         }
 
-        const html = `<ul id="subjectList" class="subjectList ajaxSubjectList">
+        const html = /* html */`<ul id="subjectList" class="subjectList ajaxSubjectList">
         ${data.reduce((m, { id, type, images, name,
             name_cn, career, infobox }) => {
             name_cn ??= infobox?.find(({ key }) => key === '简体中文名')?.value;
@@ -279,7 +295,7 @@
                 : career ? '现实人物' : '虚拟角色';
             const grid = cat === 'subject' ? images?.grid : images?.grid.replace('/g/', '/s/');
             const exist = v => v ? v : '';
-            m += `<li class="clearit">
+            m += /* html */`<li class="clearit">
                     <a href="/${cat}/${id}" class="avatar h">
                       ${grid ? `<img src="${grid}" class="avatar ll">` : ''}
                     </a>
