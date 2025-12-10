@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.36
+// @version     0.4.37
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -5580,6 +5580,7 @@ function initContainer($target) {
       <input class="inputBtn reset-btn" value="重置" type="button">
       <input class="inputBtn clear-btn" value="清除" type="button">
     </div>
+    <div style="margin-top: 10px; color: #999;font-size: 12px">支持ctrl+v粘贴图片</div>
     <img class="preview" src="" alt="" style="display:none;">
   `;
     const $info = document.createElement('div');
@@ -5670,7 +5671,9 @@ async function dealImageWidget($form, base64Data) {
     const $file = $form.querySelector('input[type = file]');
     previewFileImage($file, $canvas, $img);
     blur($canvas);
-    document.querySelector('.e-wiki-cover-container .canvas-btn-container > .reset-btn').addEventListener('click', (e) => {
+    document
+        .querySelector('.e-wiki-cover-container .canvas-btn-container > .reset-btn')
+        .addEventListener('click', (e) => {
         // wiki 填表按钮
         const $fillForm = document.querySelector('.e-wiki-fill-form');
         if (base64Data) {
@@ -5684,10 +5687,40 @@ async function dealImageWidget($form, base64Data) {
         }
         e.preventDefault();
     }, false);
-    document.querySelector('.e-wiki-cover-container .canvas-btn-container > .clear-btn').addEventListener('click', (e) => {
+    document
+        .querySelector('.e-wiki-cover-container .canvas-btn-container > .clear-btn')
+        .addEventListener('click', (e) => {
         $canvas.width = 0;
         $canvas.height = 0;
         e.preventDefault();
+    });
+    document.body.addEventListener('paste', (e) => {
+        if (!document.querySelector('.e-wiki-cover-container'))
+            return;
+        e.preventDefault();
+        let imageFile = null;
+        if (e.clipboardData && e.clipboardData.files) {
+            imageFile = e.clipboardData.files[0];
+        }
+        else if (e.clipboardData && e.clipboardData.items) {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    imageFile = item.getAsFile(); // 转换为File对象
+                    break;
+                }
+            }
+        }
+        if (!imageFile) {
+            alert('剪贴板中未检测到图片！');
+            return;
+        }
+        const reader = new FileReader();
+        reader.addEventListener('load', (event) => {
+            const base64Data = event.target.result;
+            $img.src = base64Data;
+        });
+        reader.readAsDataURL(imageFile);
     });
     const $inputBtn = document.querySelector('.e-wiki-cover-container .inputBtn');
     if ($file) {
@@ -6143,51 +6176,49 @@ function initNewSubject(wikiInfo) {
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
     const dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
-    if (dataUrl.match(/^data:image/)) {
-        dealImageWidget($q('form[name=create_subject]'), dataUrl);
-        // 修改文本
-        setTimeout(() => {
-            const $form = $q('form[name=create_subject]');
-            const $input = $q('.e-wiki-cover-container [name=submit]');
-            const $clonedInput = $input.cloneNode(true);
-            if ($clonedInput) {
-                $clonedInput.value = getSubmitBtnText(wikiInfo);
-            }
-            $input.insertAdjacentElement('afterend', $clonedInput);
-            $input.remove();
-            const $canvas = $q('#e-wiki-cover-preview');
-            $clonedInput.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const $el = e.target;
-                $el.style.display = 'none';
-                $clonedInput.style.display = 'none';
-                const $loading = insertLoading($el);
-                try {
-                    const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-                    $wikiMode && $wikiMode.click();
-                    await sleep(200);
-                    const url = await sendForm($form);
-                    const subjectId = getSubjectId(url);
-                    if (subjectId) {
-                        if ($canvas.clientWidth > 8 && $canvas.clientHeight > 10) {
-                            await uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
-                        }
+    dealImageWidget($q('form[name=create_subject]'), dataUrl);
+    // 修改文本
+    setTimeout(() => {
+        const $form = $q('form[name=create_subject]');
+        const $input = $q('.e-wiki-cover-container [name=submit]');
+        const $clonedInput = $input.cloneNode(true);
+        if ($clonedInput) {
+            $clonedInput.value = getSubmitBtnText(wikiInfo);
+        }
+        $input.insertAdjacentElement('afterend', $clonedInput);
+        $input.remove();
+        const $canvas = $q('#e-wiki-cover-preview');
+        $clonedInput.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const $el = e.target;
+            $el.style.display = 'none';
+            $clonedInput.style.display = 'none';
+            const $loading = insertLoading($el);
+            try {
+                const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                $wikiMode && $wikiMode.click();
+                await sleep(200);
+                const url = await sendForm($form);
+                const subjectId = getSubjectId(url);
+                if (subjectId) {
+                    if ($canvas.clientWidth > 8 && $canvas.clientHeight > 10) {
+                        await uploadSubjectCover(subjectId, $canvas.toDataURL('image/png', 1));
                     }
-                    await sleep(200);
-                    await addMusicEp(subjectId, wikiInfo, (str) => {
-                        insertLogInfo($el, str);
-                    });
-                    $loading.remove();
-                    $el.style.display = '';
-                    $clonedInput.style.display = '';
-                    location.assign(url);
                 }
-                catch (e) {
-                    console.log('send form err: ', e);
-                }
-            });
-        }, 300);
-    }
+                await sleep(200);
+                await addMusicEp(subjectId, wikiInfo, (str) => {
+                    insertLogInfo($el, str);
+                });
+                $loading.remove();
+                $el.style.display = '';
+                $clonedInput.style.display = '';
+                location.assign(url);
+            }
+            catch (e) {
+                console.log('send form err: ', e);
+            }
+        });
+    }, 300);
 }
 function initNewCharacter(wikiInfo, subjectId) {
     var _a;
@@ -6218,76 +6249,73 @@ function initNewCharacter(wikiInfo, subjectId) {
             dataUrl = coverInfo.value;
         }
     }
-    if (dataUrl.match(/^data:image/)) {
-        const $form = $q('form[name=new_character]');
-        dealImageWidget($form, dataUrl);
-        // 修改文本
-        setTimeout(() => {
-            const $input = $q('.e-wiki-cover-container [name=submit]');
-            const $clonedInput = $input.cloneNode(true);
-            if ($clonedInput) {
-                $clonedInput.value = '添加人物并上传肖像';
-            }
-            $input.insertAdjacentElement('afterend', $clonedInput);
-            $input.remove();
-            // 2021-05-19 关联条目 id.
-            const $relatedInput = htmlToElement(`
+    const $form = $q('form[name=new_character]');
+    dealImageWidget($form, dataUrl);
+    // 修改文本
+    setTimeout(() => {
+        const $input = $q('.e-wiki-cover-container [name=submit]');
+        const $clonedInput = $input.cloneNode(true);
+        if ($clonedInput) {
+            $clonedInput.value = '添加人物并上传肖像';
+        }
+        $input.insertAdjacentElement('afterend', $clonedInput);
+        $input.remove();
+        // 2021-05-19 关联条目 id.
+        const $relatedInput = htmlToElement(`
 <span class="e-bnwh-related-id">
 <span title="为空时不做关联操作">关联条目 id:</span>
 <input type="number" placeholder="输入关联条目 id" />
 </span>
       `);
-            $clonedInput.insertAdjacentElement('afterend', $relatedInput);
-            const $canvas = $q('#e-wiki-cover-preview');
-            $clonedInput.addEventListener('click', async (e) => {
-                var _a;
-                e.preventDefault();
-                if ($canvas.width > 8 && $canvas.height > 10) {
-                    const $el = e.target;
-                    $el.style.display = 'none';
-                    $clonedInput.style.display = 'none';
-                    const $loading = insertLoading($el);
-                    try {
-                        const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-                        $wikiMode && $wikiMode.click();
-                        await sleep(200);
-                        const currentHost = getBgmHost();
-                        const url = await sendFormImg($form, dataUrl);
-                        insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
-                        const charaId = getSubjectId(url);
-                        // subject id
-                        const subjectId = ((_a = $relatedInput.querySelector('input')) === null || _a === void 0 ? void 0 : _a.value) || '';
-                        if (charaId && subjectId) {
-                            insertLogInfo($el, '存在条目 id, 开始关联条目');
-                            await addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
-                            insertLogInfo($el, `关联条目成功: ${genLinkText(`${currentHost}/subject/${subjectId}`, '条目地址')}`);
-                            const cvInfo = wikiInfo.infos.filter((item) => item.name.toUpperCase() === 'CV')[0];
-                            if (cvInfo) {
-                                const cvId = await searchCVByName(cvInfo.value, charaId);
-                                cvId &&
-                                    (await addPersonRelatedCV(subjectId, charaId, [cvId], wikiInfo.type));
-                                insertLogInfo($el, `关联 CV 成功: ${genLinkText(`${currentHost}/person/${cvId}`)}`);
-                            }
+        $clonedInput.insertAdjacentElement('afterend', $relatedInput);
+        const $canvas = $q('#e-wiki-cover-preview');
+        $clonedInput.addEventListener('click', async (e) => {
+            var _a;
+            e.preventDefault();
+            if ($canvas.width > 8 && $canvas.height > 10) {
+                const $el = e.target;
+                $el.style.display = 'none';
+                $clonedInput.style.display = 'none';
+                const $loading = insertLoading($el);
+                try {
+                    const $wikiMode = $q('table small a:nth-of-type(1)[href="javascript:void(0)"]');
+                    $wikiMode && $wikiMode.click();
+                    await sleep(200);
+                    const currentHost = getBgmHost();
+                    const url = await sendFormImg($form, dataUrl);
+                    insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
+                    const charaId = getSubjectId(url);
+                    // subject id
+                    const subjectId = ((_a = $relatedInput.querySelector('input')) === null || _a === void 0 ? void 0 : _a.value) || '';
+                    if (charaId && subjectId) {
+                        insertLogInfo($el, '存在条目 id, 开始关联条目');
+                        await addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
+                        insertLogInfo($el, `关联条目成功: ${genLinkText(`${currentHost}/subject/${subjectId}`, '条目地址')}`);
+                        const cvInfo = wikiInfo.infos.filter((item) => item.name.toUpperCase() === 'CV')[0];
+                        if (cvInfo) {
+                            const cvId = await searchCVByName(cvInfo.value, charaId);
+                            cvId &&
+                                (await addPersonRelatedCV(subjectId, charaId, [cvId], wikiInfo.type));
+                            insertLogInfo($el, `关联 CV 成功: ${genLinkText(`${currentHost}/person/${cvId}`)}`);
                         }
-                        $loading.remove();
-                        $el.style.display = '';
-                        $clonedInput.style.display = '';
-                        location.assign(url);
                     }
-                    catch (e) {
-                        console.log('send form err: ', e);
-                        insertLogInfo($el, `出错了: ${e}`);
-                    }
+                    $loading.remove();
+                    $el.style.display = '';
+                    $clonedInput.style.display = '';
+                    location.assign(url);
                 }
-            });
-        }, 300);
-    }
+                catch (e) {
+                    console.log('send form err: ', e);
+                    insertLogInfo($el, `出错了: ${e}`);
+                }
+            }
+        });
+    }, 300);
 }
 function initUploadImg(wikiInfo) {
+    var _a;
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
-    if (coverInfo && coverInfo.value && coverInfo.value.dataUrl) {
-        dealImageWidget($q('form[name=img_upload]'), coverInfo.value.dataUrl);
-    }
+    dealImageWidget($q('form[name=img_upload]'), (_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl);
 }
 
 const bangumi = {
