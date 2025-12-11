@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.37
+// @version     0.4.38
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -5580,7 +5580,7 @@ function initContainer($target) {
       <input class="inputBtn reset-btn" value="重置" type="button">
       <input class="inputBtn clear-btn" value="清除" type="button">
     </div>
-    <div style="margin-top: 10px; color: #999;font-size: 12px">支持ctrl+v粘贴图片</div>
+    <div class="paste-tips" style="margin-top: 10px; color: #999;font-size: 12px">ctrl+v粘贴图片</div>
     <img class="preview" src="" alt="" style="display:none;">
   `;
     const $info = document.createElement('div');
@@ -5694,8 +5694,22 @@ async function dealImageWidget($form, base64Data) {
         $canvas.height = 0;
         e.preventDefault();
     });
+    const $container = document.querySelector('.e-wiki-cover-container');
+    // 标记：鼠标是否在目标元素内（初始为false）
+    let isMouseInPasteArea = false;
+    // 2. 监听鼠标进入/离开，更新状态 + 视觉反馈
+    $container.addEventListener('mouseenter', () => {
+        isMouseInPasteArea = true;
+        $container.querySelector('.paste-tips').textContent = '可粘贴图片（Ctrl+V）';
+    });
+    $container.addEventListener('mouseleave', () => {
+        isMouseInPasteArea = false;
+        $container.querySelector('.paste-tips').textContent = '鼠标移入此区域后粘贴图片生效';
+    });
     document.body.addEventListener('paste', (e) => {
         if (!document.querySelector('.e-wiki-cover-container'))
+            return;
+        if (!isMouseInPasteArea)
             return;
         e.preventDefault();
         let imageFile = null;
@@ -5712,7 +5726,7 @@ async function dealImageWidget($form, base64Data) {
             }
         }
         if (!imageFile) {
-            alert('剪贴板中未检测到图片！');
+            $container.querySelector('.paste-tips').textContent = '未检测到图片！';
             return;
         }
         const reader = new FileReader();
