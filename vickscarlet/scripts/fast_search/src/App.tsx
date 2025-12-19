@@ -181,9 +181,9 @@ export function App(props: SearchToolProps) {
             e.preventDefault()
             setShowSearchTool(true)
         })
+        handleNotify(parseQuery(''))
     }, [])
 
-    useEffect(() => handleNotify(parseQuery('')), [])
     useEffect(() => {
         console.debug('inComposition', inComposition)
         if (inComposition) return
@@ -195,7 +195,8 @@ export function App(props: SearchToolProps) {
         const onScroll = () => tryNext()
         el.addEventListener('scroll', onScroll)
         return () => el.removeEventListener('scroll', onScroll)
-    }, [ref])
+    }, [ref.current])
+
     if (!showSearchTool) return <></>
 
     return (

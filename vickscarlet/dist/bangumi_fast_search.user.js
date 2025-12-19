@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 快速搜索
 // @namespace    b38.dev
-// @version      1.0.2
+// @version      1.0.3
 // @author       神戸小鳥 @vickscarlet
 // @description  Bangumi 快速搜索, Ctrl-K
 // @license      MIT
@@ -15122,8 +15122,8 @@ jsxRuntimeExports.jsx("ul", { className: "tips", children: extra.map((tip, i) =>
         e.preventDefault();
         setShowSearchTool(true);
       });
+      handleNotify(parseQuery(""));
     }, []);
-    reactExports.useEffect(() => handleNotify(parseQuery("")), []);
     reactExports.useEffect(() => {
       console.debug("inComposition", inComposition);
       if (inComposition) return;
@@ -15135,7 +15135,7 @@ jsxRuntimeExports.jsx("ul", { className: "tips", children: extra.map((tip, i) =>
       const onScroll = () => tryNext();
       el.addEventListener("scroll", onScroll);
       return () => el.removeEventListener("scroll", onScroll);
-    }, [ref]);
+    }, [ref.current]);
     if (!showSearchTool) return jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, {});
     return jsxRuntimeExports.jsxs("div", { className: "v-fast-search-app", "data-show": showSearchTool, children: [
 jsxRuntimeExports.jsx("button", { onClick: () => close() }),

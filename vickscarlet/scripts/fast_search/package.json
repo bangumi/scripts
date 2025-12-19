@@ -1,7 +1,7 @@
 {
   "name": "@b38dev/fast-search",
   "author": "神戸小鳥 @vickscarlet",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Bangumi 快速搜索, Ctrl-K",
   "license": "MIT",
   "main": "src/index.tsx",
