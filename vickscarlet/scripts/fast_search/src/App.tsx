@@ -138,6 +138,7 @@ export function App(props: SearchToolProps) {
             setCancelSearch
         )
     }
+    const onScroll = () => tryNext()
     const handleChange = (value: string) => {
         setInput(value)
         cancelSearch.current()
@@ -192,10 +193,10 @@ export function App(props: SearchToolProps) {
     useEffect(() => {
         if (!ref.current) return
         const el = ref.current
-        const onScroll = () => tryNext()
+        el.removeEventListener('scroll', onScroll)
         el.addEventListener('scroll', onScroll)
         return () => el.removeEventListener('scroll', onScroll)
-    }, [ref.current])
+    }, [showSearchTool, ref, ref.current])
 
     if (!showSearchTool) return <></>
 
