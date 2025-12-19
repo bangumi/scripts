@@ -147,7 +147,7 @@ export async function fetchJson<T>(url: string, init?: RequestInit): Promise<Res
 export function parseQuery(input: string): Result<SearchQuery> {
     const trimmed = input.trim()
 
-    if (trimmed === '')
+    if (trimmed === '' || input === '/')
         return { success: false, banner: <h1>😊输入文字开始搜索</h1>, tips: <tips.MainTips /> }
     const parts = trimmed.split(/\s+/g).map((part) => part.trim())
     let command: Command | undefined = undefined

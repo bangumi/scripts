@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 快速搜索
 // @namespace    b38.dev
-// @version      1.0.1
+// @version      1.0.2
 // @author       神戸小鳥 @vickscarlet
 // @description  Bangumi 快速搜索, Ctrl-K
 // @license      MIT
@@ -13077,7 +13077,7 @@ jsxRuntimeExports.jsx("ul", { children: Array.from(commandDescription.entries())
   }
   function parseQuery(input) {
     const trimmed = input.trim();
-    if (trimmed === "")
+    if (trimmed === "" || input === "/")
       return { success: false, banner: jsxRuntimeExports.jsx("h1", { children: "😊输入文字开始搜索" }), tips: jsxRuntimeExports.jsx(MainTips, {}) };
     const parts = trimmed.split(/\s+/g).map((part) => part.trim());
     let command = void 0;
