@@ -26,6 +26,8 @@
     "build:wiki-editor": "pnpm --filter @b38dev/wiki-editor build",
     "dev:gadget-deprecated-notify": "pnpm --filter @b38dev/gadget-deprecated-notify dev",
     "build:gadget-deprecated-notify": "pnpm --filter @b38dev/gadget-deprecated-notify build",
+    "dev:fast-search": "pnpm --filter @b38dev/fast-search dev",
+    "build:fast-search": "pnpm --filter @b38dev/fast-search build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },

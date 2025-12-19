@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Bangumi 快速搜索, Ctrl-K",
   "license": "MIT",
-  "main": "src/index.ts",
+  "main": "src/index.tsx",
   "out": "bangumi_fast_search.user.js",
   "userscript": {
     "name": "Bangumi 快速搜索",
@@ -25,14 +25,24 @@
   },
   "dependencies": {
     "@b38dev/bangumi": "workspace:^",
-    "@b38dev/dom": "workspace:^"
+    "@bbob/core": "^4.3.1",
+    "@bbob/plugin-helper": "^4.3.1",
+    "@bbob/preset-react": "^4.3.1",
+    "@bbob/react": "^4.3.1"
   },
   "devDependencies": {
+    "@bbob/types": "^4.3.1",
+    "@svgr/plugin-svgo": "^8.1.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.10",
     "vite-plugin-monkey": "^7.1.4",
     "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.15"
   }
 }

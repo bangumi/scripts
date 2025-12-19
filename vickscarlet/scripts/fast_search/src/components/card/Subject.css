@@ -1,0 +1,144 @@
+.v-search-item-card[data-item="subject"] {
+    padding: 8px;
+    > .avatar {
+        flex: 0 0 auto;
+        width: 80px;
+        height: auto;
+        border-radius: 4px;
+        img {
+            height: auto;
+        }
+    }
+    >.info {
+        flex: 1 1 auto;
+        > .title {
+            > a {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                gap: 2px;
+            }
+            > a::before {
+                flex: 1 1 auto;
+                content: '';
+                display: inline-block;
+                width: 17px;
+                height: 15px;
+                filter: brightness(0.5);
+                background: url('/img/ico/subject_type_v2.png') no-repeat;
+            }
+        }
+        > .extra {
+            > .tips {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                margin-right: 12px;
+                > li {
+                    padding: 2px 6px;
+                    background-color: rgb(from var(--background) calc(r - 30) calc(g - 30) calc(b - 30) / 0.3);
+                    border-radius: 12px;
+                    font-size: 11px;
+                }
+            }
+            > .mark {
+                position: absolute;
+                right: 8px;
+                bottom: 8px;
+                color: var(--primary-color, #f09199);
+            }
+        }
+    }
+    > .judge {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-family: 'Noto Sans Mono', Consolas, 'Courier New', Courier, monospace;
+        gap: 0;
+        top: 0;
+        font-size: 12px;
+        background-color: linear-gradient(to bottom, var(--primary-color, #f09199) 0%, rgb(from var(--primary-color, #f09199) / 0) 100%);
+
+        .rank {
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--primary-color, #f09199);
+        }
+
+        .rank::before {
+            content: '#';
+        }
+
+        .rate {
+            font-size: 16px;
+            line-height: 1;
+            font-style: italic;
+        }
+
+        .rate::before {
+            content: '☆';
+            padding-right: 3px;
+            font-size: 0.8em;
+        }
+    }
+}
+html[data-theme="dark"] {
+    .v-search-item-card[data-item="subject"] {
+        > .info {
+            > .title {
+                > a::before {
+                    filter: brightness(1);
+                }
+            }
+        }
+    }
+}
+
+.v-search-item-card[data-catalog="anime"] {
+    >.info {
+        > .title {
+            > a::before {
+                background-position: 0 -19px;
+            }
+        }
+    }
+}
+.v-search-item-card[data-catalog="book"] {
+    >.info {
+        > .title {
+            > a::before {
+                background-position: 0 0;
+            }
+        }
+    }
+}
+.v-search-item-card[data-catalog="game"] {
+    >.info {
+        > .title {
+            > a::before {
+                background-position: 0 -50px;
+            }
+        }
+    }
+}
+.v-search-item-card[data-catalog="music"] {
+    >.info {
+        > .title {
+            > a::before {
+                background-position: 0 -34px;
+            }
+        }
+    }
+}
+.v-search-item-card[data-catalog="real"] {
+    >.info {
+        > .title {
+            > a::before {
+                background-position: 0 -65px;
+            }
+        }
+    }
+}

@@ -12,6 +12,13 @@
         "isolatedModules": true,
         "moduleDetection": "force",
         "noEmit": true,
+        "exactOptionalPropertyTypes": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "jsx": "react-jsx",
+        "paths": {
+            "@/*": ["src/*"]
+        },
 
         /* Linting */
         "noUnusedLocals": true,

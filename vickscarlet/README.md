@@ -19,6 +19,16 @@
 GitHub|[`bangumi_community.user.js`](dist/bangumi_community.user.js?raw=true)
 GreasyFork|[`Bangumi 社区助手 preview`](https://greasyfork.org/zh-CN/scripts/527566-bangumi-%E7%A4%BE%E5%8C%BA%E5%8A%A9%E6%89%8B-preview)
 
+## `Preview` Bangumi 社区助手 preview
+
+> [!TIP]  
+> 用于替换 `Bangumi 快速搜索`  
+> 正在开发中  
+
+源|链接
+---|---
+GitHub|[`bangumi_fast_search.user.js`](dist/bangumi_fast_search.user.js?raw=true)
+
 ## `Stable` Bangumi 高楼优化
 
 > [!TIP] 

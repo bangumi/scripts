@@ -1,0 +1,27 @@
+.v-search-item-card[data-catalog="topic"] {
+    >.info {
+        > .extra {
+            > .group {
+                color: var(--primary-color, #f09199);
+            }
+            > .creator {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+                color: inherit;
+
+                img {
+                    width: 16px;
+                    height: 16px;
+                    object-fit: cover;
+                    border-radius: 100%;
+                }
+
+                span {
+                    vertical-align: middle;
+                }
+            }
+        }
+    }
+}
