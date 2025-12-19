@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 快速搜索
 // @namespace    b38.dev
-// @version      1.0.0
+// @version      1.0.1
 // @author       神戸小鳥 @vickscarlet
 // @description  Bangumi 快速搜索, Ctrl-K
 // @license      MIT
@@ -15121,8 +15121,6 @@ jsxRuntimeExports.jsx("ul", { className: "tips", children: extra.map((tip, i) =>
         }
         e.preventDefault();
         setShowSearchTool(true);
-        if (mq.current?.init) return;
-        handleChange(lastValue.current);
       });
     }, []);
     reactExports.useEffect(() => handleNotify(parseQuery("")), []);

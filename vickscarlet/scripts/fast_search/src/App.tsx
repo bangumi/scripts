@@ -180,8 +180,6 @@ export function App(props: SearchToolProps) {
             }
             e.preventDefault()
             setShowSearchTool(true)
-            if (mq.current?.init) return
-            handleChange(lastValue.current)
         })
     }, [])
 
