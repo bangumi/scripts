@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.38
+// @version     0.4.39
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -6182,7 +6182,7 @@ function initNewSubject(wikiInfo) {
         // @ts-ignore
         $q('#subject_summary').value = '';
         // 移除上传图片
-        (_a = $q('.e-wiki-cover-container')) === null || _a === void 0 ? void 0 : _a.remove();
+        (_a = $q('.e-wiki-cover-container .clear-btn')) === null || _a === void 0 ? void 0 : _a.click();
         const $editSummary = $q('#editSummary');
         if ($editSummary) {
             $editSummary.value = '';
