@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.39
+// @version     0.4.40
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -20,6 +20,7 @@
 // @grant       GM_xmlhttpRequest
 // @grant       GM_getValue
 // @grant       GM_setValue
+// @grant       GM_deleteValue
 // @grant       GM_getResourceText
 // @resource    NOTYF_CSS https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css
 // @require     https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.0/fuse.min.js
@@ -6187,6 +6188,12 @@ function initNewSubject(wikiInfo) {
         if ($editSummary) {
             $editSummary.value = '';
         }
+        let customEvent = new CustomEvent('scriptMessage', {
+            detail: {
+                type: 'clearInfo',
+            }
+        });
+        window.dispatchEvent(customEvent);
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
     const dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
@@ -6332,6 +6339,12 @@ function initUploadImg(wikiInfo) {
     dealImageWidget($q('form[name=img_upload]'), (_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl);
 }
 
+function clearInfo() {
+    GM_deleteValue(AUTO_FILL_FORM);
+    GM_deleteValue(WIKI_DATA);
+    GM_deleteValue(CHARA_DATA);
+    GM_deleteValue(SUBJECT_ID);
+}
 const bangumi = {
     async init() {
         const re = new RegExp(['new_subject', 'add_related', 'character/new', 'upload_img'].join('|'));
@@ -6342,6 +6355,13 @@ const bangumi = {
         const charaData = JSON.parse(GM_getValue(CHARA_DATA) || null);
         const subjectId = GM_getValue(SUBJECT_ID);
         const autoFill = GM_getValue(AUTO_FILL_FORM);
+        // 处理消息
+        window.addEventListener('scriptMessage', (e) => {
+            if (e.detail.type === 'clearInfo') {
+                console.info('user script: clear info');
+                clearInfo();
+            }
+        });
         switch (page[0]) {
             case 'new_subject':
                 if (wikiData) {
@@ -6353,6 +6373,12 @@ const bangumi = {
                             GM_setValue(AUTO_FILL_FORM, 0);
                         }, 300);
                     }
+                }
+                else {
+                    initNewSubject({
+                        type: +window.location.pathname.split('/')[2] || 1,
+                        infos: [],
+                    });
                 }
                 break;
             case 'add_related':
