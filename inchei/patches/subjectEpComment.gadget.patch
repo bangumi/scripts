@@ -1,10 +1,11 @@
---- subjectEpComment.user.js	2025-09-17 11:17:02.743251400 +0800
-+++ subjectEpComment.gadget.js	2025-09-17 12:26:00.269637800 +0800
-@@ -7,14 +7,11 @@
+--- subjectEpComment.user.js	2025-12-23 21:35:03.713873766 +0800
++++ subjectEpComment.gadget.js	2025-12-23 21:48:47.157874197 +0800
+@@ -8,15 +8,11 @@
  // @match        http*://bgm.tv/*
  // @match        http*://chii.in/*
  // @match        http*://bangumi.tv/*
 -// @grant        GM_xmlhttpRequest
+-// @connect      next.bgm.tv
 -// @require      https://update.greasyfork.org/scripts/549003/1658079/Bangumi-BBCode-to-HTML.js
  // @license      MIT
  // @gf           https://greasyfork.org/zh-CN/scripts/516402
@@ -15,7 +16,7 @@
  (async function () {
  
      const colors = {
-@@ -137,23 +134,16 @@
+@@ -141,23 +136,16 @@
      refreshStyle();
      document.head.appendChild(style);
  
@@ -49,7 +50,7 @@
      }
  
      const cacheHandler = {
-@@ -209,8 +199,6 @@
+@@ -213,8 +201,6 @@
  
      const saveRepliesHTMLFromDOM = saveRepliesHTML((reply) => reply.querySelector('.message').innerHTML.trim());
  
@@ -58,7 +59,7 @@
      // 章节讨论页
      if (location.pathname.startsWith('/ep')) {
          let replies = getRepliesFromDOM(document);
-@@ -582,9 +570,9 @@
+@@ -586,9 +572,9 @@
                      return;
                  } else if (shouldFetch(epData)) {
                      try {

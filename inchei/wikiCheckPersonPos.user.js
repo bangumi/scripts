@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 关联人物职位查询
 // @namespace    https://bangumi.tv
-// @version      0.1.0
+// @version      0.1.1
 // @description  在关联人物编辑页面快速查看人物最近参与的职位信息
 // @author       aaa
 // @match        https://bgm.tv/subject/*/add_related/person
@@ -17,7 +17,7 @@
 
     // 添加样式
     const style = document.createElement('style');
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     style.textContent = css`
         .position-helper-container {
             margin: 10px 0;

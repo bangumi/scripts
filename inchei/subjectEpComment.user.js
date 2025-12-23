@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         章节讨论吐槽加强
 // @namespace    https://bgm.tv/group/topic/408098
-// @version      0.5.5
+// @version      0.5.6
 // @description  章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 // @author       oo
 // @icon         https://bgm.tv/img/favicon.ico
@@ -25,7 +25,7 @@
     }
     const myUsername = document.querySelector('#dock a').href.split('/').pop();
     const style = document.createElement('style');
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     const refreshStyle = () => {
         style.textContent = css`
             .commented a.epBtnQueue {

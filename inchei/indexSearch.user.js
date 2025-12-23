@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序
 // @namespace    https://bgm.tv/group/topic/409246
-// @version      0.6.8
+// @version      0.6.9
 // @description  为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 // @author       mmm
 // @match        http*://bgm.tv/index/*
@@ -43,7 +43,7 @@
 
     // #region 样式
     const style = document.createElement('style');
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     style.textContent = css`
         #browserItemList .item {
             scroll-margin-block-start: 60px;

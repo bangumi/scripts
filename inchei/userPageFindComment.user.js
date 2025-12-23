@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         时光机查询特定条目评价
 // @namespace    https://bgm.tv/group/topic/411925
-// @version      0.2.2
+// @version      0.2.3
 // @description  经济的同步率查询
 // @author       mmv
 // @match        http*://bgm.tv/user/*
@@ -19,7 +19,7 @@
     'use strict';
 
     const style = document.createElement('style');
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     style.innerHTML = css`
         div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
             color: #666;

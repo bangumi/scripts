@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         班固米代码高亮
 // @namespace    https://bgm.tv/group/topic/409276
-// @version      1.8.1
+// @version      1.8.2
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
 // @icon         https://bgm.tv/img/favicon.ico
@@ -38,7 +38,7 @@
 
         // 添加自定义样式
         const customStyles = document.createElement('style');
-        const css = (strings) => strings.join('');
+        const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
         customStyles.textContent = css`
             .codeHighlight {
                 position: relative;

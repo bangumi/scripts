@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
-// @version      0.2.3
+// @version      0.2.4
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -226,7 +226,7 @@
         }
 
         const style = document.createElement('style');
-        const css = (strings) => strings.join('');
+        const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
         style.textContent = css`
             #crtRelateSubjects li:target {
                 background-color: rgba(165, 255, 165, 0.4) !important;

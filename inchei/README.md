@@ -11,7 +11,7 @@
 | Greasy Fork | 无 |
 | 组件 | [130](https://bgm.tv/dev/app/130) |
 
-## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.7`
+## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.9`
 为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 
 - 讨论页：https://bgm.tv/group/topic/409246
@@ -42,7 +42,7 @@
 | Greasy Fork | 无 |
 | 组件 | [4701](https://bgm.tv/dev/app/4701) |
 
-## 班固米右上角快速搜索 `0.1.8`
+## 班固米右上角快速搜索 `0.1.10`
 右上角搜索框输入文字后快速显示部分搜索结果
 
 - 讨论页：https://bgm.tv/group/topic/409735
@@ -62,7 +62,7 @@
 | Greasy Fork | [513954](https://greasyfork.org/zh-CN/scripts/513954) |
 | 组件 | [3344](https://bgm.tv/dev/app/3344) |
 
-## 章节讨论吐槽加强 `0.5.5`
+## 章节讨论吐槽加强 `0.5.6`
 章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 
 - 讨论页：https://bgm.tv/group/topic/408098
@@ -73,7 +73,16 @@
 | Greasy Fork | [516402](https://greasyfork.org/zh-CN/scripts/516402) |
 | 组件 | [3341](https://bgm.tv/dev/app/3341) |
 
-## 进度时间线显示评论 `0.1.7`
+## 长篇动画分页显示所有格子 `0.0.1`
+在长篇动画条目页格子区域增加分页选项以显示全部格子
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [subjectEpsExtend.user.js](https://github.com/bangumi/scripts/blob/master/inchei/subjectEpsExtend.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
+## 进度时间线显示评论 `0.1.8`
 在班固米显示动画进度时间线的对应评论
 
 - 讨论页：https://bgm.tv/group/topic/
@@ -84,7 +93,7 @@
 | Greasy Fork | [529610](https://greasyfork.org/zh-CN/scripts/529610) |
 | 组件 | [3654](https://bgm.tv/dev/app/3654) |
 
-## RSS订阅班友收藏 `0.2.4`
+## RSS订阅班友收藏 `0.2.5`
 在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 
 - 讨论页：https://bgm.tv/group/topic/414787
@@ -95,7 +104,7 @@
 | Greasy Fork | [524603](https://greasyfork.org/zh-CN/scripts/524603) |
 | 组件 | [3526](https://bgm.tv/dev/app/3526) |
 
-## 条目讨论页显示用户评价 `1.1.7`
+## 条目讨论页显示用户评价 `1.1.9`
 也可以干别的
 
 - 讨论页：https://bgm.tv/group/topic/411796
@@ -106,7 +115,7 @@
 | Greasy Fork | [520506](https://greasyfork.org/zh-CN/scripts/520506) |
 | 组件 | [3437](https://bgm.tv/dev/app/3437) |
 
-## 班固米代码高亮 `1.8.1`
+## 班固米代码高亮 `1.8.2`
 使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 
 - 讨论页：https://bgm.tv/group/topic/409276
@@ -126,7 +135,7 @@
 | Greasy Fork | 无 |
 | 组件 | [3565](https://bgm.tv/dev/app/3565) |
 
-## Bangumi 不同类型收藏状态比例条图 `1.3.1`
+## Bangumi 不同类型收藏状态比例条图 `1.3.2`
 在用户页面显示收藏状态分布彩色条
 
 - 讨论页：https://bgm.tv/group/topic/422194
@@ -137,7 +146,7 @@
 | Greasy Fork | [534247](https://greasyfork.org/zh-CN/scripts/534247) |
 | 组件 | [3773](https://bgm.tv/dev/app/3773) |
 
-## 时光机查询特定条目评价 `0.2.2`
+## 时光机查询特定条目评价 `0.2.3`
 经济的同步率查询
 
 - 讨论页：https://bgm.tv/group/topic/411925
@@ -168,7 +177,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## Bangumi 关联人物职位查询 `0.1.0`
+## Bangumi 关联人物职位查询 `0.1.1`
 在关联人物编辑页面快速查看人物最近参与的职位信息
 
 | 载点 | 链接 |
@@ -186,7 +195,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 根据章节简介关联制作人员参与 `0.2.3`
+## 根据章节简介关联制作人员参与 `0.2.4`
 从章节页或人物关联页根据章节简介关联制作人员参与
 
 | 载点 | 链接 |
@@ -195,7 +204,7 @@
 | Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
 | 组件 | [4948](https://bgm.tv/dev/app/4948) |
 
-## 从引进出版社网站获取班固米书籍版本 `0.2.0`
+## 从引进出版社网站获取班固米书籍版本 `0.2.1`
 支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
 
 | 载点 | 链接 |
@@ -233,7 +242,7 @@
 | Greasy Fork | [552759](https://greasyfork.org/zh-CN/scripts/552759) |
 | 组件 | 无 |
 
-## 维基关联历史对比差异 `0.2.0`
+## 维基关联历史对比差异 `0.2.1`
 比较条目-人物/角色、人物-条目关联项目的增删修改
 
 | 载点 | 链接 |
@@ -242,7 +251,7 @@
 | Greasy Fork | [554524](https://greasyfork.org/zh-CN/scripts/554524) |
 | 组件 | [5040](https://bgm.tv/dev/app/5040) |
 
-## Bangumi wiki 图片上传增强 `1.4.4`
+## Bangumi wiki 图片上传增强 `1.4.5`
 支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
 
 - 讨论页：https://bgm.tv/group/topic/431819

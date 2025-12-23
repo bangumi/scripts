@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         班固米右上角快速搜索
 // @namespace    https://bgm.tv/group/topic/409735
-// @version      0.1.9
+// @version      0.1.10
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
 // @icon         https://bgm.tv/img/favicon.ico
@@ -32,7 +32,7 @@
     const searchClass = headerSearch.querySelector('form').action.split('/').pop();
 
     const styleSheet = document.createElement("style");
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     styleSheet.innerText = css`
         #headerSearch .search-suggestions {
             top: calc(100% + 5px);

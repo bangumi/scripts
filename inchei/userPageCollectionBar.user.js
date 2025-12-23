@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 不同类型收藏状态比例条图
 // @namespace    https://bgm.tv/group/topic/422194
-// @version      1.3.1
+// @version      1.3.2
 // @description  在用户页面显示收藏状态分布彩色条
 // @author       owho
 // @icon         https://bgm.tv/img/favicon.ico
@@ -27,7 +27,7 @@
 
     // 添加样式（包含tooltip样式）
     const style = document.createElement('style');
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     style.textContent = css`
         html {
             --bar-bg-color: rgba(0, 0, 0, 0.05);

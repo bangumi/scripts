@@ -3,7 +3,7 @@
 // @namespace    https://bgm.tv/group/topic/
 // @homepage     https://bgm.tv/group/topic/418549
 // @homepageURL  https://bgm.tv/group/topic/418549
-// @version      0.1.7
+// @version      0.1.8
 // @description  在班固米显示动画进度时间线的对应评论
 // @author       oov
 // @match        https://bangumi.tv/
@@ -58,7 +58,7 @@
   };
 
   const style = document.createElement('style');
-  const css = (strings) => strings.join('');
+  const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   function updateStyle(shouldntNetabare) {
     style.textContent = css`
       .skeleton {

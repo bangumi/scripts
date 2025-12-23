@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
-// @version      1.1.8
+// @version      1.1.9
 // @description  也可以干别的
 // @author       mmv
 // @match        http*://bgm.tv/subject/topic/*
@@ -41,7 +41,7 @@
     const sfwq = '，受限条目？';
 
     const styleSheet = document.createElement("style");
-    const css = (strings) => strings.join('');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     styleSheet.innerText = css`
         .ccf-wrapper ~ .ccf-wrapper::before { /* 用 ~ 不用 + 避免与其他组件冲突 */
             content: "·";
