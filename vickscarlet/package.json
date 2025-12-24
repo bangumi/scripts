@@ -28,6 +28,8 @@
     "build:gadget-deprecated-notify": "pnpm --filter @b38dev/gadget-deprecated-notify build",
     "dev:fast-search": "pnpm --filter @b38dev/fast-search dev",
     "build:fast-search": "pnpm --filter @b38dev/fast-search build",
+    "dev:name-history": "pnpm --filter @b38dev/name-history dev",
+    "build:name-history": "pnpm --filter @b38dev/name-history build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },

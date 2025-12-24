@@ -1,0 +1,12 @@
+{
+  "name": "@b38dev/api",
+  "version": "1.0.0",
+  "description": "Indexeddb helper",
+  "main": "./src/index.ts",
+  "author": "Vick Scarlet(vick@syaro.io)",
+  "license": "MIT",
+  "exports": {
+    "./name_history": "./src/name_history.ts"
+  },
+  "dependencies": {}
+}
