@@ -51,6 +51,8 @@ html[data-theme="dark"] {
             flex-direction: column;
             flex: 0 0 auto;
             gap: 4px;
+            max-height: 50vh;
+            overflow-y: auto;
             > li {
                 flex: 0 0 auto;
                 text-wrap: nowrap;
