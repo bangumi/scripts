@@ -6,6 +6,7 @@ html[data-theme="dark"] {
 }
 
 .v-name-history-tool {
+    z-index: 10;
     --color-bg: #dfd8c88;
     --color-shadow: #0004;
     display: inline-block;
