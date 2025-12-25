@@ -45,11 +45,7 @@
             return;
     }
 
-    const allFocus = filterList.querySelectorAll('.focus');
-    allFocus.forEach(el => el.classList.remove('focus'));
-
     if (targetLink) {
-        targetLink.classList.add('focus');
         targetLink.click();
     }
 
