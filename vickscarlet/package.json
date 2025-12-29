@@ -30,6 +30,8 @@
     "build:fast-search": "pnpm --filter @b38dev/fast-search build",
     "dev:name-history": "pnpm --filter @b38dev/name-history dev",
     "build:name-history": "pnpm --filter @b38dev/name-history build",
+    "dev:snowing": "pnpm --filter @b38dev/snowing dev",
+    "build:snowing": "pnpm --filter @b38dev/snowing build",
     "build": "npm-run-all build:*",
     "test": "vitest"
   },
