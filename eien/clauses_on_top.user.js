@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 进度置顶
 // @namespace    clauses_on_top_mofeng
-// @version      0.1.1
+// @version      0.1.2
 // @description  Bangumi 进度置顶
 // @author       默沨
 // @match        https://bangumi.tv/
@@ -342,6 +342,12 @@
                         this.syncButtonStates(subjectId, isPinned);
                         return;
                     }
+                    if (chiiApp.cloud_settings.get('pin_button_display') === 'default') {
+                        const spacer = document.createElement('span');
+                        spacer.className = 'link-spacer';
+                        spacer.textContent = ' ';
+                        headerEditLink.parentNode.appendChild(spacer);
+                    }
                     const btn = this.createPinButton(subjectId, isPinned, true);
                     headerEditLink.parentNode.appendChild(btn);
                 }
@@ -354,11 +360,12 @@
                             this.syncButtonStates(subjectId, isPinned);
                             return;
                         }
-                        // tinyHeaderEditLink.parentNode.appendChild(document.createTextNode(' '));// 先插入一个空格
-                        const spacer = document.createElement('span');
-                        spacer.className = 'link-spacer';
-                        spacer.textContent = ' ';
-                        tinyHeaderEditLink.parentNode.appendChild(spacer);
+                        if (chiiApp.cloud_settings.get('pin_button_display') === 'default') {
+                            const spacer = document.createElement('span');
+                            spacer.className = 'link-spacer';
+                            spacer.textContent = ' ';
+                            tinyHeaderEditLink.parentNode.appendChild(spacer);
+                        }
                         const btn = this.createPinButton(subjectId, isPinned, false);
                         tinyHeaderEditLink.parentNode.appendChild(btn);
                     }
@@ -413,6 +420,9 @@
         if (!chiiApp.cloud_settings.get('pin_badge_display')) {
             chiiApp.cloud_settings.update({ 'pin_badge_display': 'default' });
         }
+        if (!chiiApp.cloud_settings.get('pin_button_display')) {
+            chiiApp.cloud_settings.update({ 'pin_button_display': 'default' });
+        }
         if (!chiiApp.cloud_settings.get('pin_button_style')) {
             chiiApp.cloud_settings.update({ 'pin_button_style': 'default' });
         }
@@ -452,6 +462,18 @@
                         { value: 'default', label: '显示' },
                         { value: 'normal', label: '仅列表显示' },
                         { value: 'none', label: '隐藏' }
+                    ]
+                },
+                {
+                    title: '置顶按钮样式',
+                    name: 'pin_button_display',
+                    type: 'radio',
+                    defaultValue: 'default',
+                    getCurrentValue: function () { return chiiApp.cloud_settings.get('pin_button_display') || 'default'; },
+                    onChange: function (value) { chiiApp.cloud_settings.update({ 'pin_button_display': value }); chiiApp.cloud_settings.save(); },
+                    options: [
+                        { value: 'default', label: '宽松' },
+                        { value: 'compact', label: '紧凑' }
                     ]
                 },
                 {
@@ -514,33 +536,6 @@
                 document.querySelector('#prgManagerMain #prgSubjectList [class~="clearit"]:not([class~="hidden"]) a.subjectItem.title.textTip')?.click();
             }
         }
-
-        // // 监听面板切换，动态添加按钮
-        // const observer = new MutationObserver((mutations) => {
-        //     mutations.forEach(mutation => {
-        //         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-        //             // 当面板显示/隐藏时，确保按钮存在
-        //             UIManager.addPinButtons();
-        //         }
-        //     });
-        // });
-
-        // const infoContainer = document.getElementById('cloumnSubjectInfo');
-        // if (infoContainer) {
-        //     observer.observe(infoContainer, {
-        //         attributes: true,
-        //         subtree: true,
-        //         attributeFilter: ['class']
-        //     });
-        // }
-
-        // // 监听列表项点击，同步更新
-        // list.addEventListener('click', (e) => {
-        //     // 延迟执行以等待原有事件处理完成
-        //     setTimeout(() => {
-        //         UIManager.addPinButtons();
-        //     }, 100);
-        // });
     }
 
     // ================================================================
