@@ -426,6 +426,9 @@
         if (!chiiApp.cloud_settings.get('pin_button_style')) {
             chiiApp.cloud_settings.update({ 'pin_button_style': 'default' });
         }
+        if (!chiiApp.cloud_settings.get('pin_large_item_display')) {
+            chiiApp.cloud_settings.update({ 'pin_large_item_display': 'default' });
+        }
         if (!chiiApp.cloud_settings.get('pin_cleanup_delay')) {
             chiiApp.cloud_settings.update({ 'pin_cleanup_delay': '7' });
         }
@@ -490,6 +493,18 @@
                     ]
                 },
                 {
+                    title: '列表模式大条目展示',
+                    name: 'pin_large_item_display',
+                    type: 'radio',
+                    defaultValue: 'default',
+                    getCurrentValue: function () { return chiiApp.cloud_settings.get('pin_large_item_display') || 'default'; },
+                    onChange: function (value) { chiiApp.cloud_settings.update({ 'pin_large_item_display': value }); chiiApp.cloud_settings.save(); },
+                    options: [
+                        { value: 'default', label: '置顶条目的最后更新' },
+                        { value: 'all', label: '全部条目的最后更新' },
+                    ]
+                },
+                {
                     title: '非在看条目清理延迟时间',
                     name: 'pin_cleanup_delay',
                     type: 'radio',
@@ -532,8 +547,10 @@
         }
 
         if (chiiApp.cloud_settings.get('pin_range') !== 'tiny') {
-            if (document.querySelector('#prgManagerHeader #prgManagerMode .focus')?.id === "switchNormalManager") {
-                document.querySelector('#prgManagerMain #prgSubjectList [class~="clearit"]:not([class~="hidden"]) a.subjectItem.title.textTip')?.click();
+            if (chiiApp.cloud_settings.get('pin_large_item_display') === 'default') {
+                if (document.querySelector('#prgManagerHeader #prgManagerMode .focus')?.id === "switchNormalManager") {
+                    document.querySelector('#prgManagerMain #prgSubjectList [class~="clearit"]:not([class~="hidden"]) a.subjectItem.title.textTip')?.click();
+                }
             }
         }
     }
