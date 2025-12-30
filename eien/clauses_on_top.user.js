@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 进度置顶
 // @namespace    clauses_on_top_mofeng
-// @version      0.1.0
+// @version      0.1.1
 // @description  Bangumi 进度置顶
 // @author       默沨
 // @match        https://bangumi.tv/
@@ -191,7 +191,6 @@
             const normalItems = [];
 
             items.forEach(item => {
-
                 // 检查是否是条目元素（有 subject_type 属性）
                 if (item.hasAttribute('subject_type')) {
                     const link = item.querySelector('a[subject_id]');
@@ -213,12 +212,11 @@
                 }
             });
 
-            // 清空列表
-            items.forEach(item => item.remove());
-
             // 重新插入：先置顶项，最后普通项
-            pinnedItems.forEach(item => list.appendChild(item));
-            normalItems.forEach(item => list.appendChild(item));
+            const fragment = document.createDocumentFragment();
+            pinnedItems.forEach(item => fragment.appendChild(item));
+            normalItems.forEach(item => fragment.appendChild(item));
+            list.appendChild(fragment);
         },
 
         // 重新排序 #cloumnSubjectInfo 中的面板列表
@@ -250,12 +248,11 @@
                     }
                 });
 
-                // 从 container 中移除所有面板
-                panels.forEach(panel => panel.remove());
-
                 // 重新插入：先置顶项
-                pinnedPanels.forEach(panel => container.appendChild(panel));
-                normalPanels.forEach(panel => container.appendChild(panel));
+                const fragment = document.createDocumentFragment();
+                pinnedPanels.forEach(panel => fragment.appendChild(panel));
+                normalPanels.forEach(panel => fragment.appendChild(panel));
+                container.appendChild(fragment);
             });
         },
 
@@ -428,7 +425,7 @@
 
         chiiLib.ukagaka.addPanelTab({
             tab: 'clauses_on_top',
-            label: '首页收藏箱条目置顶',
+            label: '首页条目置顶',
             type: 'options',
             config: [
                 {
@@ -478,6 +475,7 @@
                     getCurrentValue: function () { return chiiApp.cloud_settings.get('pin_cleanup_delay') || '7'; },
                     onChange: function (value) { chiiApp.cloud_settings.update({ 'pin_cleanup_delay': value }); chiiApp.cloud_settings.save(); },
                     options: [
+                        { value: '1', label: '1天' },
                         { value: '7', label: '7天' },
                         { value: '14', label: '14天' },
                         { value: '30', label: '30天' },
