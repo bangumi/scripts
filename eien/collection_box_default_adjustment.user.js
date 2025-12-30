@@ -13,6 +13,11 @@
 (function () {
     "use strict";
 
+    if (!chiiApp.cloud_settings.get('collection_box_default')) {
+        chiiApp.cloud_settings.update({ 'collection_box_default': 'anime' });
+        chiiApp.cloud_settings.save();
+    }
+
     chiiLib.ukagaka.addGeneralConfig({
         title: '收藏箱默认选项',
         name: 'collection_box_default',
@@ -47,6 +52,10 @@
 
     if (targetLink) {
         targetLink.click();
+
+        if (document.querySelector('#prgManagerHeader #prgManagerMode .focus')?.id === "switchNormalManager") {
+            document.querySelector('#prgManagerMain #prgSubjectList [class~="clearit"]:not([class~="hidden"]) a.subjectItem.title.textTip')?.click();
+        }
     }
 
 })();
