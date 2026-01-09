@@ -177,6 +177,15 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
+## 顶部维基直接可选编辑/修订历史/封面/关联 `0.0.1`
+顶部添加直接编辑/修订历史/封面/关联的按钮，不需要先点开修订历史，可设置点击 Wiki 按钮默认打开哪一项
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiBtnSwitch.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiBtnSwitch.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5349](https://bgm.tv/dev/app/5349) |
+
 ## Bangumi 关联人物职位查询 `0.1.1`
 在关联人物编辑页面快速查看人物最近参与的职位信息
 
