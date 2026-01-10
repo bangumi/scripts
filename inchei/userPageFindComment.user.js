@@ -176,11 +176,11 @@
         const btn = document.createElement('a');
         btn.href = 'javascript:;';
         btn.innerText = text;
-        btn.style = `text-wrap: nowrap;
+        btn.style = `white-space: nowrap;
                      border: none;
                      border-left: 1px solid rgba(200, 200, 200, 0.5);
                      padding: 4px 5px;
-                     cursor: pointer;`
+                     cursor: pointer`;
         return btn;
     }
 
