@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         角色维基修订历史对比差异
-// @namespace    wiki.person.diff
+// @name         人物/角色维基修订历史对比差异
+// @namespace    bangumi.wiki.mono.diff
 // @version      0.0.1
-// @description  显示角色维基修订历史
+// @description  显示人物/角色维基修订历史
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/character/*/edit
@@ -11,6 +11,12 @@
 // @match        http*://bgm.tv/character/*/upload_img
 // @match        http*://bangumi.tv/character/*/upload_img
 // @match        http*://chii.in/character/*/upload_img
+// @match        http*://bgm.tv/person/*/edit
+// @match        http*://bangumi.tv/person/*/edit
+// @match        http*://chii.in/person/*/edit
+// @match        http*://bgm.tv/person/*/upload_img
+// @match        http*://bangumi.tv/person/*/upload_img
+// @match        http*://chii.in/person/*/upload_img
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
@@ -28,8 +34,10 @@
 (function () {
     'use strict';
 
-    const characterID = location.pathname.split('/')[2];
-    if (!/\d+/.test(characterID)) return;
+    const monoId = location.pathname.split('/')[2];
+    if (!/\d+/.test(monoId)) return;
+
+    const monos = `${location.pathname.split('/')[1]}s`; // characters or persons
 
     const groupsLine = document.querySelector('.groupsLine');
     const simpleSidePanel = document.querySelector('.SimpleSidePanel');
@@ -45,7 +53,7 @@
     const fancyboxCSS = GM_getResourceText('FANCYBOX_CSS');
     GM_addStyle(fancyboxCSS);
     const customStyle = css`
-        #wikiPersonDiff {
+        #wikiMonoDiff {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -63,21 +71,21 @@
             z-index: 9999;
             overflow: hidden;
         }
-        #wikiPersonDiff .diff-tip-header {
+        #wikiMonoDiff .diff-tip-header {
             padding: 10px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, .2);
         }
-        #wikiPersonDiff .diff-tip-close {
+        #wikiMonoDiff .diff-tip-close {
             background: none;
             border: none;
             font-size: 18px;
             cursor: pointer;
             color: inherit;
         }
-        #wikiPersonDiff .diff-warning-section {
+        #wikiMonoDiff .diff-warning-section {
             padding: 10px 12px;
             margin: 0 0 16px;
             background: rgba(255, 248, 225, 0.6);
@@ -86,7 +94,7 @@
             color: #856404;
             overflow-wrap: break-word;
         }
-        #wikiPersonDiff .diff-error-section {
+        #wikiMonoDiff .diff-error-section {
             padding: 10px 12px;
             margin: 0 0 16px;
             background: rgba(255, 224, 178, 0.6);
@@ -94,18 +102,18 @@
             border-radius: 8px;
             color: #8B0000;
         }
-        #wikiPersonDiff .diff-warning-title, #wikiPersonDiff .diff-error-title {
+        #wikiMonoDiff .diff-warning-title, #wikiMonoDiff .diff-error-title {
             font-size: 14px;
             font-weight: 500;
             margin-bottom: 8px;
         }
-        #wikiPersonDiff .diff-tip-content {
+        #wikiMonoDiff .diff-tip-content {
             padding: 12px 16px;
             max-height: calc(80vh - 100px);
             overflow-y: auto;
             font-size: 13px;
         }
-        #wikiPersonDiff .d2h-file-diff {
+        #wikiMonoDiff .d2h-file-diff {
             width: 100% !important;
             overflow-x: auto !important;
         }
@@ -184,22 +192,22 @@
         .version-radio-group:has(input[name="versionB"]:checked) input[name="versionA"] {
             visibility: hidden;
         }
-        html[data-theme="dark"] #wikiPersonDiff {
+        html[data-theme="dark"] #wikiMonoDiff {
             background: rgba(40, 40, 40, .95);
             color: #fff;
             box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
         }
-        html[data-theme="dark"] #wikiPersonDiff .diff-warning-section {
+        html[data-theme="dark"] #wikiMonoDiff .diff-warning-section {
             background: rgba(50, 30, 70, 0.4);
             border-color: rgba(153, 102, 255, 0.5);
             color: #d8bfff;
         }
-        html[data-theme="dark"] #wikiPersonDiff .diff-error-section {
+        html[data-theme="dark"] #wikiMonoDiff .diff-error-section {
             background: rgba(80, 0, 0, 0.4);
             border-color: rgba(255, 99, 71, 0.5);
             color: #ffb6c1;
         }
-        html[data-theme="dark"] #wikiPersonDiff .diff-tip-header {
+        html[data-theme="dark"] #wikiMonoDiff .diff-tip-header {
             border-bottom-color: rgba(255, 255, 255, .05);
         }
         html[data-theme="dark"] .img-compare-item img {
@@ -213,18 +221,18 @@
         html[data-theme="dark"] .img-compare-label {
             color: #aaa;
         }
-        #wikiPersonDiff .d2h-wrapper {
+        #wikiMonoDiff .d2h-wrapper {
             text-align: left;
             transform: translateZ(0);
             width: 100%;
         }
-        #wikiPersonDiff .d2h-file-header.d2h-sticky-header {
+        #wikiMonoDiff .d2h-file-header.d2h-sticky-header {
             display: none !important;
         }
-        #wikiPersonDiff .hljs {
+        #wikiMonoDiff .hljs {
             background: unset;
         }
-        #wikiPersonDiff .d2h-code-line-ctn {
+        #wikiMonoDiff .d2h-code-line-ctn {
             white-space: pre-wrap;
         }
         /* fancybox适配 */
@@ -235,7 +243,7 @@
     GM_addStyle(customStyle);
 
     async function fetchHistorySummary() {
-        const apiUrl = `https://next.bgm.tv/p1/wiki/characters/${characterID}/history-summary`;
+        const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}/history-summary`;
         try {
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
@@ -256,7 +264,7 @@
             });
         } catch (error) {
             console.error('历史摘要获取失败:', error);
-            alert(`角色修订历史获取失败：${error.message}`);
+            alert(`修订历史获取失败：${error.message}`);
             return [];
         }
     }
@@ -282,7 +290,7 @@
             return versionCache.get(cacheKey);
         }
 
-        const apiUrl = `https://next.bgm.tv/p1/wiki/characters/-/revisions/${revisionId}`;
+        const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/-/revisions/${revisionId}`;
         try {
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
@@ -353,14 +361,14 @@
     }
 
     function createComparePopup() {
-        const existing = document.querySelector('#wikiPersonDiff');
+        const existing = document.querySelector('#wikiMonoDiff');
         if (existing) existing.remove();
 
         const popup = document.createElement('div');
-        popup.id = 'wikiPersonDiff';
+        popup.id = 'wikiMonoDiff';
         popup.innerHTML = `
             <div class="diff-tip-header">
-                <h3 class="diff-tip-title">角色维基修订历史对比</h3>
+                <h3 class="diff-tip-title">${monos === 'characters' ? '角色' : '人物'}修订历史对比</h3>
                 <button class="diff-tip-close">&times;</button>
             </div>
             <div class="diff-tip-content">
