@@ -55,7 +55,10 @@ export default defineConfig([
         tb_remove: "readonly",
         subjectList: "readonly",
         addRelateSubject: "readonly",
-        findSubjectFunc: "readonly"
+        findSubjectFunc: "readonly",
+        nowmode: 'readonly',
+        WCODEtoNormal: 'readonly',
+        NormaltoWCODE: 'readonly',
       }
     },
     rules: {

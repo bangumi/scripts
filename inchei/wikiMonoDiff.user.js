@@ -20,6 +20,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
+// @grant        unsafeWindow
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.2.0/diff.min.js
 // @require      https://cdn.jsdmirror.com/npm/diff2html/bundles/js/diff2html-ui-base.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js
@@ -301,7 +302,7 @@
                             const resData = JSON.parse(response.responseText);
                             const wikiPayload = resData || {};
 
-                            const compareText = JSON.stringify(wikiPayload, null, 2).replaceAll('\\n', '\n').replaceAll('\\r', '');
+                            const compareText = JSON.stringify(wikiPayload, null, 2).replaceAll('\\r', '');
                             const result = {
                                 compareText,
                                 img: resData.extra?.img
@@ -412,8 +413,8 @@
             const theme = document.documentElement.dataset.theme || 'light';
             const diffStr = window.Diff.createPatch(
                 `修订对比（旧 ↔ 新）`,
-                versionA.compareText,
-                versionB.compareText
+                versionA.compareText.replaceAll('\\n', '\n'),
+                versionB.compareText.replaceAll('\\n', '\n')
             );
 
             new window.Diff2HtmlUI(diffContainer, diffStr, {
@@ -440,6 +441,10 @@
     const h2Element = document.querySelector('.SimpleSidePanel h2');
     if (!h2Element) return;
 
+    const nameInput = document.querySelector('[name="crt_name"]');
+    const infoboxInput = document.querySelector('#subject_infobox');
+    const summaryInput = document.querySelector('#crt_summary');
+
     h2Element.classList.add('version-compare-h2');
     const compareBtn = document.createElement('a');
     compareBtn.className = 'l compare-btn';
@@ -452,19 +457,71 @@
         radioGroup.className = 'version-radio-group';
         li.prepend(radioGroup);
 
-        const radioA = document.createElement('input');
-        radioA.type = 'radio';
-        radioA.name = 'versionA';
-        radioA.className = 'version-radio';
-        radioA.dataset.revisionId = li.dataset.revisionId || '';
-        radioGroup.appendChild(radioA);
+        const createRadio = (id) => {
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = id;
+            radio.className = 'version-radio';
+            radio.dataset.revisionId = li.dataset.revisionId || '';
+            return radio
+        };
 
-        const radioB = document.createElement('input');
-        radioB.type = 'radio';
-        radioB.name = 'versionB';
-        radioB.className = 'version-radio';
-        radioB.dataset.revisionId = li.dataset.revisionId || '';
-        radioGroup.appendChild(radioB);
+        radioGroup.append(createRadio('versionA'), createRadio('versionB'));
+
+        const revertBtn = document.createElement('a');
+        revertBtn.classList.add('l', 'revertBtn');
+        revertBtn.href = 'javascript:';
+        revertBtn.textContent = '恢复';
+        revertBtn.addEventListener('click', async () => {
+            document.querySelectorAll('.revertBtn').forEach(b => {
+                b.style.pointerEvents = 'none';
+                b.style.opacity = '.6';
+            })
+            revertBtn.textContent = '加载中...'
+            try {
+                if (!isHistorySummaryFetched) {
+                    await fetchHistorySummary();
+                    matchDomWithApiData();
+                    isHistorySummaryFetched = true;
+                    document.querySelectorAll('.version-radio').forEach(radio => {
+                        const li = radio.closest('.groupsLine li');
+                        radio.dataset.revisionId = li.dataset.revisionId || '';
+                    });
+                }
+
+                const revisionId = revertBtn.closest('.groupsLine li').dataset.revisionId;
+                const revision = await extractVersionData(revisionId);
+                const revisionObj = JSON.parse(revision.compareText);
+
+                nameInput.value = revisionObj.name;
+                summaryInput.value = revisionObj.summary;
+
+                if (nowmode === 'normal') {
+                    NormaltoWCODE();
+                    infoboxInput.value = revisionObj.infobox;
+                    WCODEtoNormal();
+                } else if (document.querySelector('.wiki-enhance-editor')) {
+                    unsafeWindow.monaco?.editor.getEditors()?.[0].setValue(revisionObj.infobox);
+                } else {
+                    infoboxInput.value = revisionObj.infobox;
+                }
+
+                revertBtn.textContent = '已恢复';
+                setTimeout(() => {
+                    revertBtn.textContent = '恢复';
+                }, 2000);
+            } catch (error) {
+                console.error(error);
+                revertBtn.textContent = '加载失败，点击重试';
+                return;
+            } finally {
+                document.querySelectorAll('.revertBtn').forEach(b => {
+                    b.style.pointerEvents = 'auto';
+                    b.style.opacity = '1';
+                })
+            }
+        });
+        li.querySelector('small').append(document.createTextNode(' / '), revertBtn);
     });
 
     compareBtn.addEventListener('click', async () => {
