@@ -445,6 +445,7 @@
     const nameInput = document.querySelector('[name="crt_name"]');
     const infoboxInput = document.querySelector('#subject_infobox');
     const summaryInput = document.querySelector('#crt_summary');
+    const editSummaryInput = document.querySelector('#editSummary');
 
     h2Element.classList.add('version-compare-h2');
     const compareBtn = document.createElement('a');
@@ -490,7 +491,8 @@
                     });
                 }
 
-                const revisionId = revertBtn.closest('.groupsLine li').dataset.revisionId;
+                const revisionLi = revertBtn.closest('.groupsLine li');
+                const revisionId = revisionLi.dataset.revisionId;
                 const revision = await extractVersionData(revisionId);
                 const revisionObj = JSON.parse(revision.compareText);
 
@@ -507,6 +509,9 @@
                     infoboxInput.value = revisionObj.infobox;
                 }
 
+                editSummaryInput.value = `恢复版本${revisionId}（${
+                    revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
+                }）`;
                 revertBtn.textContent = '已恢复';
                 setTimeout(() => {
                     revertBtn.textContent = '恢复';
