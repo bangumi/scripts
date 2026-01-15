@@ -231,6 +231,15 @@
 | Greasy Fork | [552012](https://greasyfork.org/zh-CN/scripts/552012) |
 | 组件 | 无 |
 
+## 人物/角色维基修订历史对比差异 `0.0.1`
+显示人物/角色维基修订历史
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiMonoDiff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiMonoDiff.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
 ## 条目页快捷创建角色并关联 `0.0.2`
 条目角色页添加创建按钮，创建后自动跳转到关联页面并将新角色列入其中
 

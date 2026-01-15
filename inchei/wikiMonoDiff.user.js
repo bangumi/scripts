@@ -30,6 +30,7 @@
 // @connect      next.bgm.tv
 // @connect      lain.bgm.tv
 // @license      MIT
+// @updateURL    https://github.com/bangumi/scripts/raw/master/inchei/wikiMonoDiff.user.js
 // ==/UserScript==
 
 (function () {
