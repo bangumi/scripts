@@ -245,29 +245,53 @@
     GM_addStyle(customStyle);
 
     async function fetchHistorySummary() {
-        const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}/history-summary`;
+        const LIMIT = 100;
+        let allData = [];
+
         try {
+            // 先获取第一页知道总数
+            const firstPage = await fetchPage(0);
+            const total = firstPage.total || 0;
+            const totalPages = Math.ceil(total / LIMIT);
+
+            allData.push(...firstPage.data);
+
+            // 并行获取剩余页面
+            const pagePromises = [];
+            for (let page = 1; page < totalPages; page++) {
+                pagePromises.push(fetchPage(page));
+            }
+
+            const results = await Promise.all(pagePromises);
+            results.forEach(result => {
+                allData.push(...result.data);
+            });
+
+            historySummaryData = allData;
+            return allData;
+
+        } catch (error) {
+            console.error('历史摘要获取失败:', error);
+            return [];
+        }
+
+        async function fetchPage(pageNum) {
+            const url = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}/history-summary?limit=${LIMIT}&offset=${pageNum * LIMIT}`;
+
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
                     method: 'GET',
-                    url: apiUrl,
+                    url,
                     onload: (response) => {
                         if (response.status >= 200 && response.status < 300) {
-                            const data = JSON.parse(response.responseText);
-                            historySummaryData = data.data || [];
-                            resolve(historySummaryData);
+                            resolve(JSON.parse(response.responseText));
                         } else {
                             reject(new Error(`HTTP ${response.status}`));
                         }
                     },
-                    onerror: (error) => reject(new Error(error.message)),
-                    ontimeout: () => reject(new Error('请求超时'))
+                    onerror: reject
                 });
             });
-        } catch (error) {
-            console.error('历史摘要获取失败:', error);
-            alert(`修订历史获取失败：${error.message}`);
-            return [];
         }
     }
 
