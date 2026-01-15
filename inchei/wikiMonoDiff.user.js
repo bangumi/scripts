@@ -348,13 +348,23 @@
         }
     }
 
+    const updateCaption = async (fullUrl, thumbElement, labelElement, labelText) => {
+        if (!fullUrl) return;
+
+        const img = new Image();
+        img.onload = () => {
+            const size = `${img.width}×${img.height}`;
+            thumbElement.dataset.caption = `${labelText} - ${size}`;
+            labelElement.textContent = `${labelText} (${size})`;
+        };
+        img.src = fullUrl;
+    };
+
     function createImgCompareSection(imgA, imgB) {
-        // 只要两张图不同（包括一有一无），就生成对比栏
         if (imgA === imgB) return null;
 
-        // 构建图片地址：有图则拼接高清/缩略图，无图则为空
-        const imgFullUrlA = imgA ? `https://lain.bgm.tv/pic/crt/l/${imgA}` : '';
-        const imgFullUrlB = imgB ? `https://lain.bgm.tv/pic/crt/l/${imgB}` : '';
+        const imgFullUrlA = imgA ? `//lain.bgm.tv/pic/crt/l/${imgA}` : '';
+        const imgFullUrlB = imgB ? `//lain.bgm.tv/pic/crt/l/${imgB}` : '';
         const imgThumbUrlA = imgA ? `//lain.bgm.tv/r/400/pic/crt/l/${imgA}` : '';
         const imgThumbUrlB = imgB ? `//lain.bgm.tv/r/400/pic/crt/l/${imgB}` : '';
 
@@ -383,6 +393,19 @@
                 </div>
             </div>
         `;
+
+        const oldLink = section.querySelector('[data-caption="旧"]');
+        const newLink = section.querySelector('[data-caption="新"]');
+        const oldLabel = section.querySelector('.img-compare-item:first-child .img-compare-label');
+        const newLabel = section.querySelector('.img-compare-item:last-child .img-compare-label');
+
+        if (imgFullUrlA && oldLink && oldLabel) {
+            updateCaption(imgFullUrlA, oldLink, oldLabel, '旧');
+        }
+        if (imgFullUrlB && newLink && newLabel) {
+            updateCaption(imgFullUrlB, newLink, newLabel, '新');
+        }
+
         return section;
     }
 
@@ -591,8 +614,6 @@
             compareVersions(versionAId, versionBId);
         } else if (versionAId === versionBId) {
             alert('请选择两个不同的修订版本');
-        } else {
-            alert('请先选中两个需要对比的修订版本');
         }
     });
 
