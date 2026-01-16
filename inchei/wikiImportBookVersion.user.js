@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         从引进出版社网站获取班固米书籍版本
 // @namespace    wiki.import.book.version
-// @version      0.2.1
-// @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
+// @version      0.2.2
+// @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
 // @author       你
 // @match        https://www.tongli.com.tw/*
 // @match        https://www.egmanga.com.tw/*
@@ -15,6 +15,10 @@
 // @match        https://*.jd.com/*
 // @match        https://*.dangdang.com/*
 // @match        https://*.tmall.com/*
+// @match        https://pdc.capub.cn/*
+// @match        https://www.kingstone.com.tw/*
+// @match        https://www.books.com.tw/*
+// @match        https://www.silkbook.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @connect      tongli.com.tw
@@ -28,6 +32,10 @@
 // @connect      item.jd.com
 // @connect      product.dangdang.com
 // @connect      detail.tmall.com
+// @connect      pdc.capub.cn
+// @connect      www.kingstone.com.tw
+// @connect      www.books.com.tw
+// @connect      www.silkbook.com
 // @license      MIT
 // @require      https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js
 // @gf           https://greasyfork.org/zh-CN/scripts/556109
@@ -45,10 +53,6 @@
         '長鴻': '長鴻出版社',
     };
     const pressShortName = {
-        '台灣角川': '台角',
-        '尖端出版': '尖端',
-        '台灣東販': '東販',
-
         '天闻角川': '天角',
         '磨铁图书': '磨铁',
         '青马文化': '青马',
@@ -83,6 +87,14 @@
         formatISBN(isbnText) {
             return (isbnText || '').replace(/\D/g, '');
         },
+        formatVersionName(press) {
+            return pressShortName[press] || press.replace('出版社', '');
+        },
+        /**
+         * @param {string} text
+         * @param {regex} regex
+         * @returns {string}
+         */
         getByRegex(text, regex) {
             return (text.match(regex) || [])[1]?.trim() || '';
         },
@@ -96,7 +108,7 @@
             if (!el) return '';
             el = el.cloneNode(true);
             // 当当 .t1
-            el.querySelectorAll('p, div, .t1, li').forEach(p => p.after(document.createTextNode('\n')));
+            el.querySelectorAll('p, div, .t1, li, td').forEach(p => p.after(document.createTextNode('\n')));
             return (el.textContent || '').trim();
         },
         createBtn(text) {
@@ -179,7 +191,7 @@
                 '出版社': '長鴻出版社',
                 '发售日': /出版日期：\s*([^ \n]+)/,
                 '页数': /頁數：\s*([^ \n]+)/,
-                'ISBN': /ISBN：\s*([^ \n]+)/
+                'ISBN': /ISBN：\s*([^ \n]+)/,
             }
         },
         '东贩版': { // https://www.tohan.com.tw/product.php?act=view&cid=150&id=6658
@@ -192,7 +204,7 @@
                 '发售日': /出版日期\n\n +([^ ]+)/,
                 '页数': ({doc}) => utils.getByRegex(utils.getText('#menu3', doc), /頁數：(\d+)頁/),
                 'ISBN': /ISBN\n\n *([^ ]+)/,
-                '译者': /譯者\n\n *([^ ]+)/
+                '译者': /譯者\n\n *([^ ]+)/,
             }
         },
         '台角版': { // https://www.kadokawa.com.tw/products/9786264356435
@@ -203,7 +215,7 @@
                 '价格': ({doc}) => utils.getText('.price-regular.js-price', doc) || utils.getText('.js-price', doc),
                 '出版社': '台灣角川',
                 '发售日': /上市日期：\s*([^ ]+)/,
-                'ISBN': /ISBN：\s*([^ ]+)/
+                'ISBN': /ISBN：\s*([^ ]+)/,
             }
         },
         '青文版': { // https://www.ching-win.com.tw/product-detail/10510315A
@@ -261,7 +273,7 @@
                     const match = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
                     return match ? match[1] : '';
                 },
-                'ISBN': /ISBN\s*([^ \n]+)/
+                'ISBN': /ISBN\s*([^ \n]+)/,
             }
         },
         '_豆瓣': { // https://book.douban.com/subject/36799715/
@@ -349,7 +361,93 @@
                 'ISBN': /ISBN编号\n([^\n]+)/,
                 '译者': /译者\n([^\n]+)/,
             }
-        }
+        },
+        '_PDC': { // https://pdc.capub.cn/search.html#/detail?id=czqhpcdniljvieoxpbqetoj5l5fu6j6fz4ejaj3u2e2ssey4aagi5bfzt44vgd2uwiofrtk53m27y&from=1&type=cip
+            match: 'pdc.capub.cn',
+            anchorSelector: '.table_wrap div > span:first-child',
+            detailsSelector: '.table_data',
+            fields: {
+                '版本名': ({detailsText}) => {
+                    const title = utils.getByRegex(detailsText, /正书名\n([^\n]+)/);
+                    const num = utils.getByRegex(detailsText, /分册号\n([^\n]+)/);
+                    return `${title}${num ? ` ${num}` : ''}`;
+                },
+                '语言': '简体中文',
+                '价格': ({detailsText}) => {
+                    const priceNum = utils.getByRegex(detailsText, /定价（元）\n([^\n]+)/);
+                    return priceNum ? `￥${priceNum}` : '';
+                },
+                '出版社': /出版单位\n([^\n]+)/,
+                '发售日': /出版时间\n([^\n]+)/,
+                'ISBN': /ISBN\n([^\n]+)/,
+                '译者': /;\s+([^;]+)\n?译\./,
+            }
+        },
+        '_金石堂': { // https://www.kingstone.com.tw/basic/2019461217771
+            match: 'www.kingstone.com.tw',
+            anchorSelector: '.pdname_basic',
+            detailsSelector: '.beta_main',
+            fields: {
+                '价格': ({doc}) => {
+                    const price = utils.getText('.sty00', doc) || utils.getText('.sty2', doc);
+                    return price ? `NT$${price}` : '';
+                },
+                '出版社': ({detailsText}) => {
+                    const press = utils.getByRegex(detailsText, /出版社：\s*([^ ]+)/);
+                    return pressFullName[press] || press;
+                },
+                '页数': ({doc}) => {
+                    const subDetails = utils.getText('.detaildatafield', doc);
+                    return utils.getByRegex(subDetails, /頁數\s*([^ ]+)/);
+                },
+                '发售日': /出版日：\s*([^ ]+)/,
+                'ISBN': ({doc}) => {
+                    const subDetails = utils.getText('.detaildatafield', doc);
+                    return utils.getByRegex(subDetails, /ISBN\s*([^ ]+)/);
+                },
+                '译者': /譯者：\s*([^ ]+)/,
+            }
+        },
+        '_博客來': { // https://www.books.com.tw/products/0010994716?sloc=main
+            match: 'www.books.com.tw',
+            anchorSelector: 'h1',
+            detailsSelector: '.type02_p003',
+            fields: {
+                '价格': ({doc}) => {
+                    const price = utils.getText('.prod_cont_b em', doc);
+                    return price ? `NT$${price}` : '';
+                },
+                '出版社': ({detailsText}) => {
+                    const press = utils.getByRegex(detailsText, /出版社：\s*([^ \n]+)/);
+                    return pressFullName[press] || press;
+                },
+                '发售日': /出版日期：\s*([^ \n]+)/,
+                'ISBN': ({doc}) => {
+                    const subDetails = utils.getText('.type02_m058', doc);
+                    return utils.getByRegex(subDetails, /ISBN：\s*([^ \n]+)/)
+                },
+                '译者': /譯者：\s*([^ \n]+)/,
+            }
+        },
+        '_新絲路': { // https://www.silkbook.com/book_detail.asp?goods_ser=kk0603915
+            match: 'www.silkbook.com',
+            anchorSelector: '.title3',
+            detailsSelector: 'td[background^="Images/book/detail"] .txt2',
+            fields: {
+                '价格': ({doc}) => {
+                    const price = utils.getText('.N23', doc);
+                    return price ? `NT$${price}` : '';
+                },
+                '出版社': ({detailsText}) => {
+                    const press = utils.getByRegex(detailsText, /出版社：\s*([^ \n]+)/);
+                    return pressFullName[press] || press;
+                },
+                '发售日': /出版日期：\s*([^ \n]+)/,
+                '页数': /頁數：\s*([^ \n]+)/,
+                'ISBN': /ISBN：\s*([^ \n]+)/,
+                '译者': /譯者：\s*([^ \n]+)/,
+            }
+        },
     };
 
     /**
@@ -437,6 +535,7 @@
 [出品方|${values['出品方']}]
 [出版社|${values['出版社']}]
 [发售日|${values['发售日']}]
+[册数|]
 [页数|${values['页数']}]
 [ISBN|${values['ISBN']}]
 [译者|${values['译者']}]
