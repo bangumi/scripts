@@ -39,15 +39,36 @@
 (function() {
     'use strict';
 
+    const pressFullName = {
+        '青文': '青文出版社',
+        '東立': '東立出版社',
+        '長鴻': '長鴻出版社',
+    };
+    const pressShortName = {
+        '台灣角川': '台角',
+        '尖端出版': '尖端',
+        '台灣東販': '東販',
+
+        '天闻角川': '天角',
+        '磨铁图书': '磨铁',
+        '青马文化': '青马',
+    };
+    const labelToProducer = {
+        '漫编室': '读库文化',
+        '次元书馆': '红阅科技',
+        '墨狸': '中信出版集团',
+        '中信·墨狸': '中信出版集团',
+    }
+
     const utils = {
         formatDate(dateText) {
             if (!dateText) return '';
-            const normalizedText = dateText.replace(/\/|年|月|日/g, '-');
+            const normalizedText = dateText.replace(/\/|\.|年|月|日/g, '-');
             const parts = normalizedText.split('-').map(part => {
                 const num = parseInt(part.trim(), 10);
                 return isNaN(num) ? part : num.toString().padStart(2, '0');
             }).filter(part => part);
-    
+
             switch (parts.length) {
                 case 1:
                     return parts[0];
@@ -356,6 +377,7 @@
             '别名': '',
             '语言': '繁体中文',
             '价格': '',
+            '图书品牌': '',
             '出品方': '',
             '出版社': '',
             '页数': '',
@@ -390,9 +412,14 @@
         };
 
         values['版本名'] = values['版本名'].replace(/^[【(]限[)】]|(完結?|\(完\)|END)$/g, '').trim();
+        const producerPresumed = labelToProducer[values['出品方']];
+        if (producerPresumed) {
+            values['图书品牌'] = values['出品方'];
+            values['出品方'] = producerPresumed;
+        }
 
-        const versionName = versionKey.startsWith('_') 
-            ? `${values['出品方'] || values['出版社']}版` 
+        const versionName = versionKey.startsWith('_')
+            ? `${utils.formatVersionName(values['图书品牌'] || values['出品方'] || values['出版社'])}版`
             : versionKey;
 
         return `|版本:${versionName}={
@@ -406,6 +433,7 @@
 })()}]
 [语言|${values['语言']}]
 [价格|${values['价格']}]
+[图书品牌|${values['图书品牌']}]
 [出品方|${values['出品方']}]
 [出版社|${values['出版社']}]
 [发售日|${values['发售日']}]
