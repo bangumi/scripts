@@ -1,5 +1,14 @@
 # [inchei](https://bgm.tv/user/inchei)
 
+## 首页查看书籍上次标记进度时间并高亮可能更新 `0.0.1`
+首页查看书籍上次标记进度时间并高亮可能更新
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [bookLastRead.user.js](https://github.com/bangumi/scripts/blob/master/inchei/bookLastRead.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5412](https://bgm.tv/dev/app/5412) |
+
 ## bangumi 可拖动弹框 `2.1.0`
 使 bangumi 的 thickbnox 可拖动
 
@@ -10,6 +19,15 @@
 | GitHub | [draggableThickbox.user.js](https://github.com/bangumi/scripts/blob/master/inchei/draggableThickbox.user.js?raw=true) |
 | Greasy Fork | 无 |
 | 组件 | [130](https://bgm.tv/dev/app/130) |
+
+## 首页进度管理记住上次类型 `0.0.1`
+首页进度管理记住上次类型
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [iLikeBooks.user.js](https://github.com/bangumi/scripts/blob/master/inchei/iLikeBooks.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5413](https://bgm.tv/dev/app/5413) |
 
 ## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.9`
 为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
@@ -42,7 +60,7 @@
 | Greasy Fork | 无 |
 | 组件 | [4701](https://bgm.tv/dev/app/4701) |
 
-## 班固米右上角快速搜索 `0.1.10`
+## 班固米右上角快速搜索 `0.1.11`
 右上角搜索框输入文字后快速显示部分搜索结果
 
 - 讨论页：https://bgm.tv/group/topic/409735
@@ -92,6 +110,15 @@
 | GitHub | [timelineEpComment.user.js](https://github.com/bangumi/scripts/blob/master/inchei/timelineEpComment.user.js?raw=true) |
 | Greasy Fork | [529610](https://greasyfork.org/zh-CN/scripts/529610) |
 | 组件 | [3654](https://bgm.tv/dev/app/3654) |
+
+## 时光机时间线跳页 `0.1`
+在Bangumi时间线页面快速跳转功能
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [timelineJump.user.js](https://github.com/bangumi/scripts/blob/master/inchei/timelineJump.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5409](https://bgm.tv/dev/app/5409) |
 
 ## RSS订阅班友收藏 `0.2.5`
 在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
@@ -195,6 +222,15 @@
 | Greasy Fork | 无 |
 | 组件 | [4966](https://bgm.tv/dev/app/4966) |
 
+## 关联条目/角色拖拽排序 `0.0.1`
+修改自 biota
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiDrag2Sort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiDrag2Sort.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5410](https://bgm.tv/dev/app/5410) |
+
 ## Bangumi 编辑对比工具 `0.1`
 在Bangumi编辑页面显示编辑前后的差异对比
 
@@ -213,8 +249,8 @@
 | Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
 | 组件 | [4948](https://bgm.tv/dev/app/4948) |
 
-## 从引进出版社网站获取班固米书籍版本 `0.2.1`
-支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫，暴露window.getBgmVersion(url)方法
+## 从引进出版社网站获取班固米书籍版本 `0.2.2`
+支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
 
 | 载点 | 链接 |
 |------|------|
@@ -279,4 +315,13 @@
 | GitHub | [wikiUploadPic.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiUploadPic.user.js?raw=true) |
 | Greasy Fork | [545636](https://greasyfork.org/zh-CN/scripts/545636) |
 | 组件 | 无 |
+
+## 关联单行本自动排序 `0.0.1`
+按照数字一键排序单行本
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiVolSort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolSort.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5411](https://bgm.tv/dev/app/5411) |
 

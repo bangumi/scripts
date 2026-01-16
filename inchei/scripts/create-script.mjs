@@ -4,13 +4,15 @@ import path from 'path';
 import process from 'process';
 import openFile from './utils.mjs';
 
-const scriptName = process.argv[2];
+const scriptId = process.argv[2];
+const scriptName = process.argv[3];
+const scriptDescription = process.argv[4];
 
-if (!scriptName) {
+if (!scriptId) {
     process.exit(1);
 }
 
-const safeFileName = scriptName
+const safeFileName = scriptId
     .replace(/[^\w\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-');
@@ -21,12 +23,14 @@ if (fs.existsSync(filePath)) {
     process.exit(1);
 }
 
+const camelToDotLower = (str) => str.replace(/([A-Z])/g, (match) => `.${match.toLowerCase()}`);
+
 // 生成默认脚本内容
 const scriptContent = `// ==UserScript==
-// @name         ${scriptName}
-// @namespace    
+// @name         ${scriptName || scriptId}
+// @namespace    bangumi.${camelToDotLower(scriptId)}
 // @version      0.0.1
-// @description  ${scriptName}
+// @description  ${scriptDescription || scriptName || ''}
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/*
@@ -34,7 +38,7 @@ const scriptContent = `// ==UserScript==
 // @match        http*://bangumi.tv/*
 // @grant        none
 // @license      MIT
-// @gf           
+// @gf
 // ==/UserScript==
 
 (function () {
