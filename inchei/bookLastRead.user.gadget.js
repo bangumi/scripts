@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         首页查看书籍上次标记进度时间并高亮可能更新
 // @namespace    bangumi.book.last.read
-// @version      0.0.1
+// @version      0.1.0
 // @description  首页查看书籍上次标记进度时间并高亮可能更新
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -16,6 +16,17 @@
 
 (async function () {
     'use strict';
+
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
+    const style = document.createElement('style');
+    style.textContent = css`
+        .bookTimeLabel { font-size:11px; cursor:pointer; }
+        .bookTimeLabel:hover { opacity: .8; }
+        .bookTimeUrl, .bookTimeUrlSetter { font-size: 11px; padding-left: 1px; }
+        .bookTimeUrlSetter { visibility: hidden; }
+        .tinyMode:hover .bookTimeUrlSetter { visibility: visible; }
+    `;
+    document.head.append(style);
 
     const myUserName = document.querySelector('#dock a').href.split('/').pop();
     const res = await fetch(`https://api.bgm.tv/v0/users/${myUserName}/collections?subject_type=1&type=3&limit=50`);
@@ -39,11 +50,11 @@
         return sa > intervalMs ? Math.min(Math.floor(sa / intervalMs), 3) : null;
     };
 
-    const intervals = chiiApp.cloud_settings.getAll();
-    const deadIntervals = Object.keys(intervals).filter(i => !ids.includes(+i));
-    console.debug(intervals, deadIntervals)
-    if (deadIntervals.length) {
-        for (const i of deadIntervals) {
+    const configs = chiiApp.cloud_settings.getAll();
+    const deadConfigs = Object.keys(configs).filter(i => !ids.includes(+i.replace('l', '')));
+    console.debug(configs, deadConfigs)
+    if (deadConfigs.length) {
+        for (const i of deadConfigs) {
             chiiApp.cloud_settings.delete(i);
         }
         chiiApp.cloud_settings.save();
@@ -52,20 +63,49 @@
     const applyTimes = (selector, pos) => {
         const targets = document.querySelectorAll(selector);
         targets.forEach((t, i) => {
+            const id = ids[i];
+
             const label = document.createElement('span');
             label.textContent = `上次阅读：${fmtTime(times[i])}`;
-            label.style = 'font-size:11px;cursor:pointer';
+            label.className = 'bookTimeLabel';
             t.insertAdjacentElement(pos, label);
 
+            let link;
+            const initLink = url => {
+                if (!link) {
+                    link = document.createElement('a');
+                    link.className = 'l bookTimeUrl';
+                    link.textContent = '读';
+                    link.target = '_blank';
+                    label.after(link);
+                }
+                link.href = url;
+            };
+
+            const urlSetter = document.createElement('a');
+            urlSetter.className = 'l bookTimeUrlSetter';
+            urlSetter.textContent = '±';
+            urlSetter.href = 'javascript:';
+            urlSetter.addEventListener('click', () => {
+                const url = prompt('设置阅读链接（https://）', configs[`${id}l`] || '');
+                if (!url) return;
+                chiiApp.cloud_settings.update({ [`${id}l`]: url });
+                chiiApp.cloud_settings.save();
+                initLink(url);
+            });
+            label.after(urlSetter);
+
+            const url = configs[`${id}l`];
+            if (url) initLink(url);
+
             const box = t.closest('.tinyMode');
-            const id = ids[i];
-            const upd = outdated(times[i], intervals[id]);
+            const upd = outdated(times[i], configs[id]);
             if (upd) {
                 box.style.backgroundColor = `rgba(50, 200, 50, .${1 + upd})`;
             }
 
             label.addEventListener('click', () => {
-                const interval = prompt('设置更新间隔（单位：天，默认30天）', intervals[id] || 30);
+                const interval = prompt('设置更新间隔（单位：天，默认30天）', configs[id] || 30);
                 if (!interval) return;
                 chiiApp.cloud_settings.update({ [id]: interval });
                 chiiApp.cloud_settings.save();
