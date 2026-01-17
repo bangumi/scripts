@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         关联条目/角色拖拽排序
 // @namespace    bangumi.wiki.drag.to.sort
-// @version      0.0.1
+// @version      0.0.2
 // @description  修改自 biota
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -14,13 +14,7 @@
 
 (function() {
   'use strict';
-  // 动态引入jquery-ui
-  const script = document.createElement('script');
-  script.src = 'https://code.jquery.com/ui/1.11.4/jquery-ui.min.js';
-  script.async = false;
-  document.body.appendChild(script);
 
-  // 动态创建.sort-active样式类
   const style = document.createElement('style');
   const cssText = `
     a.chiiBtn.sort-active {
@@ -38,34 +32,46 @@
   style.appendChild(document.createTextNode(cssText));
   document.head.appendChild(style);
 
-  // 核心业务逻辑
-  $(function() {
-    // 兜底创建按钮
-    if (!$('#modifyOrder').length) {
-      $('.inputBtn').after('<a href="javascript:void(0);" id="modifyOrder" class="chiiBtn rr">排序</a>');
-    }
+  const sortableScript = document.createElement('script');
+  sortableScript.src = 'https://cdn.jsdmirror.com/npm/sortablejs@1.15.0/Sortable.min.js';
+  sortableScript.async = false;
+  sortableScript.onload = initSortableWithJquery;
+  document.body.appendChild(sortableScript);
+  /* global Sortable */
 
-    let clickCount = 0;
-    $('#modifyOrder').on('click', function() {
-      clickCount++;
-      const $btn = $(this);
-      const $crtRelateSubjects = $('#crtRelateSubjects');
-
-      if (clickCount % 2 === 1) {
-        // 单数点击：启用排序 + 添加样式
-        $crtRelateSubjects.sortable({
-          update: function() {
-            $(this).find('.item_sort').each(function(i) {
-              $(this).val(i + 1);
-            });
-          }
-        });
-        $btn.addClass('sort-active');
-      } else {
-        // 双数点击：销毁排序 + 移除样式
-        $crtRelateSubjects.sortable('destroy');
-        $btn.removeClass('sort-active');
+  let sortableInstance = null;
+  function initSortableWithJquery() {
+    $(function() {
+      if (!$('#modifyOrder').length) {
+        $('.inputBtn').after('<a href="javascript:void(0);" id="modifyOrder" class="chiiBtn rr">排序</a>');
       }
+
+      let clickCount = 0;
+      $('#modifyOrder').on('click', function() {
+        clickCount++;
+        const $btn = $(this);
+        const $crtRelateSubjects = $('#crtRelateSubjects');
+        const crtRelateSubjectsDom = $crtRelateSubjects[0];
+
+        if (clickCount % 2 === 1) {
+          $btn.addClass('sort-active');
+          sortableInstance = new Sortable(crtRelateSubjectsDom, {
+            animation: 150,
+            handle: null,
+            onEnd: function() {
+              $crtRelateSubjects.find('.item_sort').each(function(i) {
+                $(this).val(i + 1);
+              });
+            }
+          });
+        } else {
+          $btn.removeClass('sort-active');
+          if (sortableInstance) {
+            sortableInstance.destroy();
+            sortableInstance = null;
+          }
+        }
+      });
     });
-  });
+  }
 })();
