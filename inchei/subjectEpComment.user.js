@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         章节讨论吐槽加强
 // @namespace    https://bgm.tv/group/topic/408098
-// @version      0.5.6
+// @version      0.6.0
 // @description  章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 // @author       oo
 // @icon         https://bgm.tv/img/favicon.ico
@@ -158,6 +158,37 @@
                 }
             });
         });
+    }
+
+    async function getHiddenEps(subjectID) {
+        const cache = sessionStorage.getItem(`incheijs_ep_hidden_${subjectID}`);
+        if (cache) return JSON.parse(cache);
+        const eps = [];
+        const base = `https://api.bgm.tv/v0/episodes?subject_id=${subjectID}&type=0&limit=100&offset=`;
+        const getPromise = async (page) => {
+            const res = await fetch(`${base}${100 * page}`);
+            if (!res.ok) throw new Error(`API HTTP ${res.status}`);
+            const json = await res.json();
+            return json;
+        };
+        const first = await getPromise(1);
+        const total = first.total;
+        eps.push(...first.data);
+
+        const totalPages = Math.ceil(total / 100);
+        if (totalPages > 2) {
+            const promises = [];
+            for (let page = 2; page < totalPages; page++) {
+                promises.push(getPromise(page));
+            }
+
+            const allSubsequentResponses = await Promise.all(promises);
+            allSubsequentResponses.forEach(res => {
+                eps.push(...res.data);
+            });
+        }
+        sessionStorage.setItem(`incheijs_ep_hidden_${subjectID}`, JSON.stringify(eps));
+        return eps;
     }
 
     const cacheHandler = {
@@ -471,7 +502,8 @@
         if (['anime', 'real'].includes(type)) {
             await renderWatched();
             const prgList = document.querySelector('.prg_list');
-            const innerDefault = [...prgList.querySelectorAll('a')].map(elem => `<div id="incheijs_ep_content_${elem.id.split('_').pop()}"><div class="loader"></div></div>`).join('');
+            const prgAs = [...prgList.querySelectorAll('a')];
+            let innerDefault = prgAs.map(elem => `<div id="incheijs_ep_content_${elem.id.split('_').pop()}"><div class="loader"></div></div>`).join('');
             document.querySelector('.subject_tag_section').insertAdjacentHTML('afterend', /* html */`
                 <div class="subject_my_comments_section">
                     <h2 class="subtitle" style="font-size:14px">我的每集吐槽
@@ -498,11 +530,19 @@
             const checkRest = document.querySelector('#checkRest');
             expandInd.addEventListener('click', async (e) => {
                 e.target.hidden = true;
+                if (prgAs.length > 99) {
+                    try {
+                        const hiddenEps = await getHiddenEps(subjectID);
+                        innerDefault += hiddenEps.map(ep => `<div id="incheijs_ep_content_${ep.id}"><div class="loader"></div></div>`).join('');
+                    } catch (e) {
+                        console.error(`获取全部章节失败，${e}`);
+                    }
+                }
                 const inner = document.querySelector('.subject_my_comments_section .inner');
                 inner.innerHTML = innerDefault;
                 inner.hidden = false;
                 inner.classList.add('loading');
-                await displayMine();
+                await displayMine(subjectID);
                 inner.classList.remove('loading');
                 if (!inner.querySelector('h2')) {
                     inner.innerHTML = '<div style="width: 100%;text-align:center">没有找到吐槽_(:з”∠)_</div>';
@@ -568,7 +608,8 @@
         onCached = () => { },
         shouldFetch = () => true,
         onSuccess = () => { },
-        onError = () => { }
+        onError = () => { },
+        bonus = [],
     } = {}) {
         const epElems = document.querySelectorAll('.prg_list a');
         const tasks = [];
@@ -598,6 +639,25 @@
             });
         }
 
+        for (const ep of bonus.filter(e => e.comment)) {
+            const epData = {
+                epName: `ep.${ep.ep}`,
+                epId: ep.id
+            };
+
+            tasks.push(async () => {
+                try {
+                    const data = await retryAsyncOperation(() => getEpComments(epData.epId));
+                    const comments = data.filter(comment => comment.user.username === myUsername && comment.content);
+                    if (comments.length) saveRepliesHTMLFromJSON(epData.epName, epData.epId, comments);
+                    onSuccess(epData, comments);
+                } catch (error) {
+                    console.error(`Failed to fetch hidden ep ${ep.id}:`, error);
+                    onError(epData);
+                }
+            });
+        }
+
         await limitConcurrency(tasks, 5);
     }
 
@@ -622,7 +682,7 @@
         await renderEps(({ epElem }) => !epElem.classList.contains('commented') && !epElem.classList.contains('uncommented'));
     }
 
-    async function displayMine() {
+    async function displayMine(subjectID) {
         await walkThroughEps({
             cached: ({ epId }) => sessionStorage.getItem(`incheijs_ep_content_${epId}`),
             onCached: ({ epId }) => setContainer(epId),
@@ -630,7 +690,8 @@
             onSuccess: ({ epId }) => setContainer(epId),
             onError: ({ epName, epId }) => setContainer(epId,
                 `${epName}加载失败<div class="clear section_line"></div>`
-            )
+            ),
+            bonus: JSON.parse(sessionStorage.getItem(`incheijs_ep_hidden_${subjectID}`) || [])
         });
 
         function setContainer(epId, content) {
