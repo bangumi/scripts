@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         章节讨论吐槽加强
 // @namespace    https://bgm.tv/group/topic/408098
-// @version      0.6.0
+// @version      0.6.1
 // @description  章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 // @author       oo
 // @icon         https://bgm.tv/img/favicon.ico
@@ -691,7 +691,7 @@
             onError: ({ epName, epId }) => setContainer(epId,
                 `${epName}加载失败<div class="clear section_line"></div>`
             ),
-            bonus: JSON.parse(sessionStorage.getItem(`incheijs_ep_hidden_${subjectID}`) || [])
+            bonus: JSON.parse(sessionStorage.getItem(`incheijs_ep_hidden_${subjectID}`) || '[]')
         });
 
         function setContainer(epId, content) {
