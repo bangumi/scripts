@@ -527,6 +527,15 @@
                     for (const name of await getConvertedNames(originalName)) {
                         if (yieldUnique(name)) yield name;
                     }
+
+                    for (const name of await getConvertedNames(originalName)) {
+                        const _aliased = await window.personAliasQuery?.(name);
+                        if (_aliased) {
+                            const aliasedName = _aliased.name;
+                            if (yieldUnique(aliasedName)) yield aliasedName;
+                        }
+                    }
+
                 }
 
                 for await (const candidate of candidateNames()) {
