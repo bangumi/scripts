@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
-// @version      0.5.3
+// @version      0.5.4
 // @description  自动生成Bangumi编辑摘要
 // @author       You
 // @icon         https://bgm.tv/img/favicon.ico
@@ -293,11 +293,24 @@
         const oldMultiData = getMultiData(oldData);
         const newMultiData = getMultiData(newData);
 
+        const getMultiKeySum = multiKV => `（${Object.keys(multiKV).join('、')}）`;
         const multiKeyChanges = [];
         for (const key in oldMultiData) {
             if (key in newMultiData) {
                 const subChanges = genFieldChanges(oldMultiData[key], newMultiData[key]);
                 multiKeyChanges.push(...subChanges.map(change => `${key}${change}`));
+                delete oldData[key];
+                delete newData[key];
+            } else if (key in newData) {
+                multiKeyChanges.push(`修改${key}${getMultiKeySum(oldMultiData[key])}为单行模式`);
+                delete oldData[key];
+                delete newData[key];
+            }
+        }
+
+        for (const key in newMultiData) {
+            if (key in oldData) {
+                multiKeyChanges.push(`修改${key}为列表模式${getMultiKeySum(newMultiData[key])}`);
                 delete oldData[key];
                 delete newData[key];
             }
