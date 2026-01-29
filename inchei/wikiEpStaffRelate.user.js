@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
-// @version      0.2.4
+// @version      0.2.5
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -115,7 +115,7 @@
         "色彩演出": /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
         "氛围稿": /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
     };
-    const regex_sym = /[\uff1a\u003A【】/／、、＆\u0026♦◆■=]/g;
+    const regex_sym = /[\uff1a\u003A【】（）()/／、、＆\u0026♦◆■=]/g;
     // #endregion
 
     // #region
@@ -722,7 +722,7 @@
         function recordSection(records, text, className) {
             if (!records.length) return '';
             const itemTag = className === 'unmatched' ? 'div' : 'a';
-            return `
+            return /* html */`
         <div class="staff-record-list">
             <h4 class="staff-tip-title ${className}">${text}</h4>
             ${records.map(({ name, role, epLabels, aliases, liId }) => `
@@ -894,7 +894,7 @@
         const noStaffEps = [];
 
         for (const [epLabel, desc] of Object.entries(epDescs)) {
-            let processedDesc = desc.replaceAll("\r", "").replaceAll(regex_sym, "、").replace(/\([^)]*\)|（[^）]*）/g, '');
+            let processedDesc = desc.replaceAll("\r", "").replaceAll(regex_sym, "、");
 
             // 按正则表达式位置排序，确保先匹配长的职位名称
             const regexes = Object.entries(regexes_per).sort((a, b) => {
