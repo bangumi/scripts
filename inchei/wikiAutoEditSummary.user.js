@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
-// @version      0.5.4
+// @version      0.5.5
 // @description  自动生成Bangumi编辑摘要
 // @author       You
 // @icon         https://bgm.tv/img/favicon.ico
@@ -357,18 +357,20 @@
                 if (oldValue === null) {
                     changes.push(`添加${key}`);
                 } else {
-                    const splitValue = value =>
-                        value.split(SPLIT_RULE).flatMap(v => {
-                            v = v.trim();
-                            return /^\d+(:\d{2})*$/.test(v) ? v : v.split(':').map(u => u.trim()); // 时间
-                        }).filter(v => v);
-                    const oldSubValues = splitValue(oldValue);
-                    const newSubValues = splitValue(newValue);
-                    if (oldSubValues.length > 1 || newSubValues.length > 1) {
-                        const subChanges = genArrChanges(oldSubValues, newSubValues, key);
-                        if (subChanges.length) {
-                            changes.push(...subChanges);
-                            continue;
+                    if (document.querySelector('.focus.chl').href.split('/').pop() === 'anime') {
+                        const splitValue = value =>
+                            value.split(SPLIT_RULE).flatMap(v => {
+                                v = v.trim();
+                                return /^\d+(:\d{2})*$/.test(v) ? v : v.split(':').map(u => u.trim()); // 时间
+                            }).filter(v => v);
+                        const oldSubValues = splitValue(oldValue);
+                        const newSubValues = splitValue(newValue);
+                        if (oldSubValues.length > 1 || newSubValues.length > 1) {
+                            const subChanges = genArrChanges(oldSubValues, newSubValues, key);
+                            if (subChanges.length) {
+                                changes.push(...subChanges);
+                                continue;
+                            }
                         }
                     }
                     changes.push(`修改${key}（${oldValue} → ${newValue}）`);
