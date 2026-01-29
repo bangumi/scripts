@@ -245,7 +245,7 @@
         applyHandler();
 
         function applyHandler() {
-            ul.querySelectorAll('a').forEach(a => {
+            ul.querySelectorAll(':scope a').forEach(a => {
                 a.addEventListener('click', e => {
                     e.preventDefault();
                     clickHandler(a);

@@ -304,9 +304,9 @@
                 });
                 /* eslint-enable */
 
-                clone.querySelectorAll('[id]').forEach(e => e.id += '_clone'); // 楼中楼回复
+                clone.querySelectorAll(':scope [id]').forEach(e => e.id += '_clone'); // 楼中楼回复
 
-                clone.querySelectorAll('.erase_post').forEach(e => { // 添加原删除事件
+                clone.querySelectorAll(':scope .erase_post').forEach(e => { // 添加原删除事件
                     /* eslint-disable */
                     $(e).click(function () {
                         if (confirm(AJAXtip['eraseReplyConfirm'])) {
@@ -548,7 +548,7 @@
                     inner.innerHTML = '<div style="width: 100%;text-align:center">没有找到吐槽_(:з”∠)_</div>';
                     return;
                 }
-                [...inner.querySelectorAll('.section_line')].pop()?.remove();
+                [...inner.querySelectorAll(':scope .section_line')].pop()?.remove();
             });
             checkRest.addEventListener('click', async (e) => {
                 expandInd.hidden = true;

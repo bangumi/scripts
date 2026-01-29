@@ -501,7 +501,7 @@
       let toObserve, getLis;
       if (['下一页 ››', '‹‹上一页'].includes(text)) {
         toObserve = tmlContent;
-        getLis = (addedNodes) => [...addedNodes].find((node) => node.id === 'timeline')?.querySelectorAll('li');
+        getLis = (addedNodes) => [...addedNodes].find((node) => node.id === 'timeline')?.querySelectorAll(':scope li');
       } else if (['加载更多', '再来点'].includes(text)) { // 兼容加载更多、筛选简评
         toObserve = document.querySelector('#timeline');
         getLis = (addedNodes) => [...addedNodes].filter((node) => node.tagName === 'UL').flatMap((ul) => [...ul.children]);
@@ -574,7 +574,7 @@
 
     rssTab.addEventListener('click', async () => {
       tmlContent.innerHTML = '<div class="loading"><img src="/img/loadingAnimation.gif"></div>';
-      [...menu.querySelectorAll('a.focus')].forEach((e) => e.classList.remove('focus'));
+      [...menu.querySelectorAll(':scope a.focus')].forEach((e) => e.classList.remove('focus'));
       rssTab.querySelector('a').className = 'focus';
 
       if (!feedItems) { // 时间胶囊点击后再加载

@@ -7,7 +7,6 @@
 // @match        *://bgm.tv/user/*/timeline*
 // @match        *://bangumi.tv/user/*/timeline*
 // @match        *://chii.in/user/*/timeline*
-// @gadget       https://bgm.tv/dev/app/5409
 // ==/UserScript==
 
 (function () {

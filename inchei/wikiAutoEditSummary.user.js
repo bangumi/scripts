@@ -464,9 +464,9 @@
         return {
             name: short(li.querySelector('.title a').textContent) || '',
             infoName: li.querySelector('.info a')?.textContent || '',
-            type: li.querySelectorAll('option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
+            type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
             remark: li.querySelector('input[type=text]')?.value.trim() || '',
-            checkboxes: [...li.querySelectorAll('input[type=checkbox]')].map(checkbox => ({
+            checkboxes: [...li.querySelectorAll(':scope input[type=checkbox]')].map(checkbox => ({
                 checked: checkbox.checked,
                 title: checkbox.previousElementSibling.textContent.slice(0, -1).trim() || ''
             })),

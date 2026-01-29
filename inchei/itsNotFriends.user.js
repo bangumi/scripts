@@ -122,7 +122,7 @@
         if (menua) menua.textContent = '关注';
 
         observeElement('.tml_item span.info', msg => {
-            if (msg.querySelectorAll(`a[href^="${location.origin}/user/"]`).length !== 3) return;
+            if (msg.querySelectorAll(`:scope a[href^="${location.origin}/user/"]`).length !== 3) return;
             msg.innerHTML = msg.innerHTML.replace(/将(.+?)加为了好友/, '关注了$1');
         }, { once: false });
     }

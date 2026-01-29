@@ -355,7 +355,7 @@
     // 解析职位信息
     const parsePositionGroups = container => {
         const counts = {};
-        container.querySelectorAll('#browserItemList .badge_job').forEach(tag => {
+        container.querySelectorAll(':scope #browserItemList .badge_job').forEach(tag => {
             const name = tag.textContent.trim();
             counts[name] = (counts[name] || 0) + 1;
         });

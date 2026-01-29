@@ -714,7 +714,7 @@
                 <details><summary>${epLabel}</summary>${desc.replaceAll('\n', '<br>')}</details>`
             ).join('')}</details>`;
         })() }`;
-        contentBox.querySelectorAll('.search-again').forEach(a => a.addEventListener('click', () => {
+        contentBox.querySelectorAll(':scope .search-again').forEach(a => a.addEventListener('click', () => {
             document.querySelector('#subjectName').value = a.dataset.keyword;
             findSubjectFunc();
         }));

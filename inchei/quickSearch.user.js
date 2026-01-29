@@ -196,7 +196,7 @@
     });
 
     searchInput.addEventListener('keydown', function (event) {
-        const suggestionItems = suggestionBox.querySelectorAll('li');
+        const suggestionItems = suggestionBox.querySelectorAll(':scope li');
         if (event.key === 'Escape') {
             hideBox();
         } else if (event.key === 'ArrowDown') {

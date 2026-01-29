@@ -108,7 +108,7 @@
             if (!el) return '';
             el = el.cloneNode(true);
             // 当当 .t1
-            el.querySelectorAll('p, div, .t1, li, td').forEach(p => p.after(document.createTextNode('\n')));
+            el.querySelectorAll(':scope p, div, .t1, li, td').forEach(p => p.after(document.createTextNode('\n')));
             return (el.textContent || '').trim();
         },
         createBtn(text) {

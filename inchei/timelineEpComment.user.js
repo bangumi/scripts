@@ -205,7 +205,7 @@
     if (['下一页 ››', '‹‹上一页'].includes(text)) {
       superGetEpComments.abortAll();
       toObserve = tmlContent;
-      getLis = addedNodes => [...addedNodes].find((node) => node.id === 'timeline')?.querySelectorAll('li');
+      getLis = addedNodes => [...addedNodes].find((node) => node.id === 'timeline')?.querySelectorAll(':scope li');
     } else if (['加载更多', '再来点'].includes(text)) {
       // 兼容加载更多
       toObserve = document.querySelector('#timeline');

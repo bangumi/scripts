@@ -602,7 +602,7 @@
                     }
 
                     // 激活修改功能
-                    added.querySelectorAll('.thickbox').forEach(tb_init);
+                    added.querySelectorAll(':scope .thickbox').forEach(tb_init);
                     // from chiiLib.user_index.manage
                     /* eslint-disable */
                     $(modifyBtn).click(function () {
@@ -1135,7 +1135,7 @@
     }
 
     async function renderList(loader, container, cat, handler = () => { }) {
-        const applyHandler = () => ul.querySelectorAll('a').forEach(handler);
+        const applyHandler = () => ul.querySelectorAll(':scope a').forEach(handler);
         const searching = makeLoading();
         let initStart = 1;
 
@@ -1258,7 +1258,7 @@
                             observer.observe(targetNode, config);
                         } else if (node.querySelectorAll) {
                             observer.disconnect();
-                            const matchingElements = node.querySelectorAll(selector);
+                            const matchingElements = node.querySelectorAll(`:scope ${selector}`);
                             matchingElements.forEach(matchingNode => callback(matchingNode));
                             observer.observe(targetNode, config);
                         }
