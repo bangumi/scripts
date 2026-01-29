@@ -373,7 +373,7 @@
                             }
                         }
                     }
-                    changes.push(`修改${key}（${oldValue} → ${newValue}）`);
+                    changes.push(`修改${key}（${short(oldValue)} → ${short(newValue)}）`);
                 }
             }
         }
