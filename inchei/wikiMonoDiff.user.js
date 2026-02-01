@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         人物/角色维基修订历史对比差异
 // @namespace    bangumi.wiki.mono.diff
-// @version      0.0.1
+// @version      0.0.2
 // @description  显示人物/角色维基修订历史
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -361,7 +361,7 @@
     };
 
     function createImgCompareSection(imgA, imgB) {
-        if (imgA === imgB) return null;
+        if ((!imgA && !imgB) || imgA === imgB) return null;
 
         const imgFullUrlA = imgA ? `//lain.bgm.tv/pic/crt/l/${imgA}` : '';
         const imgFullUrlB = imgB ? `//lain.bgm.tv/pic/crt/l/${imgB}` : '';
