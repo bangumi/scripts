@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Bangumi 关联人物职位查询
 // @namespace    https://bangumi.tv
-// @version      0.1.1
+// @version      0.1.3
 // @description  在关联人物编辑页面快速查看人物最近参与的职位信息
 // @author       aaa
-// @match        https://bgm.tv/subject/*/add_related/person
-// @match        https://bangumi.tv/subject/*/add_related/person
-// @match        https://chii.in/subject/*/add_related/person
+// @match        https://bgm.tv/subject/*/add_related/person*
+// @match        https://bangumi.tv/subject/*/add_related/person*
+// @match        https://chii.in/subject/*/add_related/person*
 // @run-at       document-idle
 // @license      MIT
 // @gadget       https://bgm.tv/dev/app/4966
@@ -247,7 +247,7 @@
 
         try {
             // 发送请求
-            const res = await fetch(`https://bgm.tv/person/${personId}/works`, {
+            const res = await fetch(`/person/${personId}/works`, {
                 credentials: 'same-origin',
                 headers: { 'Accept': 'text/html' }
             });

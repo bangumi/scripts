@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
-// @version      0.2.5
+// @version      0.2.6
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -156,74 +156,6 @@
         document.querySelector('#crt_name').value = name;
     } else if (location.pathname.match(/^\/subject\/\d+\/add_related\/person$/)) {
         if (!document.querySelector('.focus').classList.contains('anime')) return;
-
-        const subjectId = location.pathname.split('/')[2];
-        const btn = document.createElement('button');
-        btn.textContent = '获取章节简介填写参与';
-        btn.id = 'epDescStaff';
-        btn.style = 'margin:5px;float:right';
-        btn.addEventListener('click', async () => {
-            try {
-                btn.disabled = true;
-                btn.textContent = '获取章节中……';
-
-                const allEps = [];
-                let offset = 0;
-                const limit = 100;
-
-                while (true) {
-                    const eps = await getEps(subjectId, offset);
-                    if (!eps || eps.length === 0) break;
-
-                    allEps.push(...eps);
-                    if (eps.length < limit) break;
-
-                    offset += limit;
-                }
-
-                if (!allEps.length) throw new Error('未获取到章节数据');
-
-                const epData = {}, epDescs = {};
-                for (const ep of allEps) {
-                    const epTypes = ['', 'SP', 'OP', 'ED'];
-                    const epLabel = `${epTypes[ep.type]}${ep.sort}`;
-
-                    epData[epLabel] = ep;
-                    epDescs[epLabel] = ep.desc;
-                }
-                epsCache = epData;
-
-                btn.textContent = '解析参与中……';
-                const [staffInfo, noStaffEps] = extractStaffInfo(epDescs);
-
-                if (Object.keys(staffInfo).length || noStaffEps.length) {
-                    await updAppearEps(staffInfo, noStaffEps);
-                } else {
-                    throw new Error('未解析到任何集数的人员信息');
-                }
-
-                btn.textContent = `解析完成！共处理 ${allEps.length} 集`;
-            } catch (e) {
-                btn.textContent = `获取失败：${e.message}，点击重试`;
-                btn.disabled = false;
-            }
-        });
-        document.querySelector('#indexCatBox').after(btn);
-
-        const params = new URLSearchParams(location.search);
-        if (params.has('staffs')) {
-            try {
-                const staffInfo = JSON.parse(params.get('staffs'));
-
-                btn.disabled = true;
-                btn.textContent = '解析参与中……';
-                await updAppearEps(staffInfo, []);
-                btn.textContent = '解析完成！点击获取全部章节';
-                btn.disabled = false;
-            } catch (e) {
-                console.error(`参数解析错误：${e.message}`);
-            }
-        }
 
         const style = document.createElement('style');
         const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
@@ -406,6 +338,74 @@
 
         `;
         document.head.appendChild(style);
+
+        const subjectId = location.pathname.split('/')[2];
+        const btn = document.createElement('button');
+        btn.textContent = '获取章节简介填写参与';
+        btn.id = 'epDescStaff';
+        btn.style = 'margin:5px;float:right';
+        btn.addEventListener('click', async () => {
+            try {
+                btn.disabled = true;
+                btn.textContent = '获取章节中……';
+
+                const allEps = [];
+                let offset = 0;
+                const limit = 100;
+
+                while (true) {
+                    const eps = await getEps(subjectId, offset);
+                    if (!eps || eps.length === 0) break;
+
+                    allEps.push(...eps);
+                    if (eps.length < limit) break;
+
+                    offset += limit;
+                }
+
+                if (!allEps.length) throw new Error('未获取到章节数据');
+
+                const epData = {}, epDescs = {};
+                for (const ep of allEps) {
+                    const epTypes = ['', 'SP', 'OP', 'ED'];
+                    const epLabel = `${epTypes[ep.type]}${ep.sort}`;
+
+                    epData[epLabel] = ep;
+                    epDescs[epLabel] = ep.desc;
+                }
+                epsCache = epData;
+
+                btn.textContent = '解析参与中……';
+                const [staffInfo, noStaffEps] = extractStaffInfo(epDescs);
+
+                if (Object.keys(staffInfo).length || noStaffEps.length) {
+                    await updAppearEps(staffInfo, noStaffEps);
+                } else {
+                    throw new Error('未解析到任何集数的人员信息');
+                }
+
+                btn.textContent = `解析完成！共处理 ${allEps.length} 集`;
+            } catch (e) {
+                btn.textContent = `获取失败：${e.message}，点击重试`;
+                btn.disabled = false;
+            }
+        });
+        document.querySelector('#indexCatBox').after(btn);
+
+        const params = new URLSearchParams(location.search);
+        if (params.has('staffs')) {
+            try {
+                const staffInfo = JSON.parse(params.get('staffs'));
+
+                btn.disabled = true;
+                btn.textContent = '解析参与中……';
+                await updAppearEps(staffInfo, []);
+                btn.textContent = '解析完成！点击获取全部章节';
+                btn.disabled = false;
+            } catch (e) {
+                console.error(`参数解析错误：${e.message}`);
+            }
+        }
     }
 
     async function getEps(subjectId, offset = 0) {
@@ -425,40 +425,77 @@
         return type.toLowerCase() === 'ep' ? number : `${type}${number}`;
     }
 
+    function isStrictInt(str) {
+        return /^-?\d+$/.test(str);
+    }
+    function sortAppearEps(eps) {
+        return eps.sort((a, b) => {
+            const isANum = isStrictInt(a);
+            const isBNum = isStrictInt(b);
+            if (isANum && isBNum) return Number(a) - Number(b);
+            if (isANum) return -1;
+            if (isBNum) return 1;
+            return a.localeCompare(b);
+        });
+    }
+
     function parseAppearEps(input) {
         if (!input) return [];
 
-        const isNum = str => /^-?\d+(\.\d+)?$/.test(str) && !isNaN(parseFloat(str));
+        const rawSegments = input.split(',')
+            .map(seg => seg.trim())
+            .filter(seg => seg);
 
-        const toStr = num => Number.isInteger(num) ? num.toString() : num.toFixed(1).replace(/\.0$/, '');
+        const resultSet = new Set();
 
-        return Array.from(
-            new Set(
-                input.split(',')
-                    .map(seg => seg.trim())
-                    .filter(seg => seg)
-                    .flatMap(seg => {
-                        if (seg.includes('-')) {
-                            const [s, e] = seg.split('-').map(p => p.trim());
-                            if (isNum(s) && isNum(e)) {
-                                const [min, max] = [Math.min(s, e), Math.max(s, e)].map(Number);
-                                const step = Number.isInteger(min) && Number.isInteger(max) ? 1 : 0.5;
-                                return Array.from(
-                                    { length: Math.ceil((max - min) / step) + 1 },
-                                    (_, i) => toStr(min + i * step)
-                                );
-                            }
-                        }
-                        // 处理单个集数（数字标准化，非数字直接保留）
-                        return isNum(seg) ? toStr(Number(seg)) : seg;
-                    })
-            )
-        ).sort((a, b) => {
-            // 排序：数字在前按数值排，非数字在后按字典序排
-            const aNum = isNum(a) ? Number(a) : Infinity;
-            const bNum = isNum(b) ? Number(b) : Infinity;
-            return aNum !== bNum ? aNum - bNum : a.localeCompare(b);
+        rawSegments.forEach(seg => {
+            if (seg.includes('-')) {
+                const [s, e] = seg.split('-').map(p => p.trim());
+                if (isStrictInt(s) && isStrictInt(e)) {
+                    const min = Math.min(Number(s), Number(e));
+                    const max = Math.max(Number(s), Number(e));
+                    for (let i = min; i <= max; i++) {
+                        resultSet.add(i.toString());
+                    }
+                } else {
+                    resultSet.add(seg);
+                }
+            } else {
+                resultSet.add(seg);
+            }
         });
+
+        return sortAppearEps(Array.from(resultSet));
+    }
+
+    function genAppearEps(epArr) {
+        epArr = sortAppearEps([...new Set(epArr)]);
+        const isStrictInt = str => /^-?\d+$/.test(str);
+
+        const integers = epArr.filter(isStrictInt).map(Number);
+        const others = epArr.filter(e => !isStrictInt(e));
+
+        const rangeParts = [];
+
+        if (integers.length > 0) {
+            let start = integers[0];
+            let prev = integers[0];
+
+            for (let i = 1; i <= integers.length; i++) {
+                const curr = integers[i];
+                if (i < integers.length && curr === prev + 1) {
+                    prev = curr;
+                } else {
+                    rangeParts.push(start === prev ? `${start}` : `${start}-${prev}`);
+                    if (i < integers.length) {
+                        start = curr;
+                        prev = curr;
+                    }
+                }
+            }
+        }
+
+        return [...rangeParts, ...others].join(',');
     }
 
     async function updAppearEps(staffInfo, noStaffEps) {
@@ -592,10 +629,13 @@
                     const input = matchedLi.querySelector('[name$="[appear_eps]"]');
                     const existingSet = new Set(parseAppearEps(input.value));
 
+                    const labelsToAdd = [];
+
                     for (const epLabel of epLabels) {
                         const wasExisting = existingSet.has(epLabel);
+
                         if (!wasExisting) {
-                            input.value = [input.value.trim(), epLabel].filter(Boolean).join(',');
+                            labelsToAdd.push(epLabel);
                             if (matchedLi.classList.contains('old')) {
                                 matchedLi.style.background = 'rgba(255, 248, 165, 0.2)';
                             }
@@ -615,6 +655,10 @@
                             record.aliases[originalName] ||= [];
                             record.aliases[originalName].push(epLabel);
                         }
+                    }
+
+                    if (labelsToAdd.length) {
+                        input.value = genAppearEps([...existingSet, ...labelsToAdd]);
                     }
                 }
             }
@@ -744,6 +788,9 @@
         </div>`;
         }
 
+        tipBox.style.opacity = '0';
+        document.body.appendChild(tipBox);
+
         let isDragging = false;
         let startX, startY, offsetX, offsetY;
 
@@ -765,6 +812,7 @@
 
         tipBox.style.bottom = `${targetBottom}px`;
         tipBox.style.right = `${targetRight}px`;
+        tipBox.style.opacity = '';
 
         function handleMove(clientX, clientY) {
             const moveX = clientX - startX;
@@ -817,8 +865,6 @@
         document.addEventListener('touchend', () => {
             if (isDragging) isDragging = false;
         });
-
-        document.body.appendChild(tipBox);
     }
 
     function escapeAttr(str) {
@@ -1275,10 +1321,10 @@
 
     function colorSbjList(item) {
         let map = new Map();
-        $('#crtRelateSubjects .clearit').each(function(idx) {
-            let job = $(this).find('select').val();
+        $('#crtRelateSubjects li.clearit').each(function(idx) {
+            let job = $(this).find('option:checked').text().split(' /')[0];
             let staff = $(this).find('.l').text();
-            let key = job + normalize(staff);
+            let key = staff + '-' + job;
             map.get(key) instanceof Array ? map.get(key).push(idx) : map.set(key, [idx]);
 
             if (!item) {
