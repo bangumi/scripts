@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi wiki 图片上传增强
 // @namespace    https://bgm.tv/group/topic/431819
-// @version      1.4.5
+// @version      1.4.6
 // @description  支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
 // @author       You
 // @match        https://bangumi.tv/character/*/upload_photo
@@ -587,7 +587,8 @@
             zoomable: true,
             background: false,
             ready: updateSquarePreview,
-            cropend: updateSquarePreview
+            cropend: updateSquarePreview,
+            aspectRatio: location.pathname === '/settings' ? 1 : NaN,
         });
 
         updateSquarePreview();
