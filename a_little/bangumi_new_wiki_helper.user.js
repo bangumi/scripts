@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.4.40
+// @version     0.4.41
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -6194,6 +6194,10 @@ function initNewSubject(wikiInfo) {
             }
         });
         window.dispatchEvent(customEvent);
+        const $input = $q('.e-wiki-cover-container [name=submit]');
+        if ($input) {
+            $input.value = '添加条目并上传封面';
+        }
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
     const dataUrl = ((_a = coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
@@ -6528,7 +6532,7 @@ const init = async () => {
             initChara(m);
         });
     }
-    if (['bangumi.tv', 'chii.tv', 'bgm.tv'].includes(host)) {
+    if (['bangumi.tv', 'chii.in', 'bgm.tv'].includes(host)) {
         addStyle();
         bangumi.init();
         // @TODO remove check
