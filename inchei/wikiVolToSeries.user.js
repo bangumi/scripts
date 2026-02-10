@@ -92,12 +92,16 @@
     } else if (pathname.endsWith('/add_related/subject/book')) {
         const sbjId = document.referrer.match(/subject\/(\d+)/)?.[1];
         const info = sessionStorage.getItem('seriesVolumeInfo');
-        if (document.querySelector('#crtRelateSubjects li')) {
+        if (!sbjId || !info
+            || document.querySelector('.focus.chl').href.split('/').pop() !== 'book'
+            || !document.querySelector('.nameSingle .grey').nextElementSibling
+        ) return;
+        const [volName, volId] = info.split('"""');
+        if (document.querySelector(`#crtRelateSubjects li a[href="/subject/${volId}"]`)) {
             sessionStorage.removeItem('seriesVolumeInfo');
+            sessionStorage.removeItem('seriesVolumeCover')
             return;
         }
-        if (!sbjId || !info) return;
-        const [volName, volId] = info.split('"""');
         const ul = document.querySelector('#crtRelateSubjects');
         ul.insertAdjacentHTML('afterbegin', `<li class="clearit"><a href="javascript:void(0);" class="h rr">x</a><p class="title"><a href="/subject/${volId}" target="_blank" class="l">${volName}</a></p><span class="tip">关系: <select name="infoArr[n0][relation_type]" style="width:150px;"><option value="1003">单行本 / Offprint</option><option value="1">改编 / Adaptation</option><option value="1002">系列 / Series</option><option value="1004">画集 / Album</option><option value="1010">不同版本 / Version</option><option value="1005">前传 / Prequel</option><option value="1006">续集 / Sequel</option><option value="1007">番外篇 / Side Story</option><option value="1008">主线故事 / Parent Story</option><option value="1015">不同演绎 / Alternative Version</option><option value="1011">角色出演 / Character</option><option value="1012">相同世界观 / Same setting</option><option value="1013">不同世界观 / Alternative setting</option><option value="1014">联动 / Collaboration</option><option value="1099">其他 / Other</option></select><input type="hidden" name="infoArr[n0][subject_id]" value="${volId}"><input type="hidden" name="infoArr[n0][subject_type_id]" value="1"></span></li>`);
         document.querySelector('#subjectName').value = document.querySelector('.nameSingle a').textContent;
