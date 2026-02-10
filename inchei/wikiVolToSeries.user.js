@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         由单行本创建系列
 // @namespace    wiki.vol.to.series
-// @version      0.0.1
+// @version      0.0.2
 // @description  从单行本第一卷创建系列条目
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -14,6 +14,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      next.bgm.tv
 // @license      MIT
+// @updateURL    https://github.com/bangumi/scripts/raw/master/inchei/wikiVolToSeries.user.js
 // @gf
 // @gadget
 // ==/UserScript==
@@ -33,9 +34,8 @@
     }
 
     if (pathname.match(/^\/subject\/\d+$/)) { // 条目页
-        const type = document.querySelector('.nameSingle .grey');
-        if (type.textContent !== '漫画') return;
-        if (type.nextElementSibling) { // 系列
+        if (document.querySelector('.focus.chl').href.split('/').pop() !== 'book') return;
+        if (document.querySelector('.nameSingle .grey').nextElementSibling) { // 系列
             const info = sessionStorage.getItem('seriesVolumeInfo');
             if (document.referrer !== `${location.origin}/new_subject/1` || !info) return;
             location.href += '/add_related/subject/book';

@@ -195,7 +195,7 @@
 | Greasy Fork | 无 |
 | 组件 | [5349](https://bgm.tv/dev/app/5349) |
 
-## Bangumi 关联人物职位查询 `0.1.3`
+## Bangumi 关联人物职位查询 `0.1.4`
 在关联人物编辑页面快速查看人物最近参与的职位信息
 
 | 载点 | 链接 |
@@ -287,7 +287,7 @@
 | Greasy Fork | [554524](https://greasyfork.org/zh-CN/scripts/554524) |
 | 组件 | [5040](https://bgm.tv/dev/app/5040) |
 
-## Bangumi wiki 图片上传增强 `1.4.5`
+## Bangumi wiki 图片上传增强 `1.4.6`
 支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
 
 - 讨论页：https://bgm.tv/group/topic/431819
@@ -306,4 +306,13 @@
 | GitHub | [wikiVolSort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolSort.user.js?raw=true) |
 | Greasy Fork | 无 |
 | 组件 | [5411](https://bgm.tv/dev/app/5411) |
+
+## 由单行本创建系列 `0.0.2`
+从单行本第一卷创建系列条目
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiVolToSeries.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolToSeries.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
 
