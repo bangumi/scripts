@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         Bangumi 关联人物职位查询
 // @namespace    https://bangumi.tv
-// @version      0.1.3
+// @version      0.1.4
 // @description  在关联人物编辑页面快速查看人物最近参与的职位信息
 // @author       aaa
 // @match        https://bgm.tv/subject/*/add_related/person*
 // @match        https://bangumi.tv/subject/*/add_related/person*
 // @match        https://chii.in/subject/*/add_related/person*
+// @match        https://bgm.tv/person/*/add_related/person*
+// @match        https://bangumi.tv/person/*/add_related/person*
+// @match        https://chii.in/person/*/add_related/person*
 // @run-at       document-idle
 // @license      MIT
 // @gadget       https://bgm.tv/dev/app/4966
@@ -544,7 +547,7 @@
         const editSummary = document.getElementById('editSummary');
         if (!editSummary) return;
 
-        let container = editSummary.closest('.clearit');
+        let container = editSummary.closest('.clearit, .toolbar');
         if (!container) return;
 
         // 添加辅助按钮容器
