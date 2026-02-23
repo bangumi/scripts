@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         维基关联历史对比差异
 // @namespace    bgm.wiki.rel.diff
-// @version      0.2.1
+// @version      0.2.2
 // @description  比较条目-人物/角色、人物-条目关联项目的增删修改
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -180,7 +180,7 @@
             .version-compare-h2 {
                 position: sticky;
                 top: 0;
-                background: var(--bgm-bg);
+                background: var(--dollars-bg);
             }
             html[data-nav-mode="fixed"] .version-compare-h2 {
                 top: 60px;
@@ -320,11 +320,11 @@
                     // id相等时，按typeField排序（兼容数字和字符串）
                     const valA = a[typeField];
                     const valB = b[typeField];
-                    
+
                     // 判断是否为数字（排除NaN的情况）
                     const isNumberA = typeof valA === 'number' && !isNaN(valA);
                     const isNumberB = typeof valB === 'number' && !isNaN(valB);
-                    
+
                     if (isNumberA && isNumberB) {
                         // 都是数字，用减法比较
                         return valA - valB;
