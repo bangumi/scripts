@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         从引进出版社网站获取班固米书籍版本
 // @namespace    wiki.import.book.version
-// @version      0.2.2
+// @version      0.3.0
 // @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
 // @author       你
 // @match        https://www.tongli.com.tw/*
@@ -19,6 +19,8 @@
 // @match        https://www.kingstone.com.tw/*
 // @match        https://www.books.com.tw/*
 // @match        https://www.silkbook.com/*
+// @match        https://www.anobii.com/*
+// @match        https://www.sanmin.com.tw/*
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @connect      tongli.com.tw
@@ -36,6 +38,8 @@
 // @connect      www.kingstone.com.tw
 // @connect      www.books.com.tw
 // @connect      www.silkbook.com
+// @connect      www.anobii.com
+// @connect      www.sanmin.com.tw
 // @license      MIT
 // @require      https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js
 // @gf           https://greasyfork.org/zh-CN/scripts/556109
@@ -50,6 +54,7 @@
     const pressFullName = {
         '青文': '青文出版社',
         '東立': '東立出版社',
+        '東立出版集團有限公司': '東立出版社',
         '長鴻': '長鴻出版社',
     };
     const pressShortName = {
@@ -67,7 +72,7 @@
     const utils = {
         formatDate(dateText) {
             if (!dateText) return '';
-            const normalizedText = dateText.replace(/\/|\.|年|月|日/g, '-');
+            const normalizedText = dateText.replace(/\/|\.|．|年|月|日/g, '-');
             const parts = normalizedText.split('-').map(part => {
                 const num = parseInt(part.trim(), 10);
                 return isNaN(num) ? part : num.toString().padStart(2, '0');
@@ -448,6 +453,45 @@
                 '译者': /譯者：\s*([^ \n]+)/,
             }
         },
+        '_anobii': { // https://www.anobii.com/zh-Hant/books/jia-zi-yuan-shang-kong-de-wei-xiao-quan/9789573466444/015e6394ff2f568487
+            match: 'www.anobii.com',
+            anchorSelector: 'h1',
+            detailsSelector: 'app-about-edition',
+            fields: {
+                '出版社': ({detailsText}) => {
+                    const press = utils.getByRegex(detailsText, /出版商\s*([^ \n]+)/);
+                    return pressFullName[press] || press;
+                },
+                '发售日': /發佈日期\s*([^ \n]+)/,
+                '页数': /頁數\s*([^ \n]+)/,
+                'ISBN': /ISBN-13\s*([^ \n]+)/,
+                '译者': ({doc}) => {
+                    const translator = utils.getText('.contributors', doc);
+                    return translator ? utils.getByRegex(translator, /譯者 ([^ \n]+)/) : '';
+                },
+            }
+        },
+        '_三民': { // https://www.sanmin.com.tw/product/index/003693167
+            match: 'www.sanmin.com.tw',
+            anchorSelector: 'h1',
+            detailsSelector: '.ProdAttr',
+            fields: {
+                '价格': ({doc}) => {
+                    const price = utils.getText('.Price div', doc);
+                    if (!price) return '';
+                    const priceText = utils.getByRegex(price, /定價\n：([^\n]+)/).replace('元', '').trim();
+                    return priceText || '';
+                },
+                '出版社': ({detailsText}) => {
+                    const press = utils.getByRegex(detailsText, /出版社：\s*([^ \n]+)/);
+                    return pressFullName[press] || press;
+                },
+                '发售日': /出版日：\s*([^ \n]+)/,
+                '页数': /頁數：[^ \n\d]*(\d+)/,
+                'ISBN': /ISBN13：\s*([^ \n]+)/,
+                '译者': /譯者：\s*([^ \n]+)/,
+            }
+        },
     };
 
     /**
@@ -509,7 +553,7 @@
             'ISBN': utils.formatISBN(rawValues['ISBN'])
         };
 
-        values['版本名'] = values['版本名'].replace(/^[【(]限[)】]|(完結?|\(完\)|END)$/g, '').trim();
+        values['版本名'] = values['版本名'].replace(/^[【(]限[)】]|(完結?|[(（](完|全)[)）]|END)$/g, '').trim();
         const producerPresumed = labelToProducer[values['出品方']];
         if (producerPresumed) {
             values['图书品牌'] = values['出品方'];

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         由单行本创建系列
 // @namespace    wiki.vol.to.series
-// @version      0.0.2
+// @version      0.1.0
 // @description  从单行本第一卷创建系列条目
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -68,12 +68,34 @@
                 const infobox = res.infobox.replace(/\|(页数|ISBN|价格)\s*=\s*.+(\r?\n|$)/gim, '');
                 document.querySelector('#subject_infobox').value = infobox;
 
-                document.querySelector('input[name="subject_title"]').value = res.name.replace(/\s(上|下|\d+)|[（(].+?[）)]$/, '').trim();
+                const inputBtns = document.querySelectorAll(':not(.canvas-btn-container) .inputBtn');
+                const trimmedTitle = res.name.replace(/\s(上|下|\d+|[\u0030-\u0039\uFF10-\uFF19]+)|[（(].+?[）)]$/, '').trim();
+                const titleInput = document.querySelector('input[name="subject_title"]');
+                titleInput.addEventListener('input', () => {
+                    inputBtns.forEach(inputBtn => {
+                        if (titleInput.value !== res.name) {
+                            inputBtn.style.pointerEvents = 'auto';
+                            inputBtn.value = '提交';
+                        } else {
+                            inputBtn.style.pointerEvents = 'none';
+                            inputBtn.value = '与来源单行本重名，请更改书名';
+                        }
+                    });
+                });
+                titleInput.value = trimmedTitle;
+                titleInput.dispatchEvent(new Event('input'));
                 document.querySelector('#subjectSeries').click();
                 document.querySelector(`[value="${res.platform}"]`)?.click();
                 document.querySelector('#subject_summary').value = res.summary;
                 res.nsfw && document.querySelector('[name="subject_nsfw"]').click();
-                document.querySelector('#tags').value = '漫画 系列';
+                document.querySelector('#tags').value = `${({
+                    1001: '漫画',
+                    1002: '小说',
+                    1003: '画集',
+                    1004: '绘本',
+                    1005: '写真',
+                    1006: '公式书',
+                })[res.platform] || ''} 系列`;
 
                 if (cover) {
                     waitForElement('img.preview', async (previewImg) => {
@@ -99,13 +121,20 @@
         const [volName, volId] = info.split('"""');
         if (document.querySelector(`#crtRelateSubjects li a[href="/subject/${volId}"]`)) {
             sessionStorage.removeItem('seriesVolumeInfo');
-            sessionStorage.removeItem('seriesVolumeCover')
             return;
         }
-        const ul = document.querySelector('#crtRelateSubjects');
-        ul.insertAdjacentHTML('afterbegin', `<li class="clearit"><a href="javascript:void(0);" class="h rr">x</a><p class="title"><a href="/subject/${volId}" target="_blank" class="l">${volName}</a></p><span class="tip">关系: <select name="infoArr[n0][relation_type]" style="width:150px;"><option value="1003">单行本 / Offprint</option><option value="1">改编 / Adaptation</option><option value="1002">系列 / Series</option><option value="1004">画集 / Album</option><option value="1010">不同版本 / Version</option><option value="1005">前传 / Prequel</option><option value="1006">续集 / Sequel</option><option value="1007">番外篇 / Side Story</option><option value="1008">主线故事 / Parent Story</option><option value="1015">不同演绎 / Alternative Version</option><option value="1011">角色出演 / Character</option><option value="1012">相同世界观 / Same setting</option><option value="1013">不同世界观 / Alternative setting</option><option value="1014">联动 / Collaboration</option><option value="1099">其他 / Other</option></select><input type="hidden" name="infoArr[n0][subject_id]" value="${volId}"><input type="hidden" name="infoArr[n0][subject_type_id]" value="1"></span></li>`);
-        document.querySelector('#subjectName').value = document.querySelector('.nameSingle a').textContent;
+        // eslint-disable-next-line no-global-assign
+        subjectList = [{ id: volId, type_id: '1', name: volName, name_cn: '', url_mod: 'subject' }];
+        addRelateSubject(0, 'submitForm');
+        const searchInput = document.querySelector('#subjectName');
+        searchInput.value = document.querySelector('.nameSingle a').textContent;
         findSubjectFunc();
+        // eslint-disable-next-line no-undef
+        $('#crtRelateSubjects a.h').click(rmParent);
+        waitForElement('#id_start', e => {
+            e.value = volId;
+            document.querySelector('#id_end').value = volId;
+        });
     }
 
     function waitForElement(selector, callback) {

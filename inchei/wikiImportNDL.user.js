@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NDL 添加条目到 bangumi
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
 // @author       You
 // @match        https://ndlsearch.ndl.go.jp/search*
@@ -14,11 +14,20 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @license      MIT
-// @gf           https://greasyfork.org/zh-CN/scripts/552012
 // ==/UserScript==
 
 (function() {
     'use strict';
+
+    function full2half(str) {
+        let res = '';
+        for (let c of str) {
+            const code = c.charCodeAt(0);
+            // 仅判断全宽数字并转换，其他字符直接拼接
+            res += code >= 65296 && code <= 65305 ? String.fromCharCode(code - 65248) : c;
+        }
+        return res;
+    }
 
     // 将图片URL转换为Data URL
     function imageUrlToDataUrl(url, callback) {
@@ -185,7 +194,7 @@
     }
 
     // 在BGM.tv新条目页面的操作
-    else if (window.location.href === 'https://bgm.tv/new_subject/1') {
+    else if (window.location.pathname === '/new_subject/1') {
         // 等待元素出现
         function waitForElement(selector, callback) {
             const element = document.querySelector(selector);
@@ -207,15 +216,24 @@
         }
 
         // 处理日期格式为YYYY-MM-DD
-        function processDate(dateStr) {
-            if (!dateStr) return '';
-            // 简单处理常见格式，实际可能需要更复杂的解析
-            if (dateStr.includes('.')) {
-                const parts = dateStr.split('.').map(p => p.padStart(2, '0'));
-                if (parts.length === 2) return `${parts[0]}-${parts[1]}-01`;
-                if (parts.length === 3) return `${parts[0]}-${parts[1]}-${parts[2]}`;
+        function processDate(dateText) {
+            if (!dateText) return '';
+            const normalizedText = dateText.replace(/\/|\.|．|年|月|日/g, '-');
+            const parts = normalizedText.split('-').map(part => {
+                const num = parseInt(part.trim(), 10);
+                return isNaN(num) ? part : num.toString().padStart(2, '0');
+            }).filter(part => part);
+
+            switch (parts.length) {
+                case 1:
+                    return parts[0];
+                case 2:
+                    return `${parts[0]}-${parts[1]}`;
+                case 3:
+                    return `${parts[0]}-${parts[1]}-${parts[2]}`;
+                default:
+                    return dateText;
             }
-            return `${dateStr}-01-01`; // 仅年份时的默认处理
         }
 
         // 填充表单数据
@@ -227,15 +245,33 @@
                 let titleText = data.title[0].value || '';
                 // 如果有卷数信息，添加到标题后
                 if (data.volume && data.volume[0]) {
-                    titleText += ` (${data.volume[0]})`;
+                    if (/^第?\d+巻?$/.test(full2half(data.volume[0]))) {
+                        titleText += ` (${full2half(data.volume[0]).match(/\d+/)[0]})`;
+                    } else {
+                        titleText += ` ${data.volume[0]}`;
+                    }
                 }
-                titleInput.value = titleText;
+                const volumeTitle = data.volumeTitle?.[0]?.value;
+                if (volumeTitle) {
+                    titleText += ` ${volumeTitle}`;
+                }
+                titleInput.value = full2half(titleText);
             }
 
             // 处理作者信息（去除方括号及内容）
-            let author = '';
+            let author = '', painter = '', gensaku = '';
             if (data.dc_creator && data.dc_creator[0]) {
-                author = data.dc_creator[0].name.replace(/\[.*?\]/g, '').replace(' 著', '').trim();
+                if (data.dc_creator.length === 1) {
+                    author = data.dc_creator[0].name.replace(/\[.*?\]/g, '').replace(/[／∥ /]著/, '').trim();
+                } else {
+                    const authors = data.dc_creator.map(c => c.name);
+                    gensaku = authors.find(a => a.match(/ 作$/)).replace(/ 作$/, '');
+                    painter = authors.find(a => a.match(/ 画$/)).replace(/ 画$/, '');
+                    if ((gensaku && painter && authors.length > 2) || !gensaku || !painter) {
+                        gensaku = painter = '';
+                        author = authors.join('、');
+                    }
+                }
             }
 
             // 处理出版社信息
@@ -251,14 +287,14 @@
             let price = '';
             if (data.price) {
                 // 去除"円"字并添加JP¥前缀
-                price = `JP¥${data.price.replace('円', '').trim()}`;
+                price = `JP¥${full2half(data.price).replace('円', '').trim()}`;
             }
 
             // 处理发售日
-            const releaseDate = processDate(data.date || data.issued);
+            const releaseDate = processDate(full2half(data.date || data.issued));
 
             // 处理页数
-            const pages = data.extent ? data.extent[0].match(/\d+/)[0] || '' : '';
+            const pages = data.extent ? full2half(data.extent[0]).match(/\d+/)[0] || '' : '';
 
             // 构建模板内容
             const template = `{{Infobox animanga/Book
@@ -267,6 +303,9 @@
 
 }
 |作者= ${author}
+|作画= ${painter}
+|脚本=
+|原作= ${gensaku}
 |插图=
 |出版社= ${publisher}
 |价格= ${price}
