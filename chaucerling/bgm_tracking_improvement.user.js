@@ -1,20 +1,19 @@
 // ==UserScript==
 // @name         bangumi tracking improvement
 // @namespace    BTI.chaucerling.bangumi
-// @version      0.4.2
+// @version      0.4.2.1
 // @description  tracking more than 50 subjects on bangumi index page
 // @author       chaucerling
-// @include      http://bangumi.tv/
-// @include      https://bgm.tv/
-// @include      http://bgm.tv/
-// @include      http://chii.in/
-// @grant        none
+// @include      /https?:\/\/(bgm\.tv|bangumi\.tv|chii\.in)\/$/
+// @grant        GM_deleteValue
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 /* jshint loopfunc:true */
 /* jshint esversion:6 */
 
-// var $ = unsafeWindow.jQuery; // use to access 'chiiLib.home' and '$.cluetip'
+var $ = unsafeWindow.jQuery; // use to access 'chiiLib.home' and '$.cluetip'
 var origin_tv_queue = []; // max size 50
 var origin_book_queue = []; // max size 50
 var extra_tv_queue = [];
@@ -22,8 +21,8 @@ var extra_book_queue = [];
 var watching_subjects = {};
 var extra_watching_subjects = {};
 var animes_size = 0,
-  reals_size = 0,
-  books_size = 0;
+    reals_size = 0,
+    books_size = 0;
 var auto_refresh = false; // 进入首页自动刷新extra项目进度
 
 var watching_list = [];
@@ -61,6 +60,311 @@ const LS_SCOPE = 'BTI.extra_subjects';
 function GM_addStyle(style) {
   $('head').append(`<style>${style}</style>`);
 }
+
+const tasks = [changeLayout, i18n];
+//#region [超合金组件]首页按星期分组/排序(https://bangumi.tv/dev/app/1083/gadget/851)
+function sortElements(childs, compareFunction) {
+  if (!childs.length) {
+    return;
+  }
+  var parent = childs[0].parentNode;
+  var sorting = [];
+  for (var i = childs.length - 1; i >= 0; --i) {
+    sorting.push(childs[i]);
+    parent.removeChild(childs[i]);
+  }
+  sorting.sort(compareFunction);
+  for (let child of sorting) {
+    parent.appendChild(child);
+  }
+}
+
+Number.prototype.zeroPad = function (length) {
+  var s = (this || "0").toString();
+  while (s.length < length) {
+    s = "0" + s;
+  }
+  return s;
+};
+
+String.prototype.trim = function () {
+  return this.replace(/^[ \t]+|[ \t]+$/g, "");
+};
+
+String.prototype.extractDate = function () {
+  return (this.match(/(20\d\d-\d{1,2}-\d{1,2})/) || [])[1] || NaN;
+};
+
+String.prototype.getPrefix = function () {
+  return ((this.match(/^([^(:]*)/) || [])[1] || "").trim();
+};
+
+function sortByID (list) {
+  return sortElements(list, (a, b) => a.sortId.localeCompare(b.sortId));
+}
+
+function initDay (container,i){
+  var weekdayLabels = ['日七', '月一', '火二', '水三', '木四', '金五', '土六', '未知'];
+  let day = container.appendChild(document.createElement("div"));
+  day.className = "day";
+  day.style.overflow = "auto";
+  let caption = day.appendChild(document.createElement("div"));
+  caption.appendChild(document.createTextNode(weekdayLabels[i%8]));
+  day.subjects = day.appendChild(document.createElement("div"));
+  day.subjects.style.cssText += "display:grid;grid-template-columns: 1fr 1fr;"
+  return day;
+}
+
+function setDayLabels (container, now) {
+  var days = [];
+  const today = now.getDay();
+  for (let i = 0; i < 7; ++i) { // 周 日 ~ 周 六
+    days.push(initDay(container, (today+6+i)%7));
+  }
+  days.push(initDay(container, 7)); // 未知
+  days[1].className += " today";
+  return days;
+}
+
+function getTips (subject) {
+  try {
+    for (let ep_info of $('.load-epinfo', subject).toArray()) {
+      if (!/epBtnDrop|epBtnWatched/.test(ep_info.className)) {
+        return $(".tip:first", $(ep_info.rel));
+      }
+    }
+    let ep_info = $('.load-epinfo:last', subject);
+    return $(".tip:first", $(ep_info[0].rel));
+  } catch (e) {
+    console.log(e, subject);
+  }
+}
+
+function setSubjects (days, now, subjects) {
+  // set subjects to days
+  const today = now.getDay();
+  let oldDay = days[7];
+  var lastYear = now.valueOf() - 365 * 24 * 60 * 60 * 1000;
+
+  for (let subject of subjects) {
+    let tips = getTips(subject);
+    if (!tips) {
+      oldDay.subjects.appendChild(subject);
+      continue;
+    }
+
+    let date = new Date(tips.text().extractDate());
+    let title = $("> a:last", subject)[0].title;
+    if (date.valueOf() <= lastYear || isNaN(date.valueOf())) {
+      subject.sortId = title.getPrefix() + "-" + date.getYear().zeroPad(3) + date.getMonth().zeroPad(2) + "-" + title;
+      if (isNaN(date.valueOf())) {
+        subject.appendChild(document.createTextNode("Missing On Air Date"));
+      }
+      oldDay.subjects.appendChild(subject);
+      continue;
+    }
+    subject.sortId = title.getPrefix();
+    days[(date.getDay()-today+8)%7].subjects.appendChild(subject);
+  }
+}
+
+function loadDays(now) {
+  // get subjects and clear container
+  let subjects = $("#cloumnSubjectInfo > div:not(#ti-pages, #ti-alert) >div").toArray();
+  if (!subjects.length) return;
+
+  var container = subjects[0].parentNode;
+  while (container.lastChild) {
+    container.removeChild(container.lastChild);
+  }
+
+  // set day labels
+  const days = setDayLabels(container, now);
+  setSubjects(days, now, subjects);
+
+  // sort subjects in day and reset odd/even
+  for (let day of days) {
+    if (day == days[7]) continue;
+    let nodes = day.subjects.childNodes;
+    sortByID(nodes);
+
+    for (var i = 0; i < nodes.length; ++i) {
+      setOddEven($(nodes[i]), i);
+    }
+  }
+}
+
+function setOddEven(obj, n) {
+  const odd = n % 2;
+  obj.removeClass(!odd ? 'odd' : 'even');
+  obj.addClass(odd ? 'odd' : 'even');
+}
+
+function changeLayout() {
+  // wait for element to finish
+  var unsafeWindow = window.unsafeWindow || window;
+  if (!unsafeWindow.loadXML || !unsafeWindow.$ || !document.getElementById("subject_prg_content") || !document.getElementById("cluetip")) {
+    setTimeout(changeLayout, 1);
+    return;
+  }
+  console.log("Changing layout");
+  var now = new Date();
+  loadDays(now);
+
+  let subjects = $("#prgSubjectList > li").toArray();
+  for (let i in subjects) {
+    subjects[i].sortId = $('> a:last', subjects[i])[0].title;
+  }
+  sortByID(subjects);
+
+  var within_24hours = now.valueOf() - 60 * 60 * 24 * 1000;
+  var within_48hours = now.valueOf() - 60 * 60 * 48 * 1000;
+  $.each($(".epBtnAir"), function (i, o) {
+    var airDate = new Date($(".tip:first", $(o.rel)).text().extractDate()).valueOf();
+    if (isNaN(airDate)) {
+      $(o).removeClass("epBtnAir");
+      $(o).addClass("epBtnUnknown");
+    }
+    else if (airDate >= within_48hours) {
+      $(o).addClass(airDate >= within_24hours ? "epBtnAirNewDay1" : "epBtnAirNewDay2");
+    }
+  });
+}
+
+GM_addStyle(`
+.day {
+    overflow: auto;
+}
+day {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.today {
+    background: #ffffaa42;
+}
+
+a.epBtnUnknown {
+    background: #ecceffb0 !important;
+    color: #9932cdfc !important;
+    border-color: #9932cd75 !important;
+}
+
+a.epBtnAir {
+    background: #00ff007a !important;
+    color: #55ae55 !important;
+    border-color: #55ae55 !important;
+}
+
+html[data-theme="dark"] a.epBtnAir {
+    color: lightgreen !important;
+}
+
+html[data-theme="dark"] a.epBtnToday {
+    color: #229100 !important;
+}
+
+a.epBtnAirNewDay1 {
+    border-color: #90ee90 !important;
+    outline: 1px solid #90ee90 !important;
+    color: #229100 !important;
+}
+a.epBtnAirNewDay2 {
+    outline: 1px solid #90ee90 !important;
+    color: #229100 !important;
+}`)
+//#endregion
+
+//#region
+function i18n() {
+  function gE(ele, mode, parent) { // 获取元素
+    if (typeof ele === 'object') {
+      return ele;
+    } if (mode === undefined && parent === undefined) {
+      return (isNaN(ele * 1)) ? document.querySelector(ele) : document.getElementById(ele);
+    } if (mode === 'all') {
+      return (parent === undefined) ? document.querySelectorAll(ele) : parent.querySelectorAll(ele);
+    } if (typeof mode === 'object' && parent === undefined) {
+      return mode.querySelector(ele);
+    }
+  }
+
+  function post(href, func, parm, type) { // post
+    let xhr = new window.XMLHttpRequest();
+    xhr.open(parm ? 'POST' : 'GET', href);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.responseType = type || 'document';
+    xhr.onerror = function () {
+      xhr = null;
+      post(href, func, parm, type);
+    };
+    xhr.onload = function (e) {
+      if (e.target.status >= 200 && e.target.status < 400 && typeof func === 'function') {
+        const data = e.target.response;
+        if (xhr.responseType === 'document' && gE('#messagebox', data)) {
+          if (gE('#messagebox')) {
+            gE('#csp').replaceChild(gE('#messagebox', data), gE('#messagebox'));
+          } else {
+            gE('#csp').appendChild(gE('#messagebox', data));
+          }
+        }
+        func(data, e);
+      }
+      xhr = null;
+    };
+    xhr.send(parm);
+  }
+
+  function setLocal(item, value) {
+    if (typeof GM_setValue === 'undefined') {
+      window.localStorage[`bgmTI-${item}`] = (typeof value === 'string') ? value : JSON.stringify(value);
+    } else {
+      GM_setValue(item, value);
+    }
+  }
+  function getLocal(item, toJSON) {
+    if (typeof GM_getValue === 'undefined' || !GM_getValue(item, null)) {
+      item = `bgmTI-${item}`;
+      return (item in window.localStorage) ? ((toJSON) ? JSON.parse(window.localStorage[item]) : window.localStorage[item]) : null;
+    }
+    return GM_getValue(item, null);
+  }
+
+  function trySetText(header, id, text, isSetLocal) {
+    if (!text) {
+      return false;
+    }
+    header.innerText = text;
+    if (isSetLocal) setLocal(id, text);
+    return true
+  }
+
+  console.log('Start i18n');
+  const headers = document.querySelectorAll('.tinyHeader>a')
+  for (let i = 0; i < headers.length; i++) {
+    let header = headers[i];
+    if ('javascript:void(0);' === header.href) {
+      continue;
+    }
+    let id = header.getAttribute('data-subject-id');
+    if (trySetText(header, id, getLocal(id), true)) continue;
+    if (trySetText(header, id, header.getAttribute('data-subject-name-cn'), true)) continue;
+    const keys = ['中文名: ', '别名: '];
+    post(`/subject/${id}`, data => {
+      for (let c of gE('#infobox', data).children) {
+        for (let key of keys) {
+          if (gE('span', c).innerText !== key) {
+            continue;
+          }
+          const text = c.innerText.replace(key, '').replace(/\n/g, '');
+          trySetText(header, id, text, key === '中文名: ');
+          return;
+        }
+      }
+    });
+  }
+  console.log('End i18n');
+}
+//#endregion
 
 GM_addStyle(`
   #ti-alert {
@@ -150,36 +454,36 @@ function get_path_and_size_of_all_type() {
   reals_size = -1;
   books_size = -1;
   return [{
-      value: 2,
-      path: $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href'),
-      size: function() {
-        return animes_size;
-      },
-      set_size: function(value) {
-        animes_size = value;
-      }
+    value: 2,
+    path: $("#navMenuNeue > li:nth-child(1) > ul > li > a.nav")[5].getAttribute('href'),
+    size: function() {
+      return animes_size;
     },
-    {
-      value: 6,
-      path: $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href'),
-      size: function() {
-        return reals_size;
-      },
-      set_size: function(value) {
-        reals_size = value;
-      }
-    },
-    {
-      value: 1,
-      path: $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href'),
-      size: function() {
-        return books_size;
-      },
-      set_size: function(value) {
-        books_size = value;
-      }
+    set_size: function(value) {
+      animes_size = value;
     }
-  ];
+  },
+          {
+            value: 6,
+            path: $("#navMenuNeue > li:nth-child(5) > ul > li > a.nav")[5].getAttribute('href'),
+            size: function() {
+              return reals_size;
+            },
+            set_size: function(value) {
+              reals_size = value;
+            }
+          },
+          {
+            value: 1,
+            path: $("#navMenuNeue > li:nth-child(2) > ul > li > a.nav")[4].getAttribute('href'),
+            size: function() {
+              return books_size;
+            },
+            set_size: function(value) {
+              books_size = value;
+            }
+          }
+         ];
 }
 
 function in_origin_queue(subject_id){
@@ -223,7 +527,7 @@ function check_get_all_pages_finished() {
   if (typeof this.counter1 === "undefined") this.counter1 = 0;
   this.counter1++;
   if (animes_size === -1 || reals_size === -1 || books_size === -1 ||
-    this.counter1 < parseInt(animes_size / 24) + parseInt(reals_size / 24) + parseInt(books_size / 24)) {
+      this.counter1 < parseInt(animes_size / 24) + parseInt(reals_size / 24) + parseInt(books_size / 24)) {
     console.log(`current_processing_watching_list_size: ${watching_list.length}`);
     return false;
   }
@@ -374,8 +678,8 @@ function add_extra_subjects() {
 
   $('.prgBatchManagerForm a.input_plus').off('click').on('click', function(e) {
     var input = $(this).closest('div.prgText').find('input'),
-      count = parseInt(input.val()),
-      form = $(this).closest('form.prgBatchManagerForm');
+        count = parseInt(input.val()),
+        form = $(this).closest('form.prgBatchManagerForm');
     $(input).val(count + 1);
     form.submit();
   });
@@ -405,7 +709,7 @@ function create_subject_cell(subject_id) {
         </a>
         <div class='epGird'>
           <div class='tinyHeader'>
-            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <a href='/subject/${subject.id}' data-subject-id='${subject.id}' title='${subject.title}'>${subject.title}</a>
             <small class='progress_percent_text'>
               <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
                 title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
@@ -422,9 +726,10 @@ function create_subject_cell(subject_id) {
         <a href='/subject/${subject.id}' title='${subject.title}' class='grid tinyCover ll'>
           <img src='${subject.thumb}' class='grid'>
         </a>
+        </div>
         <div class='epGird'>
           <div class='tinyHeader'>
-            <a href='/subject/${subject.id}' title='${subject.title}'>${subject.title}</a>
+            <a href='/subject/${subject.id}' data-subject-id='${subject.id}' title='${subject.title}'>${subject.title}</a>
             <small class='progress_percent_text'>
               <a href='/update/${subject.id}?keepThis=false&TB_iframe=true&height=350&width=500'
                 title='修改 ${subject.title} ' class='thickbox l' id='sbj_prg_${subject.id}'>edit</a>
@@ -445,35 +750,17 @@ function create_subject_cell(subject_id) {
 }
 
 function show_subjects(subject_type) {
-  console.log(`change_tab, subject_type: ${subject_type}`);
-  switch (subject_type) {
-    case "0": //all
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').show();
-      break;
-    case "1": //book
-      $('.infoWrapper_tv').hide();
-      $('.infoWrapper_book').show();
-
-      $('.infoWrapper_book > div').hide();
-      $('.infoWrapper_book > div[subject_type="1"]').show();
-      break;
-    case "2": //anime
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').hide();
-      $('.infoWrapper_tv > div[subject_type="2"]').show();
-      break;
-    case "6": //real
-      $('.infoWrapper_tv').show();
-      $('.infoWrapper_book').hide();
-      $('.infoWrapper_tv > div').hide();
-      $('.infoWrapper_tv > div[subject_type="6"]').show();
-      break;
-    default:
-      break;
+  if (subject_type == 0) {
+    $('div[subject_type="1"]').show();
+    $('div[subject_type="2"]').show();
+    $('div[subject_type="6"]').show();
+    reset_odd_even();
+    return;
   }
+  $('div[subject_type="1"]').hide();
+  $('div[subject_type="2"]').hide();
+  $('div[subject_type="6"]').hide();
+  $(`div[subject_type="${subject_type}"]`).show();
   reset_odd_even();
 }
 
@@ -519,6 +806,12 @@ function book_subjects_size_on_index() {
   return $('.infoWrapper_book > div').length;
 }
 
+function onAfterLoad() {
+  for (let i in tasks) {
+    tasks[i]();
+  }
+}
+
 // init
 $(document).ready(function() {
   if (location.pathname !== "/") return;
@@ -535,6 +828,7 @@ $(document).ready(function() {
     $('#ti-alert').show();
     $('#ti-alert').text(`Watching ${size1} animes, ${size2} reals, ${size3} books.(click to close)`);
     localStorage.removeItem(LS_SCOPE);
+    onAfterLoad();
     return;
   }
 
@@ -576,6 +870,7 @@ $(document).ready(function() {
       get_watching_list();
     }, 10);
   }
+  onAfterLoad();
 });
 
 $('#prgManagerMain').on('click', '#ti-alert', function(e) {
