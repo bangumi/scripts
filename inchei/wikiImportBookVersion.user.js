@@ -56,6 +56,7 @@
         '東立': '東立出版社',
         '東立出版集團有限公司': '東立出版社',
         '長鴻': '長鴻出版社',
+        '大辣': '大辣出版',
     };
     const pressShortName = {
         '天闻角川': '天角',
@@ -93,7 +94,7 @@
             return (isbnText || '').replace(/\D/g, '');
         },
         formatVersionName(press) {
-            return pressShortName[press] || press.replace('出版社', '');
+            return pressShortName[press] || press.replace(/出版社?$/, '');
         },
         /**
          * @param {string} text
@@ -429,7 +430,11 @@
                 '发售日': /出版日期：\s*([^ \n]+)/,
                 'ISBN': ({doc}) => {
                     const subDetails = utils.getText('.type02_m058', doc);
-                    return utils.getByRegex(subDetails, /ISBN：\s*([^ \n]+)/)
+                    return utils.getByRegex(subDetails, /ISBN：\s*([^ \n]+)/);
+                },
+                '页数': ({doc}) => {
+                    const subDetails = utils.getText('.type02_m058', doc);
+                    return utils.getByRegex(subDetails, /(\d+)頁/);
                 },
                 '译者': /譯者：\s*([^ \n]+)/,
             }
