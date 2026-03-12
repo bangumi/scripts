@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         人物/角色维基修订历史对比差异
+// @name         维基修订历史对比差异补完
 // @namespace    bangumi.wiki.mono.diff
-// @version      0.0.2
-// @description  显示人物/角色维基修订历史
+// @version      0.1.0
+// @description  显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/character/*/edit
@@ -11,12 +11,24 @@
 // @match        http*://bgm.tv/character/*/upload_img
 // @match        http*://bangumi.tv/character/*/upload_img
 // @match        http*://chii.in/character/*/upload_img
+// @match        http*://bgm.tv/character/*/add_related/*
+// @match        http*://bangumi.tv/character/*/add_related/*
+// @match        http*://chii.in/character/*/add_related/*
+// @match        http*://bgm.tv/character/*/add_related/person/*
+// @match        http*://bangumi.tv/character/*/add_related/person/*
+// @match        http*://chii.in/character/*/add_related/person/*
 // @match        http*://bgm.tv/person/*/edit
 // @match        http*://bangumi.tv/person/*/edit
 // @match        http*://chii.in/person/*/edit
 // @match        http*://bgm.tv/person/*/upload_img
 // @match        http*://bangumi.tv/person/*/upload_img
 // @match        http*://chii.in/person/*/upload_img
+// @match        http*://bgm.tv/person/*/add_related/character/*
+// @match        http*://bangumi.tv/person/*/add_related/character/*
+// @match        http*://chii.in/person/*/add_related/character/*
+// @match        http*://bgm.tv/subject/*/add_related/subject/*
+// @match        http*://bangumi.tv/subject/*/add_related/subject/*
+// @match        http*://chii.in/subject/*/add_related/subject/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
@@ -33,13 +45,43 @@
 // @updateURL    https://github.com/bangumi/scripts/raw/master/inchei/wikiMonoDiff.user.js
 // ==/UserScript==
 
+/* 测试用
+https://chii.in/character/1/add_related/anime
+https://chii.in/subject/9622/add_related/subject/anime
+https://chii.in/person/3818/add_related/character/anime
+*/
+
 (function () {
     'use strict';
 
-    const monoId = location.pathname.split('/')[2];
+    const pathname = location.pathname;
+    const monoId = pathname.split('/')[2];
     if (!/\d+/.test(monoId)) return;
 
-    const monos = `${location.pathname.split('/')[1]}s`; // characters or persons
+    const monosCN = {
+        characters: '角色',
+        persons: '人物',
+        subjects: '条目',
+    };
+    const typeCN = typeID => ['书籍', '动画', '音乐', '游戏', '', '三次元'][typeID - 1];
+
+    const mono = pathname.split('/')[1];
+    const monos = `${mono}s`; // characters | persons | subjects
+    const isRelating = pathname.includes('add_related');
+    const apiBaseAffix = isRelating ? `/${
+        pathname.includes('/add_related/person') ? 'casts' :
+        pathname.includes('/add_related/character') ? 'casts' :
+        pathname.includes('/add_related/subject') ? 'relations' : 'subjects'
+    }` : '';
+    const relatingCast = apiBaseAffix === '/casts';
+    const relatedType = isRelating ? ({
+        anime: 2,
+        book: 1,
+        music: 3,
+        game: 4,
+        real: 6,
+    })[document.querySelector('.selected').href.split('/').pop()] : null;
+    const relatingEditor = document.querySelector('#crtRelateSubjects');
 
     const groupsLine = document.querySelector('.groupsLine');
     const simpleSidePanel = document.querySelector('.SimpleSidePanel');
@@ -248,35 +290,28 @@
         const LIMIT = 100;
         let allData = [];
 
-        try {
-            // 先获取第一页知道总数
-            const firstPage = await fetchPage(0);
-            const total = firstPage.total || 0;
-            const totalPages = Math.ceil(total / LIMIT);
+        // 先获取第一页知道总数
+        const firstPage = await fetchPage(0);
+        const total = firstPage.total || 0;
+        const totalPages = Math.ceil(total / LIMIT);
 
-            allData.push(...firstPage.data);
+        allData.push(...firstPage.data);
 
-            // 并行获取剩余页面
-            const pagePromises = [];
-            for (let page = 1; page < totalPages; page++) {
-                pagePromises.push(fetchPage(page));
-            }
-
-            const results = await Promise.all(pagePromises);
-            results.forEach(result => {
-                allData.push(...result.data);
-            });
-
-            historySummaryData = allData;
-            return allData;
-
-        } catch (error) {
-            console.error('历史摘要获取失败:', error);
-            return [];
+        // 并行获取剩余页面
+        const pagePromises = [];
+        for (let page = 1; page < totalPages; page++) {
+            pagePromises.push(fetchPage(page));
         }
 
+        const results = await Promise.all(pagePromises);
+        results.forEach(result => {
+            allData.push(...result.data);
+        });
+
+        historySummaryData = allData;
+
         async function fetchPage(pageNum) {
-            const url = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}/history-summary?limit=${LIMIT}&offset=${pageNum * LIMIT}`;
+            const url = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}${apiBaseAffix}/history-summary?limit=${LIMIT}&offset=${pageNum * LIMIT}`;
 
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
@@ -316,7 +351,7 @@
             return versionCache.get(cacheKey);
         }
 
-        const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/-/revisions/${revisionId}`;
+        const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/-${apiBaseAffix}/revisions/${revisionId}`;
         try {
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
@@ -326,11 +361,30 @@
                         if (response.status >= 200 && response.status < 300) {
                             const resData = JSON.parse(response.responseText);
                             const wikiPayload = resData || {};
+                            let typeID;
+                            if (isRelating) {
+                                const relatedMono =
+                                    pathname.includes('/add_related/person') ? 'person' :
+                                    pathname.includes('/add_related/character') ? 'character' : null;
+                                wikiPayload.sort((a, b) => {
+                                    const subjectSort = a.subject.id - b.subject.id;
+                                    if (subjectSort === 0 && relatedMono) {
+                                        return a[relatedMono].id - b[relatedMono].id;
+                                    }
+                                    return subjectSort;
+                                });
+
+                                typeID = resData[0].subject.typeID;
+                                const revertBtn = document.querySelector(`[data-revision-id="${revisionId}"] .revertBtn`);
+                                revertBtn?.insertAdjacentText('beforebegin', `${typeCN(typeID)} `);
+                                if (typeID !== relatedType) revertBtn?.remove();
+                            }
 
                             const compareText = JSON.stringify(wikiPayload, null, 2).replaceAll('\\r', '');
                             const result = {
                                 compareText,
-                                img: resData.extra?.img
+                                img: resData.extra?.img,
+                                typeID,
                             };
                             versionCache.set(cacheKey, result);
                             resolve(result);
@@ -417,14 +471,20 @@
         popup.id = 'wikiMonoDiff';
         popup.innerHTML = `
             <div class="diff-tip-header">
-                <h3 class="diff-tip-title">${monos === 'characters' ? '角色' : '人物'}修订历史对比</h3>
+                <h3 class="diff-tip-title">${monosCN[monos]}修订历史对比</h3>
                 <button class="diff-tip-close">&times;</button>
             </div>
             <div class="diff-tip-content">
+                ${ isRelating ? `
+                <div class="diff-warning-section">
+                    <div class="diff-warning-title">注意</div>
+                    <p>两次修订间差异不完全等于新修订造成的差异，期间反向关联带来的差异也会显示</p>
+                </div>` : `
                 <div class="diff-warning-section">
                     <div class="diff-warning-title">注意</div>
                     <p>受限于系统，肖像总落后于实际版本一个版本，欲查看肖像变化，请参考新一个版本（<a class="l" href="https://bgm.tv/group/topic/448054" target="_blank">参考</a>）</p>
                 </div>
+                `}
                 <div id="diff-results">请选择两个版本进行对比</div>
             </div>
         `;
@@ -450,9 +510,18 @@
 
             resultContainer.innerHTML = '';
 
-            const imgCompareSection = createImgCompareSection(versionA.img, versionB.img);
-            if (imgCompareSection) {
-                resultContainer.appendChild(imgCompareSection);
+            if (isRelating) {
+                const typeA = versionA.typeID;
+                const typeB = versionB.typeID;
+                if (typeA && typeB && typeA !== typeB) {
+                    throw new Error(`版本类型不一致，无法进行对比
+当前版本类型：左侧${typeCN(typeA)}，右侧${typeCN(typeB)}`);
+                }
+            } else {
+                const imgCompareSection = createImgCompareSection(versionA.img, versionB.img);
+                if (imgCompareSection) {
+                    resultContainer.appendChild(imgCompareSection);
+                }
             }
 
             const diffContainer = document.createElement('div');
@@ -486,7 +555,7 @@
         }
     }
 
-    const h2Element = document.querySelector('.SimpleSidePanel h2');
+    const h2Element = document.querySelector('.SimpleSidePanel h2:not(.alert)');
     if (!h2Element) return;
 
     const nameInput = document.querySelector('[name="crt_name"]');
@@ -543,35 +612,92 @@
                 const revision = await extractVersionData(revisionId);
                 const revisionObj = JSON.parse(revision.compareText);
 
-                nameInput.value = revisionObj.name;
-                summaryInput.value = revisionObj.summary;
+                if (isRelating) {
+                    if (relatedType !== revision.typeID) {
+                        const message = `版本类型${typeCN(revision.typeID)}与当前不一致`;
+                        alert(message);
+                        throw new Error(message);
+                    }
+                    relatingEditor.innerHTML = '';
+                    addedSubjects = [];
+                    const otherMono = relatingCast ? (mono === 'person' ? 'character' : 'person') : null;
+                    subjectList = relatingCast ? revisionObj.reduce((l, o) => {
+                        const s = o.subject;
+                        const p = o[otherMono];
+                        l[p.id] ??= {
+                            id: p.id,
+                            img: '',
+                            name: p.name,
+                            name_cn: p.nameCN,
+                            relatSubjects: [],
+                            url_mod: mono,
+                        };
+                        l[p.id].relatSubjects.push({
+                            id: s.id,
+                            img: '',
+                            name: s.name,
+                            name_cn: s.nameCN,
+                            type_id: relatedType,
+                            url_mod: 'subject',
+                        });
+                        return l;
+                    }, {}) : revisionObj.map(o => ({
+                        id: o.subject.id,
+                        type_id: relatedType,
+                        name: o.subject.name,
+                        name_cn: o.subject.nameCN,
+                        url_mod: 'subject',
+                    }));
 
-                if (nowmode === 'normal') {
-                    NormaltoWCODE();
-                    infoboxInput.value = revisionObj.infobox;
-                    WCODEtoNormal();
-                } else if (document.querySelector('.wiki-enhance-editor')) {
-                    unsafeWindow.monaco?.editor.getEditors()?.[0].setValue(revisionObj.infobox);
+                    if (relatingCast) {
+                        for (const [pid, p] of Object.entries(subjectList)) {
+                            const subjects = p.relatSubjects;
+                            for (let i = 0; i < subjects.length; i++) {
+                                const sid = subjects[i].id;
+                                const data = revisionObj.find(o => o.subject.id === sid && o[otherMono].id === pid);
+                                addRelateSubject(`${pid},${i}`, 'submitForm');
+                                afterAdd(data);
+                            }
+                        }
+                    } else {
+                        for (let i = 0; i < subjectList.length; i++) {
+                            addRelateSubject(i, 'submitForm');
+                            afterAdd(revisionObj[i]);
+                            // 不支持添加条目同时修改排序
+                        }
+                    }
                 } else {
-                    infoboxInput.value = revisionObj.infobox;
+                    nameInput.value = revisionObj.name;
+                    summaryInput.value = revisionObj.summary;
+
+                    if (nowmode === 'normal') {
+                        NormaltoWCODE();
+                        infoboxInput.value = revisionObj.infobox;
+                        WCODEtoNormal();
+                    } else if (document.querySelector('.wiki-enhance-editor')) {
+                        unsafeWindow.monaco?.editor.getEditors()?.[0].setValue(revisionObj.infobox);
+                    } else {
+                        infoboxInput.value = revisionObj.infobox;
+                    }
+
+                    editSummaryInput.value = `恢复版本${revisionId}（${
+                        revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
+                    }）`;
                 }
 
-                editSummaryInput.value = `恢复版本${revisionId}（${
-                    revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
-                }）`;
                 revertBtn.textContent = '已恢复';
                 setTimeout(() => {
                     revertBtn.textContent = '恢复';
                 }, 2000);
             } catch (error) {
                 console.error(error);
-                revertBtn.textContent = '加载失败，点击重试';
+                revertBtn.textContent = '恢复失败，点击重试';
                 return;
             } finally {
                 document.querySelectorAll('.revertBtn').forEach(b => {
                     b.style.pointerEvents = 'auto';
                     b.style.opacity = '1';
-                })
+                });
             }
         });
         li.querySelector('small').append(document.createTextNode(' / '), revertBtn);
@@ -616,5 +742,19 @@
             alert('请选择两个不同的修订版本');
         }
     });
+
+    function afterAdd(data) {
+        const li = relatingEditor.firstChild;
+        const select = li.querySelector('select');
+        data.type && (select.value = data.type);
+        const sort = li.querySelector('.item_sort');
+        if (data.order && !sort) {
+            const prefix = select.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
+            select.insertAdjacentHTML('afterend',
+                `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
+            );
+            li.querySelector('.item_sort').value = data.order;
+        }
+    }
 
 })();

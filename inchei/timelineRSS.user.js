@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RSS订阅班友收藏
 // @namespace    https://bgm.tv/group/topic/414787
-// @version      0.2.5
+// @version      0.2.6
 // @description  在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 // @author       oov
 // @match        http*://bgm.tv/
@@ -65,6 +65,9 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
+  }
+  html[data-avatar-size="square"] .avatar-skeleton {
+    border-radius: 8px;
   }
   .nickname-skeleton {
     width: min(8em, 50%);
@@ -144,7 +147,6 @@
       font-weight: normal;
       font-size: 12px;
       color: rgba(0, 0, 0, .7);
-      cursor: text;
       display: flex;
       opacity: 0;
       gap: 10px;

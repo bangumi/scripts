@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         顶部维基直接可选编辑/修订历史/封面/关联
 // @namespace    wikiBtnSwitch
-// @version      0.0.1
+// @version      0.0.2
 // @description  顶部添加直接编辑/修订历史/封面/关联的按钮，不需要先点开修订历史，可设置点击 Wiki 按钮默认打开哪一项
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -16,16 +16,17 @@
 (function () {
     'use strict';
 
-    const subjectId = location.pathname.split('/').pop();
+    const subjectId = location.pathname.split('/')[2];
     if (!/\d+/.test(subjectId)) return;
 
+    const wikiBtn = document.querySelector('.navTabs [href$="/edit"][href^="/subject"]:not(.focus)');
+    if (!wikiBtn) return;
     const subjectCat = document.querySelector('.focus.chl').href.split('/').pop();
 
-    const wikiBtn = document.querySelector('[href$="/edit"][href^="/subject"]');
     const changeWikiBtn = (v = 'edit_detail') => {
         wikiBtn.href = `/subject/${subjectId}/${v.endsWith('/') ? v + subjectCat : v}`;
     };
-    changeWikiBtn(localStorage.getItem('wikiBtnSwitch'));
+    changeWikiBtn(localStorage.getItem('wikiBtnSwitch') || 'edit_detail');
 
     document.querySelector('.navTabs').insertAdjacentHTML('afterend', /* html */`
     <div class="navSubTabsWrapper">

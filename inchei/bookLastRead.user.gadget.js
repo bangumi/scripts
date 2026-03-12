@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         首页查看书籍上次标记进度时间并高亮可能更新
 // @namespace    bangumi.book.last.read
-// @version      0.1.0
+// @version      0.1.1
 // @description  首页查看书籍上次标记进度时间并高亮可能更新
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -29,14 +29,45 @@
     document.head.append(style);
 
     const myUserName = document.querySelector('#dock a').href.split('/').pop();
-    const res = await fetch(`https://api.bgm.tv/v0/users/${myUserName}/collections?subject_type=1&type=3&limit=50`);
-    if (!res.ok) {
-        console.error('获取书籍标记时间失败');
-        return;
-    }
-    const data = (await res.json()).data;
-    const ids = data.map(o => o.subject_id);
-    const times = data.map(o => o.updated_at);
+
+    const getAllBooks = async (userName) => {
+        const allData = [];
+        let offset = 0;
+        const limit = 50;
+
+        while (true) {
+            try {
+                const res = await fetch(`https://api.bgm.tv/v0/users/${userName}/collections?subject_type=1&type=3&limit=${limit}&offset=${offset}`);
+                if (!res.ok) {
+                    console.error(`获取第${offset/limit + 1}页书籍数据失败`);
+                    break;
+                }
+
+                const pageData = await res.json();
+                const currentPageItems = pageData.data || [];
+
+                allData.push(...currentPageItems);
+
+                if (currentPageItems.length < limit) {
+                    break;
+                }
+
+                offset += limit;
+
+            } catch (error) {
+                console.error('分页获取数据出错:', error);
+                break;
+            }
+        }
+
+        return allData;
+    };
+
+    const allBooksData = await getAllBooks(myUserName);
+    if (!allBooksData.length) return;
+
+    const ids = allBooksData.map(o => o.subject_id);
+    const times = allBooksData.map(o => o.updated_at);
 
     const fmtTime = isoTimeStr => {
         const d = new Date(isoTimeStr);
