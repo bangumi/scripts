@@ -4,6 +4,7 @@
 // @version      0.1.0
 // @description  显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
 // @author       you
+// @homepage     https://chii.in/group/topic/448515
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/character/*/edit
 // @match        http*://bangumi.tv/character/*/edit
@@ -654,7 +655,7 @@ https://chii.in/person/3818/add_related/character/anime
                             const subjects = p.relatSubjects;
                             for (let i = 0; i < subjects.length; i++) {
                                 const sid = subjects[i].id;
-                                const data = revisionObj.find(o => o.subject.id === sid && o[otherMono].id === pid);
+                                const data = revisionObj.find(o => o.subject.id == sid && o[otherMono].id == pid);
                                 addRelateSubject(`${pid},${i}`, 'submitForm');
                                 afterAdd(data);
                             }
@@ -663,7 +664,6 @@ https://chii.in/person/3818/add_related/character/anime
                         for (let i = 0; i < subjectList.length; i++) {
                             addRelateSubject(i, 'submitForm');
                             afterAdd(revisionObj[i]);
-                            // 不支持添加条目同时修改排序
                         }
                     }
                 } else {
@@ -747,13 +747,17 @@ https://chii.in/person/3818/add_related/character/anime
         const li = relatingEditor.firstChild;
         const select = li.querySelector('select');
         data.type && (select.value = data.type);
-        const sort = li.querySelector('.item_sort');
-        if (data.order && !sort) {
-            const prefix = select.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
-            select.insertAdjacentHTML('afterend',
-                `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
-            );
-            li.querySelector('.item_sort').value = data.order;
+        if (!isNaN(data.order)) {
+            if (!document.querySelector('#modifyOrder')) return;
+            let sort = li.querySelector('.item_sort');
+            if (!sort) {
+                const prefix = select.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
+                select.insertAdjacentHTML('afterend',
+                    `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
+                );
+                sort = li.querySelector('.item_sort');
+            }
+            sort.value = data.order;
         }
     }
 
