@@ -56,6 +56,7 @@ export default defineConfig([
         subjectList: "writable",
         addedSubjects: "writable",
         addRelateSubject: "readonly",
+        genPrsnStaffList: "readonly",
         findSubjectFunc: "readonly",
         nowmode: 'readonly',
         WCODEtoNormal: 'readonly',

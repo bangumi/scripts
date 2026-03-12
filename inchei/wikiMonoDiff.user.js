@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         维基修订历史对比差异补完
 // @namespace    bangumi.wiki.mono.diff
-// @version      0.1.0
+// @version      0.1.1
 // @description  显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
 // @author       you
 // @homepage     https://chii.in/group/topic/448515
@@ -47,9 +47,10 @@
 // ==/UserScript==
 
 /* 测试用
-https://chii.in/character/1/add_related/anime
-https://chii.in/subject/9622/add_related/subject/anime
-https://chii.in/person/3818/add_related/character/anime
+ * https://chii.in/character/1/add_related/person/anime
+ * https://chii.in/character/1/add_related/anime
+ * https://chii.in/subject/9622/add_related/subject/anime
+ * https://chii.in/person/3818/add_related/character/anime
 */
 
 (function () {
@@ -64,10 +65,11 @@ https://chii.in/person/3818/add_related/character/anime
         persons: '人物',
         subjects: '条目',
     };
-    const typeCN = typeID => ['书籍', '动画', '音乐', '游戏', '', '三次元'][typeID - 1];
-
     const mono = pathname.split('/')[1];
     const monos = `${mono}s`; // characters | persons | subjects
+
+    const typeCN = typeID => ['书籍', '动画', '音乐', '游戏', '', '三次元'][typeID - 1];
+    const typeEN = typeID => ['book', 'anime', 'music', 'game', '', 'real'][typeID - 1];
     const isRelating = pathname.includes('add_related');
     const apiBaseAffix = isRelating ? `/${
         pathname.includes('/add_related/person') ? 'casts' :
@@ -83,12 +85,17 @@ https://chii.in/person/3818/add_related/character/anime
         real: 6,
     })[document.querySelector('.selected').href.split('/').pop()] : null;
     const relatingEditor = document.querySelector('#crtRelateSubjects');
+    const typeMapping = unsafeWindow.genPrsnStaffList ? [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
+        .reduce((acc, [, k, v]) => {
+            acc[k] = v;
+            return acc;
+        }, {}) : {};
 
     const groupsLine = document.querySelector('.groupsLine');
     const simpleSidePanel = document.querySelector('.SimpleSidePanel');
     if (!groupsLine || !simpleSidePanel) return;
 
-    const versionCache = new Map();
+    const revisionCache = new Map();
     let historySummaryData = null;
     let isHistorySummaryFetched = false;
 
@@ -196,18 +203,18 @@ https://chii.in/person/3818/add_related/character/anime
             margin-top: 4px;
             color: #666;
         }
-        .version-compare-h2 {
+        .revision-compare-h2 {
             position: sticky;
             top: 0;
             background: var(--dollars-bg);
         }
-        html[data-nav-mode="fixed"] .version-compare-h2 {
+        html[data-nav-mode="fixed"] .revision-compare-h2 {
             top: 60px;
         }
-        .version-radio {
+        .revision-radio {
             cursor: pointer;
         }
-        .version-radio-group {
+        .revision-radio-group {
             display: inline-flex;
             margin-right: 10px;
             gap: 5px;
@@ -228,13 +235,13 @@ https://chii.in/person/3818/add_related/character/anime
         html[data-theme="dark"] .compare-btn:hover {
             background: rgba(90, 110, 140, 0.8);
         }
-        .SimpleSidePanel:not(:has(input[name="versionA"]:checked):has(input[name="versionB"]:checked)) .compare-btn {
+        .SimpleSidePanel:not(:has(input[name="revisionA"]:checked):has(input[name="revisionB"]:checked)) .compare-btn {
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none;
         }
-        .version-radio-group:has(input[name="versionA"]:checked) input[name="versionB"],
-        .version-radio-group:has(input[name="versionB"]:checked) input[name="versionA"] {
+        .revision-radio-group:has(input[name="revisionA"]:checked) input[name="revisionB"],
+        .revision-radio-group:has(input[name="revisionB"]:checked) input[name="revisionA"] {
             visibility: hidden;
         }
         html[data-theme="dark"] #wikiMonoDiff {
@@ -344,12 +351,12 @@ https://chii.in/person/3818/add_related/character/anime
         }
     }
 
-    async function extractVersionData(revisionId) {
+    async function extractRevisionData(revisionId) {
         if (!revisionId) throw new Error('无效的修订ID');
 
         const cacheKey = `revision_${revisionId}`;
-        if (versionCache.has(cacheKey)) {
-            return versionCache.get(cacheKey);
+        if (revisionCache.has(cacheKey)) {
+            return revisionCache.get(cacheKey);
         }
 
         const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/-${apiBaseAffix}/revisions/${revisionId}`;
@@ -381,13 +388,12 @@ https://chii.in/person/3818/add_related/character/anime
                                 if (typeID !== relatedType) revertBtn?.remove();
                             }
 
-                            const compareText = JSON.stringify(wikiPayload, null, 2).replaceAll('\\r', '');
                             const result = {
-                                compareText,
+                                raw: wikiPayload,
                                 img: resData.extra?.img,
                                 typeID,
                             };
-                            versionCache.set(cacheKey, result);
+                            revisionCache.set(cacheKey, result);
                             resolve(result);
                         } else {
                             reject(new Error(`HTTP ${response.status}`));
@@ -494,15 +500,15 @@ https://chii.in/person/3818/add_related/character/anime
         return popup;
     }
 
-    async function compareVersions(revisionIdA, revisionIdB) {
+    async function compareRevisions(revisionIdA, revisionIdB) {
         const popup = createComparePopup();
         const resultContainer = popup.querySelector('#diff-results');
         resultContainer.innerHTML = '正在获取并对比数据...';
 
         try {
-            const [versionA, versionB] = await Promise.all([
-                extractVersionData(revisionIdA),
-                extractVersionData(revisionIdB)
+            const [revisionA, revisionB] = await Promise.all([
+                extractRevisionData(revisionIdA),
+                extractRevisionData(revisionIdB)
             ]);
 
             if (!window.Diff || !window.Diff2HtmlUI) {
@@ -512,14 +518,24 @@ https://chii.in/person/3818/add_related/character/anime
             resultContainer.innerHTML = '';
 
             if (isRelating) {
-                const typeA = versionA.typeID;
-                const typeB = versionB.typeID;
+                const typeA = revisionA.typeID;
+                const typeB = revisionB.typeID;
                 if (typeA && typeB && typeA !== typeB) {
                     throw new Error(`版本类型不一致，无法进行对比
 当前版本类型：左侧${typeCN(typeA)}，右侧${typeCN(typeB)}`);
                 }
+                if (typeA !== relatedType && unsafeWindow.genPrsnStaffList) {
+                    document.querySelector('#diff-results').insertAdjacentHTML('beforebegin', `
+                    <div class="diff-warning-section">
+                        <div class="diff-warning-title">注意</div>
+                        <p>对比类型与当前关联类型不一致，无法获取关联中文，欲查看关联中文，请切换至<a href="${
+    location.pathname.replace(/(book|anime|music|game|real)$/, typeEN(typeA))
+}" class="l" target="_blank">${typeCN(typeA)}关联</a></p>
+                    </div>
+                    `)
+                }
             } else {
-                const imgCompareSection = createImgCompareSection(versionA.img, versionB.img);
+                const imgCompareSection = createImgCompareSection(revisionA.img, revisionB.img);
                 if (imgCompareSection) {
                     resultContainer.appendChild(imgCompareSection);
                 }
@@ -531,8 +547,8 @@ https://chii.in/person/3818/add_related/character/anime
             const theme = document.documentElement.dataset.theme || 'light';
             const diffStr = window.Diff.createPatch(
                 `修订对比（旧 ↔ 新）`,
-                versionA.compareText.replaceAll('\\n', '\n'),
-                versionB.compareText.replaceAll('\\n', '\n')
+                getCompareText(revisionIdA),
+                getCompareText(revisionIdB)
             );
 
             new window.Diff2HtmlUI(diffContainer, diffStr, {
@@ -542,9 +558,10 @@ https://chii.in/person/3818/add_related/character/anime
                 fileContentToggle: false,
                 colorScheme: theme === 'dark' ? 'dark' : 'light',
                 matching: 'lines',
-                outputFormat: 'side-by-side',
+                outputFormat: unsafeWindow.innerWidth < 640 ? 'line-by-line' : 'side-by-side',
             }).draw();
         } catch (error) {
+            console.error(error);
             resultContainer.innerHTML = '';
             const errorDiv = document.createElement('div');
             errorDiv.className = 'diff-error-section';
@@ -564,7 +581,7 @@ https://chii.in/person/3818/add_related/character/anime
     const summaryInput = document.querySelector('#crt_summary');
     const editSummaryInput = document.querySelector('#editSummary');
 
-    h2Element.classList.add('version-compare-h2');
+    h2Element.classList.add('revision-compare-h2');
     const compareBtn = document.createElement('a');
     compareBtn.className = 'l compare-btn';
     compareBtn.textContent = '对比选中版本';
@@ -573,19 +590,19 @@ https://chii.in/person/3818/add_related/character/anime
     const revisionItems = document.querySelectorAll('.groupsLine li');
     revisionItems.forEach(li => {
         const radioGroup = document.createElement('div');
-        radioGroup.className = 'version-radio-group';
+        radioGroup.className = 'revision-radio-group';
         li.prepend(radioGroup);
 
         const createRadio = (id) => {
             const radio = document.createElement('input');
             radio.type = 'radio';
             radio.name = id;
-            radio.className = 'version-radio';
+            radio.className = 'revision-radio';
             radio.dataset.revisionId = li.dataset.revisionId || '';
             return radio
         };
 
-        radioGroup.append(createRadio('versionA'), createRadio('versionB'));
+        radioGroup.append(createRadio('revisionA'), createRadio('revisionB'));
 
         const revertBtn = document.createElement('a');
         revertBtn.classList.add('l', 'revertBtn');
@@ -602,7 +619,7 @@ https://chii.in/person/3818/add_related/character/anime
                     await fetchHistorySummary();
                     matchDomWithApiData();
                     isHistorySummaryFetched = true;
-                    document.querySelectorAll('.version-radio').forEach(radio => {
+                    document.querySelectorAll('.revision-radio').forEach(radio => {
                         const li = radio.closest('.groupsLine li');
                         radio.dataset.revisionId = li.dataset.revisionId || '';
                     });
@@ -610,8 +627,8 @@ https://chii.in/person/3818/add_related/character/anime
 
                 const revisionLi = revertBtn.closest('.groupsLine li');
                 const revisionId = revisionLi.dataset.revisionId;
-                const revision = await extractVersionData(revisionId);
-                const revisionObj = JSON.parse(revision.compareText);
+                const revision = await extractRevisionData(revisionId);
+                const revisionObj = revision.raw;
 
                 if (isRelating) {
                     if (relatedType !== revision.typeID) {
@@ -679,12 +696,11 @@ https://chii.in/person/3818/add_related/character/anime
                     } else {
                         infoboxInput.value = revisionObj.infobox;
                     }
-
-                    editSummaryInput.value = `恢复版本${revisionId}（${
-                        revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
-                    }）`;
                 }
 
+                editSummaryInput.value = `恢复版本${revisionId}（${
+                    revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
+                }）`;
                 revertBtn.textContent = '已恢复';
                 setTimeout(() => {
                     revertBtn.textContent = '恢复';
@@ -714,7 +730,7 @@ https://chii.in/person/3818/add_related/character/anime
                 matchDomWithApiData();
                 isHistorySummaryFetched = true;
 
-                document.querySelectorAll('.version-radio').forEach(radio => {
+                document.querySelectorAll('.revision-radio').forEach(radio => {
                     const li = radio.closest('.groupsLine li');
                     radio.dataset.revisionId = li.dataset.revisionId || '';
                 });
@@ -733,12 +749,12 @@ https://chii.in/person/3818/add_related/character/anime
             }
         }
 
-        const versionAId = document.querySelector('input[name="versionA"]:checked')?.dataset.revisionId;
-        const versionBId = document.querySelector('input[name="versionB"]:checked')?.dataset.revisionId;
+        const revisionAId = document.querySelector('input[name="revisionA"]:checked')?.dataset.revisionId;
+        const revisionBId = document.querySelector('input[name="revisionB"]:checked')?.dataset.revisionId;
 
-        if (versionAId && versionBId && versionAId !== versionBId) {
-            compareVersions(versionAId, versionBId);
-        } else if (versionAId === versionBId) {
+        if (revisionAId && revisionBId && revisionAId !== revisionBId) {
+            compareRevisions(revisionAId, revisionBId);
+        } else if (revisionAId === revisionBId) {
             alert('请选择两个不同的修订版本');
         }
     });
@@ -759,6 +775,23 @@ https://chii.in/person/3818/add_related/character/anime
             }
             sort.value = data.order;
         }
+    }
+
+    function getCompareText(revisionId) {
+        const cacheKey = `revision_${revisionId}`;
+        const revision = revisionCache.get(cacheKey);
+        if (!revision) return '';
+        if (revision.compareText) return revision.compareText;
+        const raw = revision.raw;
+        if (isRelating) {
+            for (const o of raw) {
+                delete o.subject.typeID;
+                o.type &&= typeMapping[o.type] || o.type;
+            }
+        }
+        revision.compareText = JSON.stringify(raw, null, 2).replaceAll('\\r', '').replaceAll('\\n', '\n');
+        revisionCache.set(cacheKey, revision);
+        return revision.compareText;
     }
 
 })();
