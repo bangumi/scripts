@@ -15,21 +15,21 @@
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
-    const subjectId = location.pathname.split('/')[2];
-    if (!/\d+/.test(subjectId)) return;
+  const subjectId = location.pathname.split('/')[2];
+  if (!/\d+/.test(subjectId)) return;
 
-    const wikiBtn = document.querySelector('.navTabs [href$="/edit"][href^="/subject"]:not(.focus)');
-    if (!wikiBtn) return;
-    const subjectCat = document.querySelector('.focus.chl').href.split('/').pop();
+  const wikiBtn = document.querySelector('.navTabs [href$="/edit"][href^="/subject"]:not(.focus)');
+  if (!wikiBtn) return;
+  const subjectCat = document.querySelector('.focus.chl').href.split('/').pop();
 
-    const changeWikiBtn = (v = 'edit_detail') => {
-        wikiBtn.href = `/subject/${subjectId}/${v.endsWith('/') ? v + subjectCat : v}`;
-    };
-    changeWikiBtn(localStorage.getItem('wikiBtnSwitch') || 'edit_detail');
+  const changeWikiBtn = (v = 'edit_detail') => {
+    wikiBtn.href = `/subject/${subjectId}/${v.endsWith('/') ? v + subjectCat : v}`;
+  };
+  changeWikiBtn(localStorage.getItem('wikiBtnSwitch') || 'edit_detail');
 
-    document.querySelector('.navTabs').insertAdjacentHTML('afterend', /* html */`
+  document.querySelector('.navTabs').insertAdjacentHTML('afterend', /* html */`
     <div class="navSubTabsWrapper">
     <ul class="navSubTabs">
         <li><a href="/subject/${subjectId}/edit_detail">编辑</a></li>
@@ -41,23 +41,23 @@
     </ul>
     </div>`);
 
-    chiiLib.ukagaka.addGeneralConfig({
-        title: 'Wiki 按钮默认打开',
-        name: 'wikiBtnSwitch',
-        type: 'radio',
-        defaultValue: 'edit_detail',
-        getCurrentValue: () => localStorage.getItem('wikiBtnSwitch') || 'edit_detail',
-        onChange: v => {
-            localStorage.setItem('wikiBtnSwitch', v);
-            changeWikiBtn(v);
-        },
-        options: [
-            { value: 'edit_detail', label: '编辑' },
-            { value: 'edit', label: '修订历史' },
-            { value: 'upload_img', label: '增改封面' },
-            { value: 'add_related/character', label: '关联角色' },
-            { value: 'add_related/person', label: '关联人物' },
-            { value: 'add_related/subject/', label: '关联条目' },
-        ]
-    });
+  chiiLib.ukagaka.addGeneralConfig({
+    title: 'Wiki 按钮默认打开',
+    name: 'wikiBtnSwitch',
+    type: 'radio',
+    defaultValue: 'edit_detail',
+    getCurrentValue: () => localStorage.getItem('wikiBtnSwitch') || 'edit_detail',
+    onChange: v => {
+      localStorage.setItem('wikiBtnSwitch', v);
+      changeWikiBtn(v);
+    },
+    options: [
+      { value: 'edit_detail', label: '编辑' },
+      { value: 'edit', label: '修订历史' },
+      { value: 'upload_img', label: '增改封面' },
+      { value: 'add_related/character', label: '关联角色' },
+      { value: 'add_related/person', label: '关联人物' },
+      { value: 'add_related/subject/', label: '关联条目' },
+    ]
+  });
 })();

@@ -20,27 +20,27 @@
 
 /* global hljs */
 (async function () {
-    'use strict';
+  'use strict';
 
-    // 加载 highlight.js 样式
-    function loadHighlightJSCSS() {
-        const dayLink = document.createElement('link');
-        dayLink.rel = 'stylesheet';
-        dayLink.id = 'highlight-css-day';
-        dayLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/github.min.css';
-        document.head.appendChild(dayLink);
+  // 加载 highlight.js 样式
+  function loadHighlightJSCSS() {
+    const dayLink = document.createElement('link');
+    dayLink.rel = 'stylesheet';
+    dayLink.id = 'highlight-css-day';
+    dayLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/github.min.css';
+    document.head.appendChild(dayLink);
 
-        const nightLink = document.createElement('link');
-        nightLink.rel = 'stylesheet';
-        nightLink.id = 'highlight-css-night';
-        nightLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/github-dark.min.css';
-        nightLink.disabled = true;
-        document.head.appendChild(nightLink);
+    const nightLink = document.createElement('link');
+    nightLink.rel = 'stylesheet';
+    nightLink.id = 'highlight-css-night';
+    nightLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/github-dark.min.css';
+    nightLink.disabled = true;
+    document.head.appendChild(nightLink);
 
-        // 添加自定义样式
-        const customStyles = document.createElement('style');
-        const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
-        customStyles.textContent = css`
+    // 添加自定义样式
+    const customStyles = document.createElement('style');
+    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
+    customStyles.textContent = css`
             .codeHighlight {
                 position: relative;
                 border: 1px solid #ddd;
@@ -105,97 +105,99 @@
                 background-color: #444;
             }
         `;
-        document.head.appendChild(customStyles);
+    document.head.appendChild(customStyles);
+  }
+
+  // 切换 highlight.js 样式
+  function switchHighlightJSCSS(theme) {
+    const dayLink = document.getElementById('highlight-css-day');
+    const nightLink = document.getElementById('highlight-css-night');
+
+    if (theme === 'dark') {
+      dayLink.disabled = true;
+      nightLink.disabled = false;
+    } else {
+      dayLink.disabled = false;
+      nightLink.disabled = true;
+    }
+  }
+
+  // 加载 highlight.js
+  function loadHighlightJS() {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js';
+    script.onload = async () => {
+      await initializeHighlightJS();
+      switchHighlightJSCSS(document.documentElement.getAttribute('data-theme') || 'light');
+    };
+    document.head.appendChild(script);
+  }
+
+  // 复制代码到剪贴板
+  function copyToClipboard(text, button) {
+    if (navigator.clipboard && window.isSecureContext) {
+      // 使用 Clipboard API
+      navigator.clipboard.writeText(text).then(() => {
+        button.textContent = '已复制';
+      }).catch(err => {
+        console.error('无法复制文本：', err);
+        button.textContent = '复制失败';
+      });
+    } else {
+      // 使用回退方案
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        button.textContent = '已复制';
+      } catch (err) {
+        console.error('无法复制文本：', err);
+        button.textContent = '复制失败';
+      }
+      document.body.removeChild(textArea);
     }
 
-    // 切换 highlight.js 样式
-    function switchHighlightJSCSS(theme) {
-        const dayLink = document.getElementById('highlight-css-day');
-        const nightLink = document.getElementById('highlight-css-night');
+    setTimeout(() => {
+      button.textContent = '复制代码';
+    }, 3000);
+  }
 
-        if (theme === 'dark') {
-            dayLink.disabled = true;
-            nightLink.disabled = false;
-        } else {
-            dayLink.disabled = false;
-            nightLink.disabled = true;
-        }
-    }
+  // 初始化 highlight.js
+  async function initializeHighlightJS() {
+    return new Promise((resolve) => {
+      document.querySelectorAll('.codeHighlight').forEach(blockWrapper => {
+        blockWrapper.innerHTML = blockWrapper.innerHTML.replace('<pre><br>', '<pre>');
+        const block = blockWrapper.querySelector('pre');
+        const result = hljs.highlightAuto(block.textContent);
 
-    // 加载 highlight.js
-    function loadHighlightJS() {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js';
-        script.onload = async () => {
-            await initializeHighlightJS();
-            switchHighlightJSCSS(document.documentElement.getAttribute('data-theme') || 'light');
-        };
-        document.head.appendChild(script);
-    }
+        // 创建复制按钮
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.tabIndex = 0;
+        copyButton.textContent = '复制代码';
+        copyButton.addEventListener('click', () => {
+          copyToClipboard(block.textContent, copyButton);
+        });
 
-    // 复制代码到剪贴板
-    function copyToClipboard(text, button) {
-        if (navigator.clipboard && window.isSecureContext) {
-            // 使用 Clipboard API
-            navigator.clipboard.writeText(text).then(() => {
-                button.textContent = '已复制';
-            }).catch(err => {
-                console.error('无法复制文本：', err);
-                button.textContent = '复制失败';
-            });
-        } else {
-            // 使用回退方案
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                button.textContent = '已复制';
-            } catch (err) {
-                console.error('无法复制文本：', err);
-                button.textContent = '复制失败';
-            }
-            document.body.removeChild(textArea);
-        }
+        block.parentNode.insertBefore(copyButton, block);
 
-        setTimeout(() => { button.textContent = '复制代码'; }, 3000);
-    }
+        block.classList.add(`language-${result.language ?? 'plaintext'}`);
+        hljs.highlightElement(block);
+      });
+      resolve(0);
+    });
+  }
 
-    // 初始化 highlight.js
-    async function initializeHighlightJS() {
-        return new Promise((resolve) => {
-            document.querySelectorAll('.codeHighlight').forEach(blockWrapper => {
-                blockWrapper.innerHTML = blockWrapper.innerHTML.replace('<pre><br>', '<pre>');
-                const block = blockWrapper.querySelector('pre');
-                const result = hljs.highlightAuto(block.textContent);
+  const oldUpdateTheme = chiiLib.ukagaka.updateTheme;
+  chiiLib.ukagaka.updateTheme = function (style, remember) {
+    oldUpdateTheme.call(this, style, remember);
+    switchHighlightJSCSS(style);
+  };
 
-                // 创建复制按钮
-                const copyButton = document.createElement('button');
-                copyButton.className = 'copy-button';
-                copyButton.tabIndex = 0;
-                copyButton.textContent = '复制代码';
-                copyButton.addEventListener('click', () => {
-                    copyToClipboard(block.textContent, copyButton);
-                });
-
-                block.parentNode.insertBefore(copyButton, block);
-
-                block.classList.add(`language-${result.language ?? 'plaintext'}`);
-                hljs.highlightElement(block);
-            });
-            resolve(0);
-        })
-    }
-
-    const oldUpdateTheme = chiiLib.ukagaka.updateTheme;
-    chiiLib.ukagaka.updateTheme = function (style, remember) {
-        oldUpdateTheme.call(this, style, remember);
-        switchHighlightJSCSS(style);
-    }
-
-    // 初始加载 highlight.js 样式和脚本，并应用当前主题
-    loadHighlightJSCSS();
-    loadHighlightJS();
+  // 初始加载 highlight.js 样式和脚本，并应用当前主题
+  loadHighlightJSCSS();
+  loadHighlightJS();
 
 })();

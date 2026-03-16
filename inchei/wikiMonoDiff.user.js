@@ -54,57 +54,57 @@
 */
 
 (function () {
-    'use strict';
+  'use strict';
 
-    const pathname = location.pathname;
-    const monoId = pathname.split('/')[2];
-    if (!/\d+/.test(monoId)) return;
+  const pathname = location.pathname;
+  const monoId = pathname.split('/')[2];
+  if (!/\d+/.test(monoId)) return;
 
-    const monosCN = {
-        characters: '角色',
-        persons: '人物',
-        subjects: '条目',
-    };
-    const mono = pathname.split('/')[1];
-    const monos = `${mono}s`; // characters | persons | subjects
+  const monosCN = {
+    characters: '角色',
+    persons: '人物',
+    subjects: '条目',
+  };
+  const mono = pathname.split('/')[1];
+  const monos = `${mono}s`; // characters | persons | subjects
 
-    const typeCN = typeID => ['书籍', '动画', '音乐', '游戏', '', '三次元'][typeID - 1];
-    const typeEN = typeID => ['book', 'anime', 'music', 'game', '', 'real'][typeID - 1];
-    const isRelating = pathname.includes('add_related');
-    const apiBaseAffix = isRelating ? `/${
-        pathname.includes('/add_related/person') ? 'casts' :
-        pathname.includes('/add_related/character') ? 'casts' :
+  const typeCN = typeID => ['书籍', '动画', '音乐', '游戏', '', '三次元'][typeID - 1];
+  const typeEN = typeID => ['book', 'anime', 'music', 'game', '', 'real'][typeID - 1];
+  const isRelating = pathname.includes('add_related');
+  const apiBaseAffix = isRelating ? `/${
+    pathname.includes('/add_related/person') ? 'casts' :
+      pathname.includes('/add_related/character') ? 'casts' :
         pathname.includes('/add_related/subject') ? 'relations' : 'subjects'
-    }` : '';
-    const relatingCast = apiBaseAffix === '/casts';
-    const relatedType = isRelating ? ({
-        anime: 2,
-        book: 1,
-        music: 3,
-        game: 4,
-        real: 6,
-    })[document.querySelector('.selected').href.split('/').pop()] : null;
-    const relatingEditor = document.querySelector('#crtRelateSubjects');
-    const typeMapping = unsafeWindow.genPrsnStaffList ? [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
-        .reduce((acc, [, k, v]) => {
-            acc[k] = v;
-            return acc;
-        }, {}) : {};
+  }` : '';
+  const relatingCast = apiBaseAffix === '/casts';
+  const relatedType = isRelating ? ({
+    anime: 2,
+    book: 1,
+    music: 3,
+    game: 4,
+    real: 6,
+  })[document.querySelector('.selected').href.split('/').pop()] : null;
+  const relatingEditor = document.querySelector('#crtRelateSubjects');
+  const typeMapping = unsafeWindow.genPrsnStaffList ? [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
+    .reduce((acc, [, k, v]) => {
+      acc[k] = v;
+      return acc;
+    }, {}) : {};
 
-    const groupsLine = document.querySelector('.groupsLine');
-    const simpleSidePanel = document.querySelector('.SimpleSidePanel');
-    if (!groupsLine || !simpleSidePanel) return;
+  const groupsLine = document.querySelector('.groupsLine');
+  const simpleSidePanel = document.querySelector('.SimpleSidePanel');
+  if (!groupsLine || !simpleSidePanel) return;
 
-    const revisionCache = new Map();
-    let historySummaryData = null;
-    let isHistorySummaryFetched = false;
+  const revisionCache = new Map();
+  let historySummaryData = null;
+  let isHistorySummaryFetched = false;
 
-    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
-    const diff2htmlCSS = GM_getResourceText('DIFF2HTML_CSS');
-    GM_addStyle(diff2htmlCSS);
-    const fancyboxCSS = GM_getResourceText('FANCYBOX_CSS');
-    GM_addStyle(fancyboxCSS);
-    const customStyle = css`
+  const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
+  const diff2htmlCSS = GM_getResourceText('DIFF2HTML_CSS');
+  GM_addStyle(diff2htmlCSS);
+  const fancyboxCSS = GM_getResourceText('FANCYBOX_CSS');
+  GM_addStyle(fancyboxCSS);
+  const customStyle = css`
         #wikiMonoDiff {
             position: fixed;
             top: 50%;
@@ -292,157 +292,157 @@
             z-index: 99999 !important;
         }
     `;
-    GM_addStyle(customStyle);
+  GM_addStyle(customStyle);
 
-    async function fetchHistorySummary() {
-        const LIMIT = 100;
-        let allData = [];
+  async function fetchHistorySummary() {
+    const LIMIT = 100;
+    let allData = [];
 
-        // 先获取第一页知道总数
-        const firstPage = await fetchPage(0);
-        const total = firstPage.total || 0;
-        const totalPages = Math.ceil(total / LIMIT);
+    // 先获取第一页知道总数
+    const firstPage = await fetchPage(0);
+    const total = firstPage.total || 0;
+    const totalPages = Math.ceil(total / LIMIT);
 
-        allData.push(...firstPage.data);
+    allData.push(...firstPage.data);
 
-        // 并行获取剩余页面
-        const pagePromises = [];
-        for (let page = 1; page < totalPages; page++) {
-            pagePromises.push(fetchPage(page));
-        }
+    // 并行获取剩余页面
+    const pagePromises = [];
+    for (let page = 1; page < totalPages; page++) {
+      pagePromises.push(fetchPage(page));
+    }
 
-        const results = await Promise.all(pagePromises);
-        results.forEach(result => {
-            allData.push(...result.data);
+    const results = await Promise.all(pagePromises);
+    results.forEach(result => {
+      allData.push(...result.data);
+    });
+
+    historySummaryData = allData;
+
+    async function fetchPage(pageNum) {
+      const url = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}${apiBaseAffix}/history-summary?limit=${LIMIT}&offset=${pageNum * LIMIT}`;
+
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url,
+          onload: (response) => {
+            if (response.status >= 200 && response.status < 300) {
+              resolve(JSON.parse(response.responseText));
+            } else {
+              reject(new Error(`HTTP ${response.status}`));
+            }
+          },
+          onerror: reject
         });
+      });
+    }
+  }
 
-        historySummaryData = allData;
+  function matchDomWithApiData() {
+    if (!historySummaryData || historySummaryData.length === 0) return;
 
-        async function fetchPage(pageNum) {
-            const url = `https://next.bgm.tv/p1/wiki/${monos}/${monoId}${apiBaseAffix}/history-summary?limit=${LIMIT}&offset=${pageNum * LIMIT}`;
+    const revisionItems = Array.from(document.querySelectorAll('.groupsLine li'));
+    const matchLength = Math.min(revisionItems.length, historySummaryData.length);
 
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url,
-                    onload: (response) => {
-                        if (response.status >= 200 && response.status < 300) {
-                            resolve(JSON.parse(response.responseText));
-                        } else {
-                            reject(new Error(`HTTP ${response.status}`));
-                        }
-                    },
-                    onerror: reject
-                });
-            });
-        }
+    for (let index = 0; index < matchLength; index++) {
+      const li = revisionItems[index];
+      const apiRevision = historySummaryData[index];
+      li.dataset.revisionId = apiRevision.id;
+    }
+  }
+
+  async function extractRevisionData(revisionId) {
+    if (!revisionId) throw new Error('无效的修订ID');
+
+    const cacheKey = `revision_${revisionId}`;
+    if (revisionCache.has(cacheKey)) {
+      return revisionCache.get(cacheKey);
     }
 
-    function matchDomWithApiData() {
-        if (!historySummaryData || historySummaryData.length === 0) return;
-
-        const revisionItems = Array.from(document.querySelectorAll('.groupsLine li'));
-        const matchLength = Math.min(revisionItems.length, historySummaryData.length);
-
-        for (let index = 0; index < matchLength; index++) {
-            const li = revisionItems[index];
-            const apiRevision = historySummaryData[index];
-            li.dataset.revisionId = apiRevision.id;
-        }
-    }
-
-    async function extractRevisionData(revisionId) {
-        if (!revisionId) throw new Error('无效的修订ID');
-
-        const cacheKey = `revision_${revisionId}`;
-        if (revisionCache.has(cacheKey)) {
-            return revisionCache.get(cacheKey);
-        }
-
-        const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/-${apiBaseAffix}/revisions/${revisionId}`;
-        try {
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: apiUrl,
-                    onload: (response) => {
-                        if (response.status >= 200 && response.status < 300) {
-                            const resData = JSON.parse(response.responseText);
-                            const wikiPayload = resData || {};
-                            let typeID;
-                            if (isRelating) {
-                                const relatedMono =
+    const apiUrl = `https://next.bgm.tv/p1/wiki/${monos}/-${apiBaseAffix}/revisions/${revisionId}`;
+    try {
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url: apiUrl,
+          onload: (response) => {
+            if (response.status >= 200 && response.status < 300) {
+              const resData = JSON.parse(response.responseText);
+              const wikiPayload = resData || {};
+              let typeID;
+              if (isRelating) {
+                const relatedMono =
                                     pathname.includes('/add_related/person') ? 'person' :
-                                    pathname.includes('/add_related/character') ? 'character' : null;
-                                wikiPayload.sort((a, b) => {
-                                    const subjectSort = a.subject.id - b.subject.id;
-                                    if (subjectSort === 0 && relatedMono) {
-                                        return a[relatedMono].id - b[relatedMono].id;
-                                    }
-                                    return subjectSort;
-                                });
-
-                                typeID = resData[0].subject.typeID;
-                                const revertBtn = document.querySelector(`[data-revision-id="${revisionId}"] .revertBtn`);
-                                revertBtn?.insertAdjacentText('beforebegin', `${typeCN(typeID)} `);
-                                if (typeID !== relatedType) revertBtn?.remove();
-                            }
-
-                            const result = {
-                                raw: wikiPayload,
-                                img: resData.extra?.img,
-                                typeID,
-                            };
-                            revisionCache.set(cacheKey, result);
-                            resolve(result);
-                        } else {
-                            reject(new Error(`HTTP ${response.status}`));
-                        }
-                    },
-                    onerror: (error) => reject(new Error(error.message)),
-                    ontimeout: () => reject(new Error('请求超时'))
+                                      pathname.includes('/add_related/character') ? 'character' : null;
+                wikiPayload.sort((a, b) => {
+                  const subjectSort = a.subject.id - b.subject.id;
+                  if (subjectSort === 0 && relatedMono) {
+                    return a[relatedMono].id - b[relatedMono].id;
+                  }
+                  return subjectSort;
                 });
-            });
-        } catch (error) {
-            console.error('版本数据提取失败:', error);
-            throw error;
-        }
+
+                typeID = resData[0].subject.typeID;
+                const revertBtn = document.querySelector(`[data-revision-id="${revisionId}"] .revertBtn`);
+                revertBtn?.insertAdjacentText('beforebegin', `${typeCN(typeID)} `);
+                if (typeID !== relatedType) revertBtn?.remove();
+              }
+
+              const result = {
+                raw: wikiPayload,
+                img: resData.extra?.img,
+                typeID,
+              };
+              revisionCache.set(cacheKey, result);
+              resolve(result);
+            } else {
+              reject(new Error(`HTTP ${response.status}`));
+            }
+          },
+          onerror: (error) => reject(new Error(error.message)),
+          ontimeout: () => reject(new Error('请求超时'))
+        });
+      });
+    } catch (error) {
+      console.error('版本数据提取失败:', error);
+      throw error;
     }
+  }
 
-    const updateCaption = async (fullUrl, thumbElement, labelElement, labelText) => {
-        if (!fullUrl) return;
+  const updateCaption = async (fullUrl, thumbElement, labelElement, labelText) => {
+    if (!fullUrl) return;
 
-        const img = new Image();
-        img.onload = () => {
-            const size = `${img.width}×${img.height}`;
-            thumbElement.dataset.caption = `${labelText} - ${size}`;
-            labelElement.textContent = `${labelText} (${size})`;
-        };
-        img.src = fullUrl;
+    const img = new Image();
+    img.onload = () => {
+      const size = `${img.width}×${img.height}`;
+      thumbElement.dataset.caption = `${labelText} - ${size}`;
+      labelElement.textContent = `${labelText} (${size})`;
     };
+    img.src = fullUrl;
+  };
 
-    function createImgCompareSection(imgA, imgB) {
-        if ((!imgA && !imgB) || imgA === imgB) return null;
+  function createImgCompareSection(imgA, imgB) {
+    if ((!imgA && !imgB) || imgA === imgB) return null;
 
-        const imgFullUrlA = imgA ? `//lain.bgm.tv/pic/crt/l/${imgA}` : '';
-        const imgFullUrlB = imgB ? `//lain.bgm.tv/pic/crt/l/${imgB}` : '';
-        const imgThumbUrlA = imgA ? `//lain.bgm.tv/r/400/pic/crt/l/${imgA}` : '';
-        const imgThumbUrlB = imgB ? `//lain.bgm.tv/r/400/pic/crt/l/${imgB}` : '';
+    const imgFullUrlA = imgA ? `//lain.bgm.tv/pic/crt/l/${imgA}` : '';
+    const imgFullUrlB = imgB ? `//lain.bgm.tv/pic/crt/l/${imgB}` : '';
+    const imgThumbUrlA = imgA ? `//lain.bgm.tv/r/400/pic/crt/l/${imgA}` : '';
+    const imgThumbUrlB = imgB ? `//lain.bgm.tv/r/400/pic/crt/l/${imgB}` : '';
 
-        const getImgItemHtml = (imgThumb, imgFull, label) => {
-            if (imgThumb) {
-                return `
+    const getImgItemHtml = (imgThumb, imgFull, label) => {
+      if (imgThumb) {
+        return `
                     <a data-fancybox="char-portrait" data-caption="${label}" href="${imgFull}">
                         <img src="${imgThumb}" alt="${label}">
                     </a>
                 `;
-            } else {
-                return `<div class="img-placeholder">无图片</div>`;
-            }
-        };
+      } else {
+        return '<div class="img-placeholder">无图片</div>';
+      }
+    };
 
-        const section = document.createElement('div');
-        section.innerHTML = `
+    const section = document.createElement('div');
+    section.innerHTML = `
             <div class="img-compare-container">
                 <div class="img-compare-item">
                     ${getImgItemHtml(imgThumbUrlA, imgFullUrlA, '旧')}
@@ -455,28 +455,28 @@
             </div>
         `;
 
-        const oldLink = section.querySelector('[data-caption="旧"]');
-        const newLink = section.querySelector('[data-caption="新"]');
-        const oldLabel = section.querySelector('.img-compare-item:first-child .img-compare-label');
-        const newLabel = section.querySelector('.img-compare-item:last-child .img-compare-label');
+    const oldLink = section.querySelector('[data-caption="旧"]');
+    const newLink = section.querySelector('[data-caption="新"]');
+    const oldLabel = section.querySelector('.img-compare-item:first-child .img-compare-label');
+    const newLabel = section.querySelector('.img-compare-item:last-child .img-compare-label');
 
-        if (imgFullUrlA && oldLink && oldLabel) {
-            updateCaption(imgFullUrlA, oldLink, oldLabel, '旧');
-        }
-        if (imgFullUrlB && newLink && newLabel) {
-            updateCaption(imgFullUrlB, newLink, newLabel, '新');
-        }
-
-        return section;
+    if (imgFullUrlA && oldLink && oldLabel) {
+      updateCaption(imgFullUrlA, oldLink, oldLabel, '旧');
+    }
+    if (imgFullUrlB && newLink && newLabel) {
+      updateCaption(imgFullUrlB, newLink, newLabel, '新');
     }
 
-    function createComparePopup() {
-        const existing = document.querySelector('#wikiMonoDiff');
-        if (existing) existing.remove();
+    return section;
+  }
 
-        const popup = document.createElement('div');
-        popup.id = 'wikiMonoDiff';
-        popup.innerHTML = `
+  function createComparePopup() {
+    const existing = document.querySelector('#wikiMonoDiff');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'wikiMonoDiff';
+    popup.innerHTML = `
             <div class="diff-tip-header">
                 <h3 class="diff-tip-title">${monosCN[monos]}修订历史对比</h3>
                 <button class="diff-tip-close">&times;</button>
@@ -495,303 +495,303 @@
                 <div id="diff-results">请选择两个版本进行对比</div>
             </div>
         `;
-        document.body.appendChild(popup);
-        popup.querySelector('.diff-tip-close').addEventListener('click', () => popup.remove());
-        return popup;
-    }
+    document.body.appendChild(popup);
+    popup.querySelector('.diff-tip-close').addEventListener('click', () => popup.remove());
+    return popup;
+  }
 
-    async function compareRevisions(revisionIdA, revisionIdB) {
-        const popup = createComparePopup();
-        const resultContainer = popup.querySelector('#diff-results');
-        resultContainer.innerHTML = '正在获取并对比数据...';
+  async function compareRevisions(revisionIdA, revisionIdB) {
+    const popup = createComparePopup();
+    const resultContainer = popup.querySelector('#diff-results');
+    resultContainer.innerHTML = '正在获取并对比数据...';
 
-        try {
-            const [revisionA, revisionB] = await Promise.all([
-                extractRevisionData(revisionIdA),
-                extractRevisionData(revisionIdB)
-            ]);
+    try {
+      const [revisionA, revisionB] = await Promise.all([
+        extractRevisionData(revisionIdA),
+        extractRevisionData(revisionIdB)
+      ]);
 
-            if (!window.Diff || !window.Diff2HtmlUI) {
-                throw new Error('对比库加载失败，请刷新页面');
-            }
+      if (!window.Diff || !window.Diff2HtmlUI) {
+        throw new Error('对比库加载失败，请刷新页面');
+      }
 
-            resultContainer.innerHTML = '';
+      resultContainer.innerHTML = '';
 
-            if (isRelating) {
-                const typeA = revisionA.typeID;
-                const typeB = revisionB.typeID;
-                if (typeA && typeB && typeA !== typeB) {
-                    throw new Error(`版本类型不一致，无法进行对比
+      if (isRelating) {
+        const typeA = revisionA.typeID;
+        const typeB = revisionB.typeID;
+        if (typeA && typeB && typeA !== typeB) {
+          throw new Error(`版本类型不一致，无法进行对比
 当前版本类型：左侧${typeCN(typeA)}，右侧${typeCN(typeB)}`);
-                }
-                if (typeA !== relatedType && unsafeWindow.genPrsnStaffList) {
-                    document.querySelector('#diff-results').insertAdjacentHTML('beforebegin', `
+        }
+        if (typeA !== relatedType && unsafeWindow.genPrsnStaffList) {
+          document.querySelector('#diff-results').insertAdjacentHTML('beforebegin', `
                     <div class="diff-warning-section">
                         <div class="diff-warning-title">注意</div>
                         <p>对比类型与当前关联类型不一致，无法获取关联中文，欲查看关联中文，请切换至<a href="${
-    location.pathname.replace(/(book|anime|music|game|real)$/, typeEN(typeA))
-}" class="l" target="_blank">${typeCN(typeA)}关联</a></p>
+  location.pathname.replace(/(book|anime|music|game|real)$/, typeEN(typeA))
+  }" class="l" target="_blank">${typeCN(typeA)}关联</a></p>
                     </div>
-                    `)
-                }
-            } else {
-                const imgCompareSection = createImgCompareSection(revisionA.img, revisionB.img);
-                if (imgCompareSection) {
-                    resultContainer.appendChild(imgCompareSection);
-                }
-            }
+                    `);
+        }
+      } else {
+        const imgCompareSection = createImgCompareSection(revisionA.img, revisionB.img);
+        if (imgCompareSection) {
+          resultContainer.appendChild(imgCompareSection);
+        }
+      }
 
-            const diffContainer = document.createElement('div');
-            resultContainer.appendChild(diffContainer);
+      const diffContainer = document.createElement('div');
+      resultContainer.appendChild(diffContainer);
 
-            const theme = document.documentElement.dataset.theme || 'light';
-            const diffStr = window.Diff.createPatch(
-                `修订对比（旧 ↔ 新）`,
-                getCompareText(revisionIdA),
-                getCompareText(revisionIdB)
-            );
+      const theme = document.documentElement.dataset.theme || 'light';
+      const diffStr = window.Diff.createPatch(
+        '修订对比（旧 ↔ 新）',
+        getCompareText(revisionIdA),
+        getCompareText(revisionIdB)
+      );
 
-            new window.Diff2HtmlUI(diffContainer, diffStr, {
-                highlight: false,
-                drawFileList: false,
-                fileListToggle: false,
-                fileContentToggle: false,
-                colorScheme: theme === 'dark' ? 'dark' : 'light',
-                matching: 'lines',
-                outputFormat: unsafeWindow.innerWidth < 640 ? 'line-by-line' : 'side-by-side',
-            }).draw();
-        } catch (error) {
-            console.error(error);
-            resultContainer.innerHTML = '';
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'diff-error-section';
-            errorDiv.innerHTML = `
+      new window.Diff2HtmlUI(diffContainer, diffStr, {
+        highlight: false,
+        drawFileList: false,
+        fileListToggle: false,
+        fileContentToggle: false,
+        colorScheme: theme === 'dark' ? 'dark' : 'light',
+        matching: 'lines',
+        outputFormat: unsafeWindow.innerWidth < 640 ? 'line-by-line' : 'side-by-side',
+      }).draw();
+    } catch (error) {
+      console.error(error);
+      resultContainer.innerHTML = '';
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'diff-error-section';
+      errorDiv.innerHTML = `
                 <div class="diff-error-title">对比错误</div>
                 <p>${error.message}</p>
             `;
-            resultContainer.appendChild(errorDiv);
-        }
+      resultContainer.appendChild(errorDiv);
     }
+  }
 
-    const h2Element = document.querySelector('.SimpleSidePanel h2:not(.alert)');
-    if (!h2Element) return;
+  const h2Element = document.querySelector('.SimpleSidePanel h2:not(.alert)');
+  if (!h2Element) return;
 
-    const nameInput = document.querySelector('[name="crt_name"]');
-    const infoboxInput = document.querySelector('#subject_infobox');
-    const summaryInput = document.querySelector('#crt_summary');
-    const editSummaryInput = document.querySelector('#editSummary');
+  const nameInput = document.querySelector('[name="crt_name"]');
+  const infoboxInput = document.querySelector('#subject_infobox');
+  const summaryInput = document.querySelector('#crt_summary');
+  const editSummaryInput = document.querySelector('#editSummary');
 
-    h2Element.classList.add('revision-compare-h2');
-    const compareBtn = document.createElement('a');
-    compareBtn.className = 'l compare-btn';
-    compareBtn.textContent = '对比选中版本';
-    h2Element.appendChild(compareBtn);
+  h2Element.classList.add('revision-compare-h2');
+  const compareBtn = document.createElement('a');
+  compareBtn.className = 'l compare-btn';
+  compareBtn.textContent = '对比选中版本';
+  h2Element.appendChild(compareBtn);
 
-    const revisionItems = document.querySelectorAll('.groupsLine li');
-    revisionItems.forEach(li => {
-        const radioGroup = document.createElement('div');
-        radioGroup.className = 'revision-radio-group';
-        li.prepend(radioGroup);
+  const revisionItems = document.querySelectorAll('.groupsLine li');
+  revisionItems.forEach(li => {
+    const radioGroup = document.createElement('div');
+    radioGroup.className = 'revision-radio-group';
+    li.prepend(radioGroup);
 
-        const createRadio = (id) => {
-            const radio = document.createElement('input');
-            radio.type = 'radio';
-            radio.name = id;
-            radio.className = 'revision-radio';
-            radio.dataset.revisionId = li.dataset.revisionId || '';
-            return radio
-        };
+    const createRadio = (id) => {
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = id;
+      radio.className = 'revision-radio';
+      radio.dataset.revisionId = li.dataset.revisionId || '';
+      return radio;
+    };
 
-        radioGroup.append(createRadio('revisionA'), createRadio('revisionB'));
+    radioGroup.append(createRadio('revisionA'), createRadio('revisionB'));
 
-        const revertBtn = document.createElement('a');
-        revertBtn.classList.add('l', 'revertBtn');
-        revertBtn.href = 'javascript:';
-        revertBtn.textContent = '恢复';
-        revertBtn.addEventListener('click', async () => {
-            document.querySelectorAll('.revertBtn').forEach(b => {
-                b.style.pointerEvents = 'none';
-                b.style.opacity = '.6';
-            })
-            revertBtn.textContent = '加载中...'
-            try {
-                if (!isHistorySummaryFetched) {
-                    await fetchHistorySummary();
-                    matchDomWithApiData();
-                    isHistorySummaryFetched = true;
-                    document.querySelectorAll('.revision-radio').forEach(radio => {
-                        const li = radio.closest('.groupsLine li');
-                        radio.dataset.revisionId = li.dataset.revisionId || '';
-                    });
-                }
-
-                const revisionLi = revertBtn.closest('.groupsLine li');
-                const revisionId = revisionLi.dataset.revisionId;
-                const revision = await extractRevisionData(revisionId);
-                const revisionObj = revision.raw;
-
-                if (isRelating) {
-                    if (relatedType !== revision.typeID) {
-                        const message = `版本类型${typeCN(revision.typeID)}与当前不一致`;
-                        alert(message);
-                        throw new Error(message);
-                    }
-                    relatingEditor.innerHTML = '';
-                    addedSubjects = [];
-                    const otherMono = relatingCast ? (mono === 'person' ? 'character' : 'person') : null;
-                    subjectList = relatingCast ? revisionObj.reduce((l, o) => {
-                        const s = o.subject;
-                        const p = o[otherMono];
-                        l[p.id] ??= {
-                            id: p.id,
-                            img: '',
-                            name: p.name,
-                            name_cn: p.nameCN,
-                            relatSubjects: [],
-                            url_mod: mono,
-                        };
-                        l[p.id].relatSubjects.push({
-                            id: s.id,
-                            img: '',
-                            name: s.name,
-                            name_cn: s.nameCN,
-                            type_id: relatedType,
-                            url_mod: 'subject',
-                        });
-                        return l;
-                    }, {}) : revisionObj.map(o => ({
-                        id: o.subject.id,
-                        type_id: relatedType,
-                        name: o.subject.name,
-                        name_cn: o.subject.nameCN,
-                        url_mod: 'subject',
-                    }));
-
-                    if (relatingCast) {
-                        for (const [pid, p] of Object.entries(subjectList)) {
-                            const subjects = p.relatSubjects;
-                            for (let i = 0; i < subjects.length; i++) {
-                                const sid = subjects[i].id;
-                                const data = revisionObj.find(o => o.subject.id == sid && o[otherMono].id == pid);
-                                addRelateSubject(`${pid},${i}`, 'submitForm');
-                                afterAdd(data);
-                            }
-                        }
-                    } else {
-                        for (let i = 0; i < subjectList.length; i++) {
-                            addRelateSubject(i, 'submitForm');
-                            afterAdd(revisionObj[i]);
-                        }
-                    }
-                } else {
-                    nameInput.value = revisionObj.name;
-                    summaryInput.value = revisionObj.summary;
-
-                    if (nowmode === 'normal') {
-                        NormaltoWCODE();
-                        infoboxInput.value = revisionObj.infobox;
-                        WCODEtoNormal();
-                    } else if (document.querySelector('.wiki-enhance-editor')) {
-                        unsafeWindow.monaco?.editor.getEditors()?.[0].setValue(revisionObj.infobox);
-                    } else {
-                        infoboxInput.value = revisionObj.infobox;
-                    }
-                }
-
-                editSummaryInput.value = `恢复版本${revisionId}（${
-                    revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
-                }）`;
-                revertBtn.textContent = '已恢复';
-                setTimeout(() => {
-                    revertBtn.textContent = '恢复';
-                }, 2000);
-            } catch (error) {
-                console.error(error);
-                revertBtn.textContent = '恢复失败，点击重试';
-                return;
-            } finally {
-                document.querySelectorAll('.revertBtn').forEach(b => {
-                    b.style.pointerEvents = 'auto';
-                    b.style.opacity = '1';
-                });
-            }
-        });
-        li.querySelector('small').append(document.createTextNode(' / '), revertBtn);
-    });
-
-    compareBtn.addEventListener('click', async () => {
+    const revertBtn = document.createElement('a');
+    revertBtn.classList.add('l', 'revertBtn');
+    revertBtn.href = 'javascript:';
+    revertBtn.textContent = '恢复';
+    revertBtn.addEventListener('click', async () => {
+      document.querySelectorAll('.revertBtn').forEach(b => {
+        b.style.pointerEvents = 'none';
+        b.style.opacity = '.6';
+      });
+      revertBtn.textContent = '加载中...';
+      try {
         if (!isHistorySummaryFetched) {
-            const tempPopup = createComparePopup();
-            const tempResult = tempPopup.querySelector('#diff-results');
-            tempResult.innerHTML = '正在获取修订历史摘要...（首次对比需加载，稍候）';
+          await fetchHistorySummary();
+          matchDomWithApiData();
+          isHistorySummaryFetched = true;
+          document.querySelectorAll('.revision-radio').forEach(radio => {
+            const li = radio.closest('.groupsLine li');
+            radio.dataset.revisionId = li.dataset.revisionId || '';
+          });
+        }
 
-            try {
-                await fetchHistorySummary();
-                matchDomWithApiData();
-                isHistorySummaryFetched = true;
+        const revisionLi = revertBtn.closest('.groupsLine li');
+        const revisionId = revisionLi.dataset.revisionId;
+        const revision = await extractRevisionData(revisionId);
+        const revisionObj = revision.raw;
 
-                document.querySelectorAll('.revision-radio').forEach(radio => {
-                    const li = radio.closest('.groupsLine li');
-                    radio.dataset.revisionId = li.dataset.revisionId || '';
-                });
+        if (isRelating) {
+          if (relatedType !== revision.typeID) {
+            const message = `版本类型${typeCN(revision.typeID)}与当前不一致`;
+            alert(message);
+            throw new Error(message);
+          }
+          relatingEditor.innerHTML = '';
+          addedSubjects = [];
+          const otherMono = relatingCast ? (mono === 'person' ? 'character' : 'person') : null;
+          subjectList = relatingCast ? revisionObj.reduce((l, o) => {
+            const s = o.subject;
+            const p = o[otherMono];
+            l[p.id] ??= {
+              id: p.id,
+              img: '',
+              name: p.name,
+              name_cn: p.nameCN,
+              relatSubjects: [],
+              url_mod: mono,
+            };
+            l[p.id].relatSubjects.push({
+              id: s.id,
+              img: '',
+              name: s.name,
+              name_cn: s.nameCN,
+              type_id: relatedType,
+              url_mod: 'subject',
+            });
+            return l;
+          }, {}) : revisionObj.map(o => ({
+            id: o.subject.id,
+            type_id: relatedType,
+            name: o.subject.name,
+            name_cn: o.subject.nameCN,
+            url_mod: 'subject',
+          }));
 
-                tempPopup.remove();
-            } catch (error) {
-                tempResult.innerHTML = '';
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'diff-error-section';
-                errorDiv.innerHTML = `
+          if (relatingCast) {
+            for (const [pid, p] of Object.entries(subjectList)) {
+              const subjects = p.relatSubjects;
+              for (let i = 0; i < subjects.length; i++) {
+                const sid = subjects[i].id;
+                const data = revisionObj.find(o => o.subject.id == sid && o[otherMono].id == pid);
+                addRelateSubject(`${pid},${i}`, 'submitForm');
+                afterAdd(data);
+              }
+            }
+          } else {
+            for (let i = 0; i < subjectList.length; i++) {
+              addRelateSubject(i, 'submitForm');
+              afterAdd(revisionObj[i]);
+            }
+          }
+        } else {
+          nameInput.value = revisionObj.name;
+          summaryInput.value = revisionObj.summary;
+
+          if (nowmode === 'normal') {
+            NormaltoWCODE();
+            infoboxInput.value = revisionObj.infobox;
+            WCODEtoNormal();
+          } else if (document.querySelector('.wiki-enhance-editor')) {
+            unsafeWindow.monaco?.editor.getEditors()?.[0].setValue(revisionObj.infobox);
+          } else {
+            infoboxInput.value = revisionObj.infobox;
+          }
+        }
+
+        editSummaryInput.value = `恢复版本${revisionId}（${
+          revisionLi.querySelector('small').textContent.split(' / ')[0].trim() // 时间
+        }）`;
+        revertBtn.textContent = '已恢复';
+        setTimeout(() => {
+          revertBtn.textContent = '恢复';
+        }, 2000);
+      } catch (error) {
+        console.error(error);
+        revertBtn.textContent = '恢复失败，点击重试';
+        return;
+      } finally {
+        document.querySelectorAll('.revertBtn').forEach(b => {
+          b.style.pointerEvents = 'auto';
+          b.style.opacity = '1';
+        });
+      }
+    });
+    li.querySelector('small').append(document.createTextNode(' / '), revertBtn);
+  });
+
+  compareBtn.addEventListener('click', async () => {
+    if (!isHistorySummaryFetched) {
+      const tempPopup = createComparePopup();
+      const tempResult = tempPopup.querySelector('#diff-results');
+      tempResult.innerHTML = '正在获取修订历史摘要...（首次对比需加载，稍候）';
+
+      try {
+        await fetchHistorySummary();
+        matchDomWithApiData();
+        isHistorySummaryFetched = true;
+
+        document.querySelectorAll('.revision-radio').forEach(radio => {
+          const li = radio.closest('.groupsLine li');
+          radio.dataset.revisionId = li.dataset.revisionId || '';
+        });
+
+        tempPopup.remove();
+      } catch (error) {
+        tempResult.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'diff-error-section';
+        errorDiv.innerHTML = `
                     <div class="diff-error-title">历史数据获取失败</div>
                     <p>${error.message}</p>
                 `;
-                tempResult.appendChild(errorDiv);
-                return;
-            }
-        }
-
-        const revisionAId = document.querySelector('input[name="revisionA"]:checked')?.dataset.revisionId;
-        const revisionBId = document.querySelector('input[name="revisionB"]:checked')?.dataset.revisionId;
-
-        if (revisionAId && revisionBId && revisionAId !== revisionBId) {
-            compareRevisions(revisionAId, revisionBId);
-        } else if (revisionAId === revisionBId) {
-            alert('请选择两个不同的修订版本');
-        }
-    });
-
-    function afterAdd(data) {
-        const li = relatingEditor.firstChild;
-        const select = li.querySelector('select');
-        data.type && (select.value = data.type);
-        if (!isNaN(data.order)) {
-            if (!document.querySelector('#modifyOrder')) return;
-            let sort = li.querySelector('.item_sort');
-            if (!sort) {
-                const prefix = select.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
-                select.insertAdjacentHTML('afterend',
-                    `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
-                );
-                sort = li.querySelector('.item_sort');
-            }
-            sort.value = data.order;
-        }
+        tempResult.appendChild(errorDiv);
+        return;
+      }
     }
 
-    function getCompareText(revisionId) {
-        const cacheKey = `revision_${revisionId}`;
-        const revision = revisionCache.get(cacheKey);
-        if (!revision) return '';
-        if (revision.compareText) return revision.compareText;
-        const raw = revision.raw;
-        if (isRelating) {
-            for (const o of raw) {
-                delete o.subject.typeID;
-                o.type &&= typeMapping[o.type] || o.type;
-            }
-        }
-        revision.compareText = JSON.stringify(raw, null, 2).replaceAll('\\r', '').replaceAll('\\n', '\n');
-        revisionCache.set(cacheKey, revision);
-        return revision.compareText;
+    const revisionAId = document.querySelector('input[name="revisionA"]:checked')?.dataset.revisionId;
+    const revisionBId = document.querySelector('input[name="revisionB"]:checked')?.dataset.revisionId;
+
+    if (revisionAId && revisionBId && revisionAId !== revisionBId) {
+      compareRevisions(revisionAId, revisionBId);
+    } else if (revisionAId === revisionBId) {
+      alert('请选择两个不同的修订版本');
     }
+  });
+
+  function afterAdd(data) {
+    const li = relatingEditor.firstChild;
+    const select = li.querySelector('select');
+    data.type && (select.value = data.type);
+    if (!isNaN(data.order)) {
+      if (!document.querySelector('#modifyOrder')) return;
+      let sort = li.querySelector('.item_sort');
+      if (!sort) {
+        const prefix = select.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
+        select.insertAdjacentHTML('afterend',
+          `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
+        );
+        sort = li.querySelector('.item_sort');
+      }
+      sort.value = data.order;
+    }
+  }
+
+  function getCompareText(revisionId) {
+    const cacheKey = `revision_${revisionId}`;
+    const revision = revisionCache.get(cacheKey);
+    if (!revision) return '';
+    if (revision.compareText) return revision.compareText;
+    const raw = revision.raw;
+    if (isRelating) {
+      for (const o of raw) {
+        delete o.subject.typeID;
+        o.type &&= typeMapping[o.type] || o.type;
+      }
+    }
+    revision.compareText = JSON.stringify(raw, null, 2).replaceAll('\\r', '').replaceAll('\\n', '\n');
+    revisionCache.set(cacheKey, revision);
+    return revision.compareText;
+  }
 
 })();

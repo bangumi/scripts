@@ -33,28 +33,28 @@
   'use strict';
 
   const FACE_KEY_GIF_MAPPING = {
-    "0": "44",
-    "140": "101",
-    "80": "41",
-    "54": "15",
-    "85": "46",
-    "104": "65",
-    "88": "49",
-    "62": "23",
-    "79": "40",
-    "53": "14",
-    "122": "83",
-    "92": "53",
-    "118": "79",
-    "141": "102",
-    "90": "51",
-    "76": "37",
-    "60": "21",
-    "128": "89",
-    "47": "08",
-    "68": "29",
-    "137": "98",
-    "132": "93"
+    '0': '44',
+    '140': '101',
+    '80': '41',
+    '54': '15',
+    '85': '46',
+    '104': '65',
+    '88': '49',
+    '62': '23',
+    '79': '40',
+    '53': '14',
+    '122': '83',
+    '92': '53',
+    '118': '79',
+    '141': '102',
+    '90': '51',
+    '76': '37',
+    '60': '21',
+    '128': '89',
+    '47': '08',
+    '68': '29',
+    '137': '98',
+    '132': '93'
   };
 
   const style = document.createElement('style');
@@ -126,7 +126,7 @@
       }
     `;
   }
-  updateStyle(localStorage.getItem('incheijs_eptl_nonetabare') === 'true')
+  updateStyle(localStorage.getItem('incheijs_eptl_nonetabare') === 'true');
   document.head.appendChild(style);
 
   class LocalStorageWithExpiry {
@@ -185,7 +185,7 @@
   const isEpTl = li => {
     const subjectOrEpLink = li.querySelector(`a.l[href^="${location.origin}/subject/"]`);
     return subjectOrEpLink?.href.includes('/ep/') || subjectOrEpLink?.previousSibling.textContent.trim() === '完成了'; // 主页和时光机前后空格不同
-  }
+  };
   const superGetEpComments = beDistinctConcurrentRetryCached(getEpComments, { cacheMap: epCommentsCache });
   const superGetSubjectEpId = beDistinctConcurrentRetryCached(getSubjectEpId, { maxCacheSize: 10, cacheMap: subjectEpIdCache, genKey: (subjectId, epNum) => `${subjectId}_${epNum}` });
   let loading = false; // 兼容加载更多，避免连续点击导致重复
@@ -417,16 +417,16 @@
       return (epEles.find(epEle => {
         const epEleSubjectId = epEle.getAttribute('subject_id');
         const epEleEpNum = +epEle.textContent;
-        return (epEleSubjectId === subjectId && epEleEpNum === epNum)
+        return (epEleSubjectId === subjectId && epEleEpNum === epNum);
       }) || epTlEles.find(epTlEle => {
         const epLink = epTlEle.querySelector(':is(.info, .info_full) a.l:last-of-type');
         const epTlEleSubjectId = epTlEle.querySelector('.card a').href.split('/').pop();
-        const epTlEleEpNum = +epLink.textContent.split(' ')[0].split('.')[1]
+        const epTlEleEpNum = +epLink.textContent.split(' ')[0].split('.')[1];
         if (isNaN(epTlEleEpNum)) return false;
-        return (epTlEleSubjectId === subjectId && epTlEleEpNum === epNum)
+        return (epTlEleSubjectId === subjectId && epTlEleEpNum === epNum);
       }))?.href.split('/').pop();
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
   }
 
@@ -453,7 +453,7 @@
         selected: i.users.some(user => user.id === unsafeWindow.CHOBITS_UID)
       };
       return acc;
-    }, {})
+    }, {});
   }
 
   function beDistinctConcurrentRetryCached(requestFunction, options = {}) {
@@ -505,7 +505,7 @@
             } catch (error) {
               retries++;
               if (retries > maxRetries) {
-                throw new Error(`Request to ${key} failed after ${maxRetries} retries: ${error.message}`);
+                throw new Error(`Request to ${key} failed after ${maxRetries} retries: ${error.message}`, { cause: error });
               }
               console.log(`Request to ${key} failed: ${error.message}, retrying(${retries} / ${maxRetries})...`);
               await new Promise((resolve) => setTimeout(resolve, retryDelay));

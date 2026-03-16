@@ -448,7 +448,7 @@
     const resetInsert = () => {
       feedItemsCopy = [...feedItems];
       originalToRSSLis = {};
-    }
+    };
     resetInsert();
 
     function insertRSSItems(feedItemsCopy, originalItems, insDate) {
@@ -791,7 +791,7 @@
             <span class="avatar">
               <div class="avatar-skeleton skeleton"></div>
             </span>` : ''
-            }
+  }
             <span class="info${locUser ? '_full' : ''} clearit">
               ${!locUser ? '<div class="nickname-skeleton skeleton"></div>' : ''}
               ${prefix} <a href="${subjectLink}" class="l">${titleText}</a>

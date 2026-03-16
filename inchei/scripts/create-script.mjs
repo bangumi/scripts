@@ -9,18 +9,18 @@ const scriptName = process.argv[3];
 const scriptDescription = process.argv[4];
 
 if (!scriptId) {
-    process.exit(1);
+  process.exit(1);
 }
 
 const safeFileName = scriptId
-    .replace(/[^\w\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
+  .replace(/[^\w\s-]/g, '')
+  .trim()
+  .replace(/\s+/g, '-');
 const filePath = path.resolve(process.cwd(), `${safeFileName}.user.js`);
 
 if (fs.existsSync(filePath)) {
-    console.error(`文件已存在！`);
-    process.exit(1);
+  console.error('文件已存在！');
+  process.exit(1);
 }
 
 const camelToDotLower = (str) => str.replace(/([A-Z])/g, (match) => `.${match.toLowerCase()}`);
@@ -49,9 +49,9 @@ const scriptContent = `// ==UserScript==
 
 // 写入文件
 try {
-    fs.writeFileSync(filePath, scriptContent, 'utf8');
-    openFile(filePath);
+  fs.writeFileSync(filePath, scriptContent, 'utf8');
+  openFile(filePath);
 } catch (error) {
-    console.error(`创建脚本失败：${error.message}`);
-    process.exit(1);
+  console.error(`创建脚本失败：${error.message}`);
+  process.exit(1);
 }

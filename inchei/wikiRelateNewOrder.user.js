@@ -16,23 +16,23 @@
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
-    (new MutationObserver(mutations => {
-        for (const m of mutations) {
-            for (const n of m.addedNodes) {
-                if (n.nodeType !== 1) continue;
-                if (!n.matches?.('li:not(.old)')) continue;
-                if (n.querySelector('.item_sort')) continue;
-                const s = n.querySelector('select');
-                const prefix = s.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
-                s.insertAdjacentHTML('afterend',
-                    `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
-                );
-            }
-        }
-    })).observe(document.querySelector('#crtRelateSubjects'), {
-        childList: true,
-        subtree: true
-    });
+  (new MutationObserver(mutations => {
+    for (const m of mutations) {
+      for (const n of m.addedNodes) {
+        if (n.nodeType !== 1) continue;
+        if (!n.matches?.('li:not(.old)')) continue;
+        if (n.querySelector('.item_sort')) continue;
+        const s = n.querySelector('select');
+        const prefix = s.name?.match(/^(infoArr\[[^\]]+\])/)?.[1];
+        s.insertAdjacentHTML('afterend',
+          `<input type="text" name="${prefix}[order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off" style="display: inline-block;">`
+        );
+      }
+    }
+  })).observe(document.querySelector('#crtRelateSubjects'), {
+    childList: true,
+    subtree: true
+  });
 })();

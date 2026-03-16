@@ -10,10 +10,10 @@
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
-    // 添加搜索面板
-    const panelHtml = `
+  // 添加搜索面板
+  const panelHtml = `
         <div class="SidePanel png_bg clearit">
             <h2 align="left">乘坐时光机</h2>
             <div style="margin-top: 10px; display: flex; align-items: center;">
@@ -22,31 +22,31 @@
             </div>
         </div>
     `;
-    $('#columnTimelineB').append(panelHtml);
+  $('#columnTimelineB').append(panelHtml);
 
-    // 添加按钮点击事件
-    $('#mySearchBtn').click(function () {
-        const inputVal = $('#mySearchInput').val().trim().replace(/-0/g, '-');
+  // 添加按钮点击事件
+  $('#mySearchBtn').click(function () {
+    const inputVal = $('#mySearchInput').val().trim().replace(/-0/g, '-');
 
-        if (!inputVal) return;
+    if (!inputVal) return;
 
-        if (/^\d+$/.test(inputVal)) {
-            let url = '';
-            const pageNum = parseInt(inputVal);
-            const pageLinks = document.querySelectorAll('a.p');
-            if (pageLinks.length) {
-                url = [...pageLinks].pop().href.replace(/page=\d+/, 'page=' + pageNum)
-            } else {
-                url = `${window.location.href}?type=${$('.timelineTabs .focus')[0].id.split('_')[1]}&page=${pageNum}`;
-            }
-            chiiLib.tml.load(url);
-        }
-    });
+    if (/^\d+$/.test(inputVal)) {
+      let url;
+      const pageNum = parseInt(inputVal);
+      const pageLinks = document.querySelectorAll('a.p');
+      if (pageLinks.length) {
+        url = [...pageLinks].pop().href.replace(/page=\d+/, 'page=' + pageNum);
+      } else {
+        url = `${window.location.href}?type=${$('.timelineTabs .focus')[0].id.split('_')[1]}&page=${pageNum}`;
+      }
+      chiiLib.tml.load(url);
+    }
+  });
 
-    // 输入框回车事件
-    $('#mySearchInput').keypress(function (e) {
-        if (e.which === 13) {
-            $('#mySearchBtn').click();
-        }
-    });
+  // 输入框回车事件
+  $('#mySearchInput').keypress(function (e) {
+    if (e.which === 13) {
+      $('#mySearchBtn').click();
+    }
+  });
 })();

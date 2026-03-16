@@ -16,140 +16,140 @@
 // ==/UserScript==
 
 (async function () {
-    'use strict';
+  'use strict';
 
-    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
-    const style = document.createElement('style');
-    style.textContent = css`
+  const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
+  const style = document.createElement('style');
+  style.textContent = css`
         .bookTimeLabel { font-size:11px; cursor:pointer; }
         .bookTimeLabel:hover { opacity: .8; }
         .bookTimeUrl, .bookTimeUrlSetter { font-size: 11px; padding-left: 1px; }
         .bookTimeUrlSetter { visibility: hidden; }
         .tinyMode:hover .bookTimeUrlSetter { visibility: visible; }
     `;
-    document.head.append(style);
+  document.head.append(style);
 
-    const myUserName = document.querySelector('#dock a').href.split('/').pop();
+  const myUserName = document.querySelector('#dock a').href.split('/').pop();
 
-    const getAllBooks = async (userName) => {
-        const allData = [];
-        let offset = 0;
-        const limit = 50;
+  const getAllBooks = async (userName) => {
+    const allData = [];
+    let offset = 0;
+    const limit = 50;
 
-        while (true) {
-            try {
-                const res = await fetch(`https://api.bgm.tv/v0/users/${userName}/collections?subject_type=1&type=3&limit=${limit}&offset=${offset}`);
-                if (!res.ok) {
-                    console.error(`获取第${offset/limit + 1}页书籍数据失败`);
-                    break;
-                }
-
-                const pageData = await res.json();
-                const currentPageItems = pageData.data || [];
-
-                allData.push(...currentPageItems);
-
-                if (currentPageItems.length < limit) {
-                    break;
-                }
-
-                offset += limit;
-
-            } catch (error) {
-                console.error('分页获取数据出错:', error);
-                break;
-            }
+    while (true) {
+      try {
+        const res = await fetch(`https://api.bgm.tv/v0/users/${userName}/collections?subject_type=1&type=3&limit=${limit}&offset=${offset}`);
+        if (!res.ok) {
+          console.error(`获取第${offset/limit + 1}页书籍数据失败`);
+          break;
         }
 
-        return allData;
-    };
+        const pageData = await res.json();
+        const currentPageItems = pageData.data || [];
 
-    const allBooksData = await getAllBooks(myUserName);
-    if (!allBooksData.length) return;
+        allData.push(...currentPageItems);
 
-    const ids = allBooksData.map(o => o.subject_id);
-    const times = allBooksData.map(o => o.updated_at);
-
-    const fmtTime = isoTimeStr => {
-        const d = new Date(isoTimeStr);
-        return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-    };
-    const outdated = (isoTimeStr, days = 30) => {
-        const intervalMs = days * 24 * 60 * 60 * 1000;
-        const targetTime = new Date(isoTimeStr).getTime();
-        const currentTime = Date.now();
-        const sa = currentTime - targetTime;
-        return sa > intervalMs ? Math.min(Math.floor(sa / intervalMs), 3) : null;
-    };
-
-    const configs = chiiApp.cloud_settings.getAll();
-    const deadConfigs = Object.keys(configs).filter(i => !ids.includes(+i.replace('l', '')));
-    console.debug(configs, deadConfigs)
-    if (deadConfigs.length) {
-        for (const i of deadConfigs) {
-            chiiApp.cloud_settings.delete(i);
+        if (currentPageItems.length < limit) {
+          break;
         }
-        chiiApp.cloud_settings.save();
+
+        offset += limit;
+
+      } catch (error) {
+        console.error('分页获取数据出错:', error);
+        break;
+      }
     }
 
-    const applyTimes = (selector, pos) => {
-        const targets = document.querySelectorAll(selector);
-        targets.forEach((t, i) => {
-            const id = ids[i];
+    return allData;
+  };
 
-            const label = document.createElement('span');
-            label.textContent = `上次阅读：${fmtTime(times[i])}`;
-            label.className = 'bookTimeLabel';
-            t.insertAdjacentElement(pos, label);
+  const allBooksData = await getAllBooks(myUserName);
+  if (!allBooksData.length) return;
 
-            let link;
-            const initLink = url => {
-                if (!link) {
-                    link = document.createElement('a');
-                    link.className = 'l bookTimeUrl';
-                    link.textContent = '读';
-                    link.target = '_blank';
-                    label.after(link);
-                }
-                link.href = url;
-            };
+  const ids = allBooksData.map(o => o.subject_id);
+  const times = allBooksData.map(o => o.updated_at);
 
-            const urlSetter = document.createElement('a');
-            urlSetter.className = 'l bookTimeUrlSetter';
-            urlSetter.textContent = '±';
-            urlSetter.href = 'javascript:';
-            urlSetter.addEventListener('click', () => {
-                const url = prompt('设置阅读链接（https://）', configs[`${id}l`] || '');
-                if (!url) return;
-                chiiApp.cloud_settings.update({ [`${id}l`]: url });
-                chiiApp.cloud_settings.save();
-                initLink(url);
-            });
-            label.after(urlSetter);
+  const fmtTime = isoTimeStr => {
+    const d = new Date(isoTimeStr);
+    return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  };
+  const outdated = (isoTimeStr, days = 30) => {
+    const intervalMs = days * 24 * 60 * 60 * 1000;
+    const targetTime = new Date(isoTimeStr).getTime();
+    const currentTime = Date.now();
+    const sa = currentTime - targetTime;
+    return sa > intervalMs ? Math.min(Math.floor(sa / intervalMs), 3) : null;
+  };
 
-            const url = configs[`${id}l`];
-            if (url) initLink(url);
+  const configs = chiiApp.cloud_settings.getAll();
+  const deadConfigs = Object.keys(configs).filter(i => !ids.includes(+i.replace('l', '')));
+  console.debug(configs, deadConfigs);
+  if (deadConfigs.length) {
+    for (const i of deadConfigs) {
+      chiiApp.cloud_settings.delete(i);
+    }
+    chiiApp.cloud_settings.save();
+  }
 
-            const box = t.closest('.tinyMode');
-            const upd = outdated(times[i], configs[id]);
-            if (upd) {
-                box.style.backgroundColor = `rgba(50, 200, 50, .${1 + upd})`;
-            }
+  const applyTimes = (selector, pos) => {
+    const targets = document.querySelectorAll(selector);
+    targets.forEach((t, i) => {
+      const id = ids[i];
 
-            label.addEventListener('click', () => {
-                const interval = prompt('设置更新间隔（单位：天，默认30天）', configs[id] || 30);
-                if (!interval) return;
-                chiiApp.cloud_settings.update({ [id]: interval });
-                chiiApp.cloud_settings.save();
-                const upd = outdated(times[i], interval);
-                if (upd) {
-                    box.style.backgroundColor = `rgba(50, 200, 50, .${1 + upd})`;
-                } else {
-                    box.style.backgroundColor = '';
-                }
-            });
-        });
-    };
-    applyTimes('.tinyManager', 'afterbegin');
-    applyTimes('[subject_type="1"] .tip_j', 'afterend');
+      const label = document.createElement('span');
+      label.textContent = `上次阅读：${fmtTime(times[i])}`;
+      label.className = 'bookTimeLabel';
+      t.insertAdjacentElement(pos, label);
+
+      let link;
+      const initLink = url => {
+        if (!link) {
+          link = document.createElement('a');
+          link.className = 'l bookTimeUrl';
+          link.textContent = '读';
+          link.target = '_blank';
+          label.after(link);
+        }
+        link.href = url;
+      };
+
+      const urlSetter = document.createElement('a');
+      urlSetter.className = 'l bookTimeUrlSetter';
+      urlSetter.textContent = '±';
+      urlSetter.href = 'javascript:';
+      urlSetter.addEventListener('click', () => {
+        const url = prompt('设置阅读链接（https://）', configs[`${id}l`] || '');
+        if (!url) return;
+        chiiApp.cloud_settings.update({ [`${id}l`]: url });
+        chiiApp.cloud_settings.save();
+        initLink(url);
+      });
+      label.after(urlSetter);
+
+      const url = configs[`${id}l`];
+      if (url) initLink(url);
+
+      const box = t.closest('.tinyMode');
+      const upd = outdated(times[i], configs[id]);
+      if (upd) {
+        box.style.backgroundColor = `rgba(50, 200, 50, .${1 + upd})`;
+      }
+
+      label.addEventListener('click', () => {
+        const interval = prompt('设置更新间隔（单位：天，默认30天）', configs[id] || 30);
+        if (!interval) return;
+        chiiApp.cloud_settings.update({ [id]: interval });
+        chiiApp.cloud_settings.save();
+        const upd = outdated(times[i], interval);
+        if (upd) {
+          box.style.backgroundColor = `rgba(50, 200, 50, .${1 + upd})`;
+        } else {
+          box.style.backgroundColor = '';
+        }
+      });
+    });
+  };
+  applyTimes('.tinyManager', 'afterbegin');
+  applyTimes('[subject_type="1"] .tip_j', 'afterend');
 })();

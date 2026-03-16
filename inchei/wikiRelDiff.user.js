@@ -34,90 +34,90 @@
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
-    // 仅在有历史版本的页面执行
-    const hasHistory = document.querySelector('.groupsLine [href*="?undo="]');
-    if (!hasHistory) return;
+  // 仅在有历史版本的页面执行
+  const hasHistory = document.querySelector('.groupsLine [href*="?undo="]');
+  if (!hasHistory) return;
 
-    // 字段中文映射
-    const FIELD_MAPPING = {
-        "name": "名称",
-        "crt_type": "角色类型",
-        "prsn_position": "人员职位",
-        "crt_spoiler": "剧透",
-        "crt_appear_eps": "参与集数",
-        "crt_order": "排序",
-        "prsn_appear_eps": "参与集数"
+  // 字段中文映射
+  const FIELD_MAPPING = {
+    'name': '名称',
+    'crt_type': '角色类型',
+    'prsn_position': '人员职位',
+    'crt_spoiler': '剧透',
+    'crt_appear_eps': '参与集数',
+    'crt_order': '排序',
+    'prsn_appear_eps': '参与集数'
+  };
+  const TYPE_CN = {
+    anime: '动画',
+    book: '书籍',
+    music: '音乐',
+    game: '游戏',
+    real: '三次元',
+  };
+
+  // 页面配置
+  let pageType = '';
+  if (window.location.pathname.includes('/add_related/person')) {
+    pageType = 'person';
+  } else if (window.location.pathname.includes('/add_related/character')) {
+    pageType = 'character';
+  } else {
+    pageType = 'personSubject';
+  }
+
+  const typeField = pageType === 'person' ? 'prsn_position' : (pageType === 'character' ? 'crt_type' : 'type');
+
+  // 类型/职位中文映射
+  const typeMapping = [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
+    .reduce((acc, [, k, v]) => {
+      acc[k] = v;
+      return acc;
+    }, {});
+
+  // 版本数据缓存
+  const versionCache = new Map();
+
+  // 人物-条目关联数据提取函数
+  function getRelItemData(li) {
+    return {
+      name: li.querySelector('.title a').textContent || '',
+      id: li.querySelector('.title a').href.split('/').pop(),
+      infoName: li.querySelector('.info a')?.textContent || '',
+      infoId: li.querySelector('.info a')?.href.split('/').pop(),
+      type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
+      remark: li.querySelector('input[type=text]')?.value.trim() || '',
+      checkboxes: [...li.querySelectorAll(':scope input[type=checkbox]')].map(checkbox => ({
+        checked: checkbox.checked,
+        title: checkbox.previousElementSibling.textContent.slice(0, -1).trim() || ''
+      }))
     };
-    const TYPE_CN = {
-        anime: '动画',
-        book: '书籍',
-        music: '音乐',
-        game: '游戏',
-        real: '三次元',
-    }
+  }
 
-    // 页面配置
-    let pageType = '';
-    if (window.location.pathname.includes('/add_related/person')) {
-        pageType = 'person';
-    } else if (window.location.pathname.includes('/add_related/character')) {
-        pageType = 'character';
-    } else {
-        pageType = 'personSubject';
-    }
+  const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
+  // 加载依赖资源
+  function loadDependencies() {
+    // 加载diff2html样式
+    const diff2htmlCSS = document.createElement('link');
+    diff2htmlCSS.rel = 'stylesheet';
+    diff2htmlCSS.href = 'https://cdn.jsdmirror.com/npm/diff2html/bundles/css/diff2html.min.css';
+    document.head.appendChild(diff2htmlCSS);
 
-    const typeField = pageType === 'person' ? 'prsn_position' : (pageType === 'character' ? 'crt_type' : 'type');
+    // 加载jsdiff核心库
+    const jsDiffScript = document.createElement('script');
+    jsDiffScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.2.0/diff.min.js';
+    document.head.appendChild(jsDiffScript);
 
-    // 类型/职位中文映射
-    const typeMapping = [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
-        .reduce((acc, [, k, v]) => {
-            acc[k] = v;
-            return acc;
-        }, {});
+    // 加载diff2html UI库
+    const diff2htmlUIScript = document.createElement('script');
+    diff2htmlUIScript.src = 'https://cdn.jsdmirror.com/npm/diff2html/bundles/js/diff2html-ui-base.min.js';
+    document.head.appendChild(diff2htmlUIScript);
 
-    // 版本数据缓存
-    const versionCache = new Map();
-
-    // 人物-条目关联数据提取函数
-    function getRelItemData(li) {
-        return {
-            name: li.querySelector('.title a').textContent || '',
-            id: li.querySelector('.title a').href.split('/').pop(),
-            infoName: li.querySelector('.info a')?.textContent || '',
-            infoId: li.querySelector('.info a')?.href.split('/').pop(),
-            type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
-            remark: li.querySelector('input[type=text]')?.value.trim() || '',
-            checkboxes: [...li.querySelectorAll(':scope input[type=checkbox]')].map(checkbox => ({
-                checked: checkbox.checked,
-                title: checkbox.previousElementSibling.textContent.slice(0, -1).trim() || ''
-            }))
-        };
-    }
-
-    const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
-    // 加载依赖资源
-    function loadDependencies() {
-        // 加载diff2html样式
-        const diff2htmlCSS = document.createElement('link');
-        diff2htmlCSS.rel = 'stylesheet';
-        diff2htmlCSS.href = 'https://cdn.jsdmirror.com/npm/diff2html/bundles/css/diff2html.min.css';
-        document.head.appendChild(diff2htmlCSS);
-
-        // 加载jsdiff核心库
-        const jsDiffScript = document.createElement('script');
-        jsDiffScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.2.0/diff.min.js';
-        document.head.appendChild(jsDiffScript);
-
-        // 加载diff2html UI库
-        const diff2htmlUIScript = document.createElement('script');
-        diff2htmlUIScript.src = 'https://cdn.jsdmirror.com/npm/diff2html/bundles/js/diff2html-ui-base.min.js';
-        document.head.appendChild(diff2htmlUIScript);
-
-        // 加载自定义样式
-        const style = document.createElement('style');
-        style.textContent = css`
+    // 加载自定义样式
+    const style = document.createElement('style');
+    style.textContent = css`
             #wikiRelDiff {
                 position: fixed;
                 top: 50%;
@@ -246,172 +246,172 @@
                 background: unset; /* 解决与代码高亮冲突 */
             }
         `;
-        document.head.appendChild(style);
+    document.head.appendChild(style);
+  }
+
+  // 提取版本原始数据（带缓存）
+  async function extractVersionData(url) {
+    if (versionCache.has(url)) {
+      return versionCache.get(url);
     }
 
-    // 提取版本原始数据（带缓存）
-    async function extractVersionData(url) {
-        if (versionCache.has(url)) {
-            return versionCache.get(url);
-        }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
+      const html = await response.text();
 
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
-            const html = await response.text();
+      // 对于人物-条目关联，使用DOM解析方式提取数据
+      if (pageType === 'personSubject') {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
 
-            // 对于人物-条目关联，使用DOM解析方式提取数据
-            if (pageType === 'personSubject') {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
+        // 提取cat信息
+        const catElement = doc.querySelector('.cat .selected');
+        if (!catElement) throw new Error('无法找到类型信息');
 
-                // 提取cat信息
-                const catElement = doc.querySelector('.cat .selected');
-                if (!catElement) throw new Error('无法找到类型信息');
+        const cat = catElement.href;
+        if (!cat) throw new Error('类型信息为空');
 
-                const cat = catElement.href;
-                if (!cat) throw new Error('类型信息为空');
+        // 提取关联数据
+        const items = doc.querySelectorAll('#crtRelateSubjects li.old');
+        const data = Array.from(items).map(getRelItemData);
 
-                // 提取关联数据
-                const items = doc.querySelectorAll('#crtRelateSubjects li.old');
-                const data = Array.from(items).map(getRelItemData);
+        const result = {
+          cat: cat,
+          data: data
+        };
 
-                const result = {
-                    cat: cat,
-                    data: data
-                };
+        const dataStr = JSON.stringify(result);
+        versionCache.set(url, dataStr);
+        return dataStr;
+      } else {
+        // 对于其他页面，使用原有的JSON提取方式
+        const match = /^\s*var subjectCrtRelations = (.*?);\s*$/gm.exec(html);
+        if (!match) throw new Error('无法找到 subjectCrtRelations 变量');
 
-                const dataStr = JSON.stringify(result);
-                versionCache.set(url, dataStr);
-                return dataStr;
-            } else {
-                // 对于其他页面，使用原有的JSON提取方式
-                const match = /^\s*var subjectCrtRelations = (.*?);\s*$/gm.exec(html);
-                if (!match) throw new Error('无法找到 subjectCrtRelations 变量');
+        const data = match[1];
+        versionCache.set(url, data); // 存入缓存
+        return data;
+      }
+    } catch (error) {
+      console.error('版本数据提取失败:', error);
+      // 不隐藏错误，而是返回错误信息
+      throw error;
+    }
+  }
 
-                const data = match[1];
-                versionCache.set(url, data); // 存入缓存
-                return data;
+  // 格式化数据（中文键名+类型转换+ID排序）
+  function formatData(rawDataStr) {
+    try {
+      const data = JSON.parse(rawDataStr);
+
+      // 对于personSubject类型，我们只需要格式化data部分
+      const actualData = pageType === 'personSubject' ? data.data : data;
+
+      // 数组按ID排序
+      const sortedData = Array.isArray(actualData)
+        ? [...actualData].sort((a, b) => {
+          // 先按id排序
+          const idA = Number(a.id) || a.id;
+          const idB = Number(b.id) || b.id;
+          if (idA !== idB) {
+            return idA - idB;
+          }
+
+          // id相等时，按typeField排序（兼容数字和字符串）
+          const valA = a[typeField];
+          const valB = b[typeField];
+
+          // 判断是否为数字（排除NaN的情况）
+          const isNumberA = typeof valA === 'number' && !isNaN(valA);
+          const isNumberB = typeof valB === 'number' && !isNaN(valB);
+
+          if (isNumberA && isNumberB) {
+            // 都是数字，用减法比较
+            return valA - valB;
+          } else {
+            // 至少有一个不是数字，转为字符串用localeCompare比较
+            return String(valA).localeCompare(String(valB));
+          }
+        })
+        : actualData;
+
+
+      // 递归格式化（替换键名和类型值）
+      const formatItem = (item) => {
+        if (Array.isArray(item)) return item.map(formatItem);
+        if (typeof item !== 'object' || item === null) return item;
+
+        const formatted = {};
+        for (const key of Object.keys(item)) {
+          // 处理人物-条目关联的特殊字段
+          if (pageType === 'personSubject') {
+            switch (key) {
+            case 'name':
+              formatted['标题'] = item[key];
+              break;
+            case 'type':
+              formatted['职位'] = item[key];
+              break;
+            case 'remark':
+              formatted['备注'] = item[key];
+              break;
+            case 'checkboxes':
+              // 将checkboxes转换为单层JSON
+              if (Array.isArray(item[key])) {
+                item[key].forEach(checkbox => {
+                  if (checkbox.title) {
+                    formatted[checkbox.title] = checkbox.checked;
+                  }
+                });
+              }
+              break;
+            case 'infoName':
+            case 'infoId':
+              // 不显示infoName和infoId
+              break;
+            default:
+              formatted[key] = formatItem(item[key]);
             }
-        } catch (error) {
-            console.error('版本数据提取失败:', error);
-            // 不隐藏错误，而是返回错误信息
-            throw error;
+          } else {
+            // 处理其他页面
+            if (key === 'url_mod') continue;
+
+            const chineseKey = FIELD_MAPPING[key] || key;
+            let value = item[key];
+
+            // 替换类型/职位ID为中文（根据页面类型匹配对应字段）
+            if (key === typeField && typeMapping[value]) {
+              value = typeMapping[value];
+            }
+
+            formatted[chineseKey] = formatItem(value);
+          }
         }
+        return formatted;
+      };
+
+      return JSON.stringify(formatItem(sortedData), null, 2);
+    } catch (error) {
+      console.error('数据格式化失败:', error);
+      throw error;
     }
+  }
 
-    // 格式化数据（中文键名+类型转换+ID排序）
-    function formatData(rawDataStr) {
-        try {
-            const data = JSON.parse(rawDataStr);
+  // 创建对比弹窗
+  function createComparePopup() {
+    const existing = document.querySelector('#wikiRelDiff');
+    if (existing) existing.remove();
 
-            // 对于personSubject类型，我们只需要格式化data部分
-            const actualData = pageType === 'personSubject' ? data.data : data;
+    let popupTitle = ({
+      person: '人物',
+      character: '角色',
+      personSubject: '条目',
+    })[pageType];
 
-            // 数组按ID排序
-            const sortedData = Array.isArray(actualData)
-                ? [...actualData].sort((a, b) => {
-                    // 先按id排序
-                    const idA = Number(a.id) || a.id;
-                    const idB = Number(b.id) || b.id;
-                    if (idA !== idB) {
-                        return idA - idB;
-                    }
-
-                    // id相等时，按typeField排序（兼容数字和字符串）
-                    const valA = a[typeField];
-                    const valB = b[typeField];
-
-                    // 判断是否为数字（排除NaN的情况）
-                    const isNumberA = typeof valA === 'number' && !isNaN(valA);
-                    const isNumberB = typeof valB === 'number' && !isNaN(valB);
-
-                    if (isNumberA && isNumberB) {
-                        // 都是数字，用减法比较
-                        return valA - valB;
-                    } else {
-                        // 至少有一个不是数字，转为字符串用localeCompare比较
-                        return String(valA).localeCompare(String(valB));
-                    }
-                    })
-                : actualData;
-
-
-            // 递归格式化（替换键名和类型值）
-            const formatItem = (item) => {
-                if (Array.isArray(item)) return item.map(formatItem);
-                if (typeof item !== 'object' || item === null) return item;
-
-                const formatted = {};
-                for (const key of Object.keys(item)) {
-                    // 处理人物-条目关联的特殊字段
-                    if (pageType === 'personSubject') {
-                        switch (key) {
-                            case 'name':
-                                formatted['标题'] = item[key];
-                                break;
-                            case 'type':
-                                formatted['职位'] = item[key];
-                                break;
-                            case 'remark':
-                                formatted['备注'] = item[key];
-                                break;
-                            case 'checkboxes':
-                                // 将checkboxes转换为单层JSON
-                                if (Array.isArray(item[key])) {
-                                    item[key].forEach(checkbox => {
-                                        if (checkbox.title) {
-                                            formatted[checkbox.title] = checkbox.checked;
-                                        }
-                                    });
-                                }
-                                break;
-                            case 'infoName':
-                            case 'infoId':
-                                // 不显示infoName和infoId
-                                break;
-                            default:
-                                formatted[key] = formatItem(item[key]);
-                        }
-                    } else {
-                        // 处理其他页面
-                        if (key === 'url_mod') continue;
-
-                        const chineseKey = FIELD_MAPPING[key] || key;
-                        let value = item[key];
-
-                        // 替换类型/职位ID为中文（根据页面类型匹配对应字段）
-                        if (key === typeField && typeMapping[value]) {
-                            value = typeMapping[value];
-                        }
-
-                        formatted[chineseKey] = formatItem(value);
-                    }
-                }
-                return formatted;
-            };
-
-            return JSON.stringify(formatItem(sortedData), null, 2);
-        } catch (error) {
-            console.error('数据格式化失败:', error);
-            throw error;
-        }
-    }
-
-    // 创建对比弹窗
-    function createComparePopup() {
-        const existing = document.querySelector('#wikiRelDiff');
-        if (existing) existing.remove();
-
-        let popupTitle = ({
-            person: '人物',
-            character: '角色',
-            personSubject: '条目',
-        })[pageType];
-
-        const popup = document.createElement('div');
-        popup.id = 'wikiRelDiff';
-        popup.innerHTML = `
+    const popup = document.createElement('div');
+    popup.id = 'wikiRelDiff';
+    popup.innerHTML = `
             <div class="staff-tip-header">
                 <h3 class="staff-tip-title">${popupTitle}关联历史对比</h3>
                 <button class="staff-tip-close">&times;</button>
@@ -424,165 +424,165 @@
                 <div id="diff-results">请选择两个版本进行对比</div>
             </div>
         `;
-        document.body.appendChild(popup);
+    document.body.appendChild(popup);
 
-        // 关闭按钮事件
-        popup.querySelector('.staff-tip-close').addEventListener('click', () => popup.remove());
+    // 关闭按钮事件
+    popup.querySelector('.staff-tip-close').addEventListener('click', () => popup.remove());
 
-        // 人物页面警告
-        if (pageType === 'person') {
-            const warning = document.createElement('div');
-            warning.className = 'staff-warning-section';
-            warning.innerHTML = `
+    // 人物页面警告
+    if (pageType === 'person') {
+      const warning = document.createElement('div');
+      warning.className = 'staff-warning-section';
+      warning.innerHTML = `
                 <div class="staff-warning-title">注意</div>
                 <p>受限于系统，人物关联历史无法获得参与信息（<a class="l" href="https://bgm.tv/group/topic/441402" target="_blank">参考</a>）</p>
             `;
-            popup.querySelector('.staff-tip-content').prepend(warning);
-        }
-
-        return popup;
+      popup.querySelector('.staff-tip-content').prepend(warning);
     }
 
-    // 执行版本对比
-    async function compareVersions(versionAUrl, versionBUrl) {
-        const popup = createComparePopup();
-        const resultContainer = popup.querySelector('#diff-results');
-        resultContainer.innerHTML = '正在计算差异...';
+    return popup;
+  }
 
-        try {
-            // 并行获取版本数据（带缓存）
-            const [rawA, rawB] = await Promise.all([
-                extractVersionData(versionAUrl),
-                extractVersionData(versionBUrl)
-            ]);
+  // 执行版本对比
+  async function compareVersions(versionAUrl, versionBUrl) {
+    const popup = createComparePopup();
+    const resultContainer = popup.querySelector('#diff-results');
+    resultContainer.innerHTML = '正在计算差异...';
 
-            // 对于personSubject类型，需要先比较cat
-            if (pageType === 'personSubject') {
-                const dataA = JSON.parse(rawA);
-                const dataB = JSON.parse(rawB);
+    try {
+      // 并行获取版本数据（带缓存）
+      const [rawA, rawB] = await Promise.all([
+        extractVersionData(versionAUrl),
+        extractVersionData(versionBUrl)
+      ]);
 
-                if (dataA.cat !== dataB.cat) {
-                    // 显示警告，不继续比对
-                    resultContainer.innerHTML = '';
-                    const warning = document.createElement('div');
-                    warning.className = 'staff-error-section';
-                    warning.innerHTML = `
+      // 对于personSubject类型，需要先比较cat
+      if (pageType === 'personSubject') {
+        const dataA = JSON.parse(rawA);
+        const dataB = JSON.parse(rawB);
+
+        if (dataA.cat !== dataB.cat) {
+          // 显示警告，不继续比对
+          resultContainer.innerHTML = '';
+          const warning = document.createElement('div');
+          warning.className = 'staff-error-section';
+          warning.innerHTML = `
                         <div class="staff-error-title">错误</div>
                         <p>版本类型不一致，无法进行对比。</p>
                         <p>版本A类型: ${TYPE_CN[dataA.cat.split('/').pop()]}</p>
                         <p>版本B类型: ${TYPE_CN[dataB.cat.split('/').pop()]}</p>
                     `;
-                    resultContainer.appendChild(warning);
-                    return;
-                }
-            }
+          resultContainer.appendChild(warning);
+          return;
+        }
+      }
 
-            // 格式化数据
-            const formattedA = formatData(rawA);
-            const formattedB = formatData(rawB);
+      // 格式化数据
+      const formattedA = formatData(rawA);
+      const formattedB = formatData(rawB);
 
-            // 等待diff库加载完成
-            await new Promise(resolve => {
-                const check = setInterval(() => {
-                    if (window.Diff && window.Diff2HtmlUI) {
-                        clearInterval(check);
-                        resolve();
-                    }
-                }, 100);
-            });
+      // 等待diff库加载完成
+      await new Promise(resolve => {
+        const check = setInterval(() => {
+          if (window.Diff && window.Diff2HtmlUI) {
+            clearInterval(check);
+            resolve();
+          }
+        }, 100);
+      });
 
-            // 渲染差异
-            resultContainer.innerHTML = '';
-            const diffContainer = document.createElement('div');
-            resultContainer.appendChild(diffContainer);
+      // 渲染差异
+      resultContainer.innerHTML = '';
+      const diffContainer = document.createElement('div');
+      resultContainer.appendChild(diffContainer);
 
-            const theme = document.documentElement.dataset.theme || 'light';
-            const diffStr = window.Diff.createPatch(
-                '关联差异',
-                formattedA,
-                formattedB
-            );
+      const theme = document.documentElement.dataset.theme || 'light';
+      const diffStr = window.Diff.createPatch(
+        '关联差异',
+        formattedA,
+        formattedB
+      );
 
-            console.log(formattedA, formattedB)
+      console.log(formattedA, formattedB);
 
-            new window.Diff2HtmlUI(diffContainer, diffStr, {
-                highlight: false,
-                drawFileList: false,
-                fileListToggle: false,
-                fileContentToggle: false,
-                colorScheme: theme === 'dark' ? 'dark' : 'light',
-                matching: 'lines'
-            }).draw();
+      new window.Diff2HtmlUI(diffContainer, diffStr, {
+        highlight: false,
+        drawFileList: false,
+        fileListToggle: false,
+        fileContentToggle: false,
+        colorScheme: theme === 'dark' ? 'dark' : 'light',
+        matching: 'lines'
+      }).draw();
 
-        } catch (error) {
-            // 显示错误信息，不隐藏错误
-            resultContainer.innerHTML = '';
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'staff-error-section';
-            errorDiv.innerHTML = `
+    } catch (error) {
+      // 显示错误信息，不隐藏错误
+      resultContainer.innerHTML = '';
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'staff-error-section';
+      errorDiv.innerHTML = `
                 <div class="staff-error-title">错误</div>
                 <p>对比过程中遇到错误: ${error.message}</p>
                 <p>请刷新页面重试，或检查网络连接。</p>
             `;
-            resultContainer.appendChild(errorDiv);
-            console.error('对比失败:', error);
-        }
+      resultContainer.appendChild(errorDiv);
+      console.error('对比失败:', error);
     }
+  }
 
-    // 初始化控制UI（单选框和对比按钮）
-    function initControlUI() {
-        const groupsLine = document.querySelector('.groupsLine');
-        const h2Element = groupsLine.previousElementSibling;
-        if (!h2Element || h2Element.tagName !== 'H2') return;
+  // 初始化控制UI（单选框和对比按钮）
+  function initControlUI() {
+    const groupsLine = document.querySelector('.groupsLine');
+    const h2Element = groupsLine.previousElementSibling;
+    if (!h2Element || h2Element.tagName !== 'H2') return;
 
-        // 吸顶标题 + 控制容器（用于CSS选择器定位）
-        h2Element.classList.add('version-compare-h2');
+    // 吸顶标题 + 控制容器（用于CSS选择器定位）
+    h2Element.classList.add('version-compare-h2');
 
-        // 对比按钮
-        const compareBtn = document.createElement('a');
-        compareBtn.className = 'l compare-btn';
-        compareBtn.textContent = '对比选中版本';
-        h2Element.appendChild(compareBtn);
+    // 对比按钮
+    const compareBtn = document.createElement('a');
+    compareBtn.className = 'l compare-btn';
+    compareBtn.textContent = '对比选中版本';
+    h2Element.appendChild(compareBtn);
 
-        // 为每个版本添加单选框组
-        const versionItems = document.querySelectorAll('.groupsLine li');
-        versionItems.forEach(li => {
-            const undoLink = li.querySelector('[href*="?undo="]');
-            if (!undoLink) return;
+    // 为每个版本添加单选框组
+    const versionItems = document.querySelectorAll('.groupsLine li');
+    versionItems.forEach(li => {
+      const undoLink = li.querySelector('[href*="?undo="]');
+      if (!undoLink) return;
 
-            // 单选框组（用于CSS互斥控制）
-            const radioGroup = document.createElement('div');
-            radioGroup.className = 'version-radio-group';
-            li.prepend(radioGroup);
+      // 单选框组（用于CSS互斥控制）
+      const radioGroup = document.createElement('div');
+      radioGroup.className = 'version-radio-group';
+      li.prepend(radioGroup);
 
-            // 版本A单选框
-            const radioA = document.createElement('input');
-            radioA.type = 'radio';
-            radioA.name = 'versionA';
-            radioA.className = 'version-radio';
-            radioA.dataset.url = undoLink.href;
-            radioGroup.appendChild(radioA);
+      // 版本A单选框
+      const radioA = document.createElement('input');
+      radioA.type = 'radio';
+      radioA.name = 'versionA';
+      radioA.className = 'version-radio';
+      radioA.dataset.url = undoLink.href;
+      radioGroup.appendChild(radioA);
 
-            // 版本B单选框
-            const radioB = document.createElement('input');
-            radioB.type = 'radio';
-            radioB.name = 'versionB';
-            radioB.className = 'version-radio';
-            radioB.dataset.url = undoLink.href;
-            radioGroup.appendChild(radioB);
-        });
+      // 版本B单选框
+      const radioB = document.createElement('input');
+      radioB.type = 'radio';
+      radioB.name = 'versionB';
+      radioB.className = 'version-radio';
+      radioB.dataset.url = undoLink.href;
+      radioGroup.appendChild(radioB);
+    });
 
-        // 对比按钮点击事件（获取选中的两个版本URL）
-        compareBtn.addEventListener('click', () => {
-            const versionAUrl = document.querySelector('input[name="versionA"]:checked')?.dataset.url;
-            const versionBUrl = document.querySelector('input[name="versionB"]:checked')?.dataset.url;
-            if (versionAUrl && versionBUrl) {
-                compareVersions(versionAUrl, versionBUrl);
-            }
-        });
-    }
+    // 对比按钮点击事件（获取选中的两个版本URL）
+    compareBtn.addEventListener('click', () => {
+      const versionAUrl = document.querySelector('input[name="versionA"]:checked')?.dataset.url;
+      const versionBUrl = document.querySelector('input[name="versionB"]:checked')?.dataset.url;
+      if (versionAUrl && versionBUrl) {
+        compareVersions(versionAUrl, versionBUrl);
+      }
+    });
+  }
 
-    // 初始化执行
-    loadDependencies();
-    initControlUI();
+  // 初始化执行
+  loadDependencies();
+  initControlUI();
 })();

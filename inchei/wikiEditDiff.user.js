@@ -43,88 +43,88 @@ submitButton.parentNode.insertBefore(compareButton, submitButton.nextSibling);
 
 // 创建差异显示函数
 function createDiffSection(container, fileName, oldValue, newValue) {
-    const section = document.createElement('div');
-    section.innerHTML = `<h4>${fileName}</h4>`;
-    container.appendChild(section);
+  const section = document.createElement('div');
+  section.innerHTML = `<h4>${fileName}</h4>`;
+  container.appendChild(section);
 
-    const theme = document.documentElement.dataset.theme || 'light';
-    const diffString = Diff.createPatch(fileName, oldValue, newValue);
-    const configuration = {
-        drawFileList: false,
-        fileListToggle: false,
-        colorScheme: theme === 'dark' ? 'dark' : 'light'
-    };
+  const theme = document.documentElement.dataset.theme || 'light';
+  const diffString = Diff.createPatch(fileName, oldValue, newValue);
+  const configuration = {
+    drawFileList: false,
+    fileListToggle: false,
+    colorScheme: theme === 'dark' ? 'dark' : 'light'
+  };
 
-    const diff2htmlUi = new Diff2HtmlUI(section, diffString, configuration);
-    diff2htmlUi.draw();
+  const diff2htmlUi = new Diff2HtmlUI(section, diffString, configuration);
+  diff2htmlUi.draw();
 }
 
 // 比较按钮点击事件
 compareButton.onclick = function (e) {
-    e.preventDefault();
-    const newWcode = getWcode();
-    const newSummary = summaryContainer.value;
-    const newTags = tagsContainer.value;
+  e.preventDefault();
+  const newWcode = getWcode();
+  const newSummary = summaryContainer.value;
+  const newTags = tagsContainer.value;
 
-    let diffContainer = document.getElementById('diffContainer');
-    if (!diffContainer) {
-        diffContainer = document.createElement('div');
-        diffContainer.id = 'diffContainer';
-        diffContainer.style.marginTop = '20px';
-        document.querySelector('#columnInSubjectA').appendChild(diffContainer);
-    }
+  let diffContainer = document.getElementById('diffContainer');
+  if (!diffContainer) {
+    diffContainer = document.createElement('div');
+    diffContainer.id = 'diffContainer';
+    diffContainer.style.marginTop = '20px';
+    document.querySelector('#columnInSubjectA').appendChild(diffContainer);
+  }
 
-    diffContainer.innerHTML = '<h2>编辑差异对比</h2>';
+  diffContainer.innerHTML = '<h2>编辑差异对比</h2>';
 
-    if (initialWcode !== newWcode) createDiffSection(diffContainer, 'WCode', initialWcode, newWcode);
-    if (initialSummary !== newSummary) createDiffSection(diffContainer, '简介', initialSummary, newSummary);
-    if (initialTags !== newTags) createDiffSection(diffContainer, '标签', initialTags, newTags);
+  if (initialWcode !== newWcode) createDiffSection(diffContainer, 'WCode', initialWcode, newWcode);
+  if (initialSummary !== newSummary) createDiffSection(diffContainer, '简介', initialSummary, newSummary);
+  if (initialTags !== newTags) createDiffSection(diffContainer, '标签', initialTags, newTags);
 
-    if (initialWcode === newWcode && initialSummary === newSummary && initialTags === newTags) {
-        diffContainer.innerHTML += '<p>没有检测到变化</p>';
-    }
+  if (initialWcode === newWcode && initialSummary === newSummary && initialTags === newTags) {
+    diffContainer.innerHTML += '<p>没有检测到变化</p>';
+  }
 };
 
 /* eslint no-undef: "off" */
 function getWcode() {
-    if (nowmode === 'wcode') {
-        return document.getElementById('subject_infobox').value;
-    } else if (nowmode === 'normal') {
-        info = new Array();
-        ids = new Object();
-        props = new Object();
-        input_num = $("#infobox_normal input.id").length;
-        ids = $("#infobox_normal input.id");
-        props = $("#infobox_normal input.prop");
-        for (i = 0; i < input_num; i++) {
-            id = $(ids).get(i);
-            prop = $(props).get(i);
-            if ($(id).hasClass('multiKey')) {
-                multiKey = $(id).val();
-                info[multiKey] = new Object();
-                var subKey = 0;
-                i++;
-                id = $(ids).get(i);
-                prop = $(props).get(i);
-                while (($(id).hasClass('multiSubKey') || $(prop).hasClass('multiSubVal')) && i < input_num) {
-                    if (isNaN($(id).val())) {
-                        info[multiKey][subKey] = {
-                            key: $(id).val(),
-                            value: $(prop).val()
-                        };
-                    } else {
-                        info[multiKey][subKey] = $(prop).val();
-                    }
-                    subKey++;
-                    i++;
-                    id = $(ids).get(i);
-                    prop = $(props).get(i);
-                }
-                i--;
-            } else if ($.trim($(id).val()) != "") {
-                info[$(id).val()] = $(prop).val();
-            }
+  if (nowmode === 'wcode') {
+    return document.getElementById('subject_infobox').value;
+  } else if (nowmode === 'normal') {
+    info = new Array();
+    ids = new Object();
+    props = new Object();
+    input_num = $('#infobox_normal input.id').length;
+    ids = $('#infobox_normal input.id');
+    props = $('#infobox_normal input.prop');
+    for (i = 0; i < input_num; i++) {
+      id = $(ids).get(i);
+      prop = $(props).get(i);
+      if ($(id).hasClass('multiKey')) {
+        multiKey = $(id).val();
+        info[multiKey] = new Object();
+        var subKey = 0;
+        i++;
+        id = $(ids).get(i);
+        prop = $(props).get(i);
+        while (($(id).hasClass('multiSubKey') || $(prop).hasClass('multiSubVal')) && i < input_num) {
+          if (isNaN($(id).val())) {
+            info[multiKey][subKey] = {
+              key: $(id).val(),
+              value: $(prop).val()
+            };
+          } else {
+            info[multiKey][subKey] = $(prop).val();
+          }
+          subKey++;
+          i++;
+          id = $(ids).get(i);
+          prop = $(props).get(i);
         }
-        return WCODEDump(info);
+        i--;
+      } else if ($.trim($(id).val()) != '') {
+        info[$(id).val()] = $(prop).val();
+      }
     }
+    return WCODEDump(info);
+  }
 }

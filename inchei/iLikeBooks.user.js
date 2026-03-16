@@ -16,11 +16,11 @@
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
-    const prefer = localStorage.getItem('homePagePrg');
-    if (prefer) document.querySelector(`#prgCatrgoryFilter [subject_type="${prefer}"]`)?.click();
-    document.querySelectorAll('#prgCatrgoryFilter a').forEach(a => a.addEventListener('click', () => {
-        localStorage.setItem('homePagePrg', a.getAttribute('subject_type'));
-    }));
+  const prefer = localStorage.getItem('homePagePrg');
+  if (prefer) document.querySelector(`#prgCatrgoryFilter [subject_type="${prefer}"]`)?.click();
+  document.querySelectorAll('#prgCatrgoryFilter a').forEach(a => a.addEventListener('click', () => {
+    localStorage.setItem('homePagePrg', a.getAttribute('subject_type'));
+  }));
 })();
