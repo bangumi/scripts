@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 不同类型收藏状态比例条图
 // @namespace    https://bgm.tv/group/topic/422194
+// @homepage     https://bgm.tv/group/topic/422194
 // @version      1.3.2
 // @description  在用户页面显示收藏状态分布彩色条
 // @author       owho
@@ -148,7 +149,7 @@
             white-space: nowrap;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
-        
+
         /* 暗色主题适配 */
         html[data-theme="dark"] .custom-tooltip {
             background: rgba(255, 255, 255, 0.8);

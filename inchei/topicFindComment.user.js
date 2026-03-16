@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         条目讨论页显示用户评价
 // @namespace    https://bgm.tv/group/topic/411796
+// @homepage     https://bgm.tv/group/topic/411796
 // @version      1.1.9
 // @description  也可以干别的
 // @author       mmv

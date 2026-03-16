@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         班固米人物别名本地 API
 // @namespace    https://bgm.tv/
+// @homepage     https://bgm.tv/group/topic/439645
 // @version      1.3
 // @description  从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
 // @author       Your Name

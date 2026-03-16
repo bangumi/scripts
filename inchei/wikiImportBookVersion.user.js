@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         从引进出版社网站获取班固米书籍版本
 // @namespace    wiki.import.book.version
+// @homepage     https://bgm.tv/group/topic/443284
 // @version      0.3.0
 // @description  支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
 // @author       你

@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         由单行本创建系列
 // @namespace    wiki.vol.to.series
+// @homepage     https://bgm.tv/group/topic/451224
 // @version      0.1.0
 // @description  从单行本第一卷创建系列条目
 // @author       you

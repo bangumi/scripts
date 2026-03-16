@@ -4,7 +4,7 @@
 // @version      0.1.1
 // @description  显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
 // @author       you
-// @homepage     https://chii.in/group/topic/448515
+// @homepage     https://bgm.tv/group/topic/448515
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/character/*/edit
 // @match        http*://bangumi.tv/character/*/edit

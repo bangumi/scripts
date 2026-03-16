@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
+// @homepage     https://bgm.tv/group/topic/439326
 // @version      0.2.7
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you

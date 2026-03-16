@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         关联单行本自动排序
 // @namespace    bangumi.wiki.vol.sort
+// @homepage     https://bgm.tv/group/topic/454446
 // @version      0.0.1
 // @description  按照数字一键排序单行本
 // @author       you

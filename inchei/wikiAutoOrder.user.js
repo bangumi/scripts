@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         关联单行本自动排序
 // @namespace    bangumi.wiki.vol.sort
+// @homepage     https://bgm.tv/group/topic/454446
 // @version      0.1.1
 // @description  按照数字一键排序单行本（支持可配置化扩展排序方式）
 // @author       you
@@ -10,6 +11,7 @@
 // @match        https://chii.in/subject/*/add_related/subject/book
 // @grant        none
 // @license      MIT
+// @gadget       https://bgm.tv/dev/app/5411
 // ==/UserScript==
 
 (function() {

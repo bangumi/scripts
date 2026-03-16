@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         顶部维基直接可选编辑/修订历史/封面/关联
 // @namespace    wikiBtnSwitch
+// @homepage     https://bgm.tv/group/topic/448089
 // @version      0.0.2
 // @description  顶部添加直接编辑/修订历史/封面/关联的按钮，不需要先点开修订历史，可设置点击 Wiki 按钮默认打开哪一项
 // @author       you

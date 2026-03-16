@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         首页进度管理记住上次类型
 // @namespace    bangumi.i.like.books
+// @homepage     https://bgm.tv/group/topic/448958
 // @version      0.0.1
 // @description  首页进度管理记住上次类型
 // @author       you

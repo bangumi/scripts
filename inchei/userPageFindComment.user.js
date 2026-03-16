@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         时光机查询特定条目评价
 // @namespace    https://bgm.tv/group/topic/411925
+// @homepage     https://bgm.tv/group/topic/411925
 // @version      0.2.3
 // @description  经济的同步率查询
 // @author       mmv
@@ -47,7 +48,7 @@
         }
         html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial select {
             color: #e0e0e1;
-        }    
+        }
     `;
     document.body.append(style);
 

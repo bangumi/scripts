@@ -1,5 +1,9 @@
 # [inchei](https://bgm.tv/user/inchei)
 
+> [!IMPORTANT]
+> 由于 Greasy Fork 不再接受 jsdelivr 等 CDN，Greasy Fork 版本将无法获得最新版本，
+新增脚本亦不再添加 Greasy Fork 载点，若欲安装，请选择 GitHub 载点。
+
 ## bangumi 可拖动弹框 `2.1.0`
 使 bangumi 的 thickbnox 可拖动
 
@@ -13,6 +17,8 @@
 
 ## 首页进度管理记住上次类型 `0.0.1`
 首页进度管理记住上次类型
+
+- 讨论页：https://bgm.tv/group/topic/448958
 
 | 载点 | 链接 |
 |------|------|
@@ -64,6 +70,8 @@
 
 ## 加入或修改收藏时标签功能加强 `0.3.1`
 加入或修改收藏时高亮或自动填充自己与他人的共同标签，高亮其中的元标签，点击展开所有标签
+
+- 讨论页：https://bgm.tv/group/topic/408232
 
 | 载点 | 链接 |
 |------|------|
@@ -138,6 +146,8 @@
 ## 共同好友 `0.0.1`
 好友页看共同好友
 
+- 讨论页：https://bgm.tv/group/topic/425389
+
 | 载点 | 链接 |
 |------|------|
 | GitHub | [userPageAlsoFollow.user.js](https://github.com/bangumi/scripts/blob/master/inchei/userPageAlsoFollow.user.js?raw=true) |
@@ -180,14 +190,18 @@
 ## 关联单行本自动排序 `0.1.1`
 按照数字一键排序单行本（支持可配置化扩展排序方式）
 
+- 讨论页：https://bgm.tv/group/topic/454446
+
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiAutoOrder.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiAutoOrder.user.js?raw=true) |
 | Greasy Fork | 无 |
-| 组件 | 无 |
+| 组件 | [5411](https://bgm.tv/dev/app/5411) |
 
 ## 顶部维基直接可选编辑/修订历史/封面/关联 `0.0.2`
 顶部添加直接编辑/修订历史/封面/关联的按钮，不需要先点开修订历史，可设置点击 Wiki 按钮默认打开哪一项
+
+- 讨论页：https://bgm.tv/group/topic/448089
 
 | 载点 | 链接 |
 |------|------|
@@ -204,8 +218,10 @@
 | Greasy Fork | 无 |
 | 组件 | [4966](https://bgm.tv/dev/app/4966) |
 
-## 关联条目/角色拖拽排序 `0.0.2`
+## 关联条目/角色拖拽排序 `0.0.3`
 修改自 biota
+
+- 讨论页：https://bgm.tv/group/topic/448955
 
 | 载点 | 链接 |
 |------|------|
@@ -225,6 +241,8 @@
 ## 根据章节简介关联制作人员参与 `0.2.7`
 从章节页或人物关联页根据章节简介关联制作人员参与
 
+- 讨论页：https://bgm.tv/group/topic/439326
+
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiEpStaffRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEpStaffRelate.user.js?raw=true) |
@@ -233,6 +251,8 @@
 
 ## 从引进出版社网站获取班固米书籍版本 `0.3.0`
 支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
+
+- 讨论页：https://bgm.tv/group/topic/443284
 
 | 载点 | 链接 |
 |------|------|
@@ -243,23 +263,27 @@
 ## NDL 添加条目到 bangumi `0.2`
 在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
 
+- 讨论页：https://bgm.tv/group/topic/438774
+
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiImportNDL.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportNDL.user.js?raw=true) |
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 维基粘贴自动转换ISBN-10为ISBN-13 `0.0.1`
-在班固米维基粘贴 ISBN-10 时自动转为 ISBN-13，支持普通输入框 & Monaco Editor
+## 维基粘贴自动转换ISBN-10为ISBN-13 & 日期&日元格式 `0.1.0`
+在班固米维基粘贴时自动处理：ISBN-10转13、ISBN-13去横杠、日期标准化为YYYY-MM-DD、円转换为JP¥
 
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiIsbnConvert.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiIsbnConvert.user.js?raw=true) |
 | Greasy Fork | 无 |
-| 组件 | 无 |
+| 组件 | [5504](https://chii.in/dev/app/5504) |
 
-## 维基修订历史对比差异补完 `0.1.0`
+## 维基修订历史对比差异补完 `0.1.1`
 显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
+
+- 讨论页：https://bgm.tv/group/topic/448515
 
 | 载点 | 链接 |
 |------|------|
@@ -281,14 +305,18 @@
 ## 班固米人物别名本地 API `1.3`
 从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
 
+- 讨论页：https://bgm.tv/group/topic/439645
+
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiPersonAlias.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonAlias.user.js?raw=true) |
 | Greasy Fork | [552759](https://greasyfork.org/zh-CN/scripts/552759) |
 | 组件 | 无 |
 
-## 维基关联历史对比差异 `0.2.2`
+## 维基关联历史对比差异 `0.2.3`
 比较条目-人物/角色、人物-条目关联项目的增删修改
+
+- 讨论页：https://bgm.tv/group/topic/441525
 
 | 载点 | 链接 |
 |------|------|
@@ -298,6 +326,8 @@
 
 ## 新增关联条目可同时修改顺序 `0.0.1`
 新增关联条目时即可排序，无需两次关联
+
+- 讨论页：https://chii.in/group/topic/454833
 
 | 载点 | 链接 |
 |------|------|
@@ -319,6 +349,8 @@
 ## 关联单行本自动排序 `0.0.1`
 按照数字一键排序单行本
 
+- 讨论页：https://bgm.tv/group/topic/454446
+
 | 载点 | 链接 |
 |------|------|
 | GitHub | [wikiVolSort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolSort.user.js?raw=true) |
@@ -327,6 +359,8 @@
 
 ## 由单行本创建系列 `0.1.0`
 从单行本第一卷创建系列条目
+
+- 讨论页：https://bgm.tv/group/topic/451224
 
 | 载点 | 链接 |
 |------|------|

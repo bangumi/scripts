@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         新增关联条目可同时修改顺序
 // @namespace    bangumi.wiki.relate.new.order
+// @homepage     https://chii.in/group/topic/454833
 // @version      0.0.1
 // @description  新增关联条目时即可排序，无需两次关联
 // @author       you

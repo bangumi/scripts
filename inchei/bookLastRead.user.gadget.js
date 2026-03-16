@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         首页查看书籍上次标记进度时间并高亮可能更新
 // @namespace    bangumi.book.last.read
+// @homepage     https://bgm.tv/group/topic/448749
 // @version      0.1.1
 // @description  首页查看书籍上次标记进度时间并高亮可能更新
 // @author       you

@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
+// @homepage     https://bgm.tv/group/topic/433505
 // @version      0.5.6
 // @description  自动生成Bangumi编辑摘要
 // @author       You

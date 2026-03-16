@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         共同好友
 // @version      0.0.1
+// @homepage     https://bgm.tv/group/topic/425389
 // @description  好友页看共同好友
 // @author       ooo
 // @match        http*://bgm.tv/user/*/friends

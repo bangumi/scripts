@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         班固米代码高亮
 // @namespace    https://bgm.tv/group/topic/409276
+// @homepage     https://bgm.tv/group/topic/409276
 // @version      1.8.2
 // @description  使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 // @author       mvm
@@ -88,7 +89,7 @@
                 .codeHighlight .copy-button {
                     opacity: 0;
                 }
-                .copy-button:focus, 
+                .copy-button:focus,
                 .codeHighlight:hover .copy-button {
                     opacity: 1;
                 }

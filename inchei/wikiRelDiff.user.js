@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         维基关联历史对比差异
 // @namespace    bgm.wiki.rel.diff
-// @version      0.2.2
+// @homepage     https://bgm.tv/group/topic/441525
+// @version      0.2.3
 // @description  比较条目-人物/角色、人物-条目关联项目的增删修改
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -68,13 +69,13 @@
     }
 
     const typeField = pageType === 'person' ? 'prsn_position' : (pageType === 'character' ? 'crt_type' : 'type');
-    const typeSelector = '#crtRelateSubjects li option';
 
     // 类型/职位中文映射
-    const typeMapping = {};
-    document.querySelectorAll(typeSelector).forEach(option => {
-        typeMapping[option.value] = option.textContent.split(' /')[0].trim();
-    });
+    const typeMapping = [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
+        .reduce((acc, [, k, v]) => {
+            acc[k] = v;
+            return acc;
+        }, {});
 
     // 版本数据缓存
     const versionCache = new Map();

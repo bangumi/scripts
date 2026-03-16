@@ -55,7 +55,13 @@ const getLinkNumber = (url) => {
 
 // 生成 README.md 内容
 const generateREADME = (scripts) => {
-    let content = `# [inchei](https://bgm.tv/user/inchei)\n\n`;
+    let content = `# [inchei](https://bgm.tv/user/inchei)
+
+> [!IMPORTANT]
+> 由于 Greasy Fork 不再接受 jsdelivr 等 CDN，Greasy Fork 版本将无法获得最新版本，
+新增脚本亦不再添加 Greasy Fork 载点，若欲安装，请选择 GitHub 载点。
+
+`;
 
     if (scripts.length === 0) {
         content += `暂无脚本，请添加 .user.js 文件后重新生成。\n`;

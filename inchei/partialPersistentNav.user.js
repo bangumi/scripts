@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         下滑隐藏顶栏，上滑显示顶栏
 // @namespace    https://bgm.tv/dev/app/4701
+// @homepage     https://bgm.tv/dev/app/4701
 // @version      0.0.1
 // @description  下滑隐藏顶栏，上滑显示顶栏
 // @author       you
@@ -9,7 +10,7 @@
 // @match        http*://bangumi.tv/*
 // @grant        none
 // @license      MIT
-// @gf           
+// @gf
 // @gadget       https://bgm.tv/dev/app/4701
 // ==/UserScript==
 

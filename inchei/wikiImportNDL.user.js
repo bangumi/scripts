@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         NDL 添加条目到 bangumi
 // @namespace    http://tampermonkey.net/
+// @homepage     https://bgm.tv/group/topic/438774
 // @version      0.2
 // @description  在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
 // @author       You

@@ -9,7 +9,6 @@
 // @match        https://chii.in/subject/*/edit_detail
 // @icon         https://bgm.tv/img/favicon.ico
 // @grant        none
-
 // ==/UserScript==
 
 // 加载所需CSS

@@ -1,12 +1,17 @@
 // ==UserScript==
 // @name         关联条目/角色拖拽排序
 // @namespace    bangumi.wiki.drag.to.sort
-// @version      0.0.2
+// @homepage     https://bgm.tv/group/topic/448955
+// @version      0.0.3
 // @description  修改自 biota
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/subject/*/add_related/subject/*
 // @match        http*://bgm.tv/subject/*/add_related/character
+// @match        http*://bangumi.tv/subject/*/add_related/subject/*
+// @match        http*://bangumi.tv/subject/*/add_related/character
+// @match        http*://chii.in/subject/*/add_related/subject/*
+// @match        http*://chii.in/subject/*/add_related/character
 // @grant        none
 // @license      MIT
 // @gadget       https://bgm.tv/dev/app/5410
