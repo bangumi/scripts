@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         subjectPowerUp
 // @namespace    fifth26.com
-// @version      1.3.2
+// @version      1.3.3
 // @description  条目页面优化：看看你的好友是否喜欢
 // @author       fifth | aslo thanks to @everpcpc's contributions.
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/subject/\d+/
 // @encoding     utf-8
 // ==/UserScript==
 
-const CURRENT_VERSION = '1.3.1';
+const CURRENT_VERSION = '1.3.3';
 
 const ACTIONS = [
     'wishes',
@@ -281,7 +281,7 @@ function listRequest(action, page = 1, limit = settings[action + 'Num']) {
             }
             tops[action].push({
                 uid: $(this).find('a').attr('href').split('/')[2],
-                img: $(this).find('img').attr('src').replace('/m/', '/s/'),
+                img: $(this).find('.userImage > span').attr('style').replace(/background-image:url\(\'(.+)\'\)/, '$1').replace('/l/', '/s/'),
                 name: $(this).find('a').text(),
                 time: $(this).find('p.info').text(),
                 star: starInfo,
