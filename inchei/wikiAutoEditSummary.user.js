@@ -2,7 +2,7 @@
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
 // @homepage     https://bgm.tv/group/topic/433505
-// @version      0.5.6
+// @version      0.6.0
 // @description  自动生成Bangumi编辑摘要
 // @author       You
 // @icon         https://bgm.tv/img/favicon.ico
@@ -186,6 +186,8 @@
       const wcodeChanges = genWcodeChanges(initialWcode, newWcode);
       if (wcodeChanges.length) {
         changes.push(...wcodeChanges);
+      } else if (initialWcode !== newWcode) {
+        changes.push('调整代码');
       }
 
       if (initialSummary !== newSummary) {
@@ -286,34 +288,47 @@
   // #endregion
 
   // #region wcode变化
-  function genWcodeChanges(oldWcode, newWcode) {
-    const oldData = parseWcode(oldWcode);
-    const newData = parseWcode(newWcode);
+  function getMultiData(data) {
+    const res = new Map();
+    for (const [key, val] of data) {
+      if (isObject(val) || val instanceof Map) {
+        res.set(key, val);
+      }
+    }
+    return res;
+  }
 
-    const getMultiData = data => Object.fromEntries(Object.entries(data).filter(([, v]) => isObject(v)));
+  function genWcodeChanges(oldWcode, newWcode) {
+    const [oldData, oldEmptyCounts] = parseWcode(oldWcode);
+    const [newData, newEmptyCounts] = parseWcode(newWcode);
+
     const oldMultiData = getMultiData(oldData);
     const newMultiData = getMultiData(newData);
 
-    const getMultiKeySum = multiKV => `（${Object.keys(multiKV).join('、')}）`;
+    const getMultiKeySum = multiKV => `（${[...multiKV.keys()].join('、')}）`;
     const multiKeyChanges = [];
-    for (const key in oldMultiData) {
-      if (key in newMultiData) {
-        const subChanges = genFieldChanges(oldMultiData[key], newMultiData[key]);
+    if (oldEmptyCounts !== newEmptyCounts) {
+      multiKeyChanges.push('清理空字段');
+    }
+
+    for (const [key, oldMulti] of oldMultiData) {
+      if (newMultiData.has(key)) {
+        const subChanges = genFieldChanges(oldMulti, newMultiData.get(key));
         multiKeyChanges.push(...subChanges.map(change => `${key}${change}`));
-        delete oldData[key];
-        delete newData[key];
-      } else if (key in newData) {
-        multiKeyChanges.push(`修改${key}${getMultiKeySum(oldMultiData[key])}为单行模式`);
-        delete oldData[key];
-        delete newData[key];
+        oldData.delete(key);
+        newData.delete(key);
+      } else if (newData.has(key)) {
+        multiKeyChanges.push(`修改${key}${getMultiKeySum(oldMulti)}为单行模式`);
+        oldData.delete(key);
+        newData.delete(key);
       }
     }
 
-    for (const key in newMultiData) {
-      if (key in oldData) {
-        multiKeyChanges.push(`修改${key}为列表模式${getMultiKeySum(newMultiData[key])}`);
-        delete oldData[key];
-        delete newData[key];
+    for (const [key, newMulti] of newMultiData) {
+      if (oldData.has(key)) {
+        multiKeyChanges.push(`修改${key}为列表模式${getMultiKeySum(newMulti)}`);
+        oldData.delete(key);
+        newData.delete(key);
       }
     }
 
@@ -324,35 +339,43 @@
     const changes = [];
     const moves = { from: new Set(), to: new Set() };
     const movedKeys = new Set();
-    const oldValueDel = (k, v) => `删除${k}${isObject(v) || v === null ? '' : `（${short(v)}）`}`;
+    const oldValueDel = (k, v) => `删除${k}${isObject(v) || v instanceof Map || v === null ? '' : `（${short(v)}）`}`;
 
-    for (const key in oldData) {
-      const oldValue = oldData[key];
+    for (const key of oldData.keys()) {
       const newKey = getNewKey(oldData, newData, key);
       if (newKey) {
-        if (oldData[newKey]) changes.push(oldValueDel(newKey, oldValue));
+        if (oldData.has(newKey)) changes.push(oldValueDel(newKey, oldData.get(newKey)));
         changes.push(`${key} → ${newKey}`);
-        if (newData[key]) changes.push(`添加${key}`);
+        if (newData.has(key)) changes.push(`添加${key}`);
         moves.from.add(key);
         moves.to.add(newKey);
         movedKeys.add(key).add(newKey);
         continue;
       }
     }
-    for (const key in oldData) {
-      if (key in newData || moves.from.has(key)) continue;
-      changes.push(oldValueDel(key, oldData[key]));
+
+    for (const key of oldData.keys()) {
+      if (newData.has(key) || moves.from.has(key)) continue;
+      changes.push(oldValueDel(key, oldData.get(key)));
     }
-    for (const key in newData) {
-      if (key in oldData || moves.to.has(key)) continue;
+
+    for (const key of newData.keys()) {
+      if (oldData.has(key) || moves.to.has(key)) continue;
       changes.push(`添加${key}`);
     }
 
-    for (const key in oldData) {
+    const oldKeys = [...oldData.keys()];
+    const newKeys = [...newData.keys()];
+    const oldOrder = oldKeys.filter(k => newKeys.includes(k)).join('');
+    const newOrder = newKeys.filter(k => oldKeys.includes(k)).join('');
+    if (oldOrder !== newOrder) changes.push('调整字段顺序');
+
+    for (const key of oldData.keys()) {
       if (movedKeys.has(key)) continue;
-      if (key in newData) {
-        const oldValue = oldData[key];
-        const newValue = newData[key];
+      if (newData.has(key)) {
+        const oldValue = oldData.get(key);
+        const newValue = newData.get(key);
+
         if (oldValue === newValue) continue;
 
         if (oldValue === null) {
@@ -383,11 +406,11 @@
   }
 
   function getNewKey(oldData, newData, key) {
-    const oldValue = oldData[key];
+    const oldValue = oldData.get(key);
     if (!oldValue) return null;
-    if (oldValue === newData[key]) return null;
-    for (const newKey in newData) {
-      if (newKey !== key && newData[newKey] === oldValue && oldValue !== oldData[newKey]) {
+    if (oldValue === newData.get(key)) return null;
+    for (const [newKey, newValue] of newData) {
+      if (newKey !== key && newValue === oldValue && oldData.get(newKey) !== oldValue) {
         return newKey;
       }
     }
@@ -395,7 +418,8 @@
   }
 
   function parseWcode(wcode) {
-    const result = {};
+    const result = new Map();
+    let emptyCounts = 0;
     const lines = wcode.split('\n').map(l => l.trim().replace(/^[|[]/, '').replace(/]$/, ''))
       .filter(l => !['', '{{', '}}'].includes(l));
 
@@ -406,6 +430,10 @@
       if (line.endsWith('={')) { // 多值字段开始
         currentKey = line.replace('={', '').trim();
         inMultiValue = true;
+        if (result.has(currentKey)) {
+          emptyCounts += 1;
+        }
+        result.set(currentKey, new Map());
         continue;
       }
 
@@ -420,13 +448,18 @@
       if (inMultiValue) { // 多值字段内容
         const [subKey, ...subValueParts] = line.split('|');
         const subValue = subValueParts.join('|').trim();
-        if (subKey.trim()) {
-          if (!result[currentKey]) result[currentKey] = {};
-          if (subValue) {
-            result[currentKey][subKey.trim()] = subValue;
+        const trimmedSubkey = subKey.trim();
+        if (trimmedSubkey) {
+          const parentMap = result.get(currentKey);
+          if (parentMap.has(trimmedSubkey)) {
+            emptyCounts += 1;
+          } else if (subValue) {
+            parentMap.set(trimmedSubkey, subValue);
           } else if (!subValueParts.length) { // 纯值子段
-            result[currentKey][subKey.trim()] = null;
-          } // 无值但有 | 的无效字段不计入
+            parentMap.set(trimmedSubkey, null);
+          } else { // 无值但有 | 的无效字段
+            emptyCounts += 1;
+          }
           continue;
         }
       }
@@ -434,11 +467,17 @@
       if (line.includes('=')) { // 普通字段
         const [key, ...valueParts] = line.split('=');
         const value = valueParts.join('=').trim();
-        if (key.trim() && value) result[key.trim()] = value;
+        if (key.trim() && value) {
+          if (value) {
+            result.set(key.trim(), value);
+          } else {
+            emptyCounts += 1;
+          }
+        }
       }
     }
 
-    return result;
+    return [result, emptyCounts];
   }
   // #endregion
 

@@ -1,0 +1,73 @@
+--- wikiAutoEditSummary.user.js	2026-03-17 17:00:45.310468133 +0800
++++ wikiAutoEditSummary.gadget.js	2026-03-17 16:59:36.994475507 +0800
+@@ -2,7 +2,7 @@
+ // @name         bangumi 自动生成编辑摘要
+ // @namespace    https://bgm.tv/group/topic/433505
+ // @homepage     https://bgm.tv/group/topic/433505
+-// @version      0.6.0
++// @version      0.5.6
+ // @description  自动生成Bangumi编辑摘要
+ // @author       You
+ // @icon         https://bgm.tv/img/favicon.ico
+@@ -27,6 +27,22 @@
+ (function () {
+   'use strict';
+ 
++  chiiLib.ukagaka.addGeneralConfig({
++    title: '自动编辑摘要是否加入详细更改（具体变更、删除内容等）',
++    name: 'autoEditSummaryDetails',
++    type: 'radio',
++    defaultValue: 'netabare',
++    getCurrentValue: () => chiiApp.cloud_settings.get('autoEditSummaryDetails') || 'on',
++    onChange: v => {
++      chiiApp.cloud_settings.update({ autoEditSummaryDetails: v });
++      updateStyle(v === 'off');
++    },
++    options: [
++      { value: 'on', label: '是' },
++      { value: 'off', label: '否' }
++    ]
++  });
++
+   const editSummaryInput = document.querySelector('#editSummary');
+   if (!editSummaryInput) return;
+ 
+@@ -159,6 +175,7 @@
+ 
+   // #region 生成摘要
+   function genEditSummary() {
++    const noDetails = chiiApp.cloud_settings.get('autoEditSummaryDetails') === 'off';
+     const changes = [];
+ 
+     if (pageFeatures.hasWcode) {
+@@ -167,7 +184,7 @@
+       const newTags = tagsInput?.value;
+ 
+       if (initialTitle !== titleInput?.value) {
+-        changes.push(`修改标题（${initialTitle} → ${titleInput.value}）`);
++        changes.push(`修改标题${noDetails ? '' : `（${initialTitle} → ${titleInput.value}）`}`);
+       }
+ 
+       const newPlatform = getPlatform?.();
+@@ -336,10 +353,11 @@
+   }
+ 
+   function genFieldChanges(oldData, newData) {
++    const noDetails = chiiApp.cloud_settings.get('autoEditSummaryDetails') === 'off';
+     const changes = [];
+     const moves = { from: new Set(), to: new Set() };
+     const movedKeys = new Set();
+-    const oldValueDel = (k, v) => `删除${k}${isObject(v) || v instanceof Map || v === null ? '' : `（${short(v)}）`}`;
++    const oldValueDel = (k, v) => `删除${k}${noDetails || isObject(v) || v instanceof Map || v === null ? '' : `（${short(v)}）`}`;
+ 
+     for (const key of oldData.keys()) {
+       const newKey = getNewKey(oldData, newData, key);
+@@ -397,7 +415,7 @@
+               }
+             }
+           }
+-          changes.push(`修改${key}（${short(oldValue)} → ${short(newValue)}）`);
++          changes.push(`修改${key}${noDetails ? '' : `（${short(oldValue)} → ${short(newValue)}）`}`);
+         }
+       }
+     }

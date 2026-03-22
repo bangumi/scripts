@@ -1,6 +1,6 @@
---- timelineRSS.user.js	2025-09-17 11:51:04.330840800 +0800
-+++ timelineRSS.gadget.js	2025-09-17 12:26:00.875417400 +0800
-@@ -30,6 +30,14 @@
+--- timelineRSS.user.js	2026-03-16 16:26:03.025354852 +0800
++++ timelineRSS.gadget.js	2026-03-17 15:26:41.999087642 +0800
+@@ -31,6 +31,14 @@
  (async function () {
    'use strict';
  
@@ -13,9 +13,9 @@
 +  }
 +
    const style = document.createElement('style');
-   style.textContent = /* css */`
-   .skeleton {
-@@ -195,7 +203,7 @@
+   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
+   style.textContent = css`
+@@ -199,7 +207,7 @@
    const menu = document.querySelector('#timelineTabs');
    const tmlContent = document.querySelector('#tmlContent');
  
@@ -24,7 +24,7 @@
    const CONCURRENCY_LIMIT = 3;
    const TTL = 720; // 默认缓存时间（分钟）
  
-@@ -553,7 +561,7 @@
+@@ -557,7 +565,7 @@
    if (locUser) { // 时光机或时间胶囊
      document.querySelector('a[href^="/feed/"]').addEventListener('click', e => {
        e.preventDefault();
@@ -33,7 +33,7 @@
        window.chiiLib.ukagaka.presentSpeech('订阅成功！', true);
      });
    }
-@@ -631,6 +639,8 @@
+@@ -635,6 +643,8 @@
  
    // #region 工具函数
    function saveRSSList(list = RSS_LIST) {
