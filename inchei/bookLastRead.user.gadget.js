@@ -21,11 +21,11 @@
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   const style = document.createElement('style');
   style.textContent = css`
-        .bookTimeLabel { font-size:11px; cursor:pointer; }
-        .bookTimeLabel:hover { opacity: .8; }
-        .bookTimeUrl, .bookTimeUrlSetter { font-size: 11px; padding-left: 1px; }
-        .bookTimeUrlSetter { visibility: hidden; }
-        .tinyMode:hover .bookTimeUrlSetter { visibility: visible; }
+    .bookTimeLabel { font-size:11px; cursor:pointer; }
+    .bookTimeLabel:hover { opacity: .8; }
+    .bookTimeUrl, .bookTimeUrlSetter { font-size: 11px; padding-left: 1px; }
+    .bookTimeUrlSetter { visibility: hidden; }
+    .tinyMode:hover .bookTimeUrlSetter { visibility: visible; }
     `;
   document.head.append(style);
 

@@ -29,115 +29,114 @@
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   const refreshStyle = () => {
     style.textContent = css`
-            .commented a.epBtnQueue {
-                background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
-            }
-            a.load-epinfo.epBtnWatched,
-            .prg_list.load-all a.epBtnAir,
-            .prg_list.load-all a.epBtnQueue {
-                opacity: .6;
-            }
-            .commented a.load-epinfo.epBtnWatched {
-                opacity: 1;
-                background: ${colors.watched};
-            }
-            html[data-theme="dark"] .commented a.epBtnAir {
-                background: rgb(from ${colors.air} r g b / 90%);
-            }
-            html[data-theme="dark"] .commented a.epBtnQueue {
-                background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
-            }
+      .commented a.epBtnQueue {
+        background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
+      }
+      a.load-epinfo.epBtnWatched,
+      .prg_list.load-all a.epBtnAir,
+      .prg_list.load-all a.epBtnQueue {
+        opacity: .6;
+      }
+      .commented a.load-epinfo.epBtnWatched {
+        opacity: 1;
+        background: ${colors.watched};
+      }
+      html[data-theme="dark"] .commented a.epBtnAir {
+        background: rgb(from ${colors.air} r g b / 90%);
+      }
+      html[data-theme="dark"] .commented a.epBtnQueue {
+        background: linear-gradient(#FFADD1 80%, ${colors.watched} 80%);
+      }
 
-            .uncommented a.load-epinfo.epBtnWatched,
-            .prg_list.load-all .commented a.epBtnAir,
-            .prg_list.load-all .commented a.epBtnQueue,
-            .prg_list.load-all .uncommented a.epBtnAir,
-            .prg_list.load-all .uncommented a.epBtnQueue {
-                opacity: 1;
-            }
-            .commented a.load-epinfo.epBtnAir {
-                background: ${colors.air};
-            }
-            html[data-theme="dark"] .commented a.load-epinfo.epBtnWatched {
-                background: ${colors.watched};
-            }
-            .cloned_mine{
-                display: block !important;
-                background: transparent;
-            }
-            div.row_reply.light_even.cloned_mine {
-                background: transparent;
-            }
-            .cloned_mine .inner {
-                margin: 0 0 0 50px;
-            }
-            .colorPickers input {
-                border: 0;
-                padding: 0;
-                width: 1em;
-                height: 1em;
-                border-radius: 2px;
-            }
-            .colorPickers input::-webkit-color-swatch-wrapper {
-                padding: 0;
-            }
-            .colorPickers input::-webkit-color-swatch {
-                border: 0;
-            }
-            .subject_my_comments_section {
-                margin: 5px 0;
-                padding: 10px;
-                font-size: 12px;
-                -webkit-border-radius: 5px;
-                -moz-border-radius: 5px;
-                border-radius: 5px;
-                -moz-background-clip: padding;
-                -webkit-background-clip: padding-box;
-                background: #FAFAFA;
-                background-clip: padding-box;
-            }
-            html[data-theme="dark"] .subject_my_comments_section {
-                background: #353535;
-            }
-            .subject_my_comments_section .inner {
-                font-size: 14px;
-                color: #444;
-            }
-            html[data-theme="dark"] .subject_my_comments_section .inner {
-                color: #e1e1e1;
-            }
-            .subject_my_comments_section .inner.loading {
-                opacity: .3;
-                pointer-events: none;
-            }
-            /* 折叠回复 */
-            div.sub_reply_collapse {
-                padding: 2px 0 2px 0;
-                -moz-opacity: 0.8;
-                opacity: 0.8;
-            }
-            div.sub_reply_collapse .post_actions {
-                margin-top: 0;
-            }
-            div.sub_reply_collapse a.avatar {
-                display: none;
-            }
-            div.sub_reply_collapse div.inner {
-                margin-left: 5px;
-            }
-            div.sub_reply_collapse div.inner div.cmt_sub_content {
-                display: inline;
-                margin: 0;
-                color: #555;
-            }
-            .tip_collapsed {
-                font-size: 12px;
-                color: #666;
-            }
-            html[data-theme="dark"] .tip_collapsed {
-                color: #d8d8d8;
-            }
-        `;
+      .uncommented a.load-epinfo.epBtnWatched,
+      .prg_list.load-all .commented a.epBtnAir,
+      .prg_list.load-all .commented a.epBtnQueue,
+      .prg_list.load-all .uncommented a.epBtnAir,
+      .prg_list.load-all .uncommented a.epBtnQueue {
+        opacity: 1;
+      }
+      .commented a.load-epinfo.epBtnAir {
+        background: ${colors.air};
+      }
+      html[data-theme="dark"] .commented a.load-epinfo.epBtnWatched {
+        background: ${colors.watched};
+      }
+      .cloned_mine{
+        display: block !important;
+        background: transparent;
+      }
+      div.row_reply.light_even.cloned_mine {
+        background: transparent;
+      }
+      .cloned_mine .inner {
+        margin: 0 0 0 50px;
+      }
+      .colorPickers input {
+        border: 0;
+        padding: 0;
+        width: 1em;
+        height: 1em;
+        border-radius: 2px;
+      }
+      .colorPickers input::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+      .colorPickers input::-webkit-color-swatch {
+        border: 0;
+      }
+      .subject_my_comments_section {
+        margin: 5px 0;
+        padding: 10px;
+        font-size: 12px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        -moz-background-clip: padding;
+        -webkit-background-clip: padding-box;
+        background: #FAFAFA;
+        background-clip: padding-box;
+      }
+      html[data-theme="dark"] .subject_my_comments_section {
+        background: #353535;
+      }
+      .subject_my_comments_section .inner {
+        font-size: 14px;
+        color: #444;
+      }
+      html[data-theme="dark"] .subject_my_comments_section .inner {
+        color: #e1e1e1;
+      }
+      .subject_my_comments_section .inner.loading {
+        opacity: .3;
+        pointer-events: none;
+      }
+      /* 折叠回复 */
+      div.sub_reply_collapse {
+        padding: 2px 0 2px 0;
+        -moz-opacity: 0.8;
+        opacity: 0.8;
+      }
+      div.sub_reply_collapse .post_actions {
+        margin-top: 0;
+      }
+      div.sub_reply_collapse a.avatar {
+        display: none;
+      }
+      div.sub_reply_collapse div.inner {
+        margin-left: 5px;
+      }
+      div.sub_reply_collapse div.inner div.cmt_sub_content {
+        display: inline;
+        margin: 0;
+        color: #555;
+      }
+      .tip_collapsed {
+        font-size: 12px;
+        color: #666;
+      }
+      html[data-theme="dark"] .tip_collapsed {
+        color: #d8d8d8;
+      }`;
   };
   refreshStyle();
   document.head.appendChild(style);

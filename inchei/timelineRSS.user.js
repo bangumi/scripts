@@ -34,62 +34,62 @@
   const style = document.createElement('style');
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   style.textContent = css`
-  .skeleton {
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
-  }
-  .skeleton::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-    animation: shimmer 1.5s infinite;
-  }
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
+    .skeleton {
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
 
-  html[data-theme="dark"] .skeleton {
-    background-color: #333;
-  }
-  html[data-theme="dark"] .skeleton::after {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  }
+    html[data-theme="dark"] .skeleton {
+      background-color: #333;
+    }
+    html[data-theme="dark"] .skeleton::after {
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    }
 
-  .avatar-skeleton {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  }
-  html[data-avatar-size="square"] .avatar-skeleton {
-    border-radius: 8px;
-  }
-  .nickname-skeleton {
-    width: min(8em, 50%);
-    height: 16px;
-    display: inline-block;
-    vertical-align: middle;
-  }
-  .comment-skeleton {
-    max-width: 500px;
-    height: 32.4px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    border-radius: 5px;
-    border: 1px solid transparent;
-  }
-  .card-skeleton {
-    max-width: 500px;
-    height: 80px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-  }
+    .avatar-skeleton {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    html[data-avatar-size="square"] .avatar-skeleton {
+      border-radius: 8px;
+    }
+    .nickname-skeleton {
+      width: min(8em, 50%);
+      height: 16px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .comment-skeleton {
+      max-width: 500px;
+      height: 32.4px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+    }
+    .card-skeleton {
+      max-width: 500px;
+      height: 80px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+    }
 
     #home_rss button {
       padding: 0;

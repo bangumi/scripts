@@ -22,33 +22,33 @@
   const style = document.createElement('style');
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   style.innerHTML = css`
-        div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
-            color: #666;
-        }
-        div.userSynchronize.userSynchronizeSpecial #subjectList li:hover small {
-            color: #EEE;
-        }
-        div.userSynchronize.userSynchronizeSpecial #subjectList img.avatar {
-            border-radius: 5px;
-        }
-        div.userSynchronize.userSynchronizeSpecial input[type=search]:focus {
-            outline: none;
-        }
-        div.userSynchronize.userSynchronizeSpecial select {
-            color: #222;
-        }
-        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
-            color: #d8d8d8;
-        }
-        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList small {
-            color: #999;
-        }
-        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList li:hover small {
-            color: #EEE;
-        }
-        html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial select {
-            color: #e0e0e1;
-        }
+    div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
+      color: #666;
+    }
+    div.userSynchronize.userSynchronizeSpecial #subjectList li:hover small {
+      color: #EEE;
+    }
+    div.userSynchronize.userSynchronizeSpecial #subjectList img.avatar {
+      border-radius: 5px;
+    }
+    div.userSynchronize.userSynchronizeSpecial input[type=search]:focus {
+      outline: none;
+    }
+    div.userSynchronize.userSynchronizeSpecial select {
+      color: #222;
+    }
+    html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList .tip {
+      color: #d8d8d8;
+    }
+    html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList small {
+      color: #999;
+    }
+    html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial #subjectList li:hover small {
+      color: #EEE;
+    }
+    html[data-theme="dark"] div.userSynchronize.userSynchronizeSpecial select {
+      color: #e0e0e1;
+    }
     `;
   document.body.append(style);
 

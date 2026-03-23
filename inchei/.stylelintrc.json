@@ -4,8 +4,9 @@
   "defaultSeverity": "warning",
   "files": ["*.{user,gadget}.js"],
   "formatter": "compact",
-  "plugins": ["stylelint-plugin-use-baseline"],
+  "plugins": ["@stylistic/stylelint-plugin", "stylelint-plugin-use-baseline"],
   "rules": {
+    "@stylistic/indentation": 2,
     "plugin/use-baseline": [
       true,
       {

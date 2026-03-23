@@ -44,75 +44,75 @@
   const styleSheet = document.createElement('style');
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   styleSheet.innerText = css`
-        .ccf-wrapper ~ .ccf-wrapper::before { /* 用 ~ 不用 + 避免与其他组件冲突 */
-            content: "·";
-            color: #999;
-            font-size: 10px;
-            margin-left: 5px;
-        }
-        .ccf-star { margin-left: 5px; }
-        .ccf-status {
-            margin-left: 5px;
-            color: #999;
-            font-size: 12px;
-            font-weight: normal;
-        }
-        button.ccf-status {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            user-select: text;
-        }
-        button.ccf-status[disabled] {
-            cursor: text;
-        }
-        .ccf-comment {
-            margin-left: 5px;
-            position: relative;
-            cursor: help;
-        }
-        .ccf-comment-popup {
-            position: absolute;
-            top: 100%;
-            background-color: rgba(254, 254, 254, 0.9);
-            box-shadow: inset 0 1px 1px hsla(0, 0%, 100%, 0.3), inset 0 -1px 0 hsla(0, 0%, 100%, 0.1), 0 2px 4px hsla(0, 0%, 0%, 0.2);
-            backdrop-filter: blur(5px);
-            border-radius: 5px;
-            padding: 5px;
-            max-width: 20em;
-            width: max-content;
-            z-index: 1000;
-            font-weight: normal;
-            font-size: 12px;
-            color: rgba(0, 0, 0, .7);
-            cursor: text;
-            display: none;
-        }
-        html[data-theme="dark"] .ccf-comment-popup {
-            background: rgba(80, 80, 80, 0.7);
-            color: rgba(255, 255, 255, .7);
-        }
-        .ccf-comment:hover .ccf-comment-popup,
-        .ccf-comment:focus .ccf-comment-popup,
-        .ccf-comment:active .ccf-comment-popup {
-            display: block;
-            opacity: 0;
-        }
-        .loader {
-            margin-left: 5px;
-            border: 2px solid transparent;
-            border-top: 2px solid #F09199;
-            border-radius: 50%;
-            width: 10px;
-            height: 10px;
-            animation: spin 2s linear infinite;
-            display: inline-block;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+    .ccf-wrapper ~ .ccf-wrapper::before { /* 用 ~ 不用 + 避免与其他组件冲突 */
+      content: "·";
+      color: #999;
+      font-size: 10px;
+      margin-left: 5px;
+    }
+    .ccf-star { margin-left: 5px; }
+    .ccf-status {
+      margin-left: 5px;
+      color: #999;
+      font-size: 12px;
+      font-weight: normal;
+    }
+    button.ccf-status {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      user-select: text;
+    }
+    button.ccf-status[disabled] {
+      cursor: text;
+    }
+    .ccf-comment {
+      margin-left: 5px;
+      position: relative;
+      cursor: help;
+    }
+    .ccf-comment-popup {
+      position: absolute;
+      top: 100%;
+      background-color: rgba(254, 254, 254, 0.9);
+      box-shadow: inset 0 1px 1px hsla(0, 0%, 100%, 0.3), inset 0 -1px 0 hsla(0, 0%, 100%, 0.1), 0 2px 4px hsla(0, 0%, 0%, 0.2);
+      backdrop-filter: blur(5px);
+      border-radius: 5px;
+      padding: 5px;
+      max-width: 20em;
+      width: max-content;
+      z-index: 1000;
+      font-weight: normal;
+      font-size: 12px;
+      color: rgba(0, 0, 0, .7);
+      cursor: text;
+      display: none;
+    }
+    html[data-theme="dark"] .ccf-comment-popup {
+      background: rgba(80, 80, 80, 0.7);
+      color: rgba(255, 255, 255, .7);
+    }
+    .ccf-comment:hover .ccf-comment-popup,
+    .ccf-comment:focus .ccf-comment-popup,
+    .ccf-comment:active .ccf-comment-popup {
+      display: block;
+      opacity: 0;
+    }
+    .loader {
+      margin-left: 5px;
+      border: 2px solid transparent;
+      border-top: 2px solid #F09199;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      animation: spin 2s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     `;
   document.head.appendChild(styleSheet);
 

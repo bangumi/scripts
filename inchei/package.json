@@ -13,7 +13,7 @@
     "diff:all": "sh -c 'mkdir -p patches && for gadgetFile in *.gadget.js; do baseName=$(basename \"$gadgetFile\" .gadget.js); userFile=\"$baseName.user.js\"; [ -f \"$userFile\" ] && pnpm run diff \"$baseName\"; done' _",
     "patch:all": "sh -c 'for patchFile in patches/*.gadget.patch; do baseName=$(basename \"$patchFile\" .gadget.patch); pnpm run patch \"$baseName\"; done' _",
     "lint": "eslint . && stylelint .",
-    "lint:fix": "eslint . --fix",
+    "lint:fix": "eslint . --fix && stylelint . --fix",
     "publish:gadget": "npm run patch:all && node scripts/publish-gadget.mjs",
     "publish:gf": "npm run version && git push",
     "publish:all": "npm run publish:gadget && npm run publish:gf"
@@ -28,16 +28,17 @@
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.0.3",
+    "@stylistic/stylelint-plugin": "^5.0.1",
+    "eslint": "^10.1.0",
     "eslint-plugin-baseline-js": "^0.6.1",
     "eslint-plugin-jsdoc": "^62.8.0",
     "eslint-plugin-userscripts": "^0.5.6",
     "globals": "^17.4.0",
     "postcss-styled-syntax": "^0.7.1",
     "pre-commit": "^1.2.2",
-    "stylelint": "^16.26.1",
+    "stylelint": "^17.5.0",
     "stylelint-config-recommended": "^17.0.0",
-    "stylelint-plugin-use-baseline": "^1.2.7",
+    "stylelint-plugin-use-baseline": "^1.4.1",
     "userscript-meta": "^1.0.1"
   }
 }

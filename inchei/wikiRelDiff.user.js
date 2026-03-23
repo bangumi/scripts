@@ -118,134 +118,133 @@
     // 加载自定义样式
     const style = document.createElement('style');
     style.textContent = css`
-            #wikiRelDiff {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                min-width: 60vw;
-                width: 600px;
-                max-width: 100vw;
-                max-height: 80vh;
-                backdrop-filter: blur(10px);
-                background: rgba(254, 254, 254, .95);
-                color: #000;
-                border-radius: 15px;
-                border: 1px solid rgba(255, 255, 255, .3);
-                box-shadow: 0 5px 30px 10px rgba(80, 80, 80, .5);
-                z-index: 9999;
-                overflow: hidden;
-            }
-            #wikiRelDiff .staff-tip-header {
-                padding: 10px 16px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid rgba(255, 255, 255, .2);
-            }
-            #wikiRelDiff .staff-tip-close {
-                background: none;
-                border: none;
-                font-size: 18px;
-                cursor: pointer;
-                color: inherit;
-            }
-            #wikiRelDiff .staff-warning-section {
-                padding: 10px 12px;
-                margin: 0 0 16px;
-                background: rgba(255, 248, 225, 0.6);
-                border: 1px solid rgba(255, 153, 0, 0.3);
-                border-radius: 8px;
-                color: #856404;
-                overflow-wrap: break-word;
-            }
-            #wikiRelDiff .staff-error-section {
-                padding: 10px 12px;
-                margin: 0 0 16px;
-                background: rgba(255, 224, 178, 0.6);
-                border: 1px solid rgba(255, 99, 71, 0.3);
-                border-radius: 8px;
-                color: #8B0000;
-                overflow-wrap: break-word;
-            }
-            #wikiRelDiff .staff-warning-title, #wikiRelDiff .staff-error-title {
-                font-size: 14px;
-                font-weight: 500;
-            }
-            #wikiRelDiff .staff-tip-content {
-                padding: 12px 16px;
-                max-height: calc(80vh - 100px);
-                overflow-y: auto;
-                font-size: 13px;
-            }
-            .version-compare-h2 {
-                position: sticky;
-                top: 0;
-                background: var(--dollars-bg);
-            }
-            html[data-nav-mode="fixed"] .version-compare-h2 {
-                top: 60px;
-            }
-            .version-radio {
-                cursor: pointer;
-            }
-            .version-radio-group {
-                display: inline-flex;
-                margin-right: 10px;
-                gap: 5px;
-                vertical-align: text-bottom;
-            }
-            .compare-btn {
-                display: inline-block;
-                margin-left: 12px;
-                padding: 2px 8px;
-                font-size: 12px;
-                line-height: 1.4;
-                cursor: pointer;
-            }
-            /* 纯CSS控制按钮状态：未同时选中A和B时禁用 */
-            .SimpleSidePanel:not(:has(input[name="versionA"]:checked):has(input[name="versionB"]:checked)) .compare-btn {
-                opacity: 0.5;
-                cursor: not-allowed;
-                pointer-events: none;
-            }
-            /* 纯CSS控制单选框互斥隐藏：选中当前A/B时，隐藏同组的B/A */
-            .version-radio-group:has(input[name="versionA"]:checked) input[name="versionB"],
-            .version-radio-group:has(input[name="versionB"]:checked) input[name="versionA"] {
-                visibility: hidden;
-            }
-            html[data-theme="dark"] #wikiRelDiff {
-                background: rgba(40, 40, 40, .95);
-                color: #fff;
-                box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
-            }
-            html[data-theme="dark"] #wikiRelDiff .staff-warning-section {
-                background: rgba(60, 40, 0, 0.4);
-                border-color: rgba(255, 153, 0, 0.5);
-                color: #ffd700;
-            }
-            html[data-theme="dark"] #wikiRelDiff .staff-error-section {
-                background: rgba(80, 0, 0, 0.4);
-                border-color: rgba(255, 99, 71, 0.5);
-                color: #ffb6c1;
-            }
-            html[data-theme="dark"] #wikiRelDiff .staff-tip-header {
-                border-bottom-color: rgba(255, 255, 255, .05);
-            }
+      #wikiRelDiff {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 60vw;
+        width: 600px;
+        max-width: 100vw;
+        max-height: 80vh;
+        backdrop-filter: blur(10px);
+        background: rgba(254, 254, 254, .95);
+        color: #000;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, .3);
+        box-shadow: 0 5px 30px 10px rgba(80, 80, 80, .5);
+        z-index: 9999;
+        overflow: hidden;
+      }
+      #wikiRelDiff .staff-tip-header {
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, .2);
+      }
+      #wikiRelDiff .staff-tip-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: inherit;
+      }
+      #wikiRelDiff .staff-warning-section {
+        padding: 10px 12px;
+        margin: 0 0 16px;
+        background: rgba(255, 248, 225, 0.6);
+        border: 1px solid rgba(255, 153, 0, 0.3);
+        border-radius: 8px;
+        color: #856404;
+        overflow-wrap: break-word;
+      }
+      #wikiRelDiff .staff-error-section {
+        padding: 10px 12px;
+        margin: 0 0 16px;
+        background: rgba(255, 224, 178, 0.6);
+        border: 1px solid rgba(255, 99, 71, 0.3);
+        border-radius: 8px;
+        color: #8B0000;
+        overflow-wrap: break-word;
+      }
+      #wikiRelDiff .staff-warning-title, #wikiRelDiff .staff-error-title {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      #wikiRelDiff .staff-tip-content {
+        padding: 12px 16px;
+        max-height: calc(80vh - 100px);
+        overflow-y: auto;
+        font-size: 13px;
+      }
+      .version-compare-h2 {
+        position: sticky;
+        top: 0;
+        background: var(--dollars-bg);
+      }
+      html[data-nav-mode="fixed"] .version-compare-h2 {
+        top: 60px;
+      }
+      .version-radio {
+        cursor: pointer;
+      }
+      .version-radio-group {
+        display: inline-flex;
+        margin-right: 10px;
+        gap: 5px;
+        vertical-align: text-bottom;
+      }
+      .compare-btn {
+        display: inline-block;
+        margin-left: 12px;
+        padding: 2px 8px;
+        font-size: 12px;
+        line-height: 1.4;
+        cursor: pointer;
+      }
+      /* 纯CSS控制按钮状态：未同时选中A和B时禁用 */
+      .SimpleSidePanel:not(:has(input[name="versionA"]:checked):has(input[name="versionB"]:checked)) .compare-btn {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+      /* 纯CSS控制单选框互斥隐藏：选中当前A/B时，隐藏同组的B/A */
+      .version-radio-group:has(input[name="versionA"]:checked) input[name="versionB"],
+      .version-radio-group:has(input[name="versionB"]:checked) input[name="versionA"] {
+        visibility: hidden;
+      }
+      html[data-theme="dark"] #wikiRelDiff {
+        background: rgba(40, 40, 40, .95);
+        color: #fff;
+        box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
+      }
+      html[data-theme="dark"] #wikiRelDiff .staff-warning-section {
+        background: rgba(60, 40, 0, 0.4);
+        border-color: rgba(255, 153, 0, 0.5);
+        color: #ffd700;
+      }
+      html[data-theme="dark"] #wikiRelDiff .staff-error-section {
+        background: rgba(80, 0, 0, 0.4);
+        border-color: rgba(255, 99, 71, 0.5);
+        color: #ffb6c1;
+      }
+      html[data-theme="dark"] #wikiRelDiff .staff-tip-header {
+        border-bottom-color: rgba(255, 255, 255, .05);
+      }
 
-            /* https://github.com/rtfpessoa/diff2html/issues/381 */
-            #wikiRelDiff .d2h-wrapper {
-                text-align: left;
-                transform: translateZ(0);
-            }
-            #wikiRelDiff .d2h-file-header.d2h-sticky-header {
-                display: none !important;
-            }
+      /* https://github.com/rtfpessoa/diff2html/issues/381 */
+      #wikiRelDiff .d2h-wrapper {
+        text-align: left;
+        transform: translateZ(0);
+      }
+      #wikiRelDiff .d2h-file-header.d2h-sticky-header {
+        display: none !important;
+      }
 
-            #wikiRelDiff .hljs {
-                background: unset; /* 解决与代码高亮冲突 */
-            }
-        `;
+      #wikiRelDiff .hljs {
+        background: unset; /* 解决与代码高亮冲突 */
+      }`;
     document.head.appendChild(style);
   }
 

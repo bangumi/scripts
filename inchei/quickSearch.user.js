@@ -35,88 +35,86 @@
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   const styleSheet = document.createElement('style');
   styleSheet.innerText = css`
-        #headerSearch .search-suggestions {
-            top: calc(100% + 5px);
-        }
-        #searchSuggestions:not(:has(.res-content)) {
-            display: none !important;
-        }
+    #headerSearch .search-suggestions {
+      top: calc(100% + 5px);
+    }
+    #searchSuggestions:not(:has(.res-content)) {
+      display: none !important;
+    }
 
-        #searchOverlay {
-            position: absolute;
-            top: calc(100% + 5px);
-            left: 0;
-            width: 100%;
-            background-color: rgba(255, 255, 255, 0.7);
-            z-index: 91;
-            display: none;
-            border-radius: 15px;
-        }
+    #searchOverlay {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.7);
+      z-index: 91;
+      display: none;
+      border-radius: 15px;
+    }
 
-        html[data-theme="dark"] #searchOverlay {
-            background: rgba(80, 80, 80, 0.7);
-        }
+    html[data-theme="dark"] #searchOverlay {
+      background: rgba(80, 80, 80, 0.7);
+    }
 
-        #suggestionBox {
-            position: absolute;
-            top: calc(100% + 5px);
-            left: 0;
-            width: 100%;
-            max-height: 300px;
-            overflow: hidden;
-            background-color: rgba(254, 254, 254, 0.9);
-            box-shadow: inset 0 1px 1px hsla(0,100%,100%,.3),inset 0 -1px 0 hsla(0,100%,100%,.1),0 3px 15px hsla(214,100%,0%,.2);
-            backdrop-filter: blur(5px);
-            border-radius: 15px;
-            z-index: 90;
-            display: none;
-        }
-        #suggestionBox ul.ajaxSubjectList {
-            overflow-y: auto;
-            max-height: 300px;
-            scrollbar-width: thin;
-            overscroll-behavior: contain;
-        }
+    #suggestionBox {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      width: 100%;
+      max-height: 300px;
+      overflow: hidden;
+      background-color: rgba(254, 254, 254, 0.9);
+      box-shadow: inset 0 1px 1px hsla(0,100%,100%,.3),inset 0 -1px 0 hsla(0,100%,100%,.1),0 3px 15px hsla(214,100%,0%,.2);
+      backdrop-filter: blur(5px);
+      border-radius: 15px;
+      z-index: 90;
+      display: none;
+    }
+    #suggestionBox ul.ajaxSubjectList {
+      overflow-y: auto;
+      max-height: 300px;
+      scrollbar-width: thin;
+      overscroll-behavior: contain;
+    }
 
-        html[data-theme="dark"] #suggestionBox {
-            background: rgba(80, 80, 80, 0.7);
-        }
+    html[data-theme="dark"] #suggestionBox {
+      background: rgba(80, 80, 80, 0.7);
+    }
 
-        #suggestionBox ul.ajaxSubjectList li:hover,
-        #suggestionBox ul.ajaxSubjectList li.selected {
-            background: var(--primary-color);
-        }
+    #suggestionBox ul.ajaxSubjectList li:hover,
+    #suggestionBox ul.ajaxSubjectList li.selected {
+      background: var(--primary-color);
+    }
 
-        #suggestionBox ul.ajaxSubjectList li.selected a {
-            color: #FFF;
-        }
+    #suggestionBox ul.ajaxSubjectList li.selected a {
+      color: #FFF;
+    }
 
-        #suggestionBox ul.ajaxSubjectList li.selected small {
-            color: #eee;
-        }
+    #suggestionBox ul.ajaxSubjectList li.selected small {
+      color: #eee;
+    }
 
-        #errorMessage {
-            padding: 8px;
-        }
+    #errorMessage {
+      padding: 8px;
+    }
 
-        #headerNeue2 #headerSearch #suggestionBox .inner {
-            display: block;
-            width: auto;
-        }
-        #suggestionBox a.avatar {
-            transition: 0ms;
-        }
-    `;
+    #headerNeue2 #headerSearch #suggestionBox .inner {
+      display: block;
+      width: auto;
+    }
+    #suggestionBox a.avatar {
+      transition: 0ms;
+    }`;
   document.head.appendChild(styleSheet);
 
   let fallbackStylesheet;
   if (!supportsHas) {
     fallbackStylesheet = document.createElement('style');
     fallbackStylesheet.innerText = css`
-            #searchSuggestions {
-                display: none !important;
-            }
-        `;
+      #searchSuggestions {
+        display: none !important;
+      }`;
     document.head.append(fallbackStylesheet);
   }
 

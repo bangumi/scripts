@@ -164,183 +164,181 @@
     const style = document.createElement('style');
     const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     style.textContent = css`
-            #crtRelateSubjects li:target {
-                background-color: rgba(165, 255, 165, 0.4) !important;
-                scroll-margin-block-start: 60px;
-            }
+      #crtRelateSubjects li:target {
+        background-color: rgba(165, 255, 165, 0.4) !important;
+        scroll-margin-block-start: 60px;
+      }
 
-            /* 提示框容器样式 */
-            #wikiEpRelate.staff-tip-box {
-                position: fixed;
-                width: min(380px, 100vw);
-                backdrop-filter: blur(10px);
-                background: rgba(254, 254, 254, .8);
-                color: #000;
-                border-radius: 15px;
-                background-clip: padding-box;
-                border: 1px solid rgba(255, 255, 255, .3);
-                box-shadow: 0 5px 30px 10px rgba(80, 80, 80, .5);
-                z-index: 9999;
-                overflow: hidden;
-            }
+      /* 提示框容器样式 */
+      #wikiEpRelate.staff-tip-box {
+        position: fixed;
+        width: min(380px, 100vw);
+        backdrop-filter: blur(10px);
+        background: rgba(254, 254, 254, .8);
+        color: #000;
+        border-radius: 15px;
+        background-clip: padding-box;
+        border: 1px solid rgba(255, 255, 255, .3);
+        box-shadow: 0 5px 30px 10px rgba(80, 80, 80, .5);
+        z-index: 9999;
+        overflow: hidden;
+      }
 
-            /* 警告提示样式 */
-            #wikiEpRelate .staff-warning-section {
-                padding: 10px 12px;
-                margin: 0 0 16px;
-                background: rgba(255, 248, 225, 0.6);
-                border: 1px solid rgba(255, 153, 0, 0.3);
-                border-radius: 8px;
-                color: #856404;
-                overflow-wrap: break-word;
-            }
-            #wikiEpRelate .staff-warning-title {
-                font-size: 14px;
-                font-weight: 500;
-            }
+      /* 警告提示样式 */
+      #wikiEpRelate .staff-warning-section {
+        padding: 10px 12px;
+        margin: 0 0 16px;
+        background: rgba(255, 248, 225, 0.6);
+        border: 1px solid rgba(255, 153, 0, 0.3);
+        border-radius: 8px;
+        color: #856404;
+        overflow-wrap: break-word;
+      }
+      #wikiEpRelate .staff-warning-title {
+        font-size: 14px;
+        font-weight: 500;
+      }
 
-            /* 提示框拖动手柄 */
-            #wikiEpRelate .staff-tip-handle {
-                height: 36px;
-                line-height: 36px;
-                padding: 0 16px;
-                background: rgba(255, 255, 255, .2);
-                border-bottom: 1px solid rgba(255, 255, 255, .1);
-                border-top-left-radius: 15px;
-                border-top-right-radius: 15px;
-                font-size: 14px;
-                font-weight: 500;
-                color: inherit;
-                cursor: move;
-                user-select: none;
-            }
+      /* 提示框拖动手柄 */
+      #wikiEpRelate .staff-tip-handle {
+        height: 36px;
+        line-height: 36px;
+        padding: 0 16px;
+        background: rgba(255, 255, 255, .2);
+        border-bottom: 1px solid rgba(255, 255, 255, .1);
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        font-size: 14px;
+        font-weight: 500;
+        color: inherit;
+        cursor: move;
+        user-select: none;
+      }
 
-            /* 提示框内容容器 */
-            #wikiEpRelate .staff-tip-content {
-                padding: 12px 16px;
-                max-height: 400px;
-                overflow-y: auto;
-                font-size: 13px;
-            }
+      /* 提示框内容容器 */
+      #wikiEpRelate .staff-tip-content {
+        padding: 12px 16px;
+        max-height: 400px;
+        overflow-y: auto;
+        font-size: 13px;
+      }
 
-            /* 提示框标题 */
-            #wikiEpRelate .staff-tip-title {
-                margin: 0 0 8px;
-                padding-bottom: 4px;
-                border-bottom: 1px solid rgba(255, 255, 255, .2);
-                font-size: 14px;
-                color: inherit;
-            }
-            #wikiEpRelate .staff-tip-title.new { color: #0a6e1e; }
-            #wikiEpRelate .staff-tip-title.existing { color: #0d5b68; }
-            #wikiEpRelate .staff-tip-title.unmatched { color: #a0222e; }
+      /* 提示框标题 */
+      #wikiEpRelate .staff-tip-title {
+        margin: 0 0 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, .2);
+        font-size: 14px;
+        color: inherit;
+      }
+      #wikiEpRelate .staff-tip-title.new { color: #0a6e1e; }
+      #wikiEpRelate .staff-tip-title.existing { color: #0d5b68; }
+      #wikiEpRelate .staff-tip-title.unmatched { color: #a0222e; }
 
-            /* 记录列表容器 */
-            #wikiEpRelate .staff-record-list {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-                margin-bottom: 16px;
-            }
+      /* 记录列表容器 */
+      #wikiEpRelate .staff-record-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 16px;
+      }
 
-            /* 统一记录项基础样式 */
-            #wikiEpRelate .staff-record-item {
-                padding: 8px 12px;
-                border-radius: 8px;
-                backdrop-filter: blur(5px);
-                color: inherit !important;
-                text-decoration: none;
-                transition: background 0.2s ease;
-                overflow-wrap: break-word;
-                position: relative;
-            }
+      /* 统一记录项基础样式 */
+      #wikiEpRelate .staff-record-item {
+        padding: 8px 12px;
+        border-radius: 8px;
+        backdrop-filter: blur(5px);
+        color: inherit !important;
+        text-decoration: none;
+        transition: background 0.2s ease;
+        overflow-wrap: break-word;
+        position: relative;
+      }
 
-            /* 新增参与项 */
-            #wikiEpRelate .staff-record-item.new {
-                background: rgba(240, 255, 244, .6);
-                border: 1px solid rgba(40, 167, 69, .2);
-            }
-            #wikiEpRelate .staff-record-item.new:hover {
-                background: rgba(230, 255, 233, .8);
-            }
+      /* 新增参与项 */
+      #wikiEpRelate .staff-record-item.new {
+        background: rgba(240, 255, 244, .6);
+        border: 1px solid rgba(40, 167, 69, .2);
+      }
+      #wikiEpRelate .staff-record-item.new:hover {
+        background: rgba(230, 255, 233, .8);
+      }
 
-            /* 已有参与项 */
-            #wikiEpRelate .staff-record-item.existing {
-                background: rgba(240, 248, 255, .6);
-                border: 1px solid rgba(23, 162, 184, .2);
-            }
-            #wikiEpRelate .staff-record-item.existing:hover {
-                background: rgba(230, 242, 255, .8);
-            }
+      /* 已有参与项 */
+      #wikiEpRelate .staff-record-item.existing {
+        background: rgba(240, 248, 255, .6);
+        border: 1px solid rgba(23, 162, 184, .2);
+      }
+      #wikiEpRelate .staff-record-item.existing:hover {
+        background: rgba(230, 242, 255, .8);
+      }
 
-            /* 未匹配记录项 */
-            #wikiEpRelate .staff-record-item.unmatched {
-                padding: 8px 12px;
-                border-radius: 8px;
-                backdrop-filter: blur(5px);
-                background: rgba(255, 248, 248, .6);
-                color: #a0222e;
-                border: 1px solid rgba(220, 53, 69, .2);
-                transition: background 0.2s ease;
-            }
-            #wikiEpRelate .staff-record-item.unmatched:hover {
-                background: rgba(255, 235, 235, .8);
-            }
+      /* 未匹配记录项 */
+      #wikiEpRelate .staff-record-item.unmatched {
+        padding: 8px 12px;
+        border-radius: 8px;
+        backdrop-filter: blur(5px);
+        background: rgba(255, 248, 248, .6);
+        color: #a0222e;
+        border: 1px solid rgba(220, 53, 69, .2);
+        transition: background 0.2s ease;
+      }
+      #wikiEpRelate .staff-record-item.unmatched:hover {
+        background: rgba(255, 235, 235, .8);
+      }
 
-            /* 记录项名称强调 */
-            #wikiEpRelate .staff-person-name {
-                font-weight: 500;
-                color: inherit;
-            }
+      /* 记录项名称强调 */
+      #wikiEpRelate .staff-person-name {
+        font-weight: 500;
+        color: inherit;
+      }
 
-            #wikiEpRelate .staff-tip-content > details > details {
-                margin-left: 1.5em;
-            }
+      #wikiEpRelate .staff-tip-content > details > details {
+        margin-left: 1.5em;
+      }
 
-            /* 夜间模式适配 */
-            html[data-theme="dark"] #wikiEpRelate.staff-tip-box {
-                background: rgba(40, 40, 40, .8);
-                color: #fff;
-                box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-warning-section {
-                background: rgba(60, 40, 0, 0.4);
-                border-color: rgba(255, 153, 0, 0.5);
-                color: #ffd700;
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-tip-handle {
-                background: rgba(0, 0, 0, .2);
-                border-bottom-color: rgba(255, 255, 255, .05);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-tip-title {
-                border-bottom-color: rgba(255, 255, 255, .05);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-tip-title.new { color: #51cf66; }
-            html[data-theme="dark"] #wikiEpRelate .staff-tip-title.existing { color: #4dd0e1; }
-            html[data-theme="dark"] #wikiEpRelate .staff-tip-title.unmatched { color: #e57373; }
-            html[data-theme="dark"] #wikiEpRelate .staff-record-item.new {
-                background: rgba(25, 65, 35, 0.4);
-                border-color: rgba(76, 175, 80, 0.4);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-record-item.new:hover {
-                background: rgba(25, 65, 35, 0.6);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-record-item.existing {
-                background: rgba(30, 45, 65, 0.4);
-                border-color: rgba(33, 150, 243, 0.4);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-record-item.existing:hover {
-                background: rgba(30, 45, 65, 0.6);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-record-item.unmatched {
-                background: rgba(65, 30, 35, 0.4);
-                border-color: rgba(244, 67, 54, 0.4);
-            }
-            html[data-theme="dark"] #wikiEpRelate .staff-record-item.unmatched:hover {
-                background: rgba(65, 30, 35, 0.6);
-            }
-
-        `;
+      /* 夜间模式适配 */
+      html[data-theme="dark"] #wikiEpRelate.staff-tip-box {
+        background: rgba(40, 40, 40, .8);
+        color: #fff;
+        box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-warning-section {
+        background: rgba(60, 40, 0, 0.4);
+        border-color: rgba(255, 153, 0, 0.5);
+        color: #ffd700;
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-tip-handle {
+        background: rgba(0, 0, 0, .2);
+        border-bottom-color: rgba(255, 255, 255, .05);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-tip-title {
+        border-bottom-color: rgba(255, 255, 255, .05);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-tip-title.new { color: #51cf66; }
+      html[data-theme="dark"] #wikiEpRelate .staff-tip-title.existing { color: #4dd0e1; }
+      html[data-theme="dark"] #wikiEpRelate .staff-tip-title.unmatched { color: #e57373; }
+      html[data-theme="dark"] #wikiEpRelate .staff-record-item.new {
+        background: rgba(25, 65, 35, 0.4);
+        border-color: rgba(76, 175, 80, 0.4);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-record-item.new:hover {
+        background: rgba(25, 65, 35, 0.6);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-record-item.existing {
+        background: rgba(30, 45, 65, 0.4);
+        border-color: rgba(33, 150, 243, 0.4);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-record-item.existing:hover {
+        background: rgba(30, 45, 65, 0.6);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-record-item.unmatched {
+        background: rgba(65, 30, 35, 0.4);
+        border-color: rgba(244, 67, 54, 0.4);
+      }
+      html[data-theme="dark"] #wikiEpRelate .staff-record-item.unmatched:hover {
+        background: rgba(65, 30, 35, 0.6);
+      }`;
     document.head.appendChild(style);
 
     const subjectId = location.pathname.split('/')[2];

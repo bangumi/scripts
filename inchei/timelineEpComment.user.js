@@ -102,22 +102,22 @@
         scrollbar-width: thin;
       }
       ${shouldntNetabare ? css`
-      .netabare-comment-container .netabare-comment {
-        filter: blur(4px);
-        transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
-      }
-      .netabare-comment-container .netabare-comment img:not([smileid]) {
-        filter: blur(3em);
-        clip-path: inset(0);
-        transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
-      }` : ''}
+        .netabare-comment-container .netabare-comment {
+          filter: blur(4px);
+          transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
+        }
+        .netabare-comment-container .netabare-comment img:not([smileid]) {
+          filter: blur(3em);
+          clip-path: inset(0);
+          transition: filter 200ms cubic-bezier(1, 0, 0, 1) 100ms;
+        }` : ''}
       ${shouldntNetabare ? css`
-      .netabare-comment-container:is(:hover, :focus) .netabare-comment {
-        filter: blur(0);
-      }
-      .netabare-comment-container:is(:hover, :focus) .netabare-comment img:not([smileid]) {
-        filter: blur(0);
-      }` : ''}
+        .netabare-comment-container:is(:hover, :focus) .netabare-comment {
+          filter: blur(0);
+        }
+        .netabare-comment-container:is(:hover, :focus) .netabare-comment img:not([smileid]) {
+          filter: blur(0);
+        }` : ''}
       .comment.comment-failed {
         opacity: .4;
       }

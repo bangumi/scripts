@@ -41,70 +41,69 @@
     const customStyles = document.createElement('style');
     const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
     customStyles.textContent = css`
-            .codeHighlight {
-                position: relative;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                overflow: hidden;
-            }
-            html[data-theme="dark"] .codeHighlight {
-                border: 1px solid #444;
-            }
-            .codeHighlight pre {
-                line-height: 1.5 !important;
-                border-radius: 0 0 5px 5px;
-                font-family: monospace;
-                scrollbar-width: thin;
-                counter-reset: line;
-                position: relative;
-                display: block;
-                max-height: 400px;
-                padding-right: 100px !important;
-            }
-            .codeHighlight .top-bar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 5px 10px;
-                font-size: 12px;
-            }
-            .codeHighlight .copy-button {
-                position: absolute;
-                top: 6px;
-                right: 15px;
-                padding: 5px 10px;
-                cursor: pointer;
-                border: none;
-                background-color: #eee;
-                color: #444;
-                font-size: 12px;
-                border-radius: 2px;
-                z-index: 1;
-                transition: all .3s ease-in-out;
-            }
-            @media (hover: hover) and (pointer: fine) {
-                .codeHighlight pre {
-                    padding-right: unset;
-                }
-                .codeHighlight .copy-button {
-                    opacity: 0;
-                }
-                .copy-button:focus,
-                .codeHighlight:hover .copy-button {
-                    opacity: 1;
-                }
-            }
-            .copy-button:hover {
-                background-color: #dedede;
-            }
-            html[data-theme="dark"] .copy-button {
-                background-color: #333;
-                color: #eee;
-            }
-            html[data-theme="dark"] .copy-button:hover {
-                background-color: #444;
-            }
-        `;
+      .codeHighlight {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      html[data-theme="dark"] .codeHighlight {
+        border: 1px solid #444;
+      }
+      .codeHighlight pre {
+        line-height: 1.5 !important;
+        border-radius: 0 0 5px 5px;
+        font-family: monospace;
+        scrollbar-width: thin;
+        counter-reset: line;
+        position: relative;
+        display: block;
+        max-height: 400px;
+        padding-right: 100px !important;
+      }
+      .codeHighlight .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+      .codeHighlight .copy-button {
+        position: absolute;
+        top: 6px;
+        right: 15px;
+        padding: 5px 10px;
+        cursor: pointer;
+        border: none;
+        background-color: #eee;
+        color: #444;
+        font-size: 12px;
+        border-radius: 2px;
+        z-index: 1;
+        transition: all .3s ease-in-out;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .codeHighlight pre {
+          padding-right: unset;
+        }
+        .codeHighlight .copy-button {
+          opacity: 0;
+        }
+        .copy-button:focus,
+        .codeHighlight:hover .copy-button {
+          opacity: 1;
+        }
+      }
+      .copy-button:hover {
+        background-color: #dedede;
+      }
+      html[data-theme="dark"] .copy-button {
+        background-color: #333;
+        color: #eee;
+      }
+      html[data-theme="dark"] .copy-button:hover {
+        background-color: #444;
+      }`;
     document.head.appendChild(customStyles);
   }
 

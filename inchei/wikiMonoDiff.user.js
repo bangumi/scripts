@@ -105,192 +105,192 @@
   const fancyboxCSS = GM_getResourceText('FANCYBOX_CSS');
   GM_addStyle(fancyboxCSS);
   const customStyle = css`
-        #wikiMonoDiff {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            min-width: 60vw;
-            width: 800px;
-            max-width: 100vw;
-            max-height: 80vh;
-            backdrop-filter: blur(10px);
-            background: rgba(254, 254, 254, .95);
-            color: #000;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, .3);
-            box-shadow: 0 5px 30px 10px rgba(80, 80, 80, .5);
-            z-index: 9999;
-            overflow: hidden;
-        }
-        #wikiMonoDiff .diff-tip-header {
-            padding: 10px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, .2);
-        }
-        #wikiMonoDiff .diff-tip-close {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: inherit;
-        }
-        #wikiMonoDiff .diff-warning-section {
-            padding: 10px 12px;
-            margin: 0 0 16px;
-            background: rgba(255, 248, 225, 0.6);
-            border: 1px solid rgba(255, 153, 0, 0.3);
-            border-radius: 8px;
-            color: #856404;
-            overflow-wrap: break-word;
-        }
-        #wikiMonoDiff .diff-error-section {
-            padding: 10px 12px;
-            margin: 0 0 16px;
-            background: rgba(255, 224, 178, 0.6);
-            border: 1px solid rgba(255, 99, 71, 0.3);
-            border-radius: 8px;
-            color: #8B0000;
-        }
-        #wikiMonoDiff .diff-warning-title, #wikiMonoDiff .diff-error-title {
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-        #wikiMonoDiff .diff-tip-content {
-            padding: 12px 16px;
-            max-height: calc(80vh - 100px);
-            overflow-y: auto;
-            font-size: 13px;
-        }
-        #wikiMonoDiff .d2h-file-diff {
-            width: 100% !important;
-            overflow-x: auto !important;
-        }
-        .img-compare-container {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            width: 100%;
-            margin: 8px 0 24px;
-        }
-        .img-compare-item {
-            flex: 1;
-            text-align: center;
-        }
-        .img-compare-item img {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            object-fit: contain;
-            cursor: zoom-in;
-        }
-        .img-placeholder {
-            width: 100%;
-            height: 200px;
-            line-height: 200px;
-            border-radius: 4px;
-            border: 1px dashed #ddd;
-            background: #f5f5f5;
-            color: #999;
-            font-size: 14px;
-        }
-        .img-compare-label {
-            font-size: 12px;
-            margin-top: 4px;
-            color: #666;
-        }
-        .revision-compare-h2 {
-            position: sticky;
-            top: 0;
-            background: var(--dollars-bg);
-        }
-        html[data-nav-mode="fixed"] .revision-compare-h2 {
-            top: 60px;
-        }
-        .revision-radio {
-            cursor: pointer;
-        }
-        .revision-radio-group {
-            display: inline-flex;
-            margin-right: 10px;
-            gap: 5px;
-            vertical-align: text-bottom;
-        }
-        .compare-btn {
-            display: inline-block;
-            margin-left: 12px;
-            padding: 2px 8px;
-            font-size: 12px;
-            line-height: 1.4;
-            cursor: pointer;
-        }
-        html[data-theme="dark"] .compare-btn {
-            background: rgba(70, 90, 120, 0.6);
-            color: #c5d4e3;
-        }
-        html[data-theme="dark"] .compare-btn:hover {
-            background: rgba(90, 110, 140, 0.8);
-        }
-        .SimpleSidePanel:not(:has(input[name="revisionA"]:checked):has(input[name="revisionB"]:checked)) .compare-btn {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .revision-radio-group:has(input[name="revisionA"]:checked) input[name="revisionB"],
-        .revision-radio-group:has(input[name="revisionB"]:checked) input[name="revisionA"] {
-            visibility: hidden;
-        }
-        html[data-theme="dark"] #wikiMonoDiff {
-            background: rgba(40, 40, 40, .95);
-            color: #fff;
-            box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
-        }
-        html[data-theme="dark"] #wikiMonoDiff .diff-warning-section {
-            background: rgba(50, 30, 70, 0.4);
-            border-color: rgba(153, 102, 255, 0.5);
-            color: #d8bfff;
-        }
-        html[data-theme="dark"] #wikiMonoDiff .diff-error-section {
-            background: rgba(80, 0, 0, 0.4);
-            border-color: rgba(255, 99, 71, 0.5);
-            color: #ffb6c1;
-        }
-        html[data-theme="dark"] #wikiMonoDiff .diff-tip-header {
-            border-bottom-color: rgba(255, 255, 255, .05);
-        }
-        html[data-theme="dark"] .img-compare-item img {
-            border-color: #555;
-        }
-        html[data-theme="dark"] .img-placeholder {
-            background: #2a2a2a;
-            border-color: #555;
-            color: #ccc;
-        }
-        html[data-theme="dark"] .img-compare-label {
-            color: #aaa;
-        }
-        #wikiMonoDiff .d2h-wrapper {
-            text-align: left;
-            transform: translateZ(0);
-            width: 100%;
-        }
-        #wikiMonoDiff .d2h-file-header.d2h-sticky-header {
-            display: none !important;
-        }
-        #wikiMonoDiff .hljs {
-            background: unset;
-        }
-        #wikiMonoDiff .d2h-code-line-ctn {
-            white-space: pre-wrap;
-        }
-        /* fancybox适配 */
-        .fancybox-container {
-            z-index: 99999 !important;
-        }
+    #wikiMonoDiff {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 60vw;
+      width: 800px;
+      max-width: 100vw;
+      max-height: 80vh;
+      backdrop-filter: blur(10px);
+      background: rgba(254, 254, 254, .95);
+      color: #000;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, .3);
+      box-shadow: 0 5px 30px 10px rgba(80, 80, 80, .5);
+      z-index: 9999;
+      overflow: hidden;
+    }
+    #wikiMonoDiff .diff-tip-header {
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, .2);
+    }
+    #wikiMonoDiff .diff-tip-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: inherit;
+    }
+    #wikiMonoDiff .diff-warning-section {
+      padding: 10px 12px;
+      margin: 0 0 16px;
+      background: rgba(255, 248, 225, 0.6);
+      border: 1px solid rgba(255, 153, 0, 0.3);
+      border-radius: 8px;
+      color: #856404;
+      overflow-wrap: break-word;
+    }
+    #wikiMonoDiff .diff-error-section {
+      padding: 10px 12px;
+      margin: 0 0 16px;
+      background: rgba(255, 224, 178, 0.6);
+      border: 1px solid rgba(255, 99, 71, 0.3);
+      border-radius: 8px;
+      color: #8B0000;
+    }
+    #wikiMonoDiff .diff-warning-title, #wikiMonoDiff .diff-error-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    #wikiMonoDiff .diff-tip-content {
+      padding: 12px 16px;
+      max-height: calc(80vh - 100px);
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    #wikiMonoDiff .d2h-file-diff {
+      width: 100% !important;
+      overflow-x: auto !important;
+    }
+    .img-compare-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      margin: 8px 0 24px;
+    }
+    .img-compare-item {
+      flex: 1;
+      text-align: center;
+    }
+    .img-compare-item img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      object-fit: contain;
+      cursor: zoom-in;
+    }
+    .img-placeholder {
+      width: 100%;
+      height: 200px;
+      line-height: 200px;
+      border-radius: 4px;
+      border: 1px dashed #ddd;
+      background: #f5f5f5;
+      color: #999;
+      font-size: 14px;
+    }
+    .img-compare-label {
+      font-size: 12px;
+      margin-top: 4px;
+      color: #666;
+    }
+    .revision-compare-h2 {
+      position: sticky;
+      top: 0;
+      background: var(--dollars-bg);
+    }
+    html[data-nav-mode="fixed"] .revision-compare-h2 {
+      top: 60px;
+    }
+    .revision-radio {
+      cursor: pointer;
+    }
+    .revision-radio-group {
+      display: inline-flex;
+      margin-right: 10px;
+      gap: 5px;
+      vertical-align: text-bottom;
+    }
+    .compare-btn {
+      display: inline-block;
+      margin-left: 12px;
+      padding: 2px 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+    html[data-theme="dark"] .compare-btn {
+      background: rgba(70, 90, 120, 0.6);
+      color: #c5d4e3;
+    }
+    html[data-theme="dark"] .compare-btn:hover {
+      background: rgba(90, 110, 140, 0.8);
+    }
+    .SimpleSidePanel:not(:has(input[name="revisionA"]:checked):has(input[name="revisionB"]:checked)) .compare-btn {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .revision-radio-group:has(input[name="revisionA"]:checked) input[name="revisionB"],
+    .revision-radio-group:has(input[name="revisionB"]:checked) input[name="revisionA"] {
+      visibility: hidden;
+    }
+    html[data-theme="dark"] #wikiMonoDiff {
+      background: rgba(40, 40, 40, .95);
+      color: #fff;
+      box-shadow: 0 5px 30px 10px rgba(0, 0, 0, .2);
+    }
+    html[data-theme="dark"] #wikiMonoDiff .diff-warning-section {
+      background: rgba(50, 30, 70, 0.4);
+      border-color: rgba(153, 102, 255, 0.5);
+      color: #d8bfff;
+    }
+    html[data-theme="dark"] #wikiMonoDiff .diff-error-section {
+      background: rgba(80, 0, 0, 0.4);
+      border-color: rgba(255, 99, 71, 0.5);
+      color: #ffb6c1;
+    }
+    html[data-theme="dark"] #wikiMonoDiff .diff-tip-header {
+      border-bottom-color: rgba(255, 255, 255, .05);
+    }
+    html[data-theme="dark"] .img-compare-item img {
+      border-color: #555;
+    }
+    html[data-theme="dark"] .img-placeholder {
+      background: #2a2a2a;
+      border-color: #555;
+      color: #ccc;
+    }
+    html[data-theme="dark"] .img-compare-label {
+      color: #aaa;
+    }
+    #wikiMonoDiff .d2h-wrapper {
+      text-align: left;
+      transform: translateZ(0);
+      width: 100%;
+    }
+    #wikiMonoDiff .d2h-file-header.d2h-sticky-header {
+      display: none !important;
+    }
+    #wikiMonoDiff .hljs {
+      background: unset;
+    }
+    #wikiMonoDiff .d2h-code-line-ctn {
+      white-space: pre-wrap;
+    }
+    /* fancybox适配 */
+    .fancybox-container {
+      z-index: 99999 !important;
+    }
     `;
   GM_addStyle(customStyle);
 

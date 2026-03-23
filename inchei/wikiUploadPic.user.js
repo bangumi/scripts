@@ -52,119 +52,119 @@
 
   const style = document.createElement('style');
   style.textContent = css`
-        .bgm-preview-container {
-            gap: 15px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            display: none;
-        }
+    .bgm-preview-container {
+      gap: 15px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      display: none;
+    }
 
-        .bgm-original-preview {
-            max-width: 100%;
-            position: relative;
-            min-height: 100px;
-        }
+    .bgm-original-preview {
+      max-width: 100%;
+      position: relative;
+      min-height: 100px;
+    }
 
-        .bgm-square-preview {
-            width: 100px;
-            height: 100px;
-            overflow: hidden;
-            border: 1px solid #ddd;
-            position: relative;
-        }
+    .bgm-square-preview {
+      width: 100px;
+      height: 100px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      position: relative;
+    }
 
-        .bgm-preview-image {
-            max-width: 100%;
-            max-height: 300px;
-            border: 1px solid #ddd;
-        }
+    .bgm-preview-image {
+      max-width: 100%;
+      max-height: 300px;
+      border: 1px solid #ddd;
+    }
 
-        .bgm-square-image {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: top center;
-        }
+    .bgm-square-image {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
 
-        .bgm-square-image.cropper-mode {
-            transform-origin: left top;
-        }
+    .bgm-square-image.cropper-mode {
+      transform-origin: left top;
+    }
 
-        .bgm-preview-text {
-            margin-top: 5px;
-            font-size: 0.8em;
-        }
+    .bgm-preview-text {
+      margin-top: 5px;
+      font-size: 0.8em;
+    }
 
-        .bgm-controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+    .bgm-controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-        .bgm-clipboard-control {
-            margin-bottom: 10px;
-        }
+    .bgm-clipboard-control {
+      margin-bottom: 10px;
+    }
 
-        .bgm-mosaic-controls {
-            margin-top: 10px;
-            display: none;
-        }
+    .bgm-mosaic-controls {
+      margin-top: 10px;
+      display: none;
+    }
 
-        .bgm-hint {
-            font-size: 0.9em;
-            margin-block: 5px;
-        }
+    .bgm-hint {
+      font-size: 0.9em;
+      margin-block: 5px;
+    }
 
-        .cropper-modal {
-            opacity: 0 !important;
-        }
-        .cropper-container {
-            border: 1px solid #ddd;
-        }
+    .cropper-modal {
+      opacity: 0 !important;
+    }
+    .cropper-container {
+      border: 1px solid #ddd;
+    }
 
-        .slider-control {
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .slider-control {
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-        .slider-control label {
-            font-size: 0.9em;
-        }
+    .slider-control label {
+      font-size: 0.9em;
+    }
 
-        .slider-control input {
-            flex-grow: 1;
-            max-width: 200px;
-        }
+    .slider-control input {
+      flex-grow: 1;
+      max-width: 200px;
+    }
 
-        .brush-size-info {
-            font-size: 0.8em;
-            margin-top: 5px;
-        }
+    .brush-size-info {
+      font-size: 0.8em;
+      margin-top: 5px;
+    }
 
-        .mosaic-canvas-container {
-            display: inline-block;
-            border: 1px solid #ddd;
-        }
+    .mosaic-canvas-container {
+      display: inline-block;
+      border: 1px solid #ddd;
+    }
 
-        /* 粘贴辅助区域 - 完全隐藏 */
-        #pasteHelper {
-            position: fixed;
-            top: -100px;
-            left: -100px;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            outline: none;
-            border: none;
-            z-index: -1;
-        }
+    /* 粘贴辅助区域 - 完全隐藏 */
+    #pasteHelper {
+      position: fixed;
+      top: -100px;
+      left: -100px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      outline: none;
+      border: none;
+      z-index: -1;
+    }
     `;
   document.head.appendChild(style);
 

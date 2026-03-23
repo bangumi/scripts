@@ -30,131 +30,131 @@
   const style = document.createElement('style');
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
   style.textContent = css`
-        html {
-            --bar-bg-color: rgba(0, 0, 0, 0.05);
-            --bar-color: #555;
-        }
-        html[data-theme="dark"] {
-            --bar-bg-color: rgba(255, 255, 255, 0.05);
-            --bar-color: #dcdcdc;
-        }
-        .status-bars-container {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            margin-inline: 8px;
-            margin-block: 5px;
-        }
-        .status-bar {
-            display: flex;
-            height: 10px;
-            border-radius: 3px;
-            overflow: hidden;
-            transition: width 0.3s;
-            min-width: 10px; /* 设置最小宽度，确保圆角显示 */
-        }
-        .category-container {
-            display: flex;
-            flex-direction: column;
-            cursor: pointer;
-            border-radius: 5px;
-            padding: 5px;
-            transition: background-color 0.3s;
-        }
-        .category-container:hover,
-        .category-container:active,
-        .category-container:focus {
-            background-color: var(--bar-bg-color);
-        }
-        .category-container:hover .status-bar,
-        .category-container:active .status-bar,
-        .category-container:focus .status-bar {
-            width: 100%!important;
-        }
-        .category-title {
-            color: var(--bar-color);
-        }
-        .status-segment {
-            height: 100%;
-            transition: width 0.3s;
-            position: relative;
-            border: 1px solid transparent;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-        }
+    html {
+      --bar-bg-color: rgba(0, 0, 0, 0.05);
+      --bar-color: #555;
+    }
+    html[data-theme="dark"] {
+      --bar-bg-color: rgba(255, 255, 255, 0.05);
+      --bar-color: #dcdcdc;
+    }
+    .status-bars-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-inline: 8px;
+      margin-block: 5px;
+    }
+    .status-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 3px;
+      overflow: hidden;
+      transition: width 0.3s;
+      min-width: 10px; /* 设置最小宽度，确保圆角显示 */
+    }
+    .category-container {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      border-radius: 5px;
+      padding: 5px;
+      transition: background-color 0.3s;
+    }
+    .category-container:hover,
+    .category-container:active,
+    .category-container:focus {
+      background-color: var(--bar-bg-color);
+    }
+    .category-container:hover .status-bar,
+    .category-container:active .status-bar,
+    .category-container:focus .status-bar {
+      width: 100%!important;
+    }
+    .category-title {
+      color: var(--bar-color);
+    }
+    .status-segment {
+      height: 100%;
+      transition: width 0.3s;
+      position: relative;
+      border: 1px solid transparent;
+      box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+    }
 
-        /* 状态颜色定义 - 带渐变效果 */
-        .status-wish {
-            background: linear-gradient(120deg,
-                rgba(255, 183, 77, 0.8) 15%,
-                rgba(255, 183, 77, 0.9) 47%,
-                #FFB74D 73%);
-            border-color: #FFB74D;
-            box-shadow: 0px 2px 5px rgba(255, 183, 77, 0.5);
-        }
-        .status-doing {
-            background: linear-gradient(120deg,
-                rgba(76, 175, 80, 0.8) 15%,
-                rgba(76, 175, 80, 0.9) 47%,
-                #4CAF50 73%);
-            border-color: #4CAF50;
-            box-shadow: 0px 2px 5px rgba(76, 175, 80, 0.5);
-        }
-        .status-done {
-            background: linear-gradient(120deg,
-                rgba(33, 150, 243, 0.8) 15%,
-                rgba(33, 150, 243, 0.9) 47%,
-                #2196F3 73%);
-            border-color: #2196F3;
-            box-shadow: 0px 2px 5px rgba(33, 150, 243, 0.5);
-        }
-        .status-onhold {
-            background: linear-gradient(120deg,
-                rgba(158, 158, 158, 0.8) 15%,
-                rgba(158, 158, 158, 0.9) 47%,
-                #9E9E9E 73%);
-            border-color: #9E9E9E;
-            box-shadow: 0px 2px 5px rgba(158, 158, 158, 0.5);
-        }
-        .status-dropped {
-            background: linear-gradient(120deg,
-                rgba(244, 67, 54, 0.8) 15%,
-                rgba(244, 67, 54, 0.9) 47%,
-                #F44336 73%);
-            border-color: #F44336;
-            box-shadow: 0px 2px 5px rgba(244, 67, 54, 0.5);
-        }
+    /* 状态颜色定义 - 带渐变效果 */
+    .status-wish {
+      background: linear-gradient(120deg,
+      rgba(255, 183, 77, 0.8) 15%,
+      rgba(255, 183, 77, 0.9) 47%,
+      #FFB74D 73%);
+      border-color: #FFB74D;
+      box-shadow: 0px 2px 5px rgba(255, 183, 77, 0.5);
+    }
+    .status-doing {
+      background: linear-gradient(120deg,
+      rgba(76, 175, 80, 0.8) 15%,
+      rgba(76, 175, 80, 0.9) 47%,
+      #4CAF50 73%);
+      border-color: #4CAF50;
+      box-shadow: 0px 2px 5px rgba(76, 175, 80, 0.5);
+    }
+    .status-done {
+      background: linear-gradient(120deg,
+      rgba(33, 150, 243, 0.8) 15%,
+      rgba(33, 150, 243, 0.9) 47%,
+      #2196F3 73%);
+      border-color: #2196F3;
+      box-shadow: 0px 2px 5px rgba(33, 150, 243, 0.5);
+    }
+    .status-onhold {
+      background: linear-gradient(120deg,
+      rgba(158, 158, 158, 0.8) 15%,
+      rgba(158, 158, 158, 0.9) 47%,
+      #9E9E9E 73%);
+      border-color: #9E9E9E;
+      box-shadow: 0px 2px 5px rgba(158, 158, 158, 0.5);
+    }
+    .status-dropped {
+      background: linear-gradient(120deg,
+      rgba(244, 67, 54, 0.8) 15%,
+      rgba(244, 67, 54, 0.9) 47%,
+      #F44336 73%);
+      border-color: #F44336;
+      box-shadow: 0px 2px 5px rgba(244, 67, 54, 0.5);
+    }
 
-        /* 悬停效果增强 */
-        .status-segment:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0px 3px 8px rgba(0,0,0,0.2);
-        }
-        .hidden {
-            display: none;
-        }
+    /* 悬停效果增强 */
+    .status-segment:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0px 3px 8px rgba(0,0,0,0.2);
+    }
+    .hidden {
+      display: none;
+    }
 
-        /* 自定义Tooltip样式 */
-        .custom-tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            pointer-events: none;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.1s ease; /* 缩短过渡时间，减少闪烁感知 */
-            white-space: nowrap;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        }
+    /* 自定义Tooltip样式 */
+    .custom-tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.1s ease; /* 缩短过渡时间，减少闪烁感知 */
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
 
-        /* 暗色主题适配 */
-        html[data-theme="dark"] .custom-tooltip {
-            background: rgba(255, 255, 255, 0.8);
-            color: #333;
-        }
+    /* 暗色主题适配 */
+    html[data-theme="dark"] .custom-tooltip {
+      background: rgba(255, 255, 255, 0.8);
+      color: #333;
+    }
     `;
   document.head.appendChild(style);
 
