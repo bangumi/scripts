@@ -1,0 +1,28 @@
+{
+  "name": "bgm-scripts-mono",
+  "version": "0.1.0",
+  "description": "dev repo for my bangumi.tv user scripts",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "fmt": "dprint fmt",
+    "fmt:check": "dprint check"
+  },
+  "author": "Wang Guan <momocraft@gmail.com>",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/bangumi/scripts/issues"
+  },
+  "homepage": "https://github.com/bangumi/scripts/tree/master/mono",
+  "dependencies": {
+    "preact": "^10"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "dprint": "^0.49",
+    "typescript": "~5.8",
+    "vite": "^8"
+  }
+}
