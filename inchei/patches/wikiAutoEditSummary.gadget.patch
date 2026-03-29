@@ -1,5 +1,14 @@
---- wikiAutoEditSummary.user.js	2026-03-17 17:00:45.310468133 +0800
-+++ wikiAutoEditSummary.gadget.js	2026-03-23 16:42:14.120773882 +0800
+--- wikiAutoEditSummary.user.js	2026-03-23 17:02:44.428774846 +0800
++++ wikiAutoEditSummary.gadget.js	2026-03-29 10:40:47.693125340 +0800
+@@ -2,7 +2,7 @@
+ // @name         bangumi 自动生成编辑摘要
+ // @namespace    https://bgm.tv/group/topic/433505
+ // @homepage     https://bgm.tv/group/topic/433505
+-// @version      0.6.0
++// @version      0.6.1
+ // @description  自动生成Bangumi编辑摘要
+ // @author       You
+ // @icon         https://bgm.tv/img/favicon.ico
 @@ -27,6 +27,22 @@
  (function () {
    'use strict';
@@ -40,7 +49,96 @@
        }
  
        const newPlatform = getPlatform?.();
-@@ -336,10 +353,11 @@
+@@ -210,28 +227,71 @@
+       const currentOldLis = currentLis.filter(li => li.classList.contains('old'));
+       const currentNewLis = currentLis.filter(li => !li.classList.contains('old'));
+ 
+-      currentOldLis.forEach(li => {
+-        const initialItem = initialRelatedItems.find(item => item.element === li);
+-        if (initialItem) {
++      const removedItems = initialRelatedItems.filter(initialItem => !currentOldLis.some(li => li === initialItem.element));
++      const exsistingItems = initialRelatedItems.filter(item => currentOldLis.find(li => item.element === li));
++
++      if (noDetails) {
++        if (currentNewLis.length) {
++          const newTypes = [...new Set([...currentNewLis].map(li => getRelType(li)))];
++          changes.push(`添加${newTypes.join('、')}`);
++        }
++
++        if (removedItems.length) {
++          const removedTypes = [...new Set(removedItems.map(item => item.type))];
++          if (removedTypes.length) changes.push(`删除${removedTypes.join('、')}`);
++        }
++
++        let typeModified, orderModified, remarkModified, checkboxModified = {};
++        for (const initial of exsistingItems) {
++          const li = initial.element;
++          const current = getRelItemData(li);
++
++          if (!typeModified && initial.type !== current.type) {
++            changes.push('修改关联类型');
++            typeModified = true;
++          }
++
++          if (initial.remark !== current.remark) {
++            if (!orderModified && pageFeatures.relatedContextType === 1) {
++              changes.push('排序');
++              orderModified = true;
++            } else if (!remarkModified) {
++              const remarkName = pageFeatures.relatedContextType === 2 ? '参与' : '备注';
++              changes.push(`修改${remarkName}`);
++              remarkModified = true;
++            }
++          }
++
++          if (initial.checkboxes.length && current.checkboxes.length) {
++            current.checkboxes.forEach((currentCheckbox, index) => {
++              const title = currentCheckbox.title;
++              const initialCheckbox = initial.checkboxes[index];
++              if (!checkboxModified[title] && initialCheckbox && initialCheckbox.checked !== currentCheckbox.checked) {
++                changes.push(`修改标记${title}`);
++                checkboxModified[title] = true;
++              }
++            });
++          }
++        }
++      } else {
++        currentNewLis.forEach(li => {
++          const item = getRelItemData(li);
++          changes.push(genRelExsistChanges(item, '添加'));
++        });
++
++        removedItems.forEach(item => {
++          changes.push(genRelExsistChanges(item, '删除'));
++        });
++
++        exsistingItems.forEach(initialItem => {
++          const li = initialItem.element;
+           const currentItem = getRelItemData(li);
+           const modifyChanges = genRelModifyChanges(initialItem, currentItem);
+           if (modifyChanges.length) {
+             changes.push(...modifyChanges);
+           }
+-        }
+-      });
+-
+-      currentNewLis.forEach(li => {
+-        const item = getRelItemData(li);
+-        changes.push(genRelExsistChanges(item, '添加'));
+-      });
+-
+-      initialRelatedItems.forEach(initialItem => {
+-        const stillExists = currentOldLis.some(li => li === initialItem.element);
+-        if (!stillExists) {
+-          changes.push(genRelExsistChanges(initialItem, '删除'));
+-        }
+-      });
++        });
++      }
+     }
+ 
+     if (editSummaryInput && changes.length) {
+@@ -336,10 +396,11 @@
    }
  
    function genFieldChanges(oldData, newData) {
@@ -53,7 +151,7 @@
  
      for (const key of oldData.keys()) {
        const newKey = getNewKey(oldData, newData, key);
-@@ -397,7 +415,7 @@
+@@ -397,7 +458,7 @@
                }
              }
            }
@@ -62,3 +160,20 @@
          }
        }
      }
+@@ -502,11 +563,15 @@
+   }
+   // #endregion
+ 
++  function getRelType(li) {
++    return li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0];
++  }
++
+   function getRelItemData(li) {
+     return {
+       name: short(li.querySelector('.title a').textContent) || '',
+       infoName: li.querySelector('.info a')?.textContent || '',
+-      type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
++      type: getRelType(li),
+       remark: li.querySelector('input[type=text]')?.value.trim() || '',
+       checkboxes: [...li.querySelectorAll(':scope input[type=checkbox]')].map(checkbox => ({
+         checked: checkbox.checked,

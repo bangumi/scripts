@@ -1,5 +1,5 @@
---- timelineEpComment.user.js	2026-03-16 16:30:51.685356352 +0800
-+++ timelineEpComment.gadget.js	2026-03-22 21:13:58.644392680 +0800
+--- timelineEpComment.user.js	2026-03-23 17:02:44.428774846 +0800
++++ timelineEpComment.gadget.js	2026-03-29 09:31:56.354082461 +0800
 @@ -13,17 +13,12 @@
  // @match        https://bgm.tv/user/*/timeline*
  // @match        https://chii.in/user/*/timeline*

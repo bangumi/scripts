@@ -1,5 +1,5 @@
---- subjectEpComment.user.js	2026-03-16 16:31:58.209355554 +0800
-+++ subjectEpComment.gadget.js	2026-03-22 21:15:57.440390922 +0800
+--- subjectEpComment.user.js	2026-03-23 17:02:44.428774846 +0800
++++ subjectEpComment.gadget.js	2026-03-29 09:31:56.050082452 +0800
 @@ -9,15 +9,11 @@
  // @match        http*://bgm.tv/*
  // @match        http*://chii.in/*
@@ -16,7 +16,7 @@
  (async function () {
  
    const colors = {
-@@ -142,23 +138,16 @@
+@@ -141,23 +137,16 @@
    refreshStyle();
    document.head.appendChild(style);
  
@@ -50,7 +50,7 @@
    }
  
    async function getHiddenEps(subjectID) {
-@@ -245,8 +234,6 @@
+@@ -244,8 +233,6 @@
  
    const saveRepliesHTMLFromDOM = saveRepliesHTML((reply) => reply.querySelector('.message').innerHTML.trim());
  
@@ -59,7 +59,7 @@
    // 章节讨论页
    if (location.pathname.startsWith('/ep')) {
      let replies = getRepliesFromDOM(document);
-@@ -628,9 +615,9 @@
+@@ -627,9 +614,9 @@
            return;
          } else if (shouldFetch(epData)) {
            try {
@@ -72,7 +72,7 @@
              onSuccess(epData, comments);
            } catch (error) {
              console.error(`Failed to fetch ${epElem.href}:`, error);
-@@ -648,9 +635,9 @@
+@@ -647,9 +634,9 @@
  
        tasks.push(async () => {
          try {

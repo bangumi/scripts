@@ -13,15 +13,14 @@
   'use strict';
 
   // 添加搜索面板
-  const panelHtml = `
-        <div class="SidePanel png_bg clearit">
-            <h2 align="left">乘坐时光机</h2>
-            <div style="margin-top: 10px; display: flex; align-items: center;">
-                <input id="mySearchInput" value="" class="searchInputL" type="text" style="min-width:60px; padding:0px 7px; height:26px;" placeholder="页码">
-                <input id="mySearchBtn" class="searchBtnL" title="Search" value="跳" type="button" style="margin-left: 8px; height:30px; padding:0px 9px; cursor:pointer;">
-            </div>
-        </div>
-    `;
+  const panelHtml = /* html */`
+  <div class="SidePanel png_bg clearit">
+    <h2 align="left">乘坐时光机</h2>
+    <div style="margin-top: 10px; display: flex; align-items: center;">
+      <input id="mySearchInput" value="" class="searchInputL" type="text" style="min-width:60px; padding:0px 7px; height:26px;" placeholder="页码">
+      <input id="mySearchBtn" class="searchBtnL" title="Search" value="跳" type="button" style="margin-left: 8px; height:30px; padding:0px 9px; cursor:pointer;">
+    </div>
+  </div>`;
   $('#columnTimelineB').append(panelHtml);
 
   // 添加按钮点击事件

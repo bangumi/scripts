@@ -1,5 +1,5 @@
---- wikiRelDiff.user.js	2026-03-16 16:26:03.025354852 +0800
-+++ wikiRelDiff.gadget.js	2026-03-22 21:09:51.372390864 +0800
+--- wikiRelDiff.user.js	2026-03-23 15:30:01.908777825 +0800
++++ wikiRelDiff.gadget.js	2026-03-29 09:31:57.302082487 +0800
 @@ -40,6 +40,24 @@
    const hasHistory = document.querySelector('.groupsLine [href*="?undo="]');
    if (!hasHistory) return;
@@ -25,7 +25,7 @@
    // 字段中文映射
    const FIELD_MAPPING = {
      'name': '名称',
-@@ -511,7 +529,8 @@
+@@ -510,7 +528,8 @@
          fileListToggle: false,
          fileContentToggle: false,
          colorScheme: theme === 'dark' ? 'dark' : 'light',
