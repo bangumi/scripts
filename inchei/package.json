@@ -12,16 +12,12 @@
     "patch": "sh -c 'patch -p1 -i patches/$1.gadget.patch -o $1.gadget.js $1.user.js' _",
     "diff:all": "sh -c 'mkdir -p patches && for gadgetFile in *.gadget.js; do baseName=$(basename \"$gadgetFile\" .gadget.js); userFile=\"$baseName.user.js\"; [ -f \"$userFile\" ] && pnpm run diff \"$baseName\"; done' _",
     "patch:all": "sh -c 'for patchFile in patches/*.gadget.patch; do baseName=$(basename \"$patchFile\" .gadget.patch); pnpm run patch \"$baseName\"; done' _",
-    "lint": "eslint . && stylelint .",
-    "lint:fix": "eslint . --fix && stylelint . --fix",
-    "publish:gadget": "npm run patch:all && node scripts/publish-gadget.mjs",
-    "publish:gf": "npm run version && git push",
-    "publish:all": "npm run publish:gadget && npm run publish:gf"
+    "lint": "eslint . && stylelint *.user.js",
+    "lint:fix": "eslint . --fix && stylelint *.user.js --fix",
+    "gadget": "sh -c 'npm run patch $1 && node scripts/publish-gadget.mjs $1' _",
+    "gadget:all": "npm run patch:all && node scripts/publish-gadget.mjs",
+    "push": "npm run version && git push"
   },
-  "pre-commit": [
-    "readme",
-    "lint"
-  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
@@ -35,7 +31,6 @@
     "eslint-plugin-userscripts": "^0.5.6",
     "globals": "^17.4.0",
     "postcss-styled-syntax": "^0.7.1",
-    "pre-commit": "^1.2.2",
     "stylelint": "^17.5.0",
     "stylelint-config-recommended": "^17.0.0",
     "stylelint-plugin-use-baseline": "^1.4.1",

@@ -32,6 +32,9 @@ export default defineConfig([
       'keyword-spacing': 'error',
       'brace-style': 'error',
       'no-trailing-spaces': 'error',
+      'eol-last': 'error',
+      'object-curly-spacing': ['error', 'always'],
+      'key-spacing': 'error',
     }
   },
   { files: ['**/*.js'], languageOptions: { sourceType: 'script' } },

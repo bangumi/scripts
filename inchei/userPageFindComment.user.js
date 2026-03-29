@@ -110,41 +110,41 @@
   searchInputs.append(searchSelect, input, searchBtn, dataBtn);
   dataPanel.append(dataResult);
   searchSelect.innerHTML = `<option value="all">全部</option>
-                              <option value="2">动画</option>
-                              <option value="1">书籍</option>
-                              <option value="4">游戏</option>
-                              <option value="3">音乐</option>
-                              <option value="6">三次元</option>`;
+                            <option value="2">动画</option>
+                            <option value="1">书籍</option>
+                            <option value="4">游戏</option>
+                            <option value="3">音乐</option>
+                            <option value="6">三次元</option>`;
   inner.style = `display: flex;
-                   flex-wrap: wrap;`;
+                 flex-wrap: wrap;`;
   searchPanel.style.flex = '0 1 300px';
   dataPanel.style.flex = '1 1 200px';
   searchInputs.style = `width: fit-content;
-                          border-radius: 100px;
-                          box-shadow: none;
-                          border: 1px solid rgba(200, 200, 200, 0.5);
-                          background-color: rgba(255, 255, 255, 0.2);`;
+                        border-radius: 100px;
+                        box-shadow: none;
+                        border: 1px solid rgba(200, 200, 200, 0.5);
+                        background-color: rgba(255, 255, 255, 0.2);`;
   searchSelect.style = `font-size: 1em;
-                          padding: 4px 0 4px 5px;
-                          width: fit-content;
-                          border: none;
-                          outline: none;
-                          box-shadow: none;
-                          background-color: transparent;
-                          background-image: none;
-                          -webkit-appearance: none;
-                          -moz-appearance: none;
-                          appearance: none;
-                          border-radius: 0;
-                          border-right: 1px solid rgba(200, 200, 200, 0.5)`;
+                        padding: 4px 0 4px 5px;
+                        width: fit-content;
+                        border: none;
+                        outline: none;
+                        box-shadow: none;
+                        background-color: transparent;
+                        background-image: none;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        appearance: none;
+                        border-radius: 0;
+                        border-right: 1px solid rgba(200, 200, 200, 0.5)`;
   input.style = `font-size: 1em;
-                   width: 120px;
-                   -webkit-appearance: none;
-                   -moz-appearance: none;
-                   box-shadow: none;
-                   background: transparent;
-                   line-height: 20px;
-                   border: none;`;
+                 width: 120px;
+                 -webkit-appearance: none;
+                 -moz-appearance: none;
+                 box-shadow: none;
+                 background: transparent;
+                 line-height: 20px;
+                 border: none;`;
 
   synchronize.after(frag);
 
@@ -178,10 +178,10 @@
     btn.href = 'javascript:;';
     btn.innerText = text;
     btn.style = `white-space: nowrap;
-                     border: none;
-                     border-left: 1px solid rgba(200, 200, 200, 0.5);
-                     padding: 4px 5px;
-                     cursor: pointer`;
+                 border: none;
+                 border-left: 1px solid rgba(200, 200, 200, 0.5);
+                 padding: 4px 5px;
+                 cursor: pointer`;
     return btn;
   }
 
@@ -200,16 +200,17 @@
     return list.reduce((m, { id, type, images, name, name_cn }) => {
       type = ['书籍', '动画', '音乐', '游戏', '', '三次元'][type - 1];
       const grid = images?.grid;
-      m += `<li class="clearit">
-                    <a href="/subject/${id}" class="avatar h">
-                      ${grid ? `<img src="${grid}" class="avatar ll">` : ''}
-                    </a>
-                    <div class="inner">
-                      <small class="grey rr">${type}</small>
-                      <p><a href="/subject/${id}" class="avatar h">${name}</a></p>
-                      <small class="tip">${name_cn}</small>
-                    </div>
-                  </li>`;
+      m += /* html */`
+        <li class="clearit">
+          <a href="/subject/${id}" class="avatar h">
+            ${grid ? `<img src="${grid}" class="avatar ll">` : ''}
+          </a>
+          <div class="inner">
+            <small class="grey rr">${type}</small>
+            <p><a href="/subject/${id}" class="avatar h">${name}</a></p>
+            <small class="tip">${name_cn}</small>
+          </div>
+        </li>`;
       return m;
     }, '');
   }
@@ -307,40 +308,35 @@
     const { rate, subject_type, type, comment, updated_at, ep_status, vol_status, subject } = data;
     const { id, name, name_cn, volumes, eps } = subject;
     const verb = ['读', '看', '听', '玩', '', '看'][subject_type - 1];
-    const html = `<li id="item_${id}" class="item even clearit" style="list-style: none;">
-                        <div class="inner" style="margin-left: 10px">
-                        <h3>
-                          ${name_cn ? `<a href="/subject/${id}" class="l">${name_cn}</a> <small class="grey">${name}</small>`
-    : `<a href="/subject/${id}" class="l">${name}</a>`
-  }
-                        </h3>
-                        <p class="collectInfo">
-                          ${rate ? `<span class="starstop-s"><span class="starlight stars${rate}"></span></span>`
-    : ''
-  }
-                          <span class="tip_j">${updated_at.slice(0, 10)}</span>
-                          <span class="tip_i">/</span>
-                          <span class="tip"> ${[`想${verb}`, `${verb}过`, `在${verb}`, '搁置', '抛弃'][type - 1]}</span>
-                          ${ep_status ? `
-                          <span class="tip_i">/</span>
-                          <span class="tip">
-                          ${ep_status}${eps ? ` / ${eps}` : ''}话
-                          </span>
-                          ` : ''}
-                          ${vol_status ? `
-                          <span class="tip_i">/</span>
-                          <span class="tip">
-                          ${vol_status}${eps ? ` / ${volumes}` : ''}卷
-                          </span>
-                          ` : ''}
-                        </p>
-                        ${comment ? `
-                          <div id="comment_box"><div class="item"><div class="text_main_even" style="float:none;width:unset">
-                            <div class="text"> ${comment}</div>
-                        <div class="text_bottom"></div>
-                      </div></div></div></div>
-                        ` : ''}
-                    </li>`;
+    const html = /* html */`
+    <li id="item_${id}" class="item even clearit" style="list-style: none;">
+      <div class="inner" style="margin-left: 10px">
+      <h3>
+        ${name_cn ? `<a href="/subject/${id}" class="l">${name_cn}</a> <small class="grey">${name}</small>`
+    : `<a href="/subject/${id}" class="l">${name}</a>`}
+      </h3>
+      <p class="collectInfo">
+        ${rate ? `<span class="starstop-s"><span class="starlight stars${rate}"></span></span>` : ''}
+        <span class="tip_j">${updated_at.slice(0, 10)}</span>
+        <span class="tip_i">/</span>
+        <span class="tip"> ${[`想${verb}`, `${verb}过`, `在${verb}`, '搁置', '抛弃'][type - 1]}</span>
+        ${ep_status ? `
+        <span class="tip_i">/</span>
+        <span class="tip">
+        ${ep_status}${eps ? ` / ${eps}` : ''}话
+        </span>` : ''}
+        ${vol_status ? `
+        <span class="tip_i">/</span>
+        <span class="tip">
+        ${vol_status}${eps ? ` / ${volumes}` : ''}卷
+        </span>` : ''}
+      </p>
+      ${comment ? /* html */`
+      <div id="comment_box"><div class="item"><div class="text_main_even" style="float:none;width:unset">
+        <div class="text"> ${comment}</div>
+      <div class="text_bottom"></div>
+      </div></div></div></div>` : ''}
+  </li>`;
     container.innerHTML = html;
   }
 })();

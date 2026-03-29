@@ -174,12 +174,12 @@
       anchorSelector: '.bi_title',
       detailsSelector: '.bi_c',
       fields: {
-        '版本名': ({doc}) => {
+        '版本名': ({ doc }) => {
           const title = utils.getText('#ContentPlaceHolder1_CBookName', doc);
           const seq = utils.getText('#ContentPlaceHolder1_SEQ', doc);
           return seq ? `${title} ${seq}` : title;
         },
-        '价格': ({doc}) => {
+        '价格': ({ doc }) => {
           const price = utils.getText('#ContentPlaceHolder1_Price', doc).replace(/\D/g, '');
           return price ? `NT$${price}` : '';
         },
@@ -194,7 +194,7 @@
       anchorSelector: '#product .product_info .product_content .product_title h1',
       detailsSelector: '#product .product_info .product_content .product_brief',
       fields: {
-        '价格': ({doc}) => utils.getText('#price_title del', doc) || utils.getText('#price_title', doc),
+        '价格': ({ doc }) => utils.getText('#price_title del', doc) || utils.getText('#price_title', doc),
         '出版社': '長鴻出版社',
         '发售日': /出版日期：\s*([^ \n]+)/,
         '页数': /頁數：\s*([^ \n]+)/,
@@ -209,7 +209,7 @@
         '价格': /定價\n\n *([^ ]+)/,
         '出版社': '台灣東販',
         '发售日': /出版日期\n\n +([^ ]+)/,
-        '页数': ({doc}) => utils.getByRegex(utils.getText('#menu3', doc), /頁數：(\d+)頁/),
+        '页数': ({ doc }) => utils.getByRegex(utils.getText('#menu3', doc), /頁數：(\d+)頁/),
         'ISBN': /ISBN\n\n *([^ ]+)/,
         '译者': /譯者\n\n *([^ ]+)/,
       }
@@ -219,7 +219,7 @@
       anchorSelector: '.Product-title',
       detailsSelector: '.Product-summary',
       fields: {
-        '价格': ({doc}) => utils.getText('.price-regular.js-price', doc) || utils.getText('.js-price', doc),
+        '价格': ({ doc }) => utils.getText('.price-regular.js-price', doc) || utils.getText('.js-price', doc),
         '出版社': '台灣角川',
         '发售日': /上市日期：\s*([^ ]+)/,
         'ISBN': /ISBN：\s*([^ ]+)/,
@@ -230,7 +230,7 @@
       anchorSelector: '.productTitle .title',
       detailsSelector: '.linebox',
       fields: {
-        '价格': ({doc}) => {
+        '价格': ({ doc }) => {
           const priceEl = doc.querySelector('.pricebox.line .font-red');
           if (!priceEl) return '';
 
@@ -257,7 +257,7 @@
       anchorSelector: '.salepage-title',
       detailsSelector: '.salepage-short-description',
       fields: {
-        '价格': ({doc}) => utils.getText('.salepage-suggestprice', doc),
+        '价格': ({ doc }) => utils.getText('.salepage-suggestprice', doc),
         '出版社': '尖端出版',
         '发售日': /上市日：\s*([^ ]+)/,
         'ISBN': /條　碼：\s*([^ ]+)/,
@@ -269,12 +269,12 @@
       anchorSelector: '.product_title',
       detailsSelector: '.woocommerce-product-details__short-description',
       fields: {
-        '价格': ({detailsText}) => {
+        '价格': ({ detailsText }) => {
           const priceNum = utils.getByRegex(detailsText, /售價：\s*[^0-9]*(\d+)/);
           return priceNum ? `HK$${priceNum}` : '';
         },
         '出版社': '玉皇朝',
-        '发售日': ({doc}) => {
+        '发售日': ({ doc }) => {
           const metaEl = doc.querySelector('meta[property="article:modified_time"]');
           const dateStr = metaEl?.content || '';
           const match = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
@@ -288,11 +288,11 @@
       anchorSelector: 'h1',
       detailsSelector: '#info',
       fields: {
-        '语言': ({detailsText}) => {
+        '语言': ({ detailsText }) => {
           const price = utils.getByRegex(detailsText, /定价:\s*([^ ]+)/).replace('元', '');
           return (price.includes('NT') || price.includes('HK')) ? '繁体中文' : '简体中文';
         },
-        '价格': ({detailsText}) => {
+        '价格': ({ detailsText }) => {
           let price = utils.getByRegex(detailsText, /定价:\s*([^ ]+)/).replace('元', '');
           if (price && !/[$¥￥]/.test(price)) {
             price = '¥' + price;
@@ -313,11 +313,11 @@
       detailsSelector: '.messbox_info',
       fields: {
         '语言': '简体中文',
-        '价格': ({doc}) => utils.getText('#original-price', doc) || utils.getText('#dd-price', doc),
+        '价格': ({ doc }) => utils.getText('#original-price', doc) || utils.getText('#dd-price', doc),
         '出品方': /，([^，]+)出品/,
         '出版社': /出版社:\s*([^ \n]+)/,
         '发售日': /出版时间:\s*([^ \n]+)/,
-        'ISBN': ({doc}) => {
+        'ISBN': ({ doc }) => {
           const detail = utils.getText('#detail_describe', doc);
           const isbn = utils.getByRegex(detail, /ISBN：([^ \n]+)/);
           return isbn;
@@ -330,18 +330,18 @@
       anchorSelector: '#p-author',
       detailsSelector: '.goods-base',
       fields: {
-        '版本名': ({doc}) => {
+        '版本名': ({ doc }) => {
           return doc.querySelector('.item.selected')?.dataset.value
                     || doc.querySelector('.sku-title-name')?.textContent || '';
         },
         '语言': '简体中文',
-        '价格': ({doc}) => utils.getText('#page_hx_price', doc) || utils.getText('.p_price', doc),
+        '价格': ({ doc }) => utils.getText('#page_hx_price', doc) || utils.getText('.p_price', doc),
         '出品方': /品牌\s*([^ ]+)/,
         '出版社': /出版社\s*([^ ]+)/,
         '页数': /页数\s*([^ ]+)/,
         '发售日': /出版时间\s*([^ ]+)/,
         'ISBN': /ISBN\s*([^ ]+)/,
-        '译者': ({anchorEl}) => {
+        '译者': ({ anchorEl }) => {
           const authors = utils.getText(anchorEl);
           return utils.getByRegex(authors, /，(.+)译/);
         },
@@ -352,12 +352,12 @@
       anchorSelector: '[class^="subTitleInnerWrap"]',
       detailsSelector: '.paramsInfoArea',
       fields: {
-        '版本名': ({detailsText}) => {
+        '版本名': ({ detailsText }) => {
           const title = utils.getByRegex(detailsText, /书名\n([^\n]+)/);
           return title;
         },
         '语言': '简体中文',
-        '价格': ({detailsText}) => {
+        '价格': ({ detailsText }) => {
           const priceNum = utils.getByRegex(detailsText, /定价\n([^\n]+)/).replace('元', '');
           return priceNum ? `￥${priceNum}` : '';
         },
@@ -374,13 +374,13 @@
       anchorSelector: '.table_wrap div > span:first-child',
       detailsSelector: '.table_data',
       fields: {
-        '版本名': ({detailsText}) => {
+        '版本名': ({ detailsText }) => {
           const title = utils.getByRegex(detailsText, /正书名\n([^\n]+)/);
           const num = utils.getByRegex(detailsText, /分册号\n([^\n]+)/);
           return `${title}${num ? ` ${num}` : ''}`;
         },
         '语言': '简体中文',
-        '价格': ({detailsText}) => {
+        '价格': ({ detailsText }) => {
           const priceNum = utils.getByRegex(detailsText, /定价（元）\n([^\n]+)/);
           return priceNum ? `￥${priceNum}` : '';
         },
@@ -395,20 +395,20 @@
       anchorSelector: '.pdname_basic',
       detailsSelector: '.beta_main',
       fields: {
-        '价格': ({doc}) => {
+        '价格': ({ doc }) => {
           const price = utils.getText('.sty00', doc) || utils.getText('.sty2', doc);
           return price ? `NT$${price}` : '';
         },
-        '出版社': ({detailsText}) => {
+        '出版社': ({ detailsText }) => {
           const press = utils.getByRegex(detailsText, /出版社：\s*([^ ]+)/);
           return pressFullName[press] || press;
         },
-        '页数': ({doc}) => {
+        '页数': ({ doc }) => {
           const subDetails = utils.getText('.detaildatafield', doc);
           return utils.getByRegex(subDetails, /頁數\s*([^ ]+)/);
         },
         '发售日': /出版日：\s*([^ ]+)/,
-        'ISBN': ({doc}) => {
+        'ISBN': ({ doc }) => {
           const subDetails = utils.getText('.detaildatafield', doc);
           return utils.getByRegex(subDetails, /ISBN\s*([^ ]+)/);
         },
@@ -420,20 +420,20 @@
       anchorSelector: 'h1',
       detailsSelector: '.type02_p003',
       fields: {
-        '价格': ({doc}) => {
+        '价格': ({ doc }) => {
           const price = utils.getText('.prod_cont_b em', doc);
           return price ? `NT$${price}` : '';
         },
-        '出版社': ({detailsText}) => {
+        '出版社': ({ detailsText }) => {
           const press = utils.getByRegex(detailsText, /出版社：\s*([^ \n]+)/);
           return pressFullName[press] || press;
         },
         '发售日': /出版日期：\s*([^ \n]+)/,
-        'ISBN': ({doc}) => {
+        'ISBN': ({ doc }) => {
           const subDetails = utils.getText('.type02_m058', doc);
           return utils.getByRegex(subDetails, /ISBN：\s*([^ \n]+)/);
         },
-        '页数': ({doc}) => {
+        '页数': ({ doc }) => {
           const subDetails = utils.getText('.type02_m058', doc);
           return utils.getByRegex(subDetails, /(\d+)頁/);
         },
@@ -445,11 +445,11 @@
       anchorSelector: '.title3',
       detailsSelector: 'td[background^="Images/book/detail"] .txt2',
       fields: {
-        '价格': ({doc}) => {
+        '价格': ({ doc }) => {
           const price = utils.getText('.N23', doc);
           return price ? `NT$${price}` : '';
         },
-        '出版社': ({detailsText}) => {
+        '出版社': ({ detailsText }) => {
           const press = utils.getByRegex(detailsText, /出版社：\s*([^ \n]+)/);
           return pressFullName[press] || press;
         },
@@ -464,14 +464,14 @@
       anchorSelector: 'h1',
       detailsSelector: 'app-about-edition',
       fields: {
-        '出版社': ({detailsText}) => {
+        '出版社': ({ detailsText }) => {
           const press = utils.getByRegex(detailsText, /出版商\s*([^ \n]+)/);
           return pressFullName[press] || press;
         },
         '发售日': /發佈日期\s*([^ \n]+)/,
         '页数': /頁數\s*([^ \n]+)/,
         'ISBN': /ISBN-13\s*([^ \n]+)/,
-        '译者': ({doc}) => {
+        '译者': ({ doc }) => {
           const translator = utils.getText('.contributors', doc);
           return translator ? utils.getByRegex(translator, /譯者 ([^ \n]+)/) : '';
         },
@@ -482,13 +482,13 @@
       anchorSelector: 'h1',
       detailsSelector: '.ProdAttr',
       fields: {
-        '价格': ({doc}) => {
+        '价格': ({ doc }) => {
           const price = utils.getText('.Price div', doc);
           if (!price) return '';
           const priceText = utils.getByRegex(price, /定價\n：([^\n]+)/).replace('元', '').trim();
           return priceText || '';
         },
-        '出版社': ({detailsText}) => {
+        '出版社': ({ detailsText }) => {
           const press = utils.getByRegex(detailsText, /出版社：\s*([^ \n]+)/);
           return pressFullName[press] || press;
         },
@@ -543,7 +543,7 @@
       Object.entries(fields).map(([key, value]) => {
         let result;
         if (typeof value === 'function') {
-          result = value({detailsText, anchorEl, doc}) || '';
+          result = value({ detailsText, anchorEl, doc }) || '';
         } else if (value instanceof RegExp) {
           result = utils.getByRegex(detailsText, value);
         } else {

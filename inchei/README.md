@@ -176,7 +176,7 @@
 | Greasy Fork | [520607](https://greasyfork.org/zh-CN/scripts/520607) |
 | 组件 | [3438](https://bgm.tv/dev/app/3438) |
 
-## bangumi 自动生成编辑摘要 `0.5.6`
+## bangumi 自动生成编辑摘要 `0.6.0`
 自动生成Bangumi编辑摘要
 
 - 讨论页：https://bgm.tv/group/topic/433505

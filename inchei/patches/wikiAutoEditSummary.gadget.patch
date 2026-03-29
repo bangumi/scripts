@@ -1,14 +1,5 @@
 --- wikiAutoEditSummary.user.js	2026-03-17 17:00:45.310468133 +0800
-+++ wikiAutoEditSummary.gadget.js	2026-03-17 16:59:36.994475507 +0800
-@@ -2,7 +2,7 @@
- // @name         bangumi 自动生成编辑摘要
- // @namespace    https://bgm.tv/group/topic/433505
- // @homepage     https://bgm.tv/group/topic/433505
--// @version      0.6.0
-+// @version      0.5.6
- // @description  自动生成Bangumi编辑摘要
- // @author       You
- // @icon         https://bgm.tv/img/favicon.ico
++++ wikiAutoEditSummary.gadget.js	2026-03-23 16:42:14.120773882 +0800
 @@ -27,6 +27,22 @@
  (function () {
    'use strict';

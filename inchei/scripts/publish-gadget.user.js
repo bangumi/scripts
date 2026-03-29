@@ -50,7 +50,7 @@
     }
   }
 
-  if (!gadgets.length || !location.href.startsWith(gadgets[0].url)) return;
+  if (!gadgets.length || !location.pathname.startsWith(gadgets[0].url)) return;
 
   const gadget = gadgets[0];
 
