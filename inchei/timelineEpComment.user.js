@@ -151,6 +151,11 @@
         codeBlocks.push(content);
         return `\x01CODE_${codeBlocks.length - 1}_CODE\x01`;
       });
+      const p = [];
+      bbcode = bbcode.replace(/\[(img|url)(?:=[^\]]*)?\].*?\[\/(img|url)\]/g, m => `\x00${p.push(m)-1}\x00`)
+        .replace(/https?:\/\/[^\s[\]]+/g, '[url=$&]$&[/url]')
+      // eslint-disable-next-line no-control-regex
+        .replace(/\x00(\d+)\x00/g, (_, i) => p[i]);
       const gifIds = new Set([11, 23, 500, 501, 505, 515, 516, 517, 518, 519, 521, 522, 523]);
       bbcode = bbcode
         .replace(/\(bgm(\d+)\)/g, (_, n) => {
@@ -176,15 +181,10 @@
         .replace(/\[img(?:=(\d+),(\d+))?\]([^[]+)\[\/img\]/g, (_, w, h, url) =>
           `<img class="code" src="${url.trim()}" rel="noreferrer" referrerpolicy="no-referrer" alt="${url.trim()}" loading="lazy"${w && h ? ` width="${w}" height="${h}"` : ''}>`
         )
-        .replace(/\[photo\]([^[]+)\[\/photo\]/g, (_, c) =>
+        .replace(/\[photo(?:=\d+)?\]([^[]+)\[\/photo\]/g, (_, c) =>
           `<img class="code" src="//lain.bgm.tv/pic/photo/l/${c}" rel="noreferrer" referrerpolicy="no-referrer" alt="photo" loading="lazy">`
         )
         .replace(/\n/g, '<br>');
-      const p = [];
-      bbcode = bbcode.replace(/\[url(?:=[^\]]*)?\].*?\[\/url\]/g, m => `\x00${p.push(m)-1}\x00`)
-        .replace(/https?:\/\/[^\s[\]]+/g, '[url=$&]$&[/url]')
-        // eslint-disable-next-line no-control-regex
-        .replace(/\x00(\d+)\x00/g, (_, i) => p[i]);
     }
 
     if (depth >= maxDepth) return bbcode;
