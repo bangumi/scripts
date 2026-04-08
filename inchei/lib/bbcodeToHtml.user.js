@@ -165,9 +165,6 @@
         .replace(/\[photo\]([^[]+)\[\/photo\]/g, (_, c) =>
           `<img class="code" src="//lain.bgm.tv/pic/photo/l/${c}" rel="noreferrer" referrerpolicy="no-referrer" alt="photo" loading="lazy">`
         )
-        .replace(/\[code\]([^[]+)\[\/code\]/g, (_, c) =>
-          `<img class="code" src="//lain.bgm.tv/pic/photo/l/${c}" rel="noreferrer" referrerpolicy="no-referrer" alt="photo" loading="lazy">`
-        )
         .replace(/\n/g, '<br>');
       const p = [];
       bbcode = bbcode.replace(/\[url(?:=[^\]]*)?\].*?\[\/url\]/g, m => `\x00${p.push(m)-1}\x00`)
