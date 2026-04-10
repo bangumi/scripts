@@ -28,7 +28,7 @@ function findFilesByPrefix(prefix) {
   }
 
   const files = [];
-  const searchPatterns = ['.gadget.js', '.user.gadget.js'];
+  const searchPatterns = ['.gadget.js', '.user.gadget.js', '.user.js'];
 
   try {
     const allFiles = readdirSync(baseDir);

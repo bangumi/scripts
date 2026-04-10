@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 关联人物职位查询
 // @namespace    https://bangumi.tv
-// @version      0.1.4
+// @version      0.1.6
 // @description  在关联人物编辑页面快速查看人物最近参与的职位信息
 // @author       aaa
 // @match        https://bgm.tv/subject/*/add_related/person*
@@ -85,7 +85,6 @@
       flex-wrap: nowrap;
       margin-left: 5px;
       max-width: 70%;
-      overflow: hidden;
       align-items: center;
       gap: 5px;
     }
@@ -201,30 +200,42 @@
 
   // 关闭所有弹出层
   const closeAllPopups = () => {
-    currentPopup?.remove();
-    currentPopup = null;
+    if (currentPopup) {
+      document.body.removeChild(currentPopup);
+      currentPopup = null;
+    }
+    // 移除全局点击事件（关键！）
     document.removeEventListener('click', closeAllPopups);
   };
 
   // 显示职位详情弹出层
   const showPositionPopup = (positions, targetElement) => {
+    // 先关闭已有弹窗
     closeAllPopups();
 
+    // 创建弹窗
     const popup = document.createElement('div');
     popup.className = 'position-popup';
     popup.innerHTML = `<ul>${positions.map(pos =>
       `<li>${pos.name} (${pos.count}次)</li>`
     ).join('')}</ul>`;
 
-    const { left, bottom } = targetElement.getBoundingClientRect();
-    popup.style.left = `${left}px`;
-    popup.style.top = `${bottom + 5}px`;
+    // 正确计算定位（解决滚动错位）
+    const rect = targetElement.getBoundingClientRect();
+    popup.style.left = `${rect.left + window.scrollX}px`;
+    popup.style.top = `${rect.bottom + window.scrollY + 5}px`;
 
+    // 添加到页面
     document.body.appendChild(popup);
     currentPopup = popup;
 
-    setTimeout(() => document.addEventListener('click', closeAllPopups), 100);
-    popup.addEventListener('click', e => e.stopPropagation());
+    // 点击弹窗内部不关闭
+    popup.addEventListener('click', (e) => e.stopPropagation());
+
+    // 绑定一次全局点击关闭（关键：只绑定一次）
+    setTimeout(() => {
+      document.addEventListener('click', closeAllPopups);
+    }, 0);
   };
 
   // 移除单个人物的查询按钮
@@ -285,7 +296,7 @@
     // 创建标签容器
     const tagsContainer = document.createElement('div');
     tagsContainer.className = 'position-tags';
-    titleElement.appendChild(tagsContainer);
+    titleElement.after(tagsContainer);
 
     // 获取下拉框信息
     const liElement = titleElement.closest('li');
@@ -426,9 +437,9 @@
     const titleElement = item.querySelector('p.title');
     // 跳过已处理或有错误的条目
     if (!titleElement ||
-            titleElement.querySelector('.position-single-btn') ||
-            titleElement.querySelector('.position-tags') ||
-            titleElement.querySelector('.position-indicator.error')) {
+            item.querySelector('.position-single-btn') ||
+            item.querySelector('.position-tags') ||
+            item.querySelector('.position-indicator.error')) {
       return;
     }
 
@@ -484,7 +495,7 @@
         const personId = getPersonId(link);
         if (!personId) continue;
 
-        if (titleElement.querySelector('.position-tags')) continue;
+        if (item.querySelector('.position-tags')) continue;
 
         await fetchPersonPosition(personId, titleElement);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -529,7 +540,7 @@
         const personId = getPersonId(link);
         if (!personId) continue;
 
-        if (titleElement.querySelector('.position-tags')) continue;
+        if (item.querySelector('.position-tags')) continue;
 
         await fetchPersonPosition(personId, titleElement);
         await new Promise(resolve => setTimeout(resolve, 1000));

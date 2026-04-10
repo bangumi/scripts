@@ -1,5 +1,5 @@
 --- timelineEpComment.user.js	2026-03-23 17:02:44.428774846 +0800
-+++ timelineEpComment.gadget.js	2026-03-29 09:31:56.354082461 +0800
++++ timelineEpComment.gadget.js	2026-04-07 22:52:33.545845288 +0800
 @@ -13,17 +13,12 @@
  // @match        https://bgm.tv/user/*/timeline*
  // @match        https://chii.in/user/*/timeline*
@@ -187,7 +187,7 @@
 +
 +  function getTietieFromDom(postId, dom) {
 +    const PRE = 22; /* "var data_likes_list = ".length */
-+    let data_likes_list = dom.querySelector('#likes_reaction_grid_item + script').textContent.trim();
++    let data_likes_list = dom.querySelector('#likes_reaction_grid_item + script').split('\n')[0].textContent.trim();
 +    if (data_likes_list) {
 +      data_likes_list = data_likes_list.slice(PRE, -1);
 +      return JSON.parse(data_likes_list)[postId];

@@ -1,14 +1,5 @@
---- wikiAutoEditSummary.user.js	2026-03-23 17:02:44.428774846 +0800
-+++ wikiAutoEditSummary.gadget.js	2026-03-29 10:40:47.693125340 +0800
-@@ -2,7 +2,7 @@
- // @name         bangumi 自动生成编辑摘要
- // @namespace    https://bgm.tv/group/topic/433505
- // @homepage     https://bgm.tv/group/topic/433505
--// @version      0.6.0
-+// @version      0.6.1
- // @description  自动生成Bangumi编辑摘要
- // @author       You
- // @icon         https://bgm.tv/img/favicon.ico
+--- wikiAutoEditSummary.user.js	2026-04-06 10:08:31.832177130 +0800
++++ wikiAutoEditSummary.gadget.js	2026-04-06 10:10:00.056178374 +0800
 @@ -27,6 +27,22 @@
  (function () {
    'use strict';
@@ -138,7 +129,7 @@
      }
  
      if (editSummaryInput && changes.length) {
-@@ -336,10 +396,11 @@
+@@ -332,10 +392,11 @@
    }
  
    function genFieldChanges(oldData, newData) {
@@ -151,7 +142,7 @@
  
      for (const key of oldData.keys()) {
        const newKey = getNewKey(oldData, newData, key);
-@@ -397,7 +458,7 @@
+@@ -393,7 +454,7 @@
                }
              }
            }
@@ -160,7 +151,7 @@
          }
        }
      }
-@@ -502,11 +563,15 @@
+@@ -486,11 +547,15 @@
    }
    // #endregion
  
@@ -175,5 +166,5 @@
 -      type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
 +      type: getRelType(li),
        remark: li.querySelector('input[type=text]')?.value.trim() || '',
-       checkboxes: [...li.querySelectorAll(':scope input[type=checkbox]')].map(checkbox => ({
+       checkboxes: [...li.querySelectorAll(':scope .tip input[type=checkbox]')].map(checkbox => ({
          checked: checkbox.checked,

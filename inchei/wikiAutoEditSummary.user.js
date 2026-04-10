@@ -2,7 +2,7 @@
 // @name         bangumi 自动生成编辑摘要
 // @namespace    https://bgm.tv/group/topic/433505
 // @homepage     https://bgm.tv/group/topic/433505
-// @version      0.6.0
+// @version      0.6.2
 // @description  自动生成Bangumi编辑摘要
 // @author       You
 // @icon         https://bgm.tv/img/favicon.ico
@@ -299,18 +299,14 @@
   }
 
   function genWcodeChanges(oldWcode, newWcode) {
-    const [oldData, oldEmptyCounts] = parseWcode(oldWcode);
-    const [newData, newEmptyCounts] = parseWcode(newWcode);
+    const oldData = parseWcode(oldWcode);
+    const newData = parseWcode(newWcode);
 
     const oldMultiData = getMultiData(oldData);
     const newMultiData = getMultiData(newData);
 
     const getMultiKeySum = multiKV => `（${[...multiKV.keys()].join('、')}）`;
     const multiKeyChanges = [];
-    if (oldEmptyCounts !== newEmptyCounts) {
-      multiKeyChanges.push('清理空字段');
-    }
-
     for (const [key, oldMulti] of oldMultiData) {
       if (newMultiData.has(key)) {
         const subChanges = genFieldChanges(oldMulti, newMultiData.get(key));
@@ -419,7 +415,6 @@
 
   function parseWcode(wcode) {
     const result = new Map();
-    let emptyCounts = 0;
     const lines = wcode.split('\n').map(l => l.trim().replace(/^[|[]/, '').replace(/]$/, ''))
       .filter(l => !['', '{{', '}}'].includes(l));
 
@@ -430,9 +425,6 @@
       if (line.endsWith('={')) { // 多值字段开始
         currentKey = line.replace('={', '').trim();
         inMultiValue = true;
-        if (result.has(currentKey)) {
-          emptyCounts += 1;
-        }
         result.set(currentKey, new Map());
         continue;
       }
@@ -451,15 +443,11 @@
         const trimmedSubkey = subKey.trim();
         if (trimmedSubkey) {
           const parentMap = result.get(currentKey);
-          if (parentMap.has(trimmedSubkey)) {
-            emptyCounts += 1;
-          } else if (subValue) {
+          if (subValue) {
             parentMap.set(trimmedSubkey, subValue);
           } else if (!subValueParts.length) { // 纯值子段
             parentMap.set(trimmedSubkey, null);
-          } else { // 无值但有 | 的无效字段
-            emptyCounts += 1;
-          }
+          } // 无值但有 | 的无效字段
           continue;
         }
       }
@@ -468,16 +456,12 @@
         const [key, ...valueParts] = line.split('=');
         const value = valueParts.join('=').trim();
         if (key.trim() && value) {
-          if (value) {
-            result.set(key.trim(), value);
-          } else {
-            emptyCounts += 1;
-          }
+          result.set(key.trim(), value);
         }
       }
     }
 
-    return [result, emptyCounts];
+    return result;
   }
   // #endregion
 
@@ -508,7 +492,7 @@
       infoName: li.querySelector('.info a')?.textContent || '',
       type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
       remark: li.querySelector('input[type=text]')?.value.trim() || '',
-      checkboxes: [...li.querySelectorAll(':scope input[type=checkbox]')].map(checkbox => ({
+      checkboxes: [...li.querySelectorAll(':scope .tip input[type=checkbox]')].map(checkbox => ({
         checked: checkbox.checked,
         title: checkbox.previousElementSibling.textContent.slice(0, -1).trim() || ''
       })),
