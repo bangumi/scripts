@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Bangumi多页面内容屏蔽
 // @namespace   tv.bgm.cedar.bangumicontentblacklist
-// @version     2.4
+// @version     2.5
 // @description 根据指定关键词或ID屏蔽首页热门条目, 小组讨论
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/$/
@@ -1684,7 +1684,7 @@ async function main() {
     let idui = await idconfigui.getConfigUI();
     let kwui = await kwconfigui.getConfigUI();
     let ui = createElement('div', {id: 'content-blacklist'}, [idui, kwui]);
-    document.getElementById("columnA").appendChild(ui);
+    document.getElementById("columnSearchB").appendChild(ui);
   }
 }
 
