@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         班固米右上角快速搜索
 // @namespace    https://bgm.tv/group/topic/409735
-// @version      0.1.11
+// @version      0.1.13
 // @description  右上角搜索框输入文字后快速显示部分搜索结果
 // @author       mov
 // @icon         https://bgm.tv/img/favicon.ico
@@ -143,7 +143,7 @@
 
   function isNativeCat() {
     const type = siteSearchSelect.value;
-    return ['all', 'prsn', 'crt', 'person'].includes(type) || !isNaN(+type);
+    return ['all', 'prsn', 'crt', 'person'].includes(type) || !Number.isNaN(+type);
   }
 
   function hideBox() {
@@ -253,17 +253,30 @@
     return result?.data;
   };
 
-  const searchSubject = async (keyword, type = '') => { // 旧API结果为空时发生CORS错误，但新API搜索结果不准确，仍用旧API
+  const searchSubject = (type = '') => async (keyword) => { // 旧API结果为空时发生CORS错误，但新API搜索结果不准确，仍用旧API
     const url = `https://api.bgm.tv/search/subject/${encodeURIComponent(keyword)}?type=${type}`;
     const result = await fetchGet(url);
     return result?.list;
   };
-    // const searchSubject = (keyword, type) => postSearch('subjects', keyword, { type: [+type].filter(a => a) });
+  // const searchSubject = (type = '') => keyword => postSearch('subjects', keyword, { type: [+type].filter(a => a) });
   const searchPrsn = keyword => postSearch('persons', keyword);
   const searchCrt = keyword => postSearch('characters', keyword);
   const searchPrsnCrt = async (keyword) => {
     const [prsn, crt] = await Promise.all([searchPrsn(keyword), searchCrt(keyword)]);
     return !prsn ? crt : !crt ? prsn : [...prsn, ...crt];
+  };
+
+  const searchMethods = type => {
+    if (!Number.isNaN(+type)) {
+      if (type === '5') return searchSubject(); // 兼容分类突破限制
+      return searchSubject(type);
+    }
+    return ({
+      all: searchClass === 'subject_search' ? searchSubject() : searchPrsnCrt,
+      person: searchPrsnCrt,
+      prsn: searchPrsn,
+      crt: searchCrt
+    })[type];
   };
 
   async function fetchSearchSuggestions(keyword, requestId) {
@@ -273,19 +286,13 @@
     overlay.style.display = 'block';
 
     const type = siteSearchSelect.value;
-    const data = searchClass === 'subject_search'
-      ? type === 'person' ? await searchPrsnCrt(keyword)
-        : await searchSubject(keyword, type)
-      : type === 'all' ? await searchPrsnCrt(keyword)
-        : type === 'prsn' ? await searchPrsn(keyword)
-          : await searchCrt(keyword);
+    const searchMethod = searchMethods(type);
+    if (!searchMethod) return;
+    const data = await searchMethod(keyword);
 
     if (requestId === currentRequestId) { // 如果请求ID不匹配，直接返回
       if (data) {
-        const cat = searchClass === 'subject_search'
-          ? type === 'person' ? 'person' : 'subject'
-          : type === 'prsn' ? 'person' : 'character';
-        renderList(data, cat);
+        renderList(data);
       } else {
         suggestionBox.innerHTML = '<div id="errorMessage">搜索失败</div>';
         suggestionBox.style.display = 'block';
@@ -294,7 +301,7 @@
     overlay.style.display = 'none';
   }
 
-  function renderList(data, cat) {
+  function renderList(data) {
     selectedIndex = -1; // 重置选中索引
 
     if (data.length === 0) {
@@ -303,10 +310,11 @@
     }
 
     const html = /* html */`<ul id="subjectList" class="subjectList ajaxSubjectList">
-        ${data.reduce((m, { id, type, images, name,
-    name_cn, career, infobox }) => {
+        ${data.reduce((m, { id, type, images, name, name_cn,
+    air_date, /* subject only */
+    career, infobox /* mono only */ }) => {
     name_cn ??= infobox?.find(({ key }) => key === '简体中文名')?.value;
-    if (cat !== 'subject') cat = career ? 'person' : 'character';
+    const cat = air_date !== undefined ? 'subject' : career ? 'person' : 'character';
     type = cat === 'subject' ? ['书籍', '动画', '音乐', '游戏', '', '三次元'][type - 1]
       : career ? '现实人物' : '虚拟角色';
     const grid = cat === 'subject' ? images?.grid : images?.grid.replace('/g/', '/s/');
