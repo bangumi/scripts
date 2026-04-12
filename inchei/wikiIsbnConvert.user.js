@@ -68,7 +68,7 @@
     const [year, month, day] = cleanDate.split('-').map(item => item.trim());
 
     // 基础校验：必须有年、月、日三个部分，且年份为4位数字
-    if (!year || !month || !day || year.length !== 4 || isNaN(year) || isNaN(month) || isNaN(day)) {
+    if (!year || !month || !day || year.length !== 4 || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
       return null;
     }
 
@@ -98,7 +98,7 @@
     if (!numMatch) return null;
     // 去除千位分隔符并转换为纯数字
     const cleanNum = numMatch[0].replace(/,/g, '');
-    if (isNaN(cleanNum) || cleanNum.length === 0) return null;
+    if (Number.isNaN(cleanNum) || cleanNum.length === 0) return null;
     return `JP¥${cleanNum}`;
   }
 

@@ -763,7 +763,7 @@
     const li = relatingEditor.firstChild;
     const select = li.querySelector('select');
     data.type && (select.value = data.type);
-    if (!isNaN(data.order)) {
+    if (!Number.isNaN(data.order)) {
       if (!document.querySelector('#modifyOrder')) return;
       let sort = li.querySelector('.item_sort');
       if (!sort) {

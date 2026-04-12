@@ -322,8 +322,8 @@
           const valB = b[typeField];
 
           // 判断是否为数字（排除NaN的情况）
-          const isNumberA = typeof valA === 'number' && !isNaN(valA);
-          const isNumberB = typeof valB === 'number' && !isNaN(valB);
+          const isNumberA = typeof valA === 'number' && !Number.isNaN(valA);
+          const isNumberB = typeof valB === 'number' && !Number.isNaN(valB);
 
           if (isNumberA && isNumberB) {
             // 都是数字，用减法比较

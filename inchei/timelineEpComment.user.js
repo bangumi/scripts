@@ -530,7 +530,7 @@
       const progText = subjectOrEpLink.nextSibling;
       const progTextFrag = progText.textContent.split(' ');
       const epNum = +progTextFrag[1];
-      if (isNaN(epNum)) return;
+      if (Number.isNaN(epNum)) return;
 
       try {
         if (!epId) {
@@ -670,7 +670,7 @@
         const epLink = epTlEle.querySelector(':is(.info, .info_full) a.l:last-of-type');
         const epTlEleSubjectId = epTlEle.querySelector('.card a').href.split('/').pop();
         const epTlEleEpNum = +epLink.textContent.split(' ')[0].split('.')[1];
-        if (isNaN(epTlEleEpNum)) return false;
+        if (Number.isNaN(epTlEleEpNum)) return false;
         return (epTlEleSubjectId === subjectId && epTlEleEpNum === epNum);
       }))?.href.split('/').pop();
     } catch (e) {

@@ -426,7 +426,7 @@
       if (!added) throw Error('未找到添加的元素');
       let modifyFailed = false;
 
-      if (content || !isNaN(order)) {
+      if (content || !Number.isNaN(order)) {
         try {
           const rlt = added.querySelector('a.tb_idx_rlt');
           const rlt_id = rlt.id.split('_')[1];

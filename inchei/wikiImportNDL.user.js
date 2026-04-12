@@ -219,7 +219,7 @@
       const normalizedText = dateText.replace(/\/|\.|．|年|月|日/g, '-');
       const parts = normalizedText.split('-').map(part => {
         const num = parseInt(part.trim(), 10);
-        return isNaN(num) ? part : num.toString().padStart(2, '0');
+        return Number.isNaN(num) ? part : num.toString().padStart(2, '0');
       }).filter(part => part);
 
       switch (parts.length) {

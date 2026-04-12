@@ -107,7 +107,7 @@ function getWcode() {
         id = $(ids).get(i);
         prop = $(props).get(i);
         while (($(id).hasClass('multiSubKey') || $(prop).hasClass('multiSubVal')) && i < input_num) {
-          if (isNaN($(id).val())) {
+          if (Number.isNaN($(id).val())) {
             info[multiKey][subKey] = {
               key: $(id).val(),
               value: $(prop).val()
