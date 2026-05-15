@@ -1,0 +1,43 @@
+#gadget-deprecated-notify-settings {
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 8px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    button {
+        position: relative;
+        transition: all 0.3s ease;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 50px;
+        height: 32px;
+        color: #fff;
+        cursor: pointer;
+        background: linear-gradient(45deg, #3effcc, var(--primary-color), #6214ff);
+    }
+
+    button::before {
+        transition: all 0.3s ease;
+        content: '';
+        display: block;
+        border-radius: 50px;
+        width: calc(100% + 24px);
+        height: 32px;
+        margin: -8px -12px -24px -12px;
+        background-color: var(--primary-color,#f09199);
+    }
+
+    button:hover::before {
+        width: calc(100% + 16px);
+        height: 24px;
+        margin: -4px -8px -20px -8px;
+    }
+
+    button:active {
+        transform: scale(0.9);
+    }
+}

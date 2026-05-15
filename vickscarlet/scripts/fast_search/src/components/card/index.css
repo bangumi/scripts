@@ -1,0 +1,104 @@
+html[data-theme="dark"] {
+    .v-search-item-card {
+        >.background {
+            --opacity: 0.5;
+            --brightness: 1.2;
+        }
+    }
+    --background: 30, 30, 30;
+}
+.v-search-item-card {
+    display: flex;
+    position: relative;
+    gap: 12px;
+    padding: 12px;
+    img {
+        border: none;
+        margin: 0;
+        padding: 0;
+    }
+    >.background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        overflow: hidden;
+        z-index: -1;
+        background-color: rgb(from var(--background) calc(r - 20) calc(g - 20) calc(b - 20) / 0.3);
+        box-shadow: 0 0 12px rgb(0 0 0 / 0.1);
+        border-radius: 8px;
+        /* opacity: 0.5; */
+        > img {
+            width: calc(100% + 40px);
+            height: calc(100% + 40px);
+            margin: -20px;
+            object-fit: cover;
+            opacity: var(--opacity, 0.8);
+            filter: blur(12px) brightness(var(--brightness, 1));
+        }
+    }
+    > .background::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgb(from var(--background) calc(r - 20) calc(g - 20) calc(b - 20) / 0.6);
+        backdrop-filter: blur(4px) brightness(var(--brightness, 1));
+        z-index: 1;
+    }
+    
+    > .avatar {
+        width: 48px;
+        height: 48px;
+        border: none;
+        object-fit: cover;
+        border-radius: 100%;
+        overflow: hidden;
+        padding: 0;
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+    > .info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        > .title {
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            align-items: end;
+
+            small {
+                font-size: 12px;
+                color: var(--primary-color, #f09199);
+            }
+        }
+        > .extra {
+            font-size: 12px;
+            color: var(--color);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+    }
+}
+
+html[data-avatar-size="square"] {
+    .v-search-item-user {
+        > img {
+            border-radius: 4px;
+        }
+    }
+}

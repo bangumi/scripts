@@ -1,0 +1,60 @@
+html[data-theme="dark"] {
+    #snowing-config {
+        --bg-color: #6e6e6e;
+        --border-corlor: #8c8c8c;
+    }
+}
+#snowing-config {
+    --bg-color: #fefefe;
+    --border-corlor: #eee;
+    .control {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        input {
+            width: 64px;
+            flex: 0 0 auto;
+        }
+        .slider {
+            position: relative;
+            height: 24px;
+            width: 100%;
+            cursor: pointer;
+            .track {
+                position: absolute;
+                top: 50%;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: var(--bg-color);
+                border-radius: 100px;
+                transform: translateY(-50%);
+                border: 1px solid var(--border-corlor);
+                box-shadow: 0 0 4px rgb(from var(--primary-color,#f09199) r g b / 0.3);
+            }
+            .range {
+                position: absolute;
+                top: 50%;
+                height: 4px;
+                background: var(--primary-color,#f09199);
+                border-radius: 100px;
+                transform: translateY(-50%);
+            }
+            .thumb {
+                position: absolute;
+                top: 50%;
+                width: 14px;
+                height: 14px;
+                background: #fff;
+                border: 2px solid var(--primary-color,#f09199);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                cursor: pointer;
+                box-sizing: border-box;
+            }
+            .thumb:hover {
+                background: #eef6ff;
+            }
+        }
+    }
+}

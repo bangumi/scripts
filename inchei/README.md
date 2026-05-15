@@ -1,119 +1,370 @@
 # [inchei](https://bgm.tv/user/inchei)
 
-## [使 bangumi 的 thickbox 可移动](https://greasyfork.org/zh-CN/scripts/38584-bangumi-moveable-thickbox)
+> [!IMPORTANT]
+> 由于 Greasy Fork 不再接受 jsdelivr 等 CDN，Greasy Fork 版本将无法获得最新版本，
+新增脚本亦不再添加 Greasy Fork 载点，若欲安装，请选择 GitHub 载点。
 
-讨论页：https://bgm.tv/group/topic/345086
+## bangumi 可拖动弹框 `2.1.0`
+使 bangumi 的 thickbnox 可拖动
 
-使 bangumi 的 thickbox（用于写吐槽的框）可移动，以便在写评分的时候参考他人意见（吐槽箱）。
+- 讨论页：https://bgm.tv/group/topic/345086
 
-## [班固米代码高亮](https://greasyfork.org/zh-CN/scripts/516547-%E7%8F%AD%E5%9B%BA%E7%B1%B3%E4%BB%A3%E7%A0%81%E9%AB%98%E4%BA%AE)
+| 载点 | 链接 |
+|------|------|
+| GitHub | [draggableThickbox.user.js](https://github.com/bangumi/scripts/blob/master/inchei/draggableThickbox.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [130](https://bgm.tv/dev/app/130) |
 
-讨论页：https://bgm.tv/group/topic/409276
+## 首页进度管理记住上次类型 `0.0.1`
+首页进度管理记住上次类型
 
-- 使用 highlight.js 自动检测代码块语言并高亮
-- 添加一键复制按钮
-- 支持夜间模式
-- 兼容性
-  - 兼容[bangumi 僞質感設計样式](https://github.com/inchei/userstyles)
-  - 大概率不兼容[代码块超进化！](https://bgm.tv/dev/app/1049)
+- 讨论页：https://bgm.tv/group/topic/448958
 
-## [目录内添加条目增强](https://greasyfork.org/zh-CN/scripts/516479-%E7%9B%AE%E5%BD%95%E5%86%85%E6%B7%BB%E5%8A%A0%E6%9D%A1%E7%9B%AE%E5%A2%9E%E5%BC%BA)
+| 载点 | 链接 |
+|------|------|
+| GitHub | [iLikeBooks.user.js](https://github.com/bangumi/scripts/blob/master/inchei/iLikeBooks.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5413](https://bgm.tv/dev/app/5413) |
 
-讨论页：https://bgm.tv/group/topic/409246
+## 目录内搜索添加条目/可加入页面和目录页加入同时修改评价和排序 `0.6.9`
+为 bangumi 增加在目录内搜索条目并添加的功能，添加无需刷新
 
-- 目录内直接搜索，点击搜索结果标题将对应链接粘贴到输入框内
-  - 搜索章节时，点击搜索结果标题加载章节，点击章节将对应链接粘贴到输入框内
-- 添加时直接修改评论和排序
-- 兼容[目录批量编辑](https://bgm.tv/dev/app/1037)
+- 讨论页：https://bgm.tv/group/topic/409246
 
-## [加入或修改收藏时标签功能加强](https://greasyfork.org/zh-CN/scripts/513954-%E5%8A%A0%E5%85%A5%E6%88%96%E4%BF%AE%E6%94%B9%E6%94%B6%E8%97%8F%E6%97%B6%E6%A0%87%E7%AD%BE%E5%8A%9F%E8%83%BD%E5%8A%A0%E5%BC%BA)
+| 载点 | 链接 |
+|------|------|
+| GitHub | [indexSearch.user.js](https://github.com/bangumi/scripts/blob/master/inchei/indexSearch.user.js?raw=true) |
+| Greasy Fork | [516479](https://greasyfork.org/zh-CN/scripts/516479) |
+| 组件 | [3372](https://bgm.tv/dev/app/3372) |
 
-讨论页：https://bgm.tv/group/topic/408232
+## “好友”改为“关注” `0.0.4`
+将关于好友的描述修改为关注
 
-加入或修改收藏时：
-- 高亮自己与他人的共同标签
-- 高亮其中的元标签
-- 点击展开所有标签
-- 可选自动填充标签
-- 同步存储该类作品所有自己的标签
-使用 localStorage 在出现自己标签的页面存储自己的标签。
+- 讨论页：https://bgm.tv/group/topic/410150
 
-## [章节讨论吐槽加强](https://greasyfork.org/zh-CN/scripts/516402-%E7%AB%A0%E8%8A%82%E8%AE%A8%E8%AE%BA%E5%90%90%E6%A7%BD%E5%8A%A0%E5%BC%BA)
+| 载点 | 链接 |
+|------|------|
+| GitHub | [itsNotFriends.user.js](https://github.com/bangumi/scripts/blob/master/inchei/itsNotFriends.user.js?raw=true) |
+| Greasy Fork | [518358](https://greasyfork.org/zh-CN/scripts/518358) |
+| 组件 | 无 |
 
-讨论页：https://bgm.tv/group/topic/408098
+## 下滑隐藏顶栏，上滑显示顶栏 `0.0.1`
+下滑隐藏顶栏，上滑显示顶栏
 
-章节讨论中置顶显示自己的吐槽，高亮参与讨论过的格子。
+| 载点 | 链接 |
+|------|------|
+| GitHub | [partialPersistentNav.user.js](https://github.com/bangumi/scripts/blob/master/inchei/partialPersistentNav.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [4701](https://bgm.tv/dev/app/4701) |
 
-## [班固米右上角快速搜索](https://greasyfork.org/zh-CN/scripts/517607-%E7%8F%AD%E5%9B%BA%E7%B1%B3%E5%8F%B3%E4%B8%8A%E8%A7%92%E5%BF%AB%E9%80%9F%E6%90%9C%E7%B4%A2)
+## 班固米右上角快速搜索 `0.1.11`
+右上角搜索框输入文字后快速显示部分搜索结果
 
-讨论页：https://bgm.tv/group/topic/409735
+- 讨论页：https://bgm.tv/group/topic/409735
 
-- ↑/↓ + ⏎ 快速进入搜索结果条目页
-- 根据选择类别不同搜索
+| 载点 | 链接 |
+|------|------|
+| GitHub | [quickSearch.user.js](https://github.com/bangumi/scripts/blob/master/inchei/quickSearch.user.js?raw=true) |
+| Greasy Fork | [517607](https://greasyfork.org/zh-CN/scripts/517607) |
+| 组件 | [3391](https://bgm.tv/dev/app/3391) |
 
-## [条目相关页面显示用户评价](https://greasyfork.org/zh-CN/scripts/520506-%E6%9D%A1%E7%9B%AE%E8%AE%A8%E8%AE%BA%E9%A1%B5%E6%98%BE%E7%A4%BA%E7%94%A8%E6%88%B7%E8%AF%84%E4%BB%B7)
+## 加入或修改收藏时标签功能加强 `0.3.1`
+加入或修改收藏时高亮或自动填充自己与他人的共同标签，高亮其中的元标签，点击展开所有标签
 
-讨论页：https://bgm.tv/group/topic/411796
+- 讨论页：https://bgm.tv/group/topic/408232
 
-- 在条目讨论版、章节讨论、角色或人物讨论、关联日志显示参与用户的评分、收藏状态、进度、短评
-  - 在有多个相关条目的角色或人物讨论、关联日志中，于显示相关条目处选择要显示评分的条目
-- 使用 ccf(subject_id) 查询相应条目
-- 点击“加载失败”重新加载
-- 点击“未标记xxx？”，填写个人令牌查询游客隐藏条目
+| 载点 | 链接 |
+|------|------|
+| GitHub | [subjectCollectAutoTag.user.js](https://github.com/bangumi/scripts/blob/master/inchei/subjectCollectAutoTag.user.js?raw=true) |
+| Greasy Fork | [513954](https://greasyfork.org/zh-CN/scripts/513954) |
+| 组件 | [3344](https://bgm.tv/dev/app/3344) |
 
-## [时光机查询特定条目评价](https://greasyfork.org/zh-CN/scripts/520607)
+## 章节讨论吐槽加强 `0.6.1`
+章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 
-讨论页：https://bgm.tv/group/topic/411925
+- 讨论页：https://bgm.tv/group/topic/408098
 
-- 在他人时光机同步率下方增加查询特定条目评价的功能
-- 🔍或⏎搜索条目，点击结果标题，或输入作品ID，点击🆔
+| 载点 | 链接 |
+|------|------|
+| GitHub | [subjectEpComment.user.js](https://github.com/bangumi/scripts/blob/master/inchei/subjectEpComment.user.js?raw=true) |
+| Greasy Fork | [516402](https://greasyfork.org/zh-CN/scripts/516402) |
+| 组件 | [3341](https://bgm.tv/dev/app/3341) |
 
-## [首页RSS订阅班友收藏](https://greasyfork.org/zh-CN/scripts/524603)
+## 进度时间线显示评论 `0.1.8`
+在班固米显示动画进度时间线的对应评论
 
-讨论页：https://bgm.tv/group/topic/414787
+- 讨论页：https://bgm.tv/group/topic/
 
-- 首页副栏增加“RSS订阅”
-  - 输入用户ID并⏎，添加订阅
-  - 点击用户ID，删除或访问主页
-  - 🔄手动更新（默认720分钟更新）、📥导入/📤导出订阅ID列表（.json）
-- 首页时间线“全部”“收藏”类按时间穿插RSS订阅项
-- 首页时间线添加“RSS”类，只查看RSS订阅项
+| 载点 | 链接 |
+|------|------|
+| GitHub | [timelineEpComment.user.js](https://github.com/bangumi/scripts/blob/master/inchei/timelineEpComment.user.js?raw=true) |
+| Greasy Fork | [529610](https://greasyfork.org/zh-CN/scripts/529610) |
+| 组件 | [3654](https://bgm.tv/dev/app/3654) |
 
-兼容：
-- [将班固米首页的下一页改为加载更多](https://bgm.tv/dev/app/432)
-- [为首页动态添加分类筛选“简评”](https://bgm.tv/dev/app/2482)
-- [时间胶囊显示交换绝对时间与相对时间](https://bgm.tv/dev/app/3226)
+## 时光机时间线跳页 `0.1`
+在Bangumi时间线页面快速跳转功能
 
-不完全兼容：
-- [Bangumi Unlimited Pages](https://bgm.tv/dev/app/17)，因为不知道为什么我这里不管开不开其他组件，都会点了“Auto Load Pages”就无限加载，不好测试。但是只是不能对新加载的内容穿插RSS项。
+| 载点 | 链接 |
+|------|------|
+| GitHub | [timelineJump.user.js](https://github.com/bangumi/scripts/blob/master/inchei/timelineJump.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
 
-## [“好友”改为“关注”](https://greasyfork.org/zh-CN/scripts/518358-%E5%A5%BD%E5%8F%8B-%E6%94%B9%E4%B8%BA-%E5%85%B3%E6%B3%A8)
+## RSS订阅班友收藏 `0.2.6`
+在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 
-讨论页：https://bgm.tv/group/topic/410150
+- 讨论页：https://bgm.tv/group/topic/414787
 
-将用户界面中“好友”相关的描述改为“关注”相关的描述。没有“粉丝”。
+| 载点 | 链接 |
+|------|------|
+| GitHub | [timelineRSS.user.js](https://github.com/bangumi/scripts/blob/master/inchei/timelineRSS.user.js?raw=true) |
+| Greasy Fork | [524603](https://greasyfork.org/zh-CN/scripts/524603) |
+| 组件 | [3526](https://bgm.tv/dev/app/3526) |
 
-兼容以下相关组件/脚本：
-- [在讨论帖子标记出楼主和好友](https://bgm.tv/dev/app/1075)
-- [确认是否添加为好友](https://bgm.tv/dev/app/783)
-- [班固米马赛克瓷砖](https://bgm.tv/group/topic/344198)
-- [显示/一键删除单向好友](https://bgm.tv/dev/app/1942)
-- [好友看？](https://bgm.tv/dev/app/20)
+## 条目讨论页显示用户评价 `1.1.9`
+也可以干别的
 
-## [展开所有回复](https://greasyfork.org/zh-CN/scripts/516186-%E5%B1%95%E5%BC%80%E6%89%80%E6%9C%89%E5%9B%9E%E5%A4%8D)
+- 讨论页：https://bgm.tv/group/topic/411796
 
-讨论页：https://bgm.tv/group/topic/409116
+| 载点 | 链接 |
+|------|------|
+| GitHub | [topicFindComment.user.js](https://github.com/bangumi/scripts/blob/master/inchei/topicFindComment.user.js?raw=true) |
+| Greasy Fork | [520506](https://greasyfork.org/zh-CN/scripts/520506) |
+| 组件 | [3437](https://bgm.tv/dev/app/3437) |
 
-开启“[折叠长楼层](https://bgm.tv/dev/app/2214)”后，在标题旁增加点击可展开所有长楼层的按钮，便于搜索。
+## 班固米代码高亮 `1.8.2`
+使用 highlight.js 高亮和检测代码块的语言，添加一键复制按钮
 
-## <s>[bangumi thickbox 计数](https://greasyfork.org/zh-TW/scripts/371758-bangumi-thickbox-counter)</s>
+- 讨论页：https://bgm.tv/group/topic/409276
 
-<s>讨论页：https://bgm.tv/group/topic/351358</s>
+| 载点 | 链接 |
+|------|------|
+| GitHub | [topicPreSyntaxHighlight.user.js](https://github.com/bangumi/scripts/blob/master/inchei/topicPreSyntaxHighlight.user.js?raw=true) |
+| Greasy Fork | [516547](https://greasyfork.org/zh-CN/scripts/516547) |
+| 组件 | [3377](https://bgm.tv/dev/app/3377) |
 
-<s>显示吐槽箱剩余的字数（暂时无法在输入文字之前提取出剩余字数）。</s>更加推荐组件里有的[简评字数统计](https://bgm.tv/dev/app/592)，此脚本不再更新。
+## 共同好友 `0.0.1`
+好友页看共同好友
 
-## <s>[bangumi 繁体搜索支持](https://greasyfork.org/zh-CN/scripts/371540-bangumi-tc-searcher)</s>
+- 讨论页：https://bgm.tv/group/topic/425389
 
-<s>讨论页：https://bgm.tv/group/topic/345086</s>
+| 载点 | 链接 |
+|------|------|
+| GitHub | [userPageAlsoFollow.user.js](https://github.com/bangumi/scripts/blob/master/inchei/userPageAlsoFollow.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [3565](https://bgm.tv/dev/app/3565) |
 
-<s>使繁体搜索页面跳转到简体搜索页面，避免搜索不到准确的内容。</s>网站功能仍未修复，但写太烂，此脚本作废。
+## Bangumi 不同类型收藏状态比例条图 `1.3.2`
+在用户页面显示收藏状态分布彩色条
+
+- 讨论页：https://bgm.tv/group/topic/422194
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [userPageCollectionBar.user.js](https://github.com/bangumi/scripts/blob/master/inchei/userPageCollectionBar.user.js?raw=true) |
+| Greasy Fork | [534247](https://greasyfork.org/zh-CN/scripts/534247) |
+| 组件 | [3773](https://bgm.tv/dev/app/3773) |
+
+## 时光机查询特定条目评价 `0.2.3`
+经济的同步率查询
+
+- 讨论页：https://bgm.tv/group/topic/411925
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [userPageFindComment.user.js](https://github.com/bangumi/scripts/blob/master/inchei/userPageFindComment.user.js?raw=true) |
+| Greasy Fork | [520607](https://greasyfork.org/zh-CN/scripts/520607) |
+| 组件 | [3438](https://bgm.tv/dev/app/3438) |
+
+## bangumi 自动生成编辑摘要 `0.6.0`
+自动生成Bangumi编辑摘要
+
+- 讨论页：https://bgm.tv/group/topic/433505
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiAutoEditSummary.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiAutoEditSummary.user.js?raw=true) |
+| Greasy Fork | [547546](https://greasyfork.org/zh-CN/scripts/547546) |
+| 组件 | [3401](https://bgm.tv/dev/app/3401) |
+
+## 关联单行本自动排序 `0.1.1`
+按照数字一键排序单行本（支持可配置化扩展排序方式）
+
+- 讨论页：https://bgm.tv/group/topic/454446
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiAutoOrder.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiAutoOrder.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5411](https://bgm.tv/dev/app/5411) |
+
+## 顶部维基直接可选编辑/修订历史/封面/关联 `0.0.2`
+顶部添加直接编辑/修订历史/封面/关联的按钮，不需要先点开修订历史，可设置点击 Wiki 按钮默认打开哪一项
+
+- 讨论页：https://bgm.tv/group/topic/448089
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiBtnSwitch.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiBtnSwitch.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5349](https://bgm.tv/dev/app/5349) |
+
+## Bangumi 关联人物职位查询 `0.1.4`
+在关联人物编辑页面快速查看人物最近参与的职位信息
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiCheckPersonPos.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiCheckPersonPos.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [4966](https://bgm.tv/dev/app/4966) |
+
+## 关联条目/角色拖拽排序 `0.0.3`
+修改自 biota
+
+- 讨论页：https://bgm.tv/group/topic/448955
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiDrag2Sort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiDrag2Sort.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5410](https://bgm.tv/dev/app/5410) |
+
+## Bangumi 编辑对比工具 `0.1`
+在Bangumi编辑页面显示编辑前后的差异对比
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiEditDiff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEditDiff.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
+## 根据章节简介关联制作人员参与 `0.2.7`
+从章节页或人物关联页根据章节简介关联制作人员参与
+
+- 讨论页：https://bgm.tv/group/topic/439326
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiEpStaffRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEpStaffRelate.user.js?raw=true) |
+| Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
+| 组件 | [4948](https://bgm.tv/dev/app/4948) |
+
+## 从引进出版社网站获取班固米书籍版本 `0.3.0`
+支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
+
+- 讨论页：https://bgm.tv/group/topic/443284
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiImportBookVersion.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportBookVersion.user.js?raw=true) |
+| Greasy Fork | [556109](https://greasyfork.org/zh-CN/scripts/556109) |
+| 组件 | 无 |
+
+## NDL 添加条目到 bangumi `0.2`
+在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+
+- 讨论页：https://bgm.tv/group/topic/438774
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiImportNDL.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportNDL.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
+## 维基粘贴自动转换ISBN-10为ISBN-13 & 日期&日元格式 `0.1.0`
+在班固米维基粘贴时自动处理：ISBN-10转13、ISBN-13去横杠、日期标准化为YYYY-MM-DD、円转换为JP¥
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiIsbnConvert.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiIsbnConvert.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5504](https://chii.in/dev/app/5504) |
+
+## 维基修订历史对比差异补完 `0.1.1`
+显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
+
+- 讨论页：https://bgm.tv/group/topic/448515
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiMonoDiff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiMonoDiff.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
+## 条目页快捷创建角色并关联 `0.0.2`
+条目角色页添加创建按钮，创建后自动跳转到关联页面并将新角色列入其中
+
+- 讨论页：https://bgm.tv/group/topic/435747
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiNewCharRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiNewCharRelate.user.js?raw=true) |
+| Greasy Fork | [549613](https://greasyfork.org/zh-CN/scripts/549613) |
+| 组件 | [3465](https://bgm.tv/dev/app/3465) |
+
+## 班固米人物别名本地 API `1.3`
+从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
+
+- 讨论页：https://bgm.tv/group/topic/439645
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiPersonAlias.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonAlias.user.js?raw=true) |
+| Greasy Fork | [552759](https://greasyfork.org/zh-CN/scripts/552759) |
+| 组件 | 无 |
+
+## 维基关联历史对比差异 `0.2.3`
+比较条目-人物/角色、人物-条目关联项目的增删修改
+
+- 讨论页：https://bgm.tv/group/topic/441525
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiRelDiff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiRelDiff.user.js?raw=true) |
+| Greasy Fork | [554524](https://greasyfork.org/zh-CN/scripts/554524) |
+| 组件 | [5040](https://bgm.tv/dev/app/5040) |
+
+## 新增关联条目可同时修改顺序 `0.0.1`
+新增关联条目时即可排序，无需两次关联
+
+- 讨论页：https://chii.in/group/topic/454833
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiRelateNewOrder.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiRelateNewOrder.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5719](https://bgm.tv/dev/app/5719) |
+
+## Bangumi wiki 图片上传增强 `1.4.6`
+支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
+
+- 讨论页：https://bgm.tv/group/topic/431819
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiUploadPic.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiUploadPic.user.js?raw=true) |
+| Greasy Fork | [545636](https://greasyfork.org/zh-CN/scripts/545636) |
+| 组件 | 无 |
+
+## 关联单行本自动排序 `0.0.1`
+按照数字一键排序单行本
+
+- 讨论页：https://bgm.tv/group/topic/454446
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiVolSort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolSort.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5411](https://bgm.tv/dev/app/5411) |
+
+## 由单行本创建系列 `0.1.0`
+从单行本第一卷创建系列条目
+
+- 讨论页：https://bgm.tv/group/topic/451224
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiVolToSeries.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolToSeries.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+

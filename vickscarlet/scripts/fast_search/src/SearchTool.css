@@ -1,0 +1,182 @@
+@property --angle {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes flip {
+    from {
+        --angle: 90deg;
+    }
+    to {
+        --angle: 450deg;
+    }
+}
+
+.v-search-tool::before,
+.v-search-tool::after {
+    content: '';
+    display: block;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: var(--padding);
+    border-radius: calc(var(--border-radius) + var(--padding));
+    z-index: -1;
+
+    /* animation: flip 3s cubic-bezier(.68,-0.55,.27,1.55); */
+    animation: flip 3s cubic-bezier(.68,-0.55,.27,1.55) infinite;
+    --angle: 90deg;
+    --padding: 2px;
+
+    background-image: conic-gradient(
+        from var(--angle),
+        transparent 0%,
+        var(--primary-color,#f09199) 22.5%,
+        var(--primary-color,#f09199) 27.5%,
+        transparent 50%
+    );
+
+    --p11: calc(var(--border-radius) * (1 - cos(10deg)) + var(--padding));
+    --d11: calc(100% - var(--p11));
+    --p12: calc(var(--border-radius) * (1 - sin(10deg)) + var(--padding));
+    --d12: calc(100% - var(--p12));
+    --p21: calc(var(--border-radius) * (1 - cos(20deg)) + var(--padding));
+    --d21: calc(100% - var(--p21));
+    --p22: calc(var(--border-radius) * (1 - sin(20deg)) + var(--padding));
+    --d22: calc(100% - var(--p22));
+    --p31: calc(var(--border-radius) * (1 - cos(30deg)) + var(--padding));
+    --d31: calc(100% - var(--p31));
+    --p32: calc(var(--border-radius) * (1 - sin(30deg)) + var(--padding));
+    --d32: calc(100% - var(--p32));
+    --p41: calc(var(--border-radius) * (1 - cos(40deg)) + var(--padding));
+    --d41: calc(100% - var(--p41));
+    --p42: calc(var(--border-radius) * (1 - sin(40deg)) + var(--padding));
+    --d42: calc(100% - var(--p42));
+    --pc: calc(var(--border-radius) * (1 - sin(45deg)) + var(--padding));
+    --dc: calc(100% - var(--pc));
+
+    clip-path: polygon(
+        -100% -100%, -100% 200%,
+        var(--p11) 200%,
+
+        /* 左上 */
+        var(--p11) var(--p12), var(--p21) var(--p22), var(--p31) var(--p32), var(--p41) var(--p42),
+        var(--pc) var(--pc),
+        var(--p42) var(--p41), var(--p32) var(--p31), var(--p22) var(--p21), var(--p12) var(--p11),
+        /* 右上 */
+        var(--d12) var(--p11), var(--d22) var(--p21), var(--d32) var(--p31), var(--d42) var(--p41),
+        var(--dc) var(--pc),
+        var(--d41) var(--p42), var(--d31) var(--p32), var(--d21) var(--p22), var(--d11) var(--p12),
+        /* 右下 */
+        var(--d11) var(--d12), var(--d21) var(--d22), var(--d31) var(--d32), var(--d41) var(--d42),
+        var(--dc) var(--dc),
+        var(--d42) var(--d41), var(--d32) var(--d31), var(--d22) var(--d21), var(--d12) var(--d11),
+        /* 左下 */
+        var(--p12) var(--d11), var(--p22) var(--d21), var(--p32) var(--d31), var(--p42) var(--d41),
+        var(--pc) var(--dc),
+        var(--p41) var(--d42), var(--p31) var(--d32), var(--p21) var(--d22), var(--p11) var(--d12),
+
+        var(--p11) 200%,
+        200% 200%, 200% -100%
+    );
+}
+
+.v-search-tool::before {
+    /* filter: blur(1.5em); */
+    filter: blur(24px);
+    opacity: 0.5;
+}
+
+.v-search-tool {
+    --border-radius: 8px;
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--border-radius);
+    background: var(--background, #ffffff4c);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 2px var(--primary-color, #f09199);
+    /* box-shadow: 0 0 24px #0008; */
+    box-sizing: border-box;
+    min-width: 600px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 160px);
+    gap: 12px;
+    /* 关键：让高度按内容收缩 */
+    height: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    > input {
+        flex: 0 0 auto;
+        grid-area: input;
+        width: 100%;
+        box-sizing: border-box;
+        background: transparent;
+        padding: 6px 16px;
+        border-radius: 100px;
+        border: 2px solid var(--primary-color, #f09199);
+        outline: none;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    > input:hover, > input:focus {
+        transition: all 0.3s ease;
+    }
+    > .v-search-tool-banner {
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        grid-area: banner;
+        width: 100%;
+        display: grid;
+        place-items: center;
+    }
+    > .v-search-tool-tips {
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        grid-area: tips;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: start;
+    }
+    > .v-search-tool-container {
+        flex: 1 1 auto;
+        /* 允许被压缩 */
+        min-height: 0;
+        box-sizing: border-box;
+        width: 100%;
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+        grid-area: list;
+        min-height: 10px;
+        /* max-height: calc(100vh - 300px); */
+        max-width: 1200px;
+        scrollbar-width: none; /* firefox */
+        -ms-overflow-style: none; /* IE 10+ */
+        overflow-x: hidden;
+        overflow-y: scroll;
+        > * {
+            width: 100%;
+        }
+        h1 {
+            font-size: 2em;
+            line-height: 1;
+            font-weight: 900;
+        }
+        .v-search-tool-loading {
+            padding: 12px 0;
+            text-align: center;
+        }
+    }
+    > .v-search-tool-container::-webkit-scrollbar {
+        display: none; /* Chrome Safari */
+    }
+}

@@ -1,0 +1,42 @@
+.v-search-item-card[data-catalog="reply"] {
+    >.info {
+        > .content {
+            background-color: var(--background);
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: pre-line;
+            line-height: 1.5;
+            img {
+                max-width: 250px;
+                height: auto;
+            }
+            blockquote {
+                margin: 4px 0;
+                padding: 4px;
+                padding-left: 12px;
+                border-left: 3px solid var(--primary-color, #f09199);
+                background-color: rgb(from var(--primary-color, #f09199) calc(r - 10) calc(g - 10) calc(b - 10) / 0.1);
+                border-radius: 0 4px 4px 0;
+            }
+            a {
+                color: var(--link-color, #61a0ff);
+            }
+            pre {
+                background-color: rgb(from var(--primary-color, #f09199) calc(r - 10) calc(g - 10) calc(b - 10) / 0.1);
+                padding: 8px;
+                border-radius: 4px;
+                overflow: auto;
+            }
+        }
+        > .extra {
+            gap: 4px;
+            align-items: center;
+            > * {
+                flex: 0 0 auto;
+            }
+            > .creator {
+                color: var(--primary-color, #f09199);
+            }
+        }
+    }
+}

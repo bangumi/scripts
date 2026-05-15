@@ -1,0 +1,42 @@
+@import './colors-base.css';
+@import './colors-light.css';
+@import './colors-dark.css';
+html {
+    --color-dock-sp: var(--color-gray-2);
+    
+    --color-switch-border: var(--color-gray-2);
+    --color-switch-on: var(--color-green);
+    --color-switch-off: var(--color-gray-4);
+    --color-switch-bar-border: var(--color-white);
+    --color-switch-bar-inner: var(--color-gray-11);
+
+    --color-hover: var(--color-blue);
+    --color-icon-btn-bg: rgb(from var(--color-bangumi) r g b / .25);
+    --color-icon-btn-color: var(--color-white);
+
+    --color-reply-sp: var(--color-gray-1);
+    --color-reply-tips: var(--color-gray-3);
+
+    --color-reply-normal: var(--color-bangumi);
+    --color-reply-owner: var(--color-yellow);
+    --color-reply-floor: var(--color-purple);
+    --color-reply-friend: var(--color-green);
+    --color-reply-self: var(--color-blue);
+
+    --color-sticky-bg: rgb(from var(--color-base) r g b / .125);
+    --color-sticky-border: rgb(from var(--color-bangumi) r g b / .25);
+    --color-sticky-shadow: rgb(from var(--color-base) r g b / .05);
+    --color-sticky-textarea: rgb(from var(--color-base) r g b / .8);
+
+    --color-sticky-hover-bg: rgb(from var(--color-bangumi) r g b / .125);
+    --color-sticky-hover-border: var(--color-bangumi);
+    --color-sticky-hover-shadow: var(--color-bangumi);
+
+    --color-primary: var(--color-bangumi);
+    --color-secondary: var(--color-blue);
+    --color-success: var(--color-green);
+    --color-info: var(--color-blue);
+    --color-important: var(--color-purple);
+    --color-warning: var(--color-yellow);
+    --color-danger: var(--color-red);
+}

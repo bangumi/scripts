@@ -1,0 +1,16 @@
+{
+  "extends": "stylelint-config-recommended",
+  "customSyntax": "postcss-styled-syntax",
+  "defaultSeverity": "warning",
+  "formatter": "string",
+  "plugins": ["@stylistic/stylelint-plugin", "stylelint-plugin-use-baseline"],
+  "rules": {
+    "@stylistic/indentation": 2,
+    "plugin/use-baseline": [
+      true,
+      {
+        "available": "widely"
+      }
+    ]
+  }
+}

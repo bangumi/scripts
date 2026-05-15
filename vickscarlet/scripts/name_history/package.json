@@ -1,0 +1,37 @@
+{
+  "name": "@b38dev/name-history",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "1.0.0",
+  "description": "Bangumi 用户曾用名, 显示用户的历史用户名",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "out": "bangumi_name_history.user.js",
+  "userscript": {
+    "name": "Bangumi 用户曾用名",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/name_history",
+    "match": [
+      "*://bgm.tv/user/*",
+      "*://chii.in/user/*",
+      "*://bangumi.tv/user/*"
+    ]
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vite-plugin-monkey": "^7.1.4",
+    "vite-plugin-svgr": "^4.5.0",
+    "vite-tsconfig-paths": "^6.0.3",
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "@b38dev/api": "workspace:*"
+  }
+}

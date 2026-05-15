@@ -1,0 +1,45 @@
+html[data-theme="dark"] {
+    .v-fast-search-app {
+        --background: #2828284c;
+        --color: #cfcfcf;
+    }
+}
+
+.v-fast-search-app {
+    --color: #282828;
+    --background: #ffffff4c;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999999;
+    > button {
+        background-color: #0003;
+        backdrop-filter: blur(2px);
+        border: none;
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 100%;
+        cursor: pointer;
+    }
+    
+    .wide {
+        font-family: "Noto Sans Mono", Consolas, 'Courier New', Courier, "Noto Sans CJK SC";
+    }
+    
+    code {
+        background: var(--background);
+        backdrop-filter: blur(4px);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: var(--primary-color,#f09199);
+        margin: 0 4px;
+    }
+}
+
+body.v-fast-search-app-open {
+    overflow: hidden;
+}

@@ -1,0 +1,28 @@
+.v-tip-item {
+    position: relative;
+    cursor: pointer;
+    > .v-tip {
+        visibility: hidden;
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, calc(-100% - 10px));
+        padding: 2px 5px;
+        border-radius: 5px;
+        background: rgb(from var(--color-black) r g b / 0.6);
+        white-space: nowrap;
+        color: var(--color-white);
+        z-index: 100;
+    }
+    > .v-tip::after {
+        content: '';
+        position: absolute !important;
+        bottom: 0;
+        left: 50%;
+        border-top: 5px solid rgb(from var(--color-black) r g b / 0.6);
+        border-right: 5px solid transparent;
+        border-left: 5px solid transparent;
+        transform: translate(-50%, 100%);
+    }
+}
+.v-tip-item:hover { .v-tip { visibility: visible; } }

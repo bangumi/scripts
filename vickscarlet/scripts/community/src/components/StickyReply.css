@@ -1,0 +1,45 @@
+@import '../styles/colors.css';
+.v-sticky-reply {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    height: auto;
+    grid-template-rows: 0fr;
+    border-radius: 4px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    width: calc(100% - 1px);
+    overflow: hidden;
+    margin-bottom: 5px;
+    background-color: var(--color-sticky-bg);
+    border: 1px solid var(--color-sticky-border);
+    box-shadow: 0px 0px 0px 2px var(--color-sticky-shadow);
+    textarea.reply {
+        background-color: var(--color-sticky-textarea) !important;
+    }
+}
+.v-sticky-reply:has(:focus),
+.v-sticky-reply:hover {
+    grid-template-rows: 1fr;
+    background-color: var(--color-sticky-hover-bg);
+    border: 1px solid var(--color-sticky-hover-border);
+    box-shadow: 0 0 4px var(--color-sticky-hover-shadow);
+}
+#reply_wrapper {
+    position: relative;
+    padding: 5px;
+    min-height: 50px;
+    margin: 0;
+    textarea.reply {
+        width: 100% !important;
+    }
+    .v-switch {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+    }
+    .tip.rr ~ .v-switch {
+        top: 35px;
+    }
+}

@@ -1,0 +1,13 @@
+.v-search-item-card[data-catalog="user"] {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 120px;
+    padding: 12px 4px;
+    > .info {
+        align-items: center;
+        > .extra {
+            justify-content: center;
+        }
+    }
+}

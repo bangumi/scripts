@@ -1,0 +1,40 @@
+{
+  "name": "@b38dev/unified",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "1.0.0",
+  "description": "Bangumi 统一地址 v1",
+  "license": "MIT",
+  "main": "src/index.js",
+  "out": "bangumi_unified.user.js",
+  "userscript": {
+    "name": "Bangumi 统一地址",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/unified",
+    "match": [
+      "*://bgm.tv/user/*",
+      "*://chii.in/user/*",
+      "*://bangumi.tv/user/*"
+    ],
+    "grant": [
+      "GM_setValue",
+      "GM_getValue",
+      "GM_registerMenuCommand"
+    ],
+    "run-at": "document-start"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vite-plugin-monkey": "^7.1.4",
+    "vite-plugin-svgr": "^4.5.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
+  }
+}

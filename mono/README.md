@@ -14,7 +14,7 @@
 - 在表格编辑器中粘贴多行文本时, 会覆盖当前和下方的单元格 (类似Excel)
 - 表格编辑器和常见文本编辑器一样可多次撤销 (Ctrl-Z)
 
-[未压缩build](dist/bgm-eps-editor.user.js) / 如需要压缩build可以clone后自行webpack
+[build](dist/bgm-eps-editor.user.js)
 
 ## 修正bgm页面内的其他bgm域名的链接
 
@@ -26,15 +26,15 @@
 
 ## 如何编译
 
-本repo代码使用了yarn, TypeScript和Webpack. 相关的编译命令如下:
-
 ```text
 # (在源代码目录: mono/src 下)
 
-# 安装npm包
-$ yarn
+# 安装依赖并编译到 dist/
+$ make build
 
-# 在 dist/ 下重新生成各脚本
-$ ./dist.sh
-
+# 其他命令
+$ make deps       # 安装npm包
+$ make typecheck  # 类型检查
+$ make fmt        # 格式化代码
+$ make check      # 格式检查 + 类型检查
 ```

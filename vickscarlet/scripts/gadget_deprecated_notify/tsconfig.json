@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "baseUrl": ".",
+        "target": "ESNext",
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+
+        /* Bundler mode */
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "isolatedModules": true,
+        "moduleDetection": "force",
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "paths": {
+            "@/*": ["src/*"]
+        },
+
+        /* Linting */
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedSideEffectImports": true
+    },
+    "references": [{ "path": "./tsconfig.node.json" }],
+    "extends": "../../tsconfig.base.json",
+    "include": ["src"],
+}

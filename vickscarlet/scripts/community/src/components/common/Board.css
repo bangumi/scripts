@@ -1,0 +1,35 @@
+.v-board {
+    --board-color-font: black;
+    --board-color-from: #ccc;
+    --board-color-to: #fff;
+    --board-color-alpha: 0.05;
+    --board-before-opacity: 0.2;
+    --board-before-bg: transparent;
+    color: var(--board-color-font);
+    padding: 10px;
+    position: relative;
+    border-radius: 4px;
+}
+.v-board::after, 
+.v-board::before {
+    content: '';
+    position: absolute;
+    border-radius: 4px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    z-index: -10;
+}
+.v-board::before { 
+    background: var(--board-before-bg);
+    background-size: cover;
+    opacity: var(--board-before-opacity);
+}
+.v-board::after {
+    opacity: 1;
+    background: linear-gradient(150deg, rgb(from var(--board-color-from) r g b / var(--board-color-alpha)), rgb(from var(--board-color-to) r g b / var(--board-color-alpha)) 75%);
+    box-shadow: 0 0 1px rgb(from var(--color-bangumi-2) r g b / .5);
+    backdrop-filter: blur(10px);
+}

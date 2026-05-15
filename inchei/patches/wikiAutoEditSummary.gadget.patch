@@ -1,0 +1,170 @@
+--- wikiAutoEditSummary.user.js	2026-04-06 10:08:31.832177130 +0800
++++ wikiAutoEditSummary.gadget.js	2026-04-06 10:10:00.056178374 +0800
+@@ -27,6 +27,22 @@
+ (function () {
+   'use strict';
+ 
++  chiiLib.ukagaka.addGeneralConfig({
++    title: '自动编辑摘要是否加入详细更改（具体变更、删除内容等）',
++    name: 'autoEditSummaryDetails',
++    type: 'radio',
++    defaultValue: 'netabare',
++    getCurrentValue: () => chiiApp.cloud_settings.get('autoEditSummaryDetails') || 'on',
++    onChange: v => {
++      chiiApp.cloud_settings.update({ autoEditSummaryDetails: v });
++      updateStyle(v === 'off');
++    },
++    options: [
++      { value: 'on', label: '是' },
++      { value: 'off', label: '否' }
++    ]
++  });
++
+   const editSummaryInput = document.querySelector('#editSummary');
+   if (!editSummaryInput) return;
+ 
+@@ -159,6 +175,7 @@
+ 
+   // #region 生成摘要
+   function genEditSummary() {
++    const noDetails = chiiApp.cloud_settings.get('autoEditSummaryDetails') === 'off';
+     const changes = [];
+ 
+     if (pageFeatures.hasWcode) {
+@@ -167,7 +184,7 @@
+       const newTags = tagsInput?.value;
+ 
+       if (initialTitle !== titleInput?.value) {
+-        changes.push(`修改标题（${initialTitle} → ${titleInput.value}）`);
++        changes.push(`修改标题${noDetails ? '' : `（${initialTitle} → ${titleInput.value}）`}`);
+       }
+ 
+       const newPlatform = getPlatform?.();
+@@ -210,28 +227,71 @@
+       const currentOldLis = currentLis.filter(li => li.classList.contains('old'));
+       const currentNewLis = currentLis.filter(li => !li.classList.contains('old'));
+ 
+-      currentOldLis.forEach(li => {
+-        const initialItem = initialRelatedItems.find(item => item.element === li);
+-        if (initialItem) {
++      const removedItems = initialRelatedItems.filter(initialItem => !currentOldLis.some(li => li === initialItem.element));
++      const exsistingItems = initialRelatedItems.filter(item => currentOldLis.find(li => item.element === li));
++
++      if (noDetails) {
++        if (currentNewLis.length) {
++          const newTypes = [...new Set([...currentNewLis].map(li => getRelType(li)))];
++          changes.push(`添加${newTypes.join('、')}`);
++        }
++
++        if (removedItems.length) {
++          const removedTypes = [...new Set(removedItems.map(item => item.type))];
++          if (removedTypes.length) changes.push(`删除${removedTypes.join('、')}`);
++        }
++
++        let typeModified, orderModified, remarkModified, checkboxModified = {};
++        for (const initial of exsistingItems) {
++          const li = initial.element;
++          const current = getRelItemData(li);
++
++          if (!typeModified && initial.type !== current.type) {
++            changes.push('修改关联类型');
++            typeModified = true;
++          }
++
++          if (initial.remark !== current.remark) {
++            if (!orderModified && pageFeatures.relatedContextType === 1) {
++              changes.push('排序');
++              orderModified = true;
++            } else if (!remarkModified) {
++              const remarkName = pageFeatures.relatedContextType === 2 ? '参与' : '备注';
++              changes.push(`修改${remarkName}`);
++              remarkModified = true;
++            }
++          }
++
++          if (initial.checkboxes.length && current.checkboxes.length) {
++            current.checkboxes.forEach((currentCheckbox, index) => {
++              const title = currentCheckbox.title;
++              const initialCheckbox = initial.checkboxes[index];
++              if (!checkboxModified[title] && initialCheckbox && initialCheckbox.checked !== currentCheckbox.checked) {
++                changes.push(`修改标记${title}`);
++                checkboxModified[title] = true;
++              }
++            });
++          }
++        }
++      } else {
++        currentNewLis.forEach(li => {
++          const item = getRelItemData(li);
++          changes.push(genRelExsistChanges(item, '添加'));
++        });
++
++        removedItems.forEach(item => {
++          changes.push(genRelExsistChanges(item, '删除'));
++        });
++
++        exsistingItems.forEach(initialItem => {
++          const li = initialItem.element;
+           const currentItem = getRelItemData(li);
+           const modifyChanges = genRelModifyChanges(initialItem, currentItem);
+           if (modifyChanges.length) {
+             changes.push(...modifyChanges);
+           }
+-        }
+-      });
+-
+-      currentNewLis.forEach(li => {
+-        const item = getRelItemData(li);
+-        changes.push(genRelExsistChanges(item, '添加'));
+-      });
+-
+-      initialRelatedItems.forEach(initialItem => {
+-        const stillExists = currentOldLis.some(li => li === initialItem.element);
+-        if (!stillExists) {
+-          changes.push(genRelExsistChanges(initialItem, '删除'));
+-        }
+-      });
++        });
++      }
+     }
+ 
+     if (editSummaryInput && changes.length) {
+@@ -332,10 +392,11 @@
+   }
+ 
+   function genFieldChanges(oldData, newData) {
++    const noDetails = chiiApp.cloud_settings.get('autoEditSummaryDetails') === 'off';
+     const changes = [];
+     const moves = { from: new Set(), to: new Set() };
+     const movedKeys = new Set();
+-    const oldValueDel = (k, v) => `删除${k}${isObject(v) || v instanceof Map || v === null ? '' : `（${short(v)}）`}`;
++    const oldValueDel = (k, v) => `删除${k}${noDetails || isObject(v) || v instanceof Map || v === null ? '' : `（${short(v)}）`}`;
+ 
+     for (const key of oldData.keys()) {
+       const newKey = getNewKey(oldData, newData, key);
+@@ -393,7 +454,7 @@
+               }
+             }
+           }
+-          changes.push(`修改${key}（${short(oldValue)} → ${short(newValue)}）`);
++          changes.push(`修改${key}${noDetails ? '' : `（${short(oldValue)} → ${short(newValue)}）`}`);
+         }
+       }
+     }
+@@ -486,11 +547,15 @@
+   }
+   // #endregion
+ 
++  function getRelType(li) {
++    return li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0];
++  }
++
+   function getRelItemData(li) {
+     return {
+       name: short(li.querySelector('.title a').textContent) || '',
+       infoName: li.querySelector('.info a')?.textContent || '',
+-      type: li.querySelectorAll(':scope option')[li.querySelector('select').selectedIndex].textContent.split(' / ')[0],
++      type: getRelType(li),
+       remark: li.querySelector('input[type=text]')?.value.trim() || '',
+       checkboxes: [...li.querySelectorAll(':scope .tip input[type=checkbox]')].map(checkbox => ({
+         checked: checkbox.checked,

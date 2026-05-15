@@ -1,0 +1,36 @@
+{
+  "name": "@b38dev/snowing",
+  "author": "神戸小鳥 @vickscarlet",
+  "version": "2.0.0",
+  "description": "白色雪花与表情共同飘落",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "out": "bangumi_snowing.user.js",
+  "userscript": {
+    "name": "Bangumi 下雪了",
+    "namespace": "b38.dev",
+    "icon": "https://bgm.tv/img/favicon.ico",
+    "homepage": "https://github.com/bangumi/scripts/blob/master/vickscarlet/scripts/snowing",
+    "match": [
+      "*://bgm.tv/*",
+      "*://chii.in/*",
+      "*://bangumi.tv/*"
+    ]
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@b38dev/bangumi": "workspace:*",
+    "@b38dev/dom": "workspace:*",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0",
+    "vite-plugin-monkey": "^7.1.4",
+    "vite-plugin-svgr": "^4.5.0",
+    "vite-tsconfig-paths": "^6.0.3",
+    "vitest": "^4.0.16"
+  }
+}

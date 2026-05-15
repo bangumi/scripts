@@ -35,7 +35,7 @@
 
 ## [用户详情爬取](https://github.com/bangumi/scripts/blob/master/yonjar/user_detail.user.js?raw=true)
 
-**2023年1月8日复活!**
+**2023 年 1 月 8 日复活!**
 
 本脚本不提供实际的功能 但能方便其他用户自行编写脚本
 爬取用户的资料 导出到 localstorage
@@ -94,3 +94,34 @@
 个人自用 wiki 助手
 具有假名转罗马字和简介框内文本预处理等功能
 [讨论帖](https://bgm.tv/blog/296048)
+
+## [bangumi 寿星名单](https://github.com/bangumi/scripts/blob/master/yonjar/happy_birthday_everyday.user.js?raw=true)
+
+!!!未完善 想试用需要自行构造 json 数据!!!
+示例代码("9"是月份, "4"和"30"是日数):
+
+    json = {
+      "9": {
+        "4": [
+          {
+            "name": "長濱ねる",
+            "birthday": "1998年9月4日",
+            "bio": "長濱 ねる（ながはま ねる、1998年9月4日 - ）は、欅坂46およびけやき坂46の元メンバー。長崎県長崎市出身。Seed & Flower合同会社所属。",
+            "year": 1998
+          }
+        ],
+        "30": [
+          {
+            "name": "今泉佑唯",
+            "birthday": "1998年9月30日",
+            "bio": "今泉 佑唯（いまいずみ ゆい、1998年9月30日 - ）は、欅坂46の元メンバー。1623マネジメント所属。神奈川県出身。",
+            "year": 1998
+          }
+        ],
+      }
+    }
+
+    localStorage.setItem("yonjar_birthdaySet", JSON.stringify(json))
+
+把角色或人物的生日添加到 localstorge 并在生日当天显示
+[讨论帖](https://bgm.tv/group/topic/424350)

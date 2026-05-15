@@ -1,0 +1,30 @@
+.v-search-no-item {
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1.5;
+}
+
+.v-search-item-list {
+    list-style: none;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.v-search-no-items {
+    text-align: center;
+}
+
+.v-search-item-list[data-command="mono"],
+.v-search-item-list[data-command="character"],
+.v-search-item-list[data-command="person"],
+.v-search-item-list[data-command="user"],
+.v-search-item-list[data-command="group"] {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}

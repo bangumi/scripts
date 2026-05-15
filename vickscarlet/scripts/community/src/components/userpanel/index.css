@@ -1,0 +1,154 @@
+@import '../../styles/colors.css';
+html, html[data-theme='dark'] {
+    #community-helper-user-panel {
+        position: fixed !important;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        > .v-close-mask {
+            position: absolute;
+            z-index: -100;
+            display: grid;
+            place-items: center;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: rgb(from var(--color-base) r g b / 0.5);
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+        > .v-container {
+            max-width: 1280px;
+            min-height: 390px;
+            max-height: 600px;
+            width: calc(100% - 60px);
+            height: calc(100vh - 60px);
+
+            display: grid;
+            grid-template-columns: auto auto auto 1fr auto;
+            grid-template-rows: 180px 34px 36px 40px calc(100% - 310px);
+            gap: 5px 5px;
+            padding: 30px 5px 5px 5px;
+            margin-bottom: 25px;
+            grid-template-areas:
+                "avatar note note note bio"
+                "actions note note note bio"
+                "stats note note note bio"
+                "chart note note note bio"
+                "usedname usedname tags tags bio";
+            > .v-loading {
+                --loading-color: var(--color-bangumi);
+            }
+            > .v-board {
+                --board-color-font: var(--color-bangumi-font);
+                --board-color-from: var(--color-base-2);
+                --board-color-to: var(--color-base-2);
+            }
+
+            > .v-avatar {
+                grid-area: avatar;
+                --board-color-font: var(--color-bangumi);
+                --board-color-from: var(--color-bangumi); 
+                --board-color-alpha: .25;
+            }
+            > .v-actions {
+                grid-area: actions;
+                --board-color-from: var(--color-yellow);
+                --board-color-font: var(--color-yellow-font);
+            }
+            > .v-stats {
+                grid-area: stats;
+                --board-color-font: var(--color-base-font);
+            }
+            > .v-chart {
+                grid-area: chart;
+                --board-color-font: var(--color-base-font);
+            }
+            > .v-tags {
+                grid-area: tags;
+                min-width: 200px;
+                --board-color-from: var(--color-blue);
+                --board-color-font: var(--color-blue-font);
+                > .v-wrapper { max-height: 100%; }
+            }
+            > .v-note { 
+                grid-area: note;
+                min-width: 200px;
+                --board-color-from: var(--color-green);
+                --board-color-font: var(--color-green-font);
+                white-space: pre-wrap;
+                > .v-wrapper { 
+                    height: 100%;
+                    > * { max-height: 100%; }
+                }
+            }
+            > .v-usedname {
+                grid-area: usedname;
+                --board-color-from: var(--color-purple);
+                --board-color-font: var(--color-purple-font);
+                max-width: 400px;
+                min-width: 200px;
+                > .v-wrapper { max-height: 100%; }
+            }
+            > .v-bio {
+                grid-area: bio;
+                --board-color-from: var(--color-bangumi);
+                --board-color-font: var(--color-base-font);
+                max-width: 505px;
+                min-width: 300px;
+                max-height: calc(100% - 34px);
+                > .v-wrapper { height: calc(100% + 2px); }
+            }
+        }
+    }
+    
+    @media (max-width: 850px) {
+        #community-helper-user-panel > .v-container {
+            grid-template-columns: auto auto auto 1fr;
+            grid-template-rows: 180px 34px 36px 40px auto auto;
+            max-height: 900px;
+            grid-template-areas:
+                "avatar note note note"
+                "actions note note note"
+                "stats note note note"
+                "chart note note note"
+                "usedname usedname tags tags"
+                "bio bio bio bio";
+            > .v-tags,
+            > .v-usedname { 
+                max-height: 300px;
+            }
+            > .v-bio { 
+                max-width: 100%; 
+                max-height: 100%;
+            }
+        }
+    }
+
+    @media (max-width: 520px) {
+        #community-helper-user-panel > .v-container {
+            grid-template-columns: 1fr;
+            grid-template-rows: 180px 34px 36px 40px auto auto auto auto;
+            max-height: 1100px;
+            grid-template-areas:
+                "avatar"
+                "actions"
+                "stats"
+                "chart"
+                "note"
+                "usedname"
+                "tags"
+                "bio";
+            > .v-board { min-width: 130px; width: calc(100% - 20px); max-width: calc(100% - 20px); }
+            > .v-actions, > .v-stats, > .v-chart { width: 100%; max-width: 100%; }
+            > .v-note { max-height: 200px; }
+            > .v-tags, > .v-usedname { max-height: 150px; }
+            > .v-bio { max-height: 100%; }
+        }
+    }
+}

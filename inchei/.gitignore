@@ -1,0 +1,4 @@
+g/
+node_modules/
+*.gadget.js
+!*.user.gadget.js
