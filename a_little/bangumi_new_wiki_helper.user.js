@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.1
+// @version     0.5.2
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -191,17 +191,27 @@ const amazonJpBookSubject = {
         {
             selector: '#nav-subnav .nav-a:first-child',
             subSelector: '.nav-a-content',
-            keyWord: ['本', '书', '漫画', 'マンガ', 'Audible'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Kindle', 'Audible'],
         },
         {
             selector: '#wayfinding-breadcrumbs_container .a-unordered-list .a-list-item:first-child',
             subSelector: '.a-link-normal',
-            keyWord: ['本', '书', '漫画', 'マンガ', 'Audible'],
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Kindle', 'Audible'],
+        },
+        {
+            selector: '#wayfinding-breadcrumbs_feature_div .a-unordered-list .a-list-item:first-child',
+            subSelector: '.a-link-normal',
+            keyWord: ['本', '书', '漫画', 'マンガ', 'Kindle', 'Audible'],
         },
     ],
-    controlSelector: {
-        selector: '#title',
-    },
+    controlSelector: [
+        {
+            selector: '#title',
+        },
+        {
+            selector: '#productTitle',
+        },
+    ],
     itemList: [],
 };
 const commonSelectors$2 = [
@@ -636,6 +646,45 @@ async function getAmazonCoverInfo(res) {
     }
 }
 
+const usedOfferReg = /非全新品|中古品|中古商品|コレクター商品|收藏品/i;
+const currentUsedBuyboxReg = /中古品\s*[:：]|中古商品\s*[:：]|コンディション\s*[:：]?\s*(?:中古|非全新品)|コレクター商品\s*[:：]|非全新品\s*[:：]/i;
+const newOfferReg = /新品/i;
+const kindleFormatReg = /Kindle|電子書籍|电子书/i;
+function getText$1(selector) {
+    return document.querySelector(selector)?.textContent ?? '';
+}
+function isCurrentAmazonJpBookOfferUsed() {
+    const selectedFormatText = getText$1('#tmmSwatches .a-button-selected');
+    if (kindleFormatReg.test(selectedFormatText)) {
+        return false;
+    }
+    const currentBuyboxText = getText$1('#usedOnlyBuybox, #used_buybox_desktop, #usedBuySection, #desktop_buybox');
+    if (document.querySelector('#usedOnlyBuybox, #used_buybox_desktop, #usedBuySection, #usedOfferListingID') ||
+        currentUsedBuyboxReg.test(currentBuyboxText)) {
+        return true;
+    }
+    const otherOfferText = getText$1('.aod-popover-caret-link');
+    return usedOfferReg.test(otherOfferText) && !newOfferReg.test(otherOfferText);
+}
+function getBookFormatSwatches() {
+    const $swatches = document.querySelector('#tmmSwatches');
+    if (!$swatches) {
+        return [];
+    }
+    const formatSwatches = $swatches.querySelectorAll('[id^="tmm-grid-swatch-"]');
+    if (formatSwatches.length) {
+        return Array.from(formatSwatches);
+    }
+    return Array.from($swatches.querySelectorAll('.swatchElement'));
+}
+function getTitleAnchor() {
+    const $title = document.querySelector('#title');
+    if ($title) {
+        return $title;
+    }
+    const $productTitle = document.querySelector('#productTitle');
+    return $productTitle?.closest('h1') ?? $productTitle;
+}
 const amazonJpBookTools = {
     filters: [
         {
@@ -645,13 +694,13 @@ const amazonJpBookTools = {
     ],
     hooks: {
         async beforeCreate() {
-            const $t = document.querySelector('#title');
-            const bookTypeList = document.querySelectorAll('#tmmSwatches ul > li.swatchElement');
-            const books = document.querySelectorAll('#tmmSwatches > .a-row div');
+            const $t = getTitleAnchor();
+            const formatSwatches = getBookFormatSwatches();
             if ($t &&
-                ((bookTypeList && bookTypeList.length > 1) ||
-                    (books && books.length > 1))) {
+                !document.querySelector('.e-wiki-amazon-book-format-warning') &&
+                formatSwatches.length > 1) {
                 const $div = document.createElement('div');
+                $div.className = 'e-wiki-amazon-book-format-warning';
                 const $s = document.createElement('span');
                 $s.style.color = 'red';
                 $s.style.fontWeight = '600';
@@ -663,27 +712,6 @@ const amazonJpBookTools = {
                 $div.appendChild($txt);
                 $div.style.padding = '6px 0';
                 $t.insertAdjacentElement('afterend', $div);
-                const $desc = document.querySelector('#bookDescription_feature_div .a-expander-content');
-                if (!$desc) {
-                    const btns = document.querySelectorAll('#tmmSwatches ul > li.swatchElement .a-button-text');
-                    if (btns && btns.length) {
-                        const url = Array.from(btns)
-                            .map((a) => a.href)
-                            .filter((h) => h.match(/^http/))[0];
-                        if (url) {
-                            return {
-                                payload: {
-                                    auxSite: {
-                                        url,
-                                        prefs: {
-                                            originNames: ['ISBN', '名称'],
-                                        },
-                                    },
-                                },
-                            };
-                        }
-                    }
-                }
             }
             return true;
         },
@@ -706,9 +734,7 @@ const amazonJpBookTools = {
                 }
                 else if (info.name === '价格') {
                     newInfo.value = stringValue.replace(/来自|より/, '').trim();
-                    // 去掉非全新品价格。
-                    const $caret = document.querySelector('.aod-popover-caret-link');
-                    if ($caret && /非全新品|中古品/.test($caret.textContent)) {
+                    if (isCurrentAmazonJpBookOfferUsed()) {
                         newInfo = null;
                     }
                 }
@@ -5802,37 +5828,60 @@ var Notyf = /** @class */ (function () {
     return Notyf;
 }());
 
-const notyf = new Notyf({
-    duration: 3000,
-    types: [
-        {
-            type: 'success',
-            // background: '#F09199',
-        },
-        {
-            type: 'info',
-            background: '#F09199',
-        },
-        {
-            type: 'error',
-            duration: 0,
-            dismissible: true,
-        },
-    ],
-    position: {
-        x: 'right',
-        y: 'top',
-    },
-});
+let notyf = null;
 const NOTYF_LIST = [];
+function waitForBody() {
+    if (document.body) {
+        return Promise.resolve(true);
+    }
+    if (document.readyState !== 'loading') {
+        return Promise.resolve(false);
+    }
+    return new Promise((resolve) => {
+        document.addEventListener('DOMContentLoaded', () => {
+            resolve(!!document.body);
+        }, { once: true });
+    });
+}
+async function getNotyf() {
+    if (notyf) {
+        return notyf;
+    }
+    if (!(await waitForBody())) {
+        return null;
+    }
+    notyf = new Notyf({
+        duration: 3000,
+        types: [
+            {
+                type: 'success',
+                // background: '#F09199',
+            },
+            {
+                type: 'info',
+                background: '#F09199',
+            },
+            {
+                type: 'error',
+                duration: 0,
+                dismissible: true,
+            },
+        ],
+        position: {
+            x: 'right',
+            y: 'top',
+        },
+    });
+    return notyf;
+}
 async function logMessage(request) {
     if (request.cmd === 'dismissAll') {
-        notyf.dismissAll();
+        notyf?.dismissAll();
         NOTYF_LIST.length = 0;
     }
     else if (request.cmd === 'dismissNotError') {
         for (const obj of NOTYF_LIST) {
-            obj && notyf.dismiss(obj);
+            obj && notyf?.dismiss(obj);
         }
         NOTYF_LIST.length = 0;
     }
@@ -5840,16 +5889,20 @@ async function logMessage(request) {
     if (request.message === '') {
         return;
     }
+    const notyfInstance = await getNotyf();
+    if (!notyfInstance) {
+        return;
+    }
     let newNotyf;
     switch (request.type) {
         case 'succuss':
-            newNotyf = notyf.success(request);
+            newNotyf = notyfInstance.success(request);
             break;
         case 'error':
-            notyf.error(request);
+            notyfInstance.error(request);
             break;
         case 'info':
-            newNotyf = notyf.open(request);
+            newNotyf = notyfInstance.open(request);
             // notyf.success(request.msg);
             break;
     }
