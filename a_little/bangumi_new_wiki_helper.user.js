@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.0
+// @version     0.5.1
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -62,14 +62,14 @@ const adultComicSubject = {
     ],
     itemList: [],
 };
-const commonSelectors = [
+const commonSelectors$3 = [
     {
         selector: '#info-table > div.info-box > dl',
         subSelector: 'dt',
         sibling: true,
     },
 ];
-const genSelectors = (keyWord) => commonSelectors.map((s) => {
+const genSelectors = (keyWord) => commonSelectors$3.map((s) => {
     return {
         ...s,
         keyWord,
@@ -204,7 +204,7 @@ const amazonJpBookSubject = {
     },
     itemList: [],
 };
-const commonSelectors$1 = [
+const commonSelectors$2 = [
     // 2021-05 日亚改版
     {
         selector: '#richProductInformation_feature_div',
@@ -238,7 +238,7 @@ amazonJpBookSubject.itemList.push({
 // },
 {
     name: 'ASIN',
-    selector: commonSelectors$1.map((s) => {
+    selector: commonSelectors$2.map((s) => {
         return {
             ...s,
             keyWord: ['ASIN', 'ISBN-10'],
@@ -247,7 +247,7 @@ amazonJpBookSubject.itemList.push({
     category: 'ASIN',
 }, {
     name: 'ISBN',
-    selector: commonSelectors$1.map((s) => {
+    selector: commonSelectors$2.map((s) => {
         return {
             ...s,
             keyWord: 'ISBN-13',
@@ -257,7 +257,7 @@ amazonJpBookSubject.itemList.push({
     pipes: ['k', 'ta'],
 }, {
     name: '发售日',
-    selector: commonSelectors$1.map((s) => {
+    selector: commonSelectors$2.map((s) => {
         return {
             ...s,
             keyWord: ['発売日', '出版日期', '配信日'],
@@ -281,7 +281,7 @@ amazonJpBookSubject.itemList.push({
                 },
             ],
         },
-        ...commonSelectors$1.map((s) => {
+        ...commonSelectors$2.map((s) => {
             return {
                 ...s,
                 keyWord: '出版社',
@@ -290,7 +290,7 @@ amazonJpBookSubject.itemList.push({
     ],
 }, {
     name: '页数',
-    selector: commonSelectors$1.map((s) => {
+    selector: commonSelectors$2.map((s) => {
         return {
             ...s,
             keyWord: ['ページ', '页'],
@@ -301,7 +301,7 @@ amazonJpBookSubject.itemList.push({
 // 有声书
 {
     name: '播放时长',
-    selector: commonSelectors$1.map((s) => {
+    selector: commonSelectors$2.map((s) => {
         return {
             ...s,
             keyWord: ['再生時間'],
@@ -309,7 +309,7 @@ amazonJpBookSubject.itemList.push({
     }),
 }, {
     name: '演播',
-    selector: commonSelectors$1.map((s) => {
+    selector: commonSelectors$2.map((s) => {
         return {
             ...s,
             keyWord: ['ナレーター'],
@@ -426,17 +426,15 @@ function getGMRequest() {
     return globalThis.GM_xmlhttpRequest;
 }
 function resolveRequestBody(method, body, data) {
-    var _a;
     if (method === 'POST') {
-        return (_a = data !== null && data !== void 0 ? data : body) !== null && _a !== void 0 ? _a : null;
+        return data ?? body ?? null;
     }
-    return body !== null && body !== void 0 ? body : null;
+    return body ?? null;
 }
 function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
-    var _a;
-    const method = ((_a = opts === null || opts === void 0 ? void 0 : opts.method) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || 'GET';
+    const method = opts?.method?.toUpperCase() || 'GET';
     const gmRequest = getGMRequest();
-    if ( gmRequest) {
+    if (gmRequest) {
         const { decode, method: _method, body, data, ...restOpts } = opts;
         const requestBody = resolveRequestBody(method, body, data);
         const responseType = decode ? 'arraybuffer' : type;
@@ -549,6 +547,9 @@ function getImageDataByURL(url, opts = {}) {
     return new Promise(async (resolve, reject) => {
         try {
             const blob = await fetchBinary(url, opts);
+            if (blob.type && !blob.type.toLowerCase().startsWith('image/')) {
+                throw new Error(`unexpected image response type: ${blob.type}`);
+            }
             const reader = new FileReader();
             reader.onloadend = function () {
                 if (typeof reader.result === 'string') {
@@ -559,8 +560,7 @@ function getImageDataByURL(url, opts = {}) {
             };
             reader.readAsDataURL(blob);
             reader.onerror = () => {
-                var _a;
-                reject((_a = reader.error) !== null && _a !== void 0 ? _a : new Error('failed to read image blob'));
+                reject(reader.error ?? new Error('failed to read image blob'));
             };
         }
         catch (e) {
@@ -596,15 +596,7 @@ const amazonUtils = {
         ];
         str = str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
         return str;
-    },
-    getUrlDp(str) {
-        const m = str.match(/\/dp\/(.*?)\//);
-        if (m) {
-            return m[1];
-        }
-        return '';
-    },
-};
+    }};
 async function getAmazonCoverInfo(res) {
     const $cover = document.querySelector('#imgTagWrapperId>img');
     if ($cover && !res.find((obj) => obj.name === 'cover')) {
@@ -714,6 +706,11 @@ const amazonJpBookTools = {
                 }
                 else if (info.name === '价格') {
                     newInfo.value = stringValue.replace(/来自|より/, '').trim();
+                    // 去掉非全新品价格。
+                    const $caret = document.querySelector('.aod-popover-caret-link');
+                    if ($caret && /非全新品|中古品/.test($caret.textContent)) {
+                        newInfo = null;
+                    }
                 }
                 if (newInfo) {
                     res.push({
@@ -764,7 +761,7 @@ const amazonJpMusicSubject = {
     },
     itemList: [],
 };
-const commonSelectors$2 = [
+const commonSelectors$1 = [
     // 2021-05 日亚改版
     {
         selector: '#richProductInformation_feature_div',
@@ -815,7 +812,7 @@ amazonJpMusicSubject.itemList.push({
     pipes: ['k'],
 }, {
     name: '碟片数量',
-    selector: commonSelectors$2.map((s) => {
+    selector: commonSelectors$1.map((s) => {
         return {
             ...s,
             keyWord: ['ディスク枚数'],
@@ -920,7 +917,7 @@ const infoSelector = {
     selector: '.messbox_info',
     subSelector: 'span',
 };
-const descSelector = {
+const descSelector$1 = {
     selector: '#detail_describe',
     subSelector: 'li',
 };
@@ -941,7 +938,7 @@ dangdangBookSubject.itemList.push({
 {
     name: 'ISBN',
     selector: {
-        ...descSelector,
+        ...descSelector$1,
         keyWord: '国际标准书号ISBN',
     },
     category: 'ISBN',
@@ -976,7 +973,7 @@ dangdangBookSubject.itemList.push({
     category: 'subject_summary',
 });
 
-function trimParenthesis(str) {
+function trimParenthesis$1(str) {
     const textList = ['\\([^\\d]*?\\)', '（[^\\d]*?）']; // 去掉多余的括号信息
     return str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
 }
@@ -1051,7 +1048,7 @@ const dangdangBookTools = {
         {
             category: 'subject_title',
             dealFunc(str) {
-                return trimParenthesis(str);
+                return trimParenthesis$1(str);
             },
         },
     ],
@@ -1110,12 +1107,12 @@ const dlsiteSubject = {
     ],
     itemList: [],
 };
-const commonSelector = {
+const commonSelector$2 = {
     selector: '#work_outline',
     subSelector: 'th',
     sibling: true,
 };
-const arrDict = [
+const arrDict$1 = [
     {
         name: '发行日期',
         key: ['販売日', '贩卖日', '販賣日'],
@@ -1146,12 +1143,12 @@ const arrDict = [
         key: ['音乐', '音楽'],
     },
 ];
-const configArr = arrDict.map((obj) => {
+const configArr$3 = arrDict$1.map((obj) => {
     const r = {
         name: obj.name,
         selector: {
             keyWord: obj.key,
-            ...commonSelector,
+            ...commonSelector$2,
         },
     };
     if (obj.categrory) {
@@ -1173,7 +1170,7 @@ dlsiteSubject.itemList.push({
             selector: '#work_maker .maker_name a',
         },
     ],
-}, ...configArr, {
+}, ...configArr$3, {
     name: 'cover',
     selector: [
         {
@@ -1220,7 +1217,6 @@ dlsiteSubject.defaultInfos = [
 const dlsiteTools = {
     hooks: {
         async afterGetWikiData(infos) {
-            var _a;
             const res = [];
             for (const info of infos) {
                 let val = info.value;
@@ -1247,7 +1243,7 @@ const dlsiteTools = {
             }
             const cover = infos.find((obj) => obj.name === 'cover');
             if (!cover) {
-                let url = (_a = document.querySelector('meta[property="og:image"]')) === null || _a === void 0 ? void 0 : _a.content;
+                let url = document.querySelector('meta[property="og:image"]')?.content;
                 if (url) {
                     let dataUrl = url;
                     try {
@@ -1288,9 +1284,8 @@ const dlsiteTools = {
 const dlsiteCharaTools = {
     hooks: {
         async afterGetWikiData(infos, model, el) {
-            var _a;
             const res = [...infos];
-            const txt = ((_a = el.querySelector('p')) === null || _a === void 0 ? void 0 : _a.textContent) || '';
+            const txt = el.querySelector('p')?.textContent || '';
             res.push({
                 name: '姓名',
                 value: txt.split('\n')[0],
@@ -1429,7 +1424,7 @@ function createInfoSelector(keyWord) {
         },
     ];
 }
-const arrDict$1 = [
+const arrDict = [
     {
         name: '发行日期',
         key: ['配信開始日'],
@@ -1456,7 +1451,7 @@ const arrDict$1 = [
     //   key: ['音乐', '音楽'],
     // },
 ];
-const configArr$1 = arrDict$1.map((obj) => {
+const configArr$2 = arrDict.map((obj) => {
     const r = {
         name: obj.name,
         selector: createInfoSelector(obj.key),
@@ -1481,7 +1476,7 @@ dmmSubject.itemList.push({
 }, {
     name: '开发',
     selector: createInfoSelector(['ブランド']),
-}, ...configArr$1, 
+}, ...configArr$2, 
 // 部分页面的图片是预览图，不少封面。所以改在 hook 里面，提取图片。
 // {
 //   name: 'cover',
@@ -1527,14 +1522,14 @@ function toTextPatterns(input) {
     }
     return isTextPattern(input) ? [input] : [];
 }
-function escapeRegExp(text) {
+function escapeRegExp$1(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 function mergeFlags(patternFlags, extraFlags = '') {
     return Array.from(new Set(`${patternFlags}${extraFlags}`.split(''))).join('');
 }
 function getTextPatternSource(pattern) {
-    return pattern instanceof RegExp ? pattern.source : escapeRegExp(pattern);
+    return pattern instanceof RegExp ? pattern.source : escapeRegExp$1(pattern);
 }
 function toRegExp(pattern, extraFlags = '') {
     if (pattern instanceof RegExp) {
@@ -1551,7 +1546,7 @@ function matchesTextPatterns(text, patterns, extraFlags = '') {
     return patterns.some((pattern) => toRegExp(pattern, extraFlags).test(text));
 }
 function createStartsWithPattern(text) {
-    return new RegExp(`^${escapeRegExp(text)}`);
+    return new RegExp(`^${escapeRegExp$1(text)}`);
 }
 
 /**
@@ -1581,14 +1576,14 @@ function getInnerText(elem) {
  * @param {string} selector
  */
 function $q(selector, $parent) {
-    return ($parent !== null && $parent !== void 0 ? $parent : document).querySelector(selector);
+    return ($parent ?? document).querySelector(selector);
 }
 /**
  * dollar 选择所有元素
  * @param {string} selector
  */
 function $qa(selector, $parent) {
-    return ($parent !== null && $parent !== void 0 ? $parent : document).querySelectorAll(selector);
+    return ($parent ?? document).querySelectorAll(selector);
 }
 /**
  * 查找包含文本的标签
@@ -1609,18 +1604,17 @@ function isDocumentNode(node) {
     return !!node && node.nodeType === Node.DOCUMENT_NODE;
 }
 function getIframeContext(selector, $parent) {
-    var _a, _b, _c;
     if ($parent instanceof HTMLIFrameElement) {
-        return (_a = $parent.contentDocument) !== null && _a !== void 0 ? _a : null;
+        return $parent.contentDocument ?? null;
     }
-    const $iframe = $parent === null || $parent === void 0 ? void 0 : $parent.querySelector(selector.selector);
-    if ($iframe === null || $iframe === void 0 ? void 0 : $iframe.contentDocument) {
+    const $iframe = $parent?.querySelector(selector.selector);
+    if ($iframe?.contentDocument) {
         return $iframe.contentDocument;
     }
     if (isDocumentNode($parent)) {
         return $parent;
     }
-    return (_c = (_b = $q(selector.selector, $parent)) === null || _b === void 0 ? void 0 : _b.contentDocument) !== null && _c !== void 0 ? _c : null;
+    return $q(selector.selector, $parent)?.contentDocument ?? null;
 }
 function findElementByKeyWord(selector, $parent) {
     let res = null;
@@ -1647,7 +1641,6 @@ function isElement(element) {
     return element !== null;
 }
 function findElement(selector, $parent) {
-    var _a;
     let r = null;
     if (selector) {
         if (selector instanceof Array) {
@@ -1663,7 +1656,7 @@ function findElement(selector, $parent) {
             }
             else if (selector.isIframe) {
                 const $iframeDoc = getIframeContext(selector, $parent);
-                r = (_a = $iframeDoc === null || $iframeDoc === void 0 ? void 0 : $iframeDoc.querySelector(selector.subSelector)) !== null && _a !== void 0 ? _a : null;
+                r = $iframeDoc?.querySelector(selector.subSelector) ?? null;
             }
             else {
                 r = findElementByKeyWord(selector, $parent);
@@ -1681,7 +1674,6 @@ function findElement(selector, $parent) {
     return r;
 }
 function findAllElement(selector, $parent) {
-    var _a;
     let res = [];
     if (selector instanceof Array) {
         let i = 0;
@@ -1704,7 +1696,7 @@ function findAllElement(selector, $parent) {
             }
             else if (selector.isIframe) {
                 const $iframeDoc = getIframeContext(selector, $parent);
-                res = Array.from((_a = $iframeDoc === null || $iframeDoc === void 0 ? void 0 : $iframeDoc.querySelectorAll(selector.subSelector)) !== null && _a !== void 0 ? _a : []);
+                res = Array.from($iframeDoc?.querySelectorAll(selector.subSelector) ?? []);
             }
             else {
                 $parent = $q(selector.selector, $parent);
@@ -1730,20 +1722,7 @@ function findAllElement(selector, $parent) {
     }
     return res;
 }
-/**
- * @param {String} HTML 字符串
- * @return {Element}
- */
-function htmlToElement(html) {
-    const template = document.createElement('template');
-    html = html.trim();
-    template.innerHTML = html;
-    const firstElement = template.content.firstElementChild;
-    if (!firstElement) {
-        throw new Error('htmlToElement requires a root element');
-    }
-    return firstElement;
-}
+
 /**
  * 载入 iframe
  * @param $iframe iframe DOM
@@ -1763,6 +1742,21 @@ function loadIframe($iframe, src, TIMEOUT = 10000) {
             resolve(undefined);
         };
     });
+}
+
+/**
+ * @param {String} HTML 字符串
+ * @return {Element}
+ */
+function htmlToElement(html) {
+    const template = document.createElement('template');
+    html = html.trim();
+    template.innerHTML = html;
+    const firstElement = template.content.firstElementChild;
+    if (!firstElement) {
+        throw new Error('htmlToElement requires a root element');
+    }
+    return firstElement;
 }
 function genAnonymousLinkText(url, text) {
     return `<a
@@ -1835,7 +1829,6 @@ function getDmmCharacterSummary($el) {
 const dmmTools = {
     hooks: {
         async afterGetWikiData(infos) {
-            var _a;
             const res = [];
             const hasCover = infos.some((info) => info.category == 'cover');
             for (const info of infos) {
@@ -1855,7 +1848,7 @@ const dmmTools = {
                     let url = '';
                     let dataUrl = '';
                     const targetSlide = slides.find((slide) => slide.dataset.slickIndex === '0') || slides[0];
-                    url = ((_a = targetSlide.querySelector('img')) === null || _a === void 0 ? void 0 : _a.getAttribute('src')) || '';
+                    url = targetSlide.querySelector('img')?.getAttribute('src') || '';
                     if (url) {
                         try {
                             dataUrl = await getImageDataByURL(url);
@@ -1894,7 +1887,6 @@ const dmmTools = {
 const dmmCharaTools = {
     hooks: {
         async afterGetWikiData(infos, model, $el) {
-            var _a, _b, _c;
             const res = infos.map((info) => {
                 if (info.category === 'crt_name' && typeof info.value === 'string') {
                     return {
@@ -1907,7 +1899,7 @@ const dmmCharaTools = {
             const $nameTxt = getDmmCharacterNameElement($el);
             if ($nameTxt) {
                 // （きのみや なのか）
-                const nameTxt = ((_a = $nameTxt.textContent) === null || _a === void 0 ? void 0 : _a.trim()) || '';
+                const nameTxt = $nameTxt.textContent?.trim() || '';
                 const kanaMatch = nameTxt.match(/（(.*)）/);
                 if (kanaMatch) {
                     res.push({
@@ -1915,7 +1907,7 @@ const dmmCharaTools = {
                         value: kanaMatch[1],
                     });
                 }
-                const cvSource = ((_c = (_b = $nameTxt.parentElement) === null || _b === void 0 ? void 0 : _b.textContent) === null || _c === void 0 ? void 0 : _c.replace(nameTxt, '')) || '';
+                const cvSource = $nameTxt.parentElement?.textContent?.replace(nameTxt, '') || '';
                 const cvMatch = cvSource.match(/CV[：:]\s*([^\n\r]+)/);
                 if (cvMatch) {
                     res.push({
@@ -1963,7 +1955,7 @@ const doubanGameSubject = {
     },
     itemList: [],
 };
-const gameAttr = {
+const gameAttr$1 = {
     selector: '#content .thing-attr',
     subSelector: 'dt',
     sibling: true,
@@ -1978,11 +1970,11 @@ doubanGameSubject.itemList.push({
     name: '发行日期',
     selector: [
         {
-            ...gameAttr,
+            ...gameAttr$1,
             keyWord: '发行日期',
         },
         {
-            ...gameAttr,
+            ...gameAttr$1,
             keyWord: '预计上市时间',
         },
     ],
@@ -2000,26 +1992,26 @@ doubanGameSubject.itemList.push({
 {
     name: '别名',
     selector: {
-        ...gameAttr,
+        ...gameAttr$1,
         keyWord: '别名',
     },
     category: 'alias',
 }, {
     name: '游戏类型',
     selector: {
-        ...gameAttr,
+        ...gameAttr$1,
         keyWord: '类型',
     },
 }, {
     name: '开发',
     selector: {
-        ...gameAttr,
+        ...gameAttr$1,
         keyWord: '开发商',
     },
 }, {
     name: '发行',
     selector: {
-        ...gameAttr,
+        ...gameAttr$1,
         keyWord: '发行商',
     },
 }, 
@@ -2084,8 +2076,7 @@ const DOUBAN_MUSIC_FIELD_MAP = {
     },
 };
 function getDoubanModifyUrl() {
-    var _a;
-    return (_a = document.querySelector('.th-modify > a')) === null || _a === void 0 ? void 0 : _a.href;
+    return document.querySelector('.th-modify > a')?.href;
 }
 function splitInfoValues(info, delimiter, valueMap = {}) {
     if (typeof info.value !== 'string') {
@@ -2095,13 +2086,10 @@ function splitInfoValues(info, delimiter, valueMap = {}) {
         .split(delimiter)
         .map((item) => item.trim())
         .filter(Boolean)
-        .map((value) => {
-        var _a;
-        return ({
-            ...info,
-            value: (_a = valueMap[value]) !== null && _a !== void 0 ? _a : value,
-        });
-    });
+        .map((value) => ({
+        ...info,
+        value: valueMap[value] ?? value,
+    }));
 }
 function normalizeSlashDelimitedValue(value) {
     if (typeof value !== 'string') {
@@ -2144,12 +2132,12 @@ function getDoubanDescriptionInfos() {
     const result = [];
     const inputList = document.querySelectorAll('input[name="target"][type="hidden"]');
     inputList.forEach(($input) => {
-        var _a;
         if ($input.value !== 'description') {
             return;
         }
-        const $target = (_a = $input
-            .closest('form')) === null || _a === void 0 ? void 0 : _a.querySelector('.desc-form-item #thing_desc_options_0');
+        const $target = $input
+            .closest('form')
+            ?.querySelector('.desc-form-item #thing_desc_options_0');
         if ($target) {
             result.push({
                 name: '游戏简介',
@@ -2161,17 +2149,16 @@ function getDoubanDescriptionInfos() {
     return result;
 }
 function getDoubanMusicFieldValue($field) {
-    var _a, _b;
     const anchors = Array.from($field.querySelectorAll('a'));
     if (anchors.length) {
         return anchors
-            .map((anchor) => { var _a, _b; return (_b = (_a = anchor.textContent) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : ''; })
+            .map((anchor) => anchor.textContent?.trim() ?? '')
             .filter(Boolean)
             .join('、');
     }
     const nextNode = $field.nextSibling;
-    if ((nextNode === null || nextNode === void 0 ? void 0 : nextNode.nodeType) === Node.TEXT_NODE) {
-        return (_b = (_a = nextNode.textContent) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : '';
+    if (nextNode?.nodeType === Node.TEXT_NODE) {
+        return nextNode.textContent?.trim() ?? '';
     }
     return '';
 }
@@ -2179,9 +2166,8 @@ function getDoubanMusicTracks() {
     const durationReg = /\s*\d{1,2}:\d{1,2}$/;
     return Array.from(document.querySelectorAll('.track-list ul.track-items > li'))
         .map((item) => {
-        var _a, _b, _c;
-        const order = Number.parseInt((_a = item.getAttribute('data-track-order')) !== null && _a !== void 0 ? _a : '0', 10);
-        const titleRaw = (_c = (_b = item.textContent) === null || _b === void 0 ? void 0 : _b.trim()) !== null && _c !== void 0 ? _c : '';
+        const order = Number.parseInt(item.getAttribute('data-track-order') ?? '0', 10);
+        const titleRaw = item.textContent?.trim() ?? '';
         const durationMatch = titleRaw.match(durationReg);
         if (durationMatch) {
             return {
@@ -2239,7 +2225,6 @@ const doubanGameTools = {
             }
         },
         async afterGetWikiData(infos) {
-            var _a, _b;
             const result = [];
             for (const info of infos) {
                 if (['平台', '别名'].includes(info.name)) {
@@ -2262,7 +2247,7 @@ const doubanGameTools = {
             for (const link of getDoubanPlatformLinks()) {
                 result.push({
                     name: '平台',
-                    value: (_b = (_a = link.textContent) === null || _a === void 0 ? void 0 : _a.replace(/\/.*/, '').trim()) !== null && _b !== void 0 ? _b : '',
+                    value: link.textContent?.replace(/\/.*/, '').trim() ?? '',
                     category: 'platform',
                 });
             }
@@ -2293,7 +2278,7 @@ const doubanGameEditSubject = {
     },
     itemList: [],
 };
-const gameAttr$1 = {
+const gameAttr = {
     selector: '#thing-modify',
     subSelector: '.thing-item .desc-item .label',
     sibling: true,
@@ -2302,11 +2287,11 @@ doubanGameEditSubject.itemList.push({
     name: '游戏名',
     selector: [
         {
-            ...gameAttr$1,
+            ...gameAttr,
             keyWord: '原名',
         },
         {
-            ...gameAttr$1,
+            ...gameAttr,
             keyWord: '中文名',
         },
     ],
@@ -2315,11 +2300,11 @@ doubanGameEditSubject.itemList.push({
     name: '发行日期',
     selector: [
         {
-            ...gameAttr$1,
+            ...gameAttr,
             keyWord: '发行日期',
         },
         {
-            ...gameAttr$1,
+            ...gameAttr,
             keyWord: '预计上市时间',
         },
     ],
@@ -2327,40 +2312,40 @@ doubanGameEditSubject.itemList.push({
 }, {
     name: '平台',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '平台',
     },
     category: 'platform',
 }, {
     name: '中文名',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '中文名',
     },
     category: 'alias',
 }, {
     name: '别名',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '别名',
     },
     category: 'alias',
 }, {
     name: '游戏类型',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '类型',
     },
 }, {
     name: '开发',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '开发商',
     },
 }, {
     name: '发行',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '发行商',
     },
 }, 
@@ -2376,7 +2361,7 @@ doubanGameEditSubject.itemList.push({
 {
     name: 'cover',
     selector: {
-        ...gameAttr$1,
+        ...gameAttr,
         keyWord: '图标',
         nextSelector: {
             selector: 'img',
@@ -2541,13 +2526,11 @@ doubanMusicSubject.itemList.push({
 const doubanMusicTools = {
     hooks: {
         async afterGetWikiData(infos) {
-            var _a;
             const result = [...infos];
             const $info = document.querySelector('#info');
             if ($info) {
                 $info.querySelectorAll('.pl').forEach(($field) => {
-                    var _a, _b;
-                    const key = (_b = (_a = $field.textContent) === null || _a === void 0 ? void 0 : _a.trim().split(':')[0]) !== null && _b !== void 0 ? _b : '';
+                    const key = $field.textContent?.trim().split(':')[0] ?? '';
                     const target = DOUBAN_MUSIC_FIELD_MAP[key];
                     const value = getDoubanMusicFieldValue($field);
                     if (!target || !value) {
@@ -2559,8 +2542,8 @@ const doubanMusicTools = {
                     });
                 });
             }
-            const discCountValue = (_a = result.find((item) => item.name === '碟片数量')) === null || _a === void 0 ? void 0 : _a.value;
-            const discCount = Number.parseInt(String(discCountValue !== null && discCountValue !== void 0 ? discCountValue : '1'), 10) || 1;
+            const discCountValue = result.find((item) => item.name === '碟片数量')?.value;
+            const discCount = Number.parseInt(String(discCountValue ?? '1'), 10) || 1;
             const discList = groupDoubanTracksByDisc(getDoubanMusicTracks());
             if (discList.length && discList.length === discCount) {
                 result.push({
@@ -2677,7 +2660,6 @@ var ErogamescapeCategory;
 const erogamescapeTools = {
     hooks: {
         async beforeCreate() {
-            var _a;
             const $el = findElement([
                 {
                     selector: '#links',
@@ -2690,7 +2672,7 @@ const erogamescapeTools = {
                     keyWord: 'Getchu.com',
                 },
             ]);
-            const softQuery = (_a = $el === null || $el === void 0 ? void 0 : $el.getAttribute('href')) === null || _a === void 0 ? void 0 : _a.match(/\?id=\d+$/);
+            const softQuery = $el?.getAttribute('href')?.match(/\?id=\d+$/);
             if (softQuery) {
                 return {
                     payload: {
@@ -2774,7 +2756,7 @@ const dict = {
     作詞: '主题歌作词',
     作曲: '主题歌作曲',
 };
-const configArr$2 = Object.keys(dict).map((key) => {
+const configArr$1 = Object.keys(dict).map((key) => {
     const r = {
         name: dict[key],
         selector: {
@@ -2805,7 +2787,7 @@ getchuSubject.itemList.push({
         },
     ],
     category: 'cover',
-}, ...configArr$2, {
+}, ...configArr$1, {
     name: '游戏简介',
     selector: [
         {
@@ -2851,11 +2833,10 @@ const getchuCharacterInfoNameDict = {
     血液型: '血型',
 };
 function getCharacterNameElement($t) {
-    var _a, _b;
     if ($t.matches(GETCHU_CHARA_NAME_SELECTOR)) {
         return $t;
     }
-    return (_b = (_a = $t.closest('dt')) === null || _a === void 0 ? void 0 : _a.querySelector(GETCHU_CHARA_NAME_SELECTOR)) !== null && _b !== void 0 ? _b : null;
+    return $t.closest('dt')?.querySelector(GETCHU_CHARA_NAME_SELECTOR) ?? null;
 }
 function normalizeCharacterName(rawName) {
     return rawName.split(/（|\(|\sCV|新建角色/)[0];
@@ -2888,7 +2869,6 @@ const getchuTools = {
         return res;
     },
     getCharacterInfo($t) {
-        var _a, _b, _c;
         const charaData = [];
         const $name = getCharacterNameElement($t);
         if (!$name)
@@ -2903,7 +2883,7 @@ const getchuTools = {
         }
         else {
             if ($name.classList.contains('chara-name') && $name.querySelector('br')) {
-                const brText = ((_b = (_a = $name.querySelector('br')) === null || _a === void 0 ? void 0 : _a.nextSibling) === null || _b === void 0 ? void 0 : _b.textContent) || getText($name);
+                const brText = $name.querySelector('br')?.nextSibling?.textContent || getText($name);
                 name = normalizeCharacterName(brText);
             }
             else {
@@ -2934,7 +2914,7 @@ const getchuTools = {
                 value: cvMatch[1].replace(/\s/g, ''),
             });
         }
-        const $img = (_c = $t.closest('tr')) === null || _c === void 0 ? void 0 : _c.querySelector('td > img');
+        const $img = $t.closest('tr')?.querySelector('td > img');
         if ($img) {
             charaData.push({
                 name: 'cover',
@@ -3038,7 +3018,7 @@ const jdBookSubject = {
     },
     itemList: [],
 };
-const descSelector$1 = {
+const descSelector = {
     selector: '#parameter2',
     subSelector: 'li',
 };
@@ -3059,14 +3039,14 @@ jdBookSubject.itemList.push({
 {
     name: 'ISBN',
     selector: {
-        ...descSelector$1,
+        ...descSelector,
         keyWord: 'ISBN',
     },
     category: 'ISBN',
 }, {
     name: '发售日',
     selector: {
-        ...descSelector$1,
+        ...descSelector,
         keyWord: '出版时间',
     },
     category: 'date',
@@ -3081,7 +3061,7 @@ jdBookSubject.itemList.push({
 }, {
     name: '出版社',
     selector: {
-        ...descSelector$1,
+        ...descSelector,
         keyWord: '出版社',
     },
 }, {
@@ -3102,7 +3082,7 @@ const jdBookTools = {
         {
             category: 'subject_title',
             dealFunc(str) {
-                return trimParenthesis(str);
+                return trimParenthesis$1(str);
             },
         },
     ],
@@ -3242,7 +3222,7 @@ const moepediaTools = {
                     selector: '.body-shop_list > .body-shop_item > a[href*="www.getchu.com/soft.phtml?id="]',
                 },
             ]);
-            const url = $el === null || $el === void 0 ? void 0 : $el.getAttribute('href');
+            const url = $el?.getAttribute('href');
             if (url) {
                 return {
                     payload: {
@@ -3265,6 +3245,10 @@ const moepediaTools = {
         async afterGetWikiData(infos) {
             const res = [];
             for (const info of infos) {
+                if (info.category === 'cover') {
+                    res.push({ ...info });
+                    continue;
+                }
                 let val = getStringValue(info.value);
                 if (info.name === '游戏名') {
                     val = dealTitle(val);
@@ -3429,7 +3413,7 @@ const steamdbSubject = {
     },
     itemList: [],
 };
-const commonSelector$2 = {
+const commonSelector = {
     selector: '.scope-app .app-row table',
     subSelector: 'td',
     sibling: true,
@@ -3452,12 +3436,12 @@ const dictArr = [
         keyWord: 'Technologies',
     }
 ];
-const configArr$3 = dictArr.map((item) => {
+const configArr = dictArr.map((item) => {
     const r = {
         name: item.name,
         selector: {
             keyWord: item.keyWord,
-            ...commonSelector$2,
+            ...commonSelector,
         },
     };
     if (item.name === '发行日期') {
@@ -3554,7 +3538,7 @@ steamdbSubject.itemList.push({
         },
     ],
     category: 'cover',
-}, ...configArr$3, {
+}, ...configArr, {
     name: '游戏简介',
     selector: [
         {
@@ -3584,7 +3568,6 @@ const steamdbTools = {
             };
         },
         async afterGetWikiData(infos) {
-            var _a;
             const res = [];
             for (const info of infos) {
                 let newInfo = { ...info };
@@ -3599,7 +3582,7 @@ const steamdbTools = {
                 }
                 if (info.name === 'cover') {
                     const coverValue = getCoverValue(info.value);
-                    if (coverValue === null || coverValue === void 0 ? void 0 : coverValue.url) {
+                    if (coverValue?.url) {
                         const a = coverValue.url;
                         const h = a.lastIndexOf('?');
                         const m = a.substring((h === -1 ? a.length : h) - 4);
@@ -3624,7 +3607,7 @@ const steamdbTools = {
                 }
             }
             const $appInstall = document.querySelector('#js-app-install');
-            const appId = (_a = $appInstall === null || $appInstall === void 0 ? void 0 : $appInstall.href.match(/steam:\/\/launch\/(\d+)/)) === null || _a === void 0 ? void 0 : _a[1];
+            const appId = $appInstall?.href.match(/steam:\/\/launch\/(\d+)/)?.[1];
             if (appId) {
                 res.push({
                     name: 'website',
@@ -3720,7 +3703,7 @@ const vgmdbSubject = {
     },
     itemList: [],
 };
-const commonSelectors$3 = {
+const commonSelectors = {
     selector: '#album_infobit_large',
     subSelector: 'tr > td:first-child',
     sibling: true,
@@ -3736,7 +3719,7 @@ vgmdbSubject.itemList.push(
     name: '厂牌',
     selector: [
         {
-            ...commonSelectors$3,
+            ...commonSelectors,
             keyWord: 'Label',
         },
     ],
@@ -3745,7 +3728,7 @@ vgmdbSubject.itemList.push(
     name: '条形码',
     selector: [
         {
-            ...commonSelectors$3,
+            ...commonSelectors,
             keyWord: 'Barcode',
         },
     ],
@@ -3754,7 +3737,7 @@ vgmdbSubject.itemList.push(
     name: '发售日期',
     selector: [
         {
-            ...commonSelectors$3,
+            ...commonSelectors,
             keyWord: 'Release Date',
             nextSelector: {
                 selector: 'a',
@@ -3766,7 +3749,7 @@ vgmdbSubject.itemList.push(
     name: '价格',
     selector: [
         {
-            ...commonSelectors$3,
+            ...commonSelectors,
             keyWord: 'Price',
         },
     ],
@@ -3774,7 +3757,7 @@ vgmdbSubject.itemList.push(
     name: '版本特性',
     selector: [
         {
-            ...commonSelectors$3,
+            ...commonSelectors,
             keyWord: 'Media Format',
         },
     ],
@@ -3933,7 +3916,6 @@ const vgmdbTools = {
             return true;
         },
         async afterGetWikiData(infos) {
-            var _a, _b, _c;
             const res = [];
             const $h1 = document.querySelector('#innermain > h1');
             res.push({
@@ -3980,7 +3962,7 @@ const vgmdbTools = {
                 res.push(item);
             }
             // Publisher (出版方) — only if different from Label
-            const labelValue = ((_a = infos.find((i) => i.name === '厂牌')) === null || _a === void 0 ? void 0 : _a.value) || '';
+            const labelValue = infos.find((i) => i.name === '厂牌')?.value || '';
             const infoTable = document.querySelector('#rightfloat');
             if (infoTable) {
                 for (const tr of infoTable.querySelectorAll('tr.maincred')) {
@@ -4038,12 +4020,12 @@ const vgmdbTools = {
             }
             // VGMdb link
             const canonical = document.querySelector('link[rel="canonical"]');
-            const vgmdbUrl = (canonical === null || canonical === void 0 ? void 0 : canonical.href) || location.href.replace(/\?.*$/, '');
+            const vgmdbUrl = canonical?.href || location.href.replace(/\?.*$/, '');
             if (vgmdbUrl) {
                 res.push({ name: '链接', value: vgmdbUrl, category: 'listItem' });
             }
             // Cover image
-            let url = (_b = document.querySelector('meta[property="og:image"]')) === null || _b === void 0 ? void 0 : _b.content;
+            let url = document.querySelector('meta[property="og:image"]')?.content;
             if (!url) {
                 try {
                     url = document.querySelector('#coverart').style.backgroundImage.match(/url\(["']?([^"']*)["']?\)/)[1];
@@ -4074,7 +4056,7 @@ const vgmdbTools = {
             // Tracklist (episodes)
             if (tracklist) {
                 let tableList = tracklist.querySelectorAll('.tl > table');
-                (_c = document.querySelectorAll('#tlnav > li > a')) === null || _c === void 0 ? void 0 : _c.forEach((item) => {
+                document.querySelectorAll('#tlnav > li > a')?.forEach((item) => {
                     if (item.innerHTML.includes('Japanese')) {
                         const rel = item.getAttribute('rel');
                         tableList = document.querySelectorAll(`#${rel} > table`);
@@ -4123,7 +4105,7 @@ const siteIntegrations = [
     moepediaIntegration,
     vgmdbIntegration,
 ];
-const characterIntegrations = siteIntegrations.flatMap((integration) => { var _a; return (_a = integration.characters) !== null && _a !== void 0 ? _a : []; });
+const characterIntegrations = siteIntegrations.flatMap((integration) => integration.characters ?? []);
 function buildSiteToolsMap(integrations) {
     return integrations.reduce((acc, integration) => {
         if (integration.tools) {
@@ -4165,8 +4147,7 @@ function getCharacterTools(key) {
     return characterToolsMap[key];
 }
 function getSubjectHooks(siteConfig, timing) {
-    var _a;
-    const hooks = (_a = getSiteTools(siteConfig.key)) === null || _a === void 0 ? void 0 : _a.hooks;
+    const hooks = getSiteTools(siteConfig.key)?.hooks;
     if (!hooks) {
         return timing === 'beforeCreate'
             ? noOpBeforeCreate
@@ -4177,22 +4158,20 @@ function getSubjectHooks(siteConfig, timing) {
         : noOpSubjectAfterGetWikiData);
 }
 function getCharacterHooks(config, timing = 'afterGetWikiData') {
-    var _a;
-    const hooks = (_a = getCharacterTools(config.key)) === null || _a === void 0 ? void 0 : _a.hooks;
+    const hooks = getCharacterTools(config.key)?.hooks;
     if (!hooks) {
         return noOpCharacterAfterGetWikiData;
     }
     return hooks[timing] || noOpCharacterAfterGetWikiData;
 }
 function dealFuncByCategory(key, category) {
-    var _a, _b;
     const filter = category
-        ? (_b = (_a = getSiteTools(key)) === null || _a === void 0 ? void 0 : _a.filters) === null || _b === void 0 ? void 0 : _b.find((item) => item.category === category)
+        ? getSiteTools(key)?.filters?.find((item) => item.category === category)
         : undefined;
-    if (filter === null || filter === void 0 ? void 0 : filter.dealFunc) {
+    if (filter?.dealFunc) {
         return filter.dealFunc;
     }
-    return (str = '') => identity((str !== null && str !== void 0 ? str : '').trim());
+    return (str = '') => identity((str ?? '').trim());
 }
 
 /**
@@ -4279,6 +4258,29 @@ ${names.map((n) => `<option value="${n}">${n}</option>`)}
     });
 }
 
+function resolveSelectorMatch(selector, root) {
+    if (selector instanceof Array) {
+        for (const candidate of selector) {
+            const match = resolveSelectorMatch(candidate, root);
+            if (match) {
+                return match;
+            }
+        }
+        return;
+    }
+    const element = findElement(selector, root);
+    if (!element) {
+        return;
+    }
+    return {
+        element,
+        selector,
+    };
+}
+function getSelectorKeyWords(selector) {
+    return toTextPatterns(selector.keyWord);
+}
+
 const pipeFnDict = {
     // t: 去除开头和结尾的空格
     t: trimSpace,
@@ -4289,7 +4291,7 @@ const pipeFnDict = {
     // k: 去除关键字;
     k: (pipe, keyWords = []) => trimKeywords(pipe, Array.isArray(keyWords) ? keyWords.filter(isTextPattern) : []),
     // p: 括号
-    p: trimParenthesis$1,
+    p: trimParenthesis,
     // pn: 括号不含数字
     pn: trimParenthesisN,
     // num: 提取数字
@@ -4299,8 +4301,7 @@ const pipeFnDict = {
     label: trimLeadingLabel,
 };
 function getStr(pipe) {
-    var _a;
-    return ((_a = pipe.out) !== null && _a !== void 0 ? _a : pipe.rawInfo).trim();
+    return (pipe.out ?? pipe.rawInfo).trim();
 }
 function trim(pipe, patterns) {
     let str = getStr(pipe);
@@ -4329,7 +4330,7 @@ function trimSpace(pipe) {
         out: str.trim(),
     };
 }
-function trimParenthesis$1(pipe) {
+function trimParenthesis(pipe) {
     return trim(pipe, [/\(.*?\)/, /（.*?）/]);
 }
 // 保留括号里面的数字. 比如一些图书的 1 2 3
@@ -4376,7 +4377,6 @@ function getDate(pipe) {
  * @returns 处理后的字符串
  */
 function dealTextByPipe(str, pipes, argsDict = {}) {
-    var _a;
     let current = { rawInfo: str };
     pipes = pipes || [];
     for (const p of pipes) {
@@ -4393,7 +4393,7 @@ function dealTextByPipe(str, pipes, argsDict = {}) {
             }
         }
     }
-    return (_a = current.out) !== null && _a !== void 0 ? _a : str;
+    return current.out ?? str;
 }
 
 function getCurrentPageUrl() {
@@ -4472,53 +4472,12 @@ function normalizeTextByCategory(str, category = '', keyWords = []) {
     return normalizeInfoText(str, keyWords);
 }
 
-function resolveSelectorMatch(selector, root) {
-    if (selector instanceof Array) {
-        for (const candidate of selector) {
-            const match = resolveSelectorMatch(candidate, root);
-            if (match) {
-                return match;
-            }
-        }
-        return;
-    }
-    const element = findElement(selector, root);
-    if (!element) {
-        return;
-    }
-    return {
-        element,
-        selector,
-    };
-}
-function getSelectorKeyWords(selector) {
-    return toTextPatterns(selector.keyWord);
-}
-function isCoverCategory(category) {
-    return category === 'cover' || category === 'crt_cover';
-}
 function isSummaryCategory(category) {
     return category === 'subject_summary' || category === 'crt_summary';
 }
-function shouldUseInnerText(category, infoConfig) {
-    var _a;
-    return isSummaryCategory(category) || Boolean((_a = infoConfig.pipes) === null || _a === void 0 ? void 0 : _a.includes('ti'));
-}
-function readRawText(element, category, infoConfig) {
-    var _a;
-    const target = element;
-    if (shouldUseInnerText(category, infoConfig)) {
-        const innerText = getInnerText(target);
-        if (innerText || ((_a = infoConfig.pipes) === null || _a === void 0 ? void 0 : _a.includes('ti'))) {
-            return innerText;
-        }
-    }
-    return getText(target);
-}
 function transformTextValue(rawText, infoConfig, site, category, keyWords) {
-    var _a;
     const pipeArgsDict = createKeywordPipeArgsDict(keyWords);
-    if ((_a = infoConfig.pipes) === null || _a === void 0 ? void 0 : _a.length) {
+    if (infoConfig.pipes?.length) {
         return dealTextByPipe(rawText, infoConfig.pipes, pipeArgsDict);
     }
     const normalizedText = normalizeTextByCategory(rawText, category, keyWords);
@@ -4531,6 +4490,23 @@ function transformTextValue(rawText, infoConfig, site, category, keyWords) {
         return dealFuncByCategory(site, category)(normalizedText);
     }
     return normalizedText;
+}
+
+function isCoverCategory(category) {
+    return category === 'cover' || category === 'crt_cover';
+}
+function shouldUseInnerText(category, infoConfig) {
+    return isSummaryCategory(category) || Boolean(infoConfig.pipes?.includes('ti'));
+}
+function readRawText(element, category, infoConfig) {
+    const target = element;
+    if (shouldUseInnerText(category, infoConfig)) {
+        const innerText = getInnerText(target);
+        if (innerText || infoConfig.pipes?.includes('ti')) {
+            return innerText;
+        }
+    }
+    return getText(target);
 }
 function postProcessValue(category, value) {
     if (category === 'creator') {
@@ -4550,6 +4526,10 @@ async function extractItemValue(infoConfig, site, context, element, keyWords) {
     const value = transformTextValue(rawText, infoConfig, site, category, keyWords);
     return postProcessValue(category, value);
 }
+
+function isSingleInfo(info) {
+    return Boolean(info);
+}
 async function getWikiItem(infoConfig, site, context = {}) {
     if (!infoConfig)
         return;
@@ -4566,20 +4546,17 @@ async function getWikiItem(infoConfig, site, context = {}) {
         };
     }
 }
-function isSingleInfo(info) {
-    return Boolean(info);
-}
 async function getWikiItems(itemList, site, context) {
     const results = await Promise.allSettled(itemList.map((item) => getWikiItem(item, site, context)));
     return results.flatMap((result, index) => {
-        var _a;
         if (result.status === 'fulfilled') {
             return isSingleInfo(result.value) ? [result.value] : [];
         }
-        console.error(`[extract] failed to get wiki item: ${(_a = itemList[index]) === null || _a === void 0 ? void 0 : _a.name}`, result.reason);
+        console.error(`[extract] failed to get wiki item: ${itemList[index]?.name}`, result.reason);
         return [];
     });
 }
+
 function applyHookResult(rawInfo, hookRes) {
     return Array.isArray(hookRes) ? hookRes : rawInfo;
 }
@@ -4603,7 +4580,6 @@ async function getCharaData(model, context = {}) {
  * @param opts
  */
 function filterResults(items, subjectInfo, opts = {}, isSearch = true) {
-    var _a, _b, _c;
     if (!items.length)
         return;
     // 只有一个结果时直接返回, 不再比较日期
@@ -4613,7 +4589,7 @@ function filterResults(items, subjectInfo, opts = {}, isSearch = true) {
         // if (isEqualDate(result.releaseDate, subjectInfo.releaseDate)) {
         // }
     }
-    const searchName = (_a = subjectInfo.name) === null || _a === void 0 ? void 0 : _a.trim();
+    const searchName = subjectInfo.name?.trim();
     if (!searchName) {
         return;
     }
@@ -4635,11 +4611,11 @@ function filterResults(items, subjectInfo, opts = {}, isSearch = true) {
     const nameRe = new RegExp(searchName);
     for (const item of results) {
         const result = item.item;
-        if (nameRe.test(result.name) || nameRe.test((_b = result.greyName) !== null && _b !== void 0 ? _b : '')) {
+        if (nameRe.test(result.name) || nameRe.test(result.greyName ?? '')) {
             return result;
         }
     }
-    return (_c = results[0]) === null || _c === void 0 ? void 0 : _c.item;
+    return results[0]?.item;
 }
 function toStringValue(value) {
     if (value === null || value === undefined) {
@@ -4696,9 +4672,8 @@ async function initSourceSubject(siteConfig, runtime) {
     const { payload } = normalizedHookRes;
     console.info(siteConfig.description, ' content script init');
     insertControlBtn($title, async (_e, shouldCheckDup) => {
-        var _a;
         const infos = await getWikiData(siteConfig);
-        await ((_a = runtime.hydrateSubjectCover) === null || _a === void 0 ? void 0 : _a.call(runtime, infos));
+        await runtime.hydrateSubjectCover?.(infos);
         console.info('wiki info list: ', infos);
         const wikiData = {
             type: siteConfig.type,
@@ -4715,137 +4690,240 @@ async function initSourceSubject(siteConfig, runtime) {
     });
 }
 
-function isChineseStr(str) {
-    return /^[\u4e00-\u9fa5]+/i.test(str) && !hasJpStr(str);
-}
-function hasJpStr(str) {
-    var pHiragana = /[\u3040-\u309Fー]/;
-    var pKatakana = /[\u30A0-\u30FF]/;
-    return pHiragana.test(str) || pKatakana.test(str);
-}
-function getTargetStr(str1, str2, checkFunc) {
-    if (checkFunc(str1))
-        return str1;
-    if (checkFunc(str2))
-        return str2;
-    return '';
-}
-// 综合两个单项信息
-function combineObj(current, target, auxPrefs = {}) {
-    if (auxPrefs.originNames === 'all' ||
-        (auxPrefs.originNames && auxPrefs.originNames.includes(current.name))) {
-        return [{ ...current }];
-    }
-    else if (auxPrefs.targetNames === 'all' ||
-        (auxPrefs.targetNames && auxPrefs.targetNames.includes(target.name))) {
-        return [{ ...target }];
-    }
-    const obj = { ...current, ...target };
-    const currentValue = getStringValue(current.value);
-    const targetValue = getStringValue(target.value);
-    if (current.category === 'subject_title') {
-        // 中日  日英  中英
-        let cnName = { name: '中文名', value: '' };
-        let titleObj = { ...current };
-        let otherName = { name: '别名', value: '', category: 'alias' };
-        let chineseStr = getTargetStr(currentValue, targetValue, isChineseStr);
-        let jpStr = getTargetStr(currentValue, targetValue, hasJpStr);
-        // TODO 状态机？
-        if (chineseStr) {
-            cnName.value = chineseStr;
-            if (currentValue === chineseStr) {
-                titleObj.value = targetValue;
-            }
-            else {
-                titleObj.value = currentValue;
-            }
+// ═══════════════════════════════════════════════════════
+// 语言检测（纯函数，无副作用）
+// ═══════════════════════════════════════════════════════
+const JP_RE = /[\u3040-\u309F\u30A0-\u30FFー]/;
+const CN_RE = /^[\u4e00-\u9fa5]+/;
+const isJp = (s) => JP_RE.test(s);
+const isCn = (s) => CN_RE.test(s) && !isJp(s);
+// ═══════════════════════════════════════════════════════
+// 各字段合并策略
+// ═══════════════════════════════════════════════════════
+/** 优先偏好：直接取指定侧 */
+const preferOriginStrategy = ({ current }) => [{ ...current }];
+const preferTargetStrategy = ({ other }) => [{ ...other }];
+/**
+ * subject_title 策略
+ *
+ * 语言优先级：日文 > 中文 > 其他
+ * 主标题 → 优先级最高的语言
+ * 中文名 → 若有中文且不是主标题
+ * 别名   → 剩余有值的字符串
+ */
+const subjectTitleStrategy = ({ current, other }) => {
+    const cv = getStringValue(current.value);
+    const ov = getStringValue(other.value);
+    const titleObj = { ...current };
+    const cnName = { name: '中文名', value: '' };
+    const alias = { name: '别名', value: '', category: 'alias' };
+    const jpVal = isJp(cv) ? cv : isJp(ov) ? ov : '';
+    const cnVal = isCn(cv) ? cv : isCn(ov) ? ov : '';
+    if (jpVal) {
+        // 日文作主标题
+        titleObj.value = jpVal;
+        if (cnVal) {
+            // 中日：中文存 cnName
+            cnName.value = cnVal;
         }
-        if (jpStr) {
-            titleObj.value = jpStr;
-            if (!chineseStr) {
-                if (currentValue === jpStr) {
-                    otherName.value = targetValue;
-                }
-                else {
-                    otherName.value = currentValue;
-                }
-            }
+        else {
+            // 只有日文：另一个存别名
+            alias.value = jpVal === cv ? ov : cv;
         }
-        return [titleObj, cnName, otherName];
     }
-    if (['游戏简介', '开发', '发行'].includes(current.name)) {
-        return [{ ...current }];
-    }
-    if (currentValue.length < targetValue.length) {
-        obj.value = targetValue;
+    else if (cnVal) {
+        // 只有中文：中文存 cnName，另一个作主标题
+        cnName.value = cnVal;
+        titleObj.value = cnVal === cv ? ov : cv;
     }
     else {
-        obj.value = currentValue;
+        // 都不是：取较长值
+        titleObj.value = cv.length >= ov.length ? cv : ov;
     }
-    return [obj];
+    return [titleObj, cnName, alias];
+};
+/** 保留原始值（游戏简介/开发/发行等不宜被覆盖的字段） */
+const keepOriginStrategy = ({ current }) => [{ ...current }];
+function isCoverField(info) {
+    return info.category === 'cover' || info.category === 'crt_cover';
+}
+function hasCoverValue(info) {
+    const cover = getCoverValue(info.value);
+    if (cover) {
+        return Boolean(cover.dataUrl || cover.url);
+    }
+    return Boolean(getStringValue(info.value).trim());
+}
+/** cover 可能是结构化对象，不能按字符串长度比较。 */
+const coverValueStrategy = ({ current, other }) => {
+    const currentHasValue = hasCoverValue(current);
+    const otherHasValue = hasCoverValue(other);
+    if (!currentHasValue && otherHasValue)
+        return [{ ...other }];
+    if (currentHasValue)
+        return [{ ...current }];
+    return [{ ...current }];
+};
+/** 默认策略：取较长值 */
+const longerValueStrategy = ({ current, other }) => {
+    const cv = getStringValue(current.value);
+    const ov = getStringValue(other.value);
+    return [{ ...current, ...other, value: cv.length >= ov.length ? cv : ov }];
+};
+// ═══════════════════════════════════════════════════════
+// 策略选择器
+// ═══════════════════════════════════════════════════════
+const KEEP_ORIGIN_NAMES = new Set(['游戏简介', '开发', '发行']);
+function selectStrategy(ctx) {
+    const { current, other, auxPrefs } = ctx;
+    const { originNames, targetNames } = auxPrefs;
+    // 偏好优先级最高
+    if (originNames === 'all' ||
+        (Array.isArray(originNames) && originNames.includes(current.name))) {
+        return preferOriginStrategy;
+    }
+    if (targetNames === 'all' ||
+        (Array.isArray(targetNames) && targetNames.includes(other.name))) {
+        return preferTargetStrategy;
+    }
+    // 按字段特征选策略
+    if (isCoverField(current) || isCoverField(other))
+        return coverValueStrategy;
+    if (current.category === 'subject_title')
+        return subjectTitleStrategy;
+    if (KEEP_ORIGIN_NAMES.has(current.name))
+        return keepOriginStrategy;
+    return longerValueStrategy;
 }
 /**
- * 结合不用网站的信息
- * @param infoList 当前的条目信息
+ * 多值字段（平台/别名）允许同名多条，其余字段 name 唯一匹配。
+ * targetNames 中的字段以 other 侧为准，origin 侧跳过；
+ * originNames 中的字段以 origin 侧为准，other 侧在 combineObj 内处理。
+ */
+function groupFields(infoList, otherInfoList, auxPrefs) {
+    const MULTI_FIELDS = new Set(['平台', '别名']);
+    const { targetNames = [] } = auxPrefs;
+    const targetNamesSet = new Set(Array.isArray(targetNames) ? targetNames : []);
+    // 非多值字段建索引
+    const otherIndex = new Map();
+    for (const item of otherInfoList) {
+        if (!MULTI_FIELDS.has(item.name) && !otherIndex.has(item.name)) {
+            otherIndex.set(item.name, item);
+        }
+    }
+    const groups = [];
+    const matchedOtherNames = new Set();
+    for (const item of infoList) {
+        if (MULTI_FIELDS.has(item.name)) {
+            groups.push({ kind: 'origin-only', item });
+            continue;
+        }
+        // targetNames 优先：此字段交给 other 侧
+        if (targetNamesSet.has(item.name))
+            continue;
+        const otherItem = otherIndex.get(item.name);
+        if (otherItem) {
+            groups.push({ kind: 'both', current: item, other: otherItem });
+            matchedOtherNames.add(item.name);
+        }
+        else {
+            groups.push({ kind: 'origin-only', item });
+        }
+    }
+    // other 侧未匹配的字段（含多值字段）
+    for (const item of otherInfoList) {
+        if (MULTI_FIELDS.has(item.name)) {
+            groups.push({ kind: 'other-only', item });
+        }
+        else if (!matchedOtherNames.has(item.name)) {
+            groups.push({ kind: 'other-only', item });
+        }
+    }
+    return groups;
+}
+// ═══════════════════════════════════════════════════════
+// Step 2：按组应用策略，展平为 SingleInfo[]
+// ═══════════════════════════════════════════════════════
+function applyStrategies(groups, auxPrefs) {
+    const { originNames = [], targetNames = [] } = auxPrefs;
+    const originNamesSet = new Set(Array.isArray(originNames) ? originNames : []);
+    const prefersAllOrigin = originNames === 'all';
+    const prefersAllTarget = targetNames === 'all';
+    const result = [];
+    for (const group of groups) {
+        if (group.kind === 'origin-only') {
+            if (prefersAllTarget &&
+                !prefersAllOrigin &&
+                !originNamesSet.has(group.item.name)) {
+                continue;
+            }
+            result.push(group.item);
+            continue;
+        }
+        if (group.kind === 'other-only') {
+            // originNames 优先：other 侧对应字段跳过
+            if (prefersAllOrigin || originNamesSet.has(group.item.name))
+                continue;
+            result.push(group.item);
+            continue;
+        }
+        // kind === 'both'：走策略选择
+        const ctx = {
+            current: group.current,
+            other: group.other,
+            auxPrefs,
+        };
+        result.push(...selectStrategy(ctx)(ctx));
+    }
+    return result;
+}
+// ═══════════════════════════════════════════════════════
+// Step 3：去空值 + 去重
+// ═══════════════════════════════════════════════════════
+function dedup(items) {
+    // 非别名字段：name+value 唯一
+    // 别名字段：value 全局唯一（防止与主标题等重复）
+    const nonAliasValues = new Set(items
+        .filter((v) => v.name !== '别名' && v.value)
+        .map((v) => String(v.value)));
+    const seen = new Set();
+    const aliasValueSeen = new Set();
+    return items.filter((v) => {
+        if (!v.value)
+            return false;
+        const val = String(v.value);
+        if (v.name === '别名') {
+            if (nonAliasValues.has(val))
+                return false;
+            if (aliasValueSeen.has(val))
+                return false;
+            aliasValueSeen.add(val);
+            return true;
+        }
+        const key = `${v.name}::${val}`;
+        if (seen.has(key))
+            return false;
+        seen.add(key);
+        return true;
+    });
+}
+// ═══════════════════════════════════════════════════════
+// 公开 API
+// ═══════════════════════════════════════════════════════
+/**
+ * 结合不同网站的条目信息
+ * @param infoList      当前的条目信息
  * @param otherInfoList 参考的条目信息
+ * @param auxPrefs      合并偏好
  */
 function combineInfoList(infoList, otherInfoList, auxPrefs = {}) {
-    // 合并数组为空时
-    if (!otherInfoList || !otherInfoList.length) {
+    if (!otherInfoList?.length)
         return infoList;
-    }
-    if (!infoList || !infoList.length) {
+    if (!infoList?.length)
         return otherInfoList;
-    }
-    const multipleNames = ['平台', '别名'];
-    const { targetNames = [], originNames = [] } = auxPrefs;
-    const res = [];
-    const idxSetOther = new Set();
-    for (let i = 0; i < infoList.length; i++) {
-        const current = infoList[i];
-        const targetFirst = targetNames.includes(current.name);
-        if (targetFirst) {
-            continue;
-        }
-        else if (!targetFirst && multipleNames.includes(current.name)) {
-            res.push(current);
-            continue;
-        }
-        const idxOther = otherInfoList.findIndex((info) => info.name === current.name);
-        if (idxOther === -1) {
-            res.push(current);
-        }
-        else {
-            const objArr = combineObj(current, otherInfoList[idxOther], auxPrefs);
-            res.push(...objArr);
-            idxSetOther.add(idxOther);
-        }
-    }
-    for (let j = 0; j < otherInfoList.length; j++) {
-        const other = otherInfoList[j];
-        const originFirst = originNames.includes(other.name);
-        if (originFirst) {
-            continue;
-        }
-        else if (!originFirst && multipleNames.includes(other.name)) {
-            res.push(other);
-            continue;
-        }
-        if (idxSetOther.has(j))
-            continue;
-        res.push(other);
-    }
-    const noEmptyArr = res.filter((v) => v.value);
-    // ref: https://stackoverflow.com/questions/2218999/remove-duplicates-from-an-array-of-objects-in-javascript
-    return noEmptyArr
-        .filter((v, i, a) => a.findIndex((t) => t.value === v.value && t.name === v.name) === i)
-        .filter((v, i, a) => {
-        if (v.name !== '别名')
-            return true;
-        else {
-            return a.findIndex((t) => t.value === v.value) === i;
-        }
-    });
+    const groups = groupFields(infoList, otherInfoList, auxPrefs);
+    const merged = applyStrategies(groups, auxPrefs);
+    return dedup(merged);
 }
 
 function createWikiExtractContext(root, pageContext = {}) {
@@ -4902,7 +4980,7 @@ function buildUnavailableMessage() {
     return `打开上面链接确认是否能访问以及有信息，再尝试`;
 }
 async function updateSubjectDraftFromAuxSite(payload, runtime) {
-    const { url: auxSite, opts: auxSiteOpts = {}, prefs: auxPrefs = {}, } = payload;
+    const { url: auxSite, opts: auxSiteOpts = {}, prefs: auxPrefs = {}, mergeOrder = 'origin', } = payload;
     try {
         await runtime.notifier.notify({
             type: 'info',
@@ -4933,10 +5011,9 @@ async function updateSubjectDraftFromAuxSite(payload, runtime) {
         if (!wikiData) {
             throw new Error('wikiData is empty');
         }
-        let infos = combineInfoList(wikiData.infos, auxData, auxPrefs);
-        if (auxSite.match(/store\.steampowered\.com/)) {
-            infos = combineInfoList(auxData, wikiData.infos);
-        }
+        let infos = mergeOrder === 'aux'
+            ? combineInfoList(auxData, wikiData.infos, auxPrefs)
+            : combineInfoList(wikiData.infos, auxData, auxPrefs);
         await runtime.storage.saveSubjectDraft({
             type: wikiData.type,
             subtype: wikiData.subtype || 0,
@@ -5039,9 +5116,8 @@ function dealSearchResults(info) {
  * @param uniqueQueryStr
  */
 async function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTypeId.all, uniqueQueryStr = '') {
-    let releaseDate;
     if (subjectInfo && subjectInfo.releaseDate) {
-        releaseDate = subjectInfo.releaseDate;
+        subjectInfo.releaseDate;
     }
     let query = (subjectInfo.name || '').trim();
     if (type === SubjectTypeId.book) {
@@ -5081,7 +5157,7 @@ async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNu
     }
     const releaseDate = new Date(subjectInfo.releaseDate);
     if (isNaN(releaseDate.getTime())) {
-        throw `invalid releasedate: ${subjectInfo.releaseDate}`;
+        throw new Error(`invalid releasedate: ${subjectInfo.releaseDate}`);
     }
     const sort = releaseDate.getDate() > 15 ? 'sort=date' : '';
     const page = pageNumber ? `page=${pageNumber}` : '';
@@ -5110,7 +5186,7 @@ async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNu
             return await findSubjectByDate(subjectInfo, bgmHost, pageNumber + 1, type);
         }
         else {
-            throw 'notmatched';
+            return undefined;
         }
     }
     return result;
@@ -5201,16 +5277,17 @@ function genLinkText(url, text = '地址') {
     $div.appendChild($link);
     return $div.innerHTML;
 }
+
 function insertLogInfo($sibling, txt) {
     const $log = document.createElement('div');
     $log.classList.add('e-wiki-log-info');
-    // $log.setAttribute('style', 'color: tomato;');
     $log.innerHTML = txt;
     if ($sibling.parentElement) {
         $sibling.parentElement.insertBefore($log, $sibling.nextElementSibling);
     }
     return $log;
 }
+
 /**
  * 通过 iframe 获取表单
  * @param url 链接地址
@@ -5218,7 +5295,6 @@ function insertLogInfo($sibling, txt) {
  * @returns Promise<HTMLFormElement>
  */
 async function getFormByIframe(url, formSelector) {
-    var _a;
     const iframeId = 'e-userjs-iframe';
     let $iframe = document.querySelector(`#${iframeId}`);
     if (!$iframe) {
@@ -5228,7 +5304,7 @@ async function getFormByIframe(url, formSelector) {
         document.body.appendChild($iframe);
     }
     await loadIframe($iframe, url, 20000);
-    const $form = (_a = $iframe.contentDocument) === null || _a === void 0 ? void 0 : _a.querySelector(formSelector);
+    const $form = $iframe.contentDocument?.querySelector(formSelector);
     if (!$form) {
         throw new Error(`form not found: ${formSelector}`);
     }
@@ -5241,47 +5317,49 @@ async function createNewSubjectEntry(payload, runtime) {
     }
     await runtime.openNewSubject(payload.type);
 }
-async function checkSubjectAndOpenEntry(payload, runtime) {
-    var _a, _b, _c, _d;
-    if (!payload.subjectInfo) {
-        await createNewSubjectEntry({
-            type: payload.type,
-            auxSite: payload.auxSite,
-        }, runtime);
-        return;
-    }
+/** 清除当前非错误通知（如 loading 提示） */
+function dismissNotification() {
+    return { type: 'info', message: '', cmd: 'dismissNotError' };
+}
+// 搜索 Bangumi 是否已有匹配条目
+// - 无结果：返回 undefined，调用方降级新建
+// - 网络失败：抛出异常，调用方不应继续新建
+async function searchExistingSubject(payload, runtime) {
     await runtime.notify({
         type: 'info',
-        message: `搜索中...<br/>${(_b = (_a = payload.subjectInfo) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : ''}`,
+        message: `搜索中...<br/>${payload.subjectInfo?.name ?? ''}`,
         duration: 0,
     });
-    let result = undefined;
     try {
-        result = await checkSubjectExit(payload.subjectInfo, runtime.bgmHost, payload.type, payload.disableDate);
+        const result = await checkSubjectExit(payload.subjectInfo, runtime.bgmHost, payload.type, payload.disableDate);
         console.info('search results: ', result);
-        await runtime.notify({
-            type: 'info',
-            message: '',
-            cmd: 'dismissNotError',
-        });
+        await runtime.notify(dismissNotification());
+        return result;
     }
     catch (error) {
-        console.log('fetch info err:', error, error === null || error === void 0 ? void 0 : error.message);
+        console.error('search request failed:', error);
         await runtime.notify({
             type: 'error',
-            message: `Bangumi 搜索匹配结果为空: <br/><b>${(_d = (_c = payload.subjectInfo) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : ''}</b>`,
+            message: `Bangumi 搜索请求失败: <br/><b>${payload.subjectInfo?.name ?? ''}</b>`,
             cmd: 'dismissNotError',
         });
+        throw error;
     }
-    if (result && result.url) {
+}
+async function checkSubjectAndOpenEntry(payload, runtime) {
+    if (!payload.subjectInfo?.name) {
+        // 没有名称，无法搜索，直接新建
+        await createNewSubjectEntry({ type: payload.type, auxSite: payload.auxSite }, runtime);
+        return;
+    }
+    const result = await searchExistingSubject(payload, runtime);
+    if (result?.url) {
         await runtime.saveSubjectId(getSubjectId(result.url));
         await runtime.openExistingSubject(result.url);
         return;
     }
-    await createNewSubjectEntry({
-        type: payload.type,
-        auxSite: payload.auxSite,
-    }, runtime);
+    // 搜索无结果，降级新建
+    await createNewSubjectEntry({ type: payload.type, auxSite: payload.auxSite }, runtime);
 }
 
 /*! *****************************************************************************
@@ -5854,15 +5932,13 @@ const defaultOpenTab = async (url) => {
     GM_openInTab(url);
 };
 function getOpenTab() {
-    var _a, _b;
-    return (_b = (_a = userScriptRuntimeCapabilities.navigator) === null || _a === void 0 ? void 0 : _a.openTab) !== null && _b !== void 0 ? _b : defaultOpenTab;
+    return userScriptRuntimeCapabilities.navigator?.openTab ?? defaultOpenTab;
 }
 async function updateAuxData(payload) {
-    var _a, _b;
     await updateSubjectDraftFromAuxSite(payload, {
         storage: userScriptRuntimeCapabilities.storage,
         notifier: {
-            notify: (_b = (_a = userScriptRuntimeCapabilities.notifier) === null || _a === void 0 ? void 0 : _a.notify) !== null && _b !== void 0 ? _b : logMessage,
+            notify: userScriptRuntimeCapabilities.notifier?.notify ?? logMessage,
         },
     });
 }
@@ -5881,14 +5957,14 @@ async function submitSubjectCreation({ wikiData, queryInfo, payload, shouldCheck
         await checkSubjectAndOpenEntry({
             subjectInfo: queryInfo,
             type: wikiData.type,
-            disableDate: payload === null || payload === void 0 ? void 0 : payload.disableDate,
-            auxSite: payload === null || payload === void 0 ? void 0 : payload.auxSite,
+            disableDate: payload?.disableDate,
+            auxSite: payload?.auxSite,
         }, subjectCreationRuntime);
         return;
     }
     await createNewSubjectEntry({
         type: wikiData.type,
-        auxSite: payload === null || payload === void 0 ? void 0 : payload.auxSite,
+        auxSite: payload?.auxSite,
     }, subjectCreationRuntime);
 }
 async function submitCharacterCreation({ charaData, }) {
@@ -5898,8 +5974,7 @@ async function submitCharacterCreation({ charaData, }) {
     GM_openInTab(`${getBangumiHost()}/character/new`);
 }
 function createUserScriptSubjectCreationRuntime(bgmHost) {
-    var _a, _b;
-    const notify = (_b = (_a = userScriptRuntimeCapabilities.notifier) === null || _a === void 0 ? void 0 : _a.notify) !== null && _b !== void 0 ? _b : logMessage;
+    const notify = userScriptRuntimeCapabilities.notifier?.notify ?? logMessage;
     const openTab = getOpenTab();
     return {
         bgmHost,
@@ -6079,13 +6154,11 @@ function clearPreviewCanvas($canvas) {
     $canvas.height = 0;
 }
 function removePreviewFetchLink(refs) {
-    var _a;
-    (_a = refs.previewFetchLink) === null || _a === void 0 ? void 0 : _a.remove();
+    refs.previewFetchLink?.remove();
     refs.previewFetchLink = null;
 }
 function ensurePreviewFetchLink(refs, url) {
-    var _a;
-    if (((_a = refs.previewFetchLink) === null || _a === void 0 ? void 0 : _a.href) === url) {
+    if (refs.previewFetchLink?.href === url) {
         return;
     }
     removePreviewFetchLink(refs);
@@ -6148,8 +6221,7 @@ function bindPreviewFileImage($file, refs) {
     refs.previewImage.addEventListener('load', handleImageLoad);
     if ($file) {
         const loadImgData = () => {
-            var _a;
-            const file = (_a = $file.files) === null || _a === void 0 ? void 0 : _a[0];
+            const file = $file.files?.[0];
             if (!file) {
                 return;
             }
@@ -6173,18 +6245,17 @@ function bindPreviewFileImage($file, refs) {
 }
 function bindPreviewControls(initialSource, $file, refs) {
     const handleReset = (e) => {
-        var _a;
         // wiki 填表按钮
         const $fillForm = document.querySelector('.e-wiki-fill-form');
-        const resetSource = resolveResetSource(initialSource, Boolean((_a = $file === null || $file === void 0 ? void 0 : $file.files) === null || _a === void 0 ? void 0 : _a[0]), Boolean($fillForm));
+        const resetSource = resolveResetSource(initialSource, Boolean($file?.files?.[0]), Boolean($fillForm));
         if (resetSource === 'initial') {
             applyInitialPreviewData(initialSource, refs);
         }
         else if (resetSource === 'file') {
-            $file === null || $file === void 0 ? void 0 : $file.dispatchEvent(new Event('change'));
+            $file?.dispatchEvent(new Event('change'));
         }
         else if (resetSource === 'fill_form') {
-            $fillForm === null || $fillForm === void 0 ? void 0 : $fillForm.dispatchEvent(new Event('click'));
+            $fillForm?.dispatchEvent(new Event('click'));
         }
         e.preventDefault();
     };
@@ -6238,8 +6309,7 @@ function bindPastePreview(refs) {
         }
         const reader = new FileReader();
         reader.addEventListener('load', (event) => {
-            var _a;
-            const pasteBase64Data = (_a = event.target) === null || _a === void 0 ? void 0 : _a.result;
+            const pasteBase64Data = event.target?.result;
             if (typeof pasteBase64Data === 'string') {
                 loadPreviewImageSource(refs, pasteBase64Data);
             }
@@ -6724,7 +6794,7 @@ function appendFormItem(fd, item) {
 async function sendFormImg($form, dataURL) {
     const info = [];
     const $file = $form.querySelector('input[type=file]');
-    const inputFileName = ($file === null || $file === void 0 ? void 0 : $file.name) ? $file.name : 'picfile';
+    const inputFileName = $file?.name ? $file.name : 'picfile';
     info.push({
         name: inputFileName,
         value: dataURItoBlob(dataURL),
@@ -6745,7 +6815,7 @@ function sendForm($form, extraInfo = []) {
             appendFormItem(fd, item);
         });
         const $submit = $form.querySelector('[name=submit]');
-        if (($submit === null || $submit === void 0 ? void 0 : $submit.name) && $submit.value) {
+        if ($submit?.name && $submit.value) {
             fd.set($submit.name, $submit.value);
         }
         const xhr = new XMLHttpRequest();
@@ -6786,7 +6856,7 @@ function bindUploadButton($file, $inputBtn, $canvas, $form) {
             const $loading = insertLoading($el);
             try {
                 const $wikiMode = document.querySelector('table small a:nth-of-type(1)[href="javascript:void(0)"]');
-                $wikiMode === null || $wikiMode === void 0 ? void 0 : $wikiMode.click();
+                $wikiMode?.click();
                 await sleep(200);
                 const url = await sendFormImg($form, $canvas.toDataURL('image/png', 1));
                 location.assign(url);
@@ -6816,10 +6886,10 @@ const imageWidgetInstances = new WeakMap();
  */
 function initImageWidget($form, base64Data) {
     const currentInstance = imageWidgetInstances.get($form);
-    if (currentInstance === null || currentInstance === void 0 ? void 0 : currentInstance.container.isConnected) {
+    if (currentInstance?.container.isConnected) {
         return;
     }
-    currentInstance === null || currentInstance === void 0 ? void 0 : currentInstance.dispose();
+    currentInstance?.dispose();
     imageWidgetInstances.delete($form);
     if (document.querySelector('.e-wiki-cover-container'))
         return;
@@ -6855,122 +6925,146 @@ function hasCategory(info, category) {
         info.category.includes(',') &&
         info.category.split(',').includes(category));
 }
-/**
- * 转换 wiki 模式下 infobox 内容
- * @param originValue
- * @param infoArr
- */
+// ─── 常量 ────────────────────────────────────────────────────────────────────
+const MULTI_VALUE_FIELDS = new Set(['website']);
+const BLOCK_FIELDS = new Set(['别名', '链接', '平台']);
+// ─── 工具函数 ─────────────────────────────────────────────────────────────────
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function isEmptyFieldLine(line, fieldName) {
+    return new RegExp(`^\\|\\s*${escapeRegExp(fieldName)}\\s*=\\s*$`).test(line.split('\n')[0].trim());
+}
+function isBlockStartLine(line, fieldName) {
+    const namePattern = fieldName ? escapeRegExp(fieldName) : '.+?';
+    return new RegExp(`^\\|\\s*${namePattern}\\s*=\\s*\\{\\s*$`).test(line.split('\n')[0].trim());
+}
+function extractFieldName(line) {
+    const m = line.match(/(?:\||\[)(.+?)([|=])/);
+    return m && m.length >= 2 ? m[1].trim() : null;
+}
+function ensureBlockSyntax(arr, fieldName) {
+    const blockMarker = `|${fieldName}={`;
+    const existingBlockIdx = arr.findIndex((v) => isBlockStartLine(v, fieldName));
+    if (existingBlockIdx > -1) {
+        const result = [...arr];
+        result[existingBlockIdx] = blockMarker;
+        return result;
+    }
+    const idx = arr.findIndex((v) => isEmptyFieldLine(v, fieldName));
+    if (idx > -1) {
+        const result = [...arr];
+        result[idx] = blockMarker;
+        return [...result.slice(0, idx + 1), '}', ...result.slice(idx + 1)];
+    }
+    return [...arr.slice(0, -1), blockMarker, '}', ...arr.slice(-1)];
+}
+function normaliseValue(info) {
+    let d = getStringValue(info.value);
+    if (info.category === 'date')
+        d = dealDate(d);
+    if (info.category === 'ISBN')
+        d = d.replace(/-/g, '');
+    return d;
+}
+function mergeInfoIntoLine(line, info, originValue) {
+    const n = extractFieldName(line);
+    if (n !== info.name)
+        return null;
+    const d = normaliseValue(info);
+    // [英文名|] 格式
+    if (/\[.+\|\]/.test(line)) {
+        return line.replace(']', '') + d + ']';
+    }
+    // |平台={ 块格式，避免重复插入
+    if (isBlockStartLine(line, info.name)) {
+        const infoValue = getStringValue(info.value);
+        if (!originValue.includes(`[${infoValue}]`) && !line.includes(`[${infoValue}]`)) {
+            return `${line}\n[${infoValue}]`;
+        }
+        return line;
+    }
+    // 普通 |字段=值 格式
+    return line.replace(/\s*=.*/, '=') + d;
+}
+function applyBlockFormats(arr, infoArr) {
+    let result = [...arr];
+    // 1. 模板规范字段（别名、链接、平台等）
+    for (const fieldName of BLOCK_FIELDS) {
+        const hasInfoForField = infoArr.some((info) => info.name === fieldName);
+        if (hasInfoForField &&
+            result.some((v) => isEmptyFieldLine(v, fieldName) || isBlockStartLine(v, fieldName))) {
+            result = ensureBlockSyntax(result, fieldName);
+        }
+    }
+    // 2. 允许多值的字段（website 等）
+    for (const fieldName of MULTI_VALUE_FIELDS) {
+        const infos = infoArr.filter((i) => i.name === fieldName);
+        if (infos.length > 1) {
+            result = ensureBlockSyntax(result, fieldName);
+        }
+    }
+    // 3. 标记为 listItem 的字段
+    for (const info of infoArr) {
+        if (hasCategory(info, 'listItem')) {
+            result = ensureBlockSyntax(result, info.name);
+        }
+    }
+    return result;
+}
+function reorderAuthorBeforePress(lines) {
+    let pressIdx = -1;
+    let authorIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (/\|(\s*)出版社(\s*)=/.test(lines[i]))
+            pressIdx = i;
+        if (/作者/.test(lines[i]))
+            authorIdx = i;
+    }
+    if (pressIdx === -1 || authorIdx === -1 || authorIdx <= pressIdx)
+        return null;
+    const result = [...lines];
+    const [author] = result.splice(authorIdx, 1);
+    result.splice(pressIdx, 0, author);
+    return result;
+}
+// ─── 主函数 ───────────────────────────────────────────────────────────────────
 function convertInfoValue(originValue, infoArr) {
+    // 1. 初始化行数组
     let arr = originValue
         .trim()
         .split('\n')
-        .filter((v) => !!v);
-    // 处理多个.
-    const categories = ['website'];
-    for (const cat of categories) {
-        const infos = infoArr.filter((i) => i.name === cat);
-        if (infos.length > 1) {
-            const idx = arr.findIndex((v) => v.trim() === `|${cat}=`);
-            if (arr.find((v) => v.trim() === `|${cat}={`)) {
-                continue;
-            }
-            if (idx > -1) {
-                arr[idx] = `|${cat}={`;
-                // arr.splice(idx + 1, 0, '}')
-                arr = [...arr.slice(0, idx + 1), '}', ...arr.slice(idx + 1)];
-            }
-            else {
-                arr = [...arr.slice(0, -1), `|${cat}={`, '}', ...arr.slice(-1)];
-            }
-        }
-    }
-    //处理单个但是写成多个.写法有点绕，凑合用吧
+        .filter(Boolean);
+    // 2. 统一处理块格式字段
+    arr = applyBlockFormats(arr, infoArr);
+    // 3. 将 infoArr 中的值合并进 arr
+    const unmatchedLines = [];
     for (const info of infoArr) {
-        if (hasCategory(info, 'listItem')) {
-            const name = info.name;
-            if (arr.find((v) => v.trim() === `|${name}={`)) {
-                continue;
-            }
-            const idx = arr.findIndex((v) => v.trim() === `|${name}=`);
-            if (idx > -1) {
-                arr[idx] = `|${name}={`;
-                arr = [...arr.slice(0, idx + 1), '}', ...arr.slice(idx + 1)];
-            }
-            else {
-                arr = [...arr.slice(0, -1), `|${name}={`, '}', ...arr.slice(-1)];
-            }
-        }
-    }
-    const newArr = [];
-    for (const info of infoArr) {
-        let isDefault = false;
-        for (let i = 0, len = arr.length; i < len; i++) {
-            //  |发行日期=  ---> 发行日期
-            // [纯假名|] ---> 纯假名
-            const m = arr[i].match(/(?:\||\[)(.+?)([|=])/);
-            if (!m || m.length < 2)
-                continue;
-            const n = m[1];
-            if (n === info.name) {
-                let d = getStringValue(info.value);
-                // 处理时间格式
-                if (info.category === 'date') {
-                    d = dealDate(d);
-                }
-                // 2024-07-31 去除 ISBN 里面的短横线
-                if (info.category === 'ISBN') {
-                    d = d.replace(/-/g, '');
-                }
-                // 匹配到 [英文名|]
-                if (/\[.+\|\]/.test(arr[i])) {
-                    arr[i] = arr[i].replace(']', '') + d + ']';
-                }
-                else if (/\|.+={/.test(arr[i])) {
-                    // 避免重复
-                    const infoValue = getStringValue(info.value);
-                    if (!originValue.includes(`[${infoValue}]`)) {
-                        // |平台={
-                        arr[i] = `${arr[i]}\n[${infoValue}]`;
-                    }
-                }
-                else {
-                    // 拼接： |发行日期=2020-01-01
-                    arr[i] = arr[i].replace(/=[^{[]+/, '=') + d;
-                }
-                isDefault = true;
+        let matched = false;
+        for (let i = 0; i < arr.length; i++) {
+            const updated = mergeInfoIntoLine(arr[i], info, originValue);
+            if (updated !== null) {
+                arr[i] = updated;
+                matched = true;
                 break;
             }
         }
-        // 抹去 asin 2020/7/26
-        if (!isDefault && info.name && !['asin', 'ASIN'].includes(info.name)) {
-            newArr.push(`|${info.name}=${getStringValue(info.value)}`);
+        // 未匹配的字段（asin 除外）追加到末尾
+        if (!matched && info.name && !['asin', 'ASIN'].includes(info.name)) {
+            unmatchedLines.push(`|${info.name}=${getStringValue(info.value)}`);
         }
     }
+    // 4. 移除末尾的 }}
     arr.pop();
-    // 图书条目的 infobox 作者放在出版社之前
+    // 5. 组合最终行数组
+    const finalLines = [...arr, ...unmatchedLines, '}}'];
+    // 6. animanga/Book：作者排在出版社之前
     if (/animanga/.test(arr[0])) {
-        let pressIdx;
-        let authorIdx;
-        let resArr = [...arr, ...newArr, '}}'];
-        for (let i = 0; i < resArr.length; i++) {
-            if (/\|(\s*)出版社(\s*)=/.test(resArr[i])) {
-                pressIdx = i;
-                continue;
-            }
-            if (/作者/.test(resArr[i])) {
-                authorIdx = i;
-                continue;
-            }
-        }
-        if (pressIdx && authorIdx && authorIdx > pressIdx) {
-            const press = resArr[pressIdx];
-            const author = resArr[authorIdx];
-            resArr.splice(pressIdx, 1, author, press);
-            resArr.splice(authorIdx + 1, 1);
-            return resArr.join('\n');
-        }
+        const reordered = reorderAuthorBeforePress(finalLines);
+        if (reordered)
+            return reordered.join('\n');
     }
-    return [...arr, ...newArr, '}}'].join('\n');
+    return finalLines.join('\n');
 }
 
 /**
@@ -7230,7 +7324,6 @@ function initCharacterSubmit(wikiInfo, dataUrl) {
         $clonedInput.insertAdjacentElement('afterend', $relatedInput);
         const $canvas = $q('#e-wiki-cover-preview');
         $clonedInput.addEventListener('click', async (e) => {
-            var _a;
             e.preventDefault();
             if ($canvas.width > 8 && $canvas.height > 10) {
                 const $el = e.target;
@@ -7246,7 +7339,7 @@ function initCharacterSubmit(wikiInfo, dataUrl) {
                     insertLogInfo($el, `新建角色成功: ${genLinkText(url, '角色地址')}`);
                     const charaId = getSubjectId(url);
                     // subject id
-                    const subjectId = ((_a = $relatedInput.querySelector('input')) === null || _a === void 0 ? void 0 : _a.value) || '';
+                    const subjectId = $relatedInput.querySelector('input')?.value || '';
                     if (charaId && subjectId) {
                         insertLogInfo($el, '存在条目 id, 开始关联条目');
                         await addPersonRelatedSubject([subjectId], charaId, wikiInfo.type);
@@ -7304,8 +7397,7 @@ function getElement(selector) {
     return $q(selector);
 }
 function clickIfPresent(selector) {
-    var _a;
-    (_a = getElement(selector)) === null || _a === void 0 ? void 0 : _a.click();
+    getElement(selector)?.click();
 }
 function setInputValue(selector, value) {
     const input = getInput(selector);
@@ -7320,8 +7412,7 @@ function setTextAreaValue(selector, value) {
     }
 }
 function getInfoBoxValue() {
-    var _a, _b;
-    return (_b = (_a = getTextArea(SUBJECT_INFOBOX_SELECTOR)) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : '';
+    return getTextArea(SUBJECT_INFOBOX_SELECTOR)?.value ?? '';
 }
 function clearPlatformInputs() {
     $qa('input[name=platform]').forEach((element) => {
@@ -7336,13 +7427,12 @@ function dispatchClearInfoEvent() {
     }));
 }
 function resetSubjectForm(defaultVal) {
-    var _a;
     clearPlatformInputs();
     clickIfPresent(WIKI_MODE_SELECTOR);
     setTextAreaValue(SUBJECT_INFOBOX_SELECTOR, defaultVal);
     setInputValue(SUBJECT_TITLE_RESET_SELECTOR, '');
     setInputValue(SUBJECT_SUMMARY_SELECTOR, '');
-    (_a = getInput(COVER_CLEAR_BUTTON_SELECTOR)) === null || _a === void 0 ? void 0 : _a.click();
+    getInput(COVER_CLEAR_BUTTON_SELECTOR)?.click();
     setInputValue('#editSummary', '');
     dispatchClearInfoEvent();
     const submitInput = getInput(COVER_SUBMIT_SELECTOR);
@@ -7351,12 +7441,11 @@ function resetSubjectForm(defaultVal) {
     }
 }
 function resetCharacterForm(defaultVal) {
-    var _a;
     clickIfPresent(WIKI_MODE_SELECTOR);
     setTextAreaValue(SUBJECT_INFOBOX_SELECTOR, defaultVal);
     setInputValue(CHARACTER_NAME_RESET_SELECTOR, '');
     setInputValue(CHARACTER_SUMMARY_SELECTOR, '');
-    (_a = getElement('.e-wiki-cover-container')) === null || _a === void 0 ? void 0 : _a.remove();
+    getElement('.e-wiki-cover-container')?.remove();
 }
 /**
  * 填写 wiki 表单
@@ -7364,15 +7453,14 @@ function resetCharacterForm(defaultVal) {
  * @param wikiData
  */
 async function fillInfoBox(wikiData) {
-    var _a, _b, _c;
     const { infos } = wikiData;
     const subType = Number(wikiData.subtype);
     const infoArray = [];
     const typeInputs = Array.from($qa(SUBJECT_TYPE_INPUT_SELECTOR));
     if (typeInputs.length) {
-        (_a = typeInputs[0]) === null || _a === void 0 ? void 0 : _a.click();
+        typeInputs[0]?.click();
         if (!Number.isNaN(subType)) {
-            (_b = typeInputs[subType]) === null || _b === void 0 ? void 0 : _b.click();
+            typeInputs[subType]?.click();
         }
     }
     await sleep(100);
@@ -7406,7 +7494,7 @@ async function fillInfoBox(wikiData) {
         }
         // 有名称并且category不在特定列表里面
         if (currentInfo.name &&
-            !['cover', 'crt_cover', 'ep'].includes((_c = currentInfo.category) !== null && _c !== void 0 ? _c : '')) {
+            !['cover', 'crt_cover', 'ep'].includes(currentInfo.category ?? '')) {
             const name = currentInfo.name;
             if (Object.prototype.hasOwnProperty.call(SUBJECT_NAME_MAP, name)) {
                 infoArray.push({
@@ -7419,19 +7507,18 @@ async function fillInfoBox(wikiData) {
             }
         }
     }
-    wikiMode === null || wikiMode === void 0 ? void 0 : wikiMode.click();
+    wikiMode?.click();
     await sleep(200);
     const infoBox = getTextArea(SUBJECT_INFOBOX_SELECTOR);
     if (infoBox) {
         infoBox.value = convertInfoValue(infoBox.value, infoArray);
     }
     await sleep(200);
-    newbieMode === null || newbieMode === void 0 ? void 0 : newbieMode.click();
+    newbieMode?.click();
 }
 function initNewSubject(wikiInfo) {
-    var _a;
     const titleInput = getElement(FORM_TITLE_PARENT_SELECTOR);
-    const parent = titleInput === null || titleInput === void 0 ? void 0 : titleInput.parentElement;
+    const parent = titleInput?.parentElement;
     if (!parent) {
         return;
     }
@@ -7443,7 +7530,7 @@ function initNewSubject(wikiInfo) {
         resetSubjectForm(defaultVal);
     });
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
-    const dataUrl = ((_a = getCoverValue(coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value)) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
+    const dataUrl = getCoverValue(coverInfo?.value)?.dataUrl || '';
     const subjectForm = getElement(SUBJECT_FORM_SELECTOR);
     if (subjectForm) {
         initImageWidget(subjectForm, dataUrl);
@@ -7451,9 +7538,8 @@ function initNewSubject(wikiInfo) {
     initSubjectSubmit(wikiInfo);
 }
 function initNewCharacter(wikiInfo, _subjectId) {
-    var _a;
     const titleInput = getElement(CHARACTER_TITLE_PARENT_SELECTOR);
-    const parent = titleInput === null || titleInput === void 0 ? void 0 : titleInput.parentElement;
+    const parent = titleInput?.parentElement;
     if (!parent) {
         return;
     }
@@ -7467,7 +7553,7 @@ function initNewCharacter(wikiInfo, _subjectId) {
     let dataUrl = '';
     if (coverInfo && coverInfo.value) {
         if (isCoverValue(coverInfo.value)) {
-            dataUrl = ((_a = getCoverValue(coverInfo.value)) === null || _a === void 0 ? void 0 : _a.dataUrl) || '';
+            dataUrl = getCoverValue(coverInfo.value)?.dataUrl || '';
         }
         else {
             dataUrl = getStringValue(coverInfo.value);
@@ -7480,18 +7566,16 @@ function initNewCharacter(wikiInfo, _subjectId) {
     initCharacterSubmit(wikiInfo, dataUrl);
 }
 function initUploadImg(wikiInfo) {
-    var _a;
     const coverInfo = wikiInfo.infos.filter((item) => item.category === 'cover')[0];
     const uploadForm = getElement(UPLOAD_FORM_SELECTOR);
     if (uploadForm) {
-        initImageWidget(uploadForm, (_a = getCoverValue(coverInfo === null || coverInfo === void 0 ? void 0 : coverInfo.value)) === null || _a === void 0 ? void 0 : _a.dataUrl);
+        initImageWidget(uploadForm, getCoverValue(coverInfo?.value)?.dataUrl);
     }
 }
 
 function getPageType() {
-    var _a;
     const re = new RegExp(['new_subject', 'add_related', 'character/new', 'upload_img'].join('|'));
-    return ((_a = document.location.href.match(re)) === null || _a === void 0 ? void 0 : _a[0]) || '';
+    return document.location.href.match(re)?.[0] || '';
 }
 function getEmptySubjectInfo() {
     return {
@@ -7502,7 +7586,7 @@ function getEmptySubjectInfo() {
 function registerClearListener(runtime) {
     window.addEventListener('scriptMessage', async (event) => {
         const detail = event.detail;
-        if ((detail === null || detail === void 0 ? void 0 : detail.type) === 'clearInfo') {
+        if (detail?.type === 'clearInfo') {
             console.info('clear info');
             await runtime.clearInfo();
         }
@@ -7510,12 +7594,11 @@ function registerClearListener(runtime) {
 }
 function triggerAutoFill(runtime, delay = 200) {
     setTimeout(async () => {
-        var _a;
         const $fillForm = $q('.e-wiki-fill-form');
         if (!$fillForm)
             return;
         $fillForm.click();
-        await ((_a = runtime.markAutoFillConsumed) === null || _a === void 0 ? void 0 : _a.call(runtime));
+        await runtime.markAutoFillConsumed?.();
     }, delay);
 }
 async function initBangumiPage(runtime) {
@@ -7573,21 +7656,19 @@ const bangumi = {
 };
 
 function getIframeSelector(itemSelector) {
-    var _a;
     if (itemSelector instanceof Array) {
-        return ((_a = itemSelector.find((item) => item.isIframe === true)) === null || _a === void 0 ? void 0 : _a.selector) || '';
+        return itemSelector.find((item) => item.isIframe === true)?.selector || '';
     }
     return itemSelector.isIframe ? itemSelector.selector : '';
 }
 async function getIframeDoc(itemSelector, runtime) {
-    var _a;
     const iframeSel = getIframeSelector(itemSelector);
     if (!iframeSel) {
         return null;
     }
-    const url = (_a = findElement({
+    const url = findElement({
         selector: iframeSel,
-    })) === null || _a === void 0 ? void 0 : _a.getAttribute('src');
+    })?.getAttribute('src');
     if (!url) {
         return null;
     }
@@ -7596,10 +7677,9 @@ async function getIframeDoc(itemSelector, runtime) {
     return new DOMParser().parseFromString(rawHtml, 'text/html');
 }
 async function submitCharacter(siteConfig, runtime, charaInfo) {
-    var _a;
     if (!charaInfo.length)
         return;
-    await ((_a = runtime.hydrateCharacterCover) === null || _a === void 0 ? void 0 : _a.call(runtime, charaInfo));
+    await runtime.hydrateCharacterCover?.(charaInfo);
     console.info('character info list: ', charaInfo);
     const charaData = {
         type: siteConfig.type,
@@ -7611,7 +7691,6 @@ async function submitCharacter(siteConfig, runtime, charaInfo) {
     });
 }
 async function initCharacterModel(siteConfig, runtime, characterModel) {
-    var _a;
     const presenceSelector = characterModel.presenceSelector;
     if (presenceSelector && !findElement(presenceSelector))
         return;
@@ -7623,7 +7702,7 @@ async function initCharacterModel(siteConfig, runtime, characterModel) {
         : findAllElement(characterModel.itemSelector);
     if (!itemArr.length)
         return;
-    if (((_a = characterModel.controlMode) !== null && _a !== void 0 ? _a : 'select') === 'inline') {
+    if ((characterModel.controlMode ?? 'select') === 'inline') {
         itemArr.forEach(($target) => {
             insertControlBtnChara($target, async () => {
                 const charaInfo = await getCharaData(characterModel, createWikiExtractContext($target));
@@ -7642,12 +7721,11 @@ async function initCharacterModel(siteConfig, runtime, characterModel) {
     if (!nameConfig)
         return;
     const names = await Promise.all(itemArr.map(async ($target) => {
-        var _a;
         const infos = await getCharaData({
             ...characterModel,
             itemList: [nameConfig],
         }, createWikiExtractContext($target));
-        return getStringValue((_a = infos.find((item) => item.category === 'crt_name')) === null || _a === void 0 ? void 0 : _a.value);
+        return getStringValue(infos.find((item) => item.category === 'crt_name')?.value);
     }));
     addCharaUI($toolbarEl, names, async (_e, selectedName) => {
         let targetList = [];
