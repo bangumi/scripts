@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.2
+// @version     0.5.3
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -595,6 +595,24 @@ function convertImgToBase64($img) {
     return dataURL;
 }
 
+function isAmazonImageUrl(url) {
+    try {
+        const parsedUrl = new URL(url);
+        return ((parsedUrl.hostname === 'm.media-amazon.com' ||
+            parsedUrl.hostname.endsWith('.ssl-images-amazon.com') ||
+            parsedUrl.hostname === 'images.amazon.com') &&
+            parsedUrl.pathname.startsWith('/images/'));
+    }
+    catch (error) {
+        return false;
+    }
+}
+function toAmazonAcSl1500ImageUrl(url) {
+    if (!isAmazonImageUrl(url)) {
+        return url;
+    }
+    return url.replace(/(?:\._[^/.]+_)?\.(jpe?g)(\?.*)?$/i, '._AC_SL1500_.$1$2');
+}
 const amazonUtils = {
     dealTitle(str = '') {
         str = str.trim().split('\n')[0].trim();
@@ -607,7 +625,7 @@ const amazonUtils = {
         str = str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
         return str;
     }};
-async function getAmazonCoverInfo(res) {
+async function getAmazonCoverInfo(res, options = {}) {
     const $cover = document.querySelector('#imgTagWrapperId>img');
     if ($cover && !res.find((obj) => obj.name === 'cover')) {
         let url = '';
@@ -627,6 +645,10 @@ async function getAmazonCoverInfo(res) {
         if (!url) {
             url = $cover.src;
         }
+        const originalUrl = url;
+        if (url && options.imageUrlTransform) {
+            url = options.imageUrlTransform(url);
+        }
         let dataUrl = url;
         try {
             if (url) {
@@ -634,6 +656,13 @@ async function getAmazonCoverInfo(res) {
             }
         }
         catch (error) { }
+        if (dataUrl === url && originalUrl && originalUrl !== url) {
+            try {
+                dataUrl = await getImageDataByURL(originalUrl);
+                url = originalUrl;
+            }
+            catch (error) { }
+        }
         const info = {
             category: 'cover',
             name: 'cover',
@@ -744,7 +773,9 @@ const amazonJpBookTools = {
                     });
                 }
             }
-            const coverInfo = await getAmazonCoverInfo(res);
+            const coverInfo = await getAmazonCoverInfo(res, {
+                imageUrlTransform: toAmazonAcSl1500ImageUrl,
+            });
             if (coverInfo) {
                 res.push(coverInfo);
             }
@@ -893,7 +924,9 @@ const amazonJpMusicTools = {
                     });
                 }
             }
-            const coverInfo = await getAmazonCoverInfo(res);
+            const coverInfo = await getAmazonCoverInfo(res, {
+                imageUrlTransform: toAmazonAcSl1500ImageUrl,
+            });
             if (coverInfo) {
                 res.push(coverInfo);
             }
