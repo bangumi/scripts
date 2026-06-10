@@ -71,11 +71,12 @@
   const typeField = pageType === 'person' ? 'prsn_position' : (pageType === 'character' ? 'crt_type' : 'type');
 
   // 类型/职位中文映射
-  const typeMapping = [...genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
+  window.genPrsnStaffList ??= chiiLib.relations.genPrsnStaffList;
+  const typeMapping = window.genPrsnStaffList ? [...window.genPrsnStaffList().matchAll(/value="(\d+)">([^</\s]+)/g)]
     .reduce((acc, [, k, v]) => {
       acc[k] = v;
       return acc;
-    }, {});
+    }, {}) : {};
 
   // 版本数据缓存
   const versionCache = new Map();
@@ -181,7 +182,10 @@
       .version-compare-h2 {
         position: sticky;
         top: 0;
-        background: var(--dollars-bg);
+        background: #fff;
+      }
+      html[data-theme="dark"] .version-compare-h2 {
+        background: #2d2e2f;
       }
       html[data-nav-mode="fixed"] .version-compare-h2 {
         top: 60px;

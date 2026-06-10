@@ -2,7 +2,7 @@
 // @name         RSS订阅班友收藏
 // @namespace    https://bgm.tv/group/topic/414787
 // @homepage     https://bgm.tv/group/topic/414787
-// @version      0.2.6
+// @version      0.2.7
 // @description  在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 // @author       oov
 // @match        http*://bgm.tv/
@@ -106,7 +106,10 @@
     }
     #home_rss .rssID {
       display: inline-block;
-      background-color: #e0e0e0;
+      color: #555;
+      background-color: #fff;
+      border: 1px solid #e8e8e8;
+      box-shadow: 0 1px 3px rgba(250,250,250,.8);
       padding-inline: 8px;
       padding-block: 4px;
       border-radius: 20px;
@@ -114,10 +117,20 @@
       user-select: text;
     }
     #home_rss .rssID:hover {
-      background-color: #d0d0d0;
+      background-color: #e8e8e8;
+    }
+    #home_rss .rssID.failed {
+      position: relative;
+      overflow: hidden;
     }
     #home_rss .rssID.failed::after {
       background: linear-gradient(90deg, rgba(225, 80, 80, 0.5), transparent, rgba(225, 80, 80, 0.5));
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       animation: none;
     }
     #home_rss .rssID-input {
@@ -175,18 +188,17 @@
       opacity: 1;
     }
 
-    html[data-theme="dark"] #home_rss .rssID-container {
-      background-color: #333;
-    }
     html[data-theme="dark"] #home_rss .rssID {
-      background-color: #555;
-      color: #fff;
+      background-color: #303030;
+      color: #dcdcdc;
+      border: 1px solid #555;
+      box-shadow: 0 1px 3px rgba(0,0,0,.4);
     }
     html[data-theme="dark"] #home_rss .rssID:hover {
       background-color: #666;
     }
     html[data-theme="dark"] #home_rss .rssID-tooltip {
-      background-color: #333;
+      background-color: #555;
       color: rgba(255, 255, 255, .7);
     }
   `;
@@ -408,7 +420,7 @@
       tooltip.inert = true;
     };
 
-    const shouldHandleTooltip = e => e.target.classList.contains('rssID') && !e.target.classList.contains('failed');
+    const shouldHandleTooltip = e => e.target.classList.contains('rssID');
     rssListContainer.addEventListener('mouseenter', (e) => {
       if (shouldHandleTooltip(e)) showTooltip(e.target);
     }, true);
@@ -761,11 +773,23 @@
     const rssResults = await runWithConcurrency(rssPromises, CONCURRENCY_LIMIT);
 
     // 解析 RSS 数据
-    for (const rssText of rssResults) {
+    for (let i = 0; i < rssResults.length; i++) {
+      const rssText = rssResults[i];
       if (!rssText) continue;
 
       const parser = new DOMParser();
       const rssDoc = parser.parseFromString(rssText, 'text/xml');
+      const parsererror = rssDoc.querySelector('parsererror');
+      if (parsererror) {
+        let id = '';
+        if (!locUser) {
+          const id = rssList[i];
+          const button = document.querySelector(`#rssID-${id}`);
+          button?.classList.add('failed');
+        }
+        console.error(id, ' RSS 解析错误: ', parsererror.textContent);
+        continue;
+      }
 
       const userLink = rssDoc.querySelector('channel > link').textContent;
       const userId = userLink.split('/').pop();
@@ -790,8 +814,7 @@
           ${!locUser ? `
             <span class="avatar">
               <div class="avatar-skeleton skeleton"></div>
-            </span>` : ''
-  }
+            </span>` : ''}
             <span class="info${locUser ? '_full' : ''} clearit">
               ${!locUser ? '<div class="nickname-skeleton skeleton"></div>' : ''}
               ${prefix} <a href="${subjectLink}" class="l">${titleText}</a>
@@ -839,6 +862,10 @@
       // 解析 RSS 获取最后更新时间
       const parser = new DOMParser();
       const rssDoc = parser.parseFromString(rssText, 'text/xml');
+      const parsererror = rssDoc.querySelector('parsererror');
+      if (parsererror) {
+        throw new Error(`RSS 解析错误: ${parsererror.textContent}`);
+      }
       lastDate[id] = +new Date(rssDoc.querySelector('item pubDate')?.textContent);
 
       return rssText;
@@ -865,13 +892,25 @@
 
     try {
       const response = await fetch(`https://api.bgm.tv/v0/users/${userId}`);
-      if (!response.ok) throw new Error(`UserInfo fetch ${response.status}`);
-      const userData = await response.json();
-      const userInfo = {
-        avatar: userData.avatar.large,
-        nickname: userData.nickname,
-        link: `/user/${userId}`,
-      };
+      let userInfo;
+      if (!response.ok) {
+        if (response.status === 404) {
+          userInfo = {
+            avatar: '//lain.bgm.tv/pic/user/l/icon.jpg',
+            nickname: '用户不存在',
+            link: `/user/${userId}`,
+          };
+        } else {
+          throw new Error(`UserInfo fetch ${response.status}`);
+        }
+      } else {
+        const userData = await response.json();
+        userInfo = {
+          avatar: userData.avatar.large,
+          nickname: userData.nickname,
+          link: `/user/${userId}`,
+        };
+      }
 
       sessionStorage.setItem(cacheKey, JSON.stringify(userInfo));
       return userInfo;
@@ -939,6 +978,7 @@
   }
 
   function timeDiffText(timestamp, now = Date.now()) {
+    if (!timestamp) return '未知';
     const diff = now - timestamp;
 
     if (diff < 1000) {

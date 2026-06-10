@@ -2,7 +2,7 @@
 // @name         Bangumi wiki 图片上传增强
 // @namespace    https://bgm.tv/group/topic/431819
 // @homepage     https://bgm.tv/group/topic/431819
-// @version      1.4.6
+// @version      1.4.7
 // @description  支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
 // @author       You
 // @match        https://bangumi.tv/character/*/upload_photo
@@ -185,7 +185,7 @@
   if (!fileInput) return;
 
   const isUploadPhotoPage = window.location.pathname.includes('/upload_photo');
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 
   // 创建UI容器
   const container = document.createElement('div');
@@ -256,6 +256,10 @@
   mosaicCancelBtn.textContent = '取消马赛克';
   mosaicCancelBtn.style.display = 'none';
 
+  const removeBgBtn = document.createElement('button');
+  removeBgBtn.textContent = '去底';
+  removeBgBtn.style.display = 'none';
+
   // 马赛克大小控制
   const mosaicControls = document.createElement('div');
   mosaicControls.className = 'bgm-mosaic-controls';
@@ -294,7 +298,7 @@
     previewWrapper.appendChild(squarePreview);
   }
 
-  controls.append(cropBtn, mosaicBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn);
+  controls.append(cropBtn, removeBgBtn, mosaicBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn);
   container.append(clipboardControl, previewWrapper, previewText, controls, mosaicControls);
   fileInput.parentNode.insertBefore(container, fileInput.nextSibling);
   // #endregion
@@ -307,9 +311,11 @@
   };
   const allowedExtensions = Object.values(allowedImageTypes);
   let currentFile = null;
+  let originalFileBeforeBgRemove = null;
   let cropper = null;
   let isCropping = false;
   let isMosaicing = false;
+  let isBgRemoved = false;
   let mosaicSizePercent = 3;
   let originalCanvas = null;
   let tempCanvas = null;
@@ -320,15 +326,88 @@
   let canvasScale = 1.0;
   // #endregion
 
+  /**
+   * 纯原生JS 去除白底 + 自动裁剪白边
+   * @param {string} base64Img 输入图片base64
+   * @param {number} whiteThresh 白色阈值(0-255)，越大越宽松
+   * @returns {Promise<string>} 处理后透明png base64
+   */
+  async function removeWhiteBgAndTrim(base64Img, whiteThresh = 245) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = function () {
+        const w = img.width;
+        const h = img.height;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0);
+
+        // 获取整张图像素
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+
+        // 1. 纯白像素置透明
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          if (r > whiteThresh && g > whiteThresh && b > whiteThresh) {
+            data[i + 3] = 0;
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        // 2. 寻找有效内容边界，裁白边
+        let minX = w, maxX = 0;
+        let minY = h, maxY = 0;
+        const alphaData = ctx.getImageData(0, 0, w, h).data;
+
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4 + 3;
+            if (alphaData[idx] > 0) {
+              minX = Math.min(minX, x);
+              maxX = Math.max(maxX, x);
+              minY = Math.min(minY, y);
+              maxY = Math.max(maxY, y);
+            }
+          }
+        }
+
+        // 无内容兜底
+        if (minX > maxX || minY > maxY) {
+          resolve(canvas.toDataURL('image/png'));
+          return;
+        }
+
+        // 裁剪画布
+        const cropW = maxX - minX + 1;
+        const cropH = maxY - minY + 1;
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = cropW;
+        cropCanvas.height = cropH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+
+        resolve(cropCanvas.toDataURL('image/png'));
+      };
+      img.src = base64Img;
+    });
+  }
+
   // #region 工具函数
   // 显示/隐藏编辑按钮
   function showEditButtons() {
     cropBtn.style.display = 'inline-block';
+    removeBgBtn.style.display = 'inline-block';
     mosaicBtn.style.display = 'inline-block';
   }
 
   function hideEditButtons() {
     cropBtn.style.display = 'none';
+    removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
   }
 
@@ -403,7 +482,7 @@
     });
   }
 
-  // 压缩图片至2MB以内
+  // 压缩图片
   function compressImage(file) {
     return new Promise((resolve, reject) => {
       if (file.size <= MAX_FILE_SIZE) {
@@ -573,6 +652,8 @@
 
   // #region 裁切功能
   function initCropper() {
+    previewImage.style.maxHeight = '500px';
+
     if (cropper) {
       cropper.destroy();
     }
@@ -601,6 +682,7 @@
 
     initCropper();
     cropBtn.style.display = 'none';
+    removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
     cropConfirmBtn.style.display = 'inline-block';
     cropCancelBtn.style.display = 'inline-block';
@@ -617,6 +699,10 @@
 
       compressImage(croppedFile).then(compressedFile => {
         currentFile = compressedFile;
+        // 去底状态重置
+        isBgRemoved = false;
+        removeBgBtn.textContent = '去底';
+        originalFileBeforeBgRemove = null;
 
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(currentFile);
@@ -640,6 +726,7 @@
   function endCropping() {
     isCropping = false;
     if (cropper) {
+      previewImage.style.maxHeight = '300px';
       cropper.destroy();
       cropper = null;
     }
@@ -647,6 +734,58 @@
     cropConfirmBtn.style.display = 'none';
     cropCancelBtn.style.display = 'none';
     updateSquarePreview();
+  }
+  // #endregion
+
+  // #region 去底功能
+  async function toggleRemoveBackground(e) {
+    e.preventDefault();
+    if (!currentFile || isCropping || isMosaicing) return;
+
+    try {
+      if (!isBgRemoved) {
+        previewText.textContent = '正在去除白底...';
+        originalFileBeforeBgRemove = currentFile;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(currentFile);
+        reader.onload = async function (e) {
+          const base64 = e.target.result;
+          const resultBase64 = await removeWhiteBgAndTrim(base64);
+
+          const res = await fetch(resultBase64);
+          const blob = await res.blob();
+          const newFile = new File([blob], currentFile.name.replace(/\.\w+$/, '_nobg.png'), { type: 'image/png' });
+
+          currentFile = newFile;
+          isBgRemoved = true;
+          removeBgBtn.textContent = '取消去底';
+
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(currentFile);
+          fileInput.files = dataTransfer.files;
+
+          await updatePreview(currentFile);
+          previewText.textContent = '已去除白底并自动裁边';
+        };
+      } else {
+        if (originalFileBeforeBgRemove) {
+          currentFile = originalFileBeforeBgRemove;
+          isBgRemoved = false;
+          removeBgBtn.textContent = '去底';
+          originalFileBeforeBgRemove = null;
+
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(currentFile);
+          fileInput.files = dataTransfer.files;
+
+          await updatePreview(currentFile);
+          previewText.textContent = '已恢复原始图片';
+        }
+      }
+    } catch (err) {
+      previewText.textContent = '去底失败：' + err.message;
+    }
   }
   // #endregion
 
@@ -725,6 +864,7 @@
     initMosaic();
 
     cropBtn.style.display = 'none';
+    removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
     mosaicConfirmBtn.style.display = 'inline-block';
     mosaicCancelBtn.style.display = 'inline-block';
@@ -788,6 +928,10 @@
 
       compressImage(mosaicFile).then(compressedFile => {
         currentFile = compressedFile;
+        // 去底状态重置
+        isBgRemoved = false;
+        removeBgBtn.textContent = '去底';
+        originalFileBeforeBgRemove = null;
 
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(currentFile);
@@ -910,6 +1054,10 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(currentFile || blob);
               fileInput.files = dataTransfer.files;
+              // 重置去底状态
+              isBgRemoved = false;
+              removeBgBtn.textContent = '去底';
+              originalFileBeforeBgRemove = null;
               return true;
             }
           }
@@ -933,6 +1081,10 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(currentFile || imageFile);
               fileInput.files = dataTransfer.files;
+              // 重置去底状态
+              isBgRemoved = false;
+              removeBgBtn.textContent = '去底';
+              originalFileBeforeBgRemove = null;
               return true;
             }
           } catch (error) {
@@ -972,6 +1124,10 @@
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(currentFile || file);
                 fileInput.files = dataTransfer.files;
+                // 重置去底状态
+                isBgRemoved = false;
+                removeBgBtn.textContent = '去底';
+                originalFileBeforeBgRemove = null;
                 return;
               }
             }
@@ -989,6 +1145,10 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(currentFile || imageFile);
               fileInput.files = dataTransfer.files;
+              // 重置去底状态
+              isBgRemoved = false;
+              removeBgBtn.textContent = '去底';
+              originalFileBeforeBgRemove = null;
               return;
             }
           } else {
@@ -1046,6 +1206,9 @@
   cropConfirmBtn.addEventListener('click', confirmCrop);
   cropCancelBtn.addEventListener('click', cancelCrop);
 
+  // 去底按钮事件
+  removeBgBtn.addEventListener('click', toggleRemoveBackground);
+
   // 马赛克相关事件
   mosaicBtn.addEventListener('click', startMosaicing);
   mosaicConfirmBtn.addEventListener('click', confirmMosaic);
@@ -1080,6 +1243,9 @@
   fileInput.addEventListener('change', async function () {
     if (this.files.length > 0) {
       await updatePreview(this.files[0]);
+      isBgRemoved = false;
+      removeBgBtn.textContent = '去底';
+      originalFileBeforeBgRemove = null;
     } else {
       hideEditButtons();
     }

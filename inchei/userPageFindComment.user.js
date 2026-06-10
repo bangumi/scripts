@@ -2,7 +2,7 @@
 // @name         时光机查询特定条目评价
 // @namespace    https://bgm.tv/group/topic/411925
 // @homepage     https://bgm.tv/group/topic/411925
-// @version      0.2.3
+// @version      0.2.4
 // @description  经济的同步率查询
 // @author       mmv
 // @match        http*://bgm.tv/user/*
@@ -332,7 +332,7 @@
         </span>` : ''}
       </p>
       ${comment ? /* html */`
-      <div id="comment_box"><div class="item"><div class="text_main_even" style="float:none;width:unset">
+      <div id="comment_box" class="comment-box"><div class="item"><div class="text_main_even" style="float:none;width:unset">
         <div class="text"> ${comment}</div>
       <div class="text_bottom"></div>
       </div></div></div></div>` : ''}

@@ -66,11 +66,12 @@ export default defineConfig([
         subjectList: 'writable',
         addedSubjects: 'writable',
         addRelateSubject: 'readonly',
-        genPrsnStaffList: 'readonly',
+        genPrsnStaffList: 'writable',
         findSubjectFunc: 'readonly',
         nowmode: 'readonly',
         WCODEtoNormal: 'readonly',
         NormaltoWCODE: 'readonly',
+        subReply: 'readonly',
       }
     },
     rules: {

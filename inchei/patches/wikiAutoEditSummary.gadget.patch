@@ -1,5 +1,5 @@
---- wikiAutoEditSummary.user.js	2026-04-06 10:08:31.832177130 +0800
-+++ wikiAutoEditSummary.gadget.js	2026-04-06 10:10:00.056178374 +0800
+--- wikiAutoEditSummary.user.js	2026-04-30 00:28:01.996023844 +0800
++++ wikiAutoEditSummary.gadget.js	2026-04-30 00:36:55.292024780 +0800
 @@ -27,6 +27,22 @@
  (function () {
    'use strict';
@@ -40,7 +40,7 @@
        }
  
        const newPlatform = getPlatform?.();
-@@ -210,28 +227,71 @@
+@@ -210,28 +227,70 @@
        const currentOldLis = currentLis.filter(li => li.classList.contains('old'));
        const currentNewLis = currentLis.filter(li => !li.classList.contains('old'));
  
@@ -51,14 +51,11 @@
 +      const exsistingItems = initialRelatedItems.filter(item => currentOldLis.find(li => item.element === li));
 +
 +      if (noDetails) {
-+        if (currentNewLis.length) {
-+          const newTypes = [...new Set([...currentNewLis].map(li => getRelType(li)))];
-+          changes.push(`添加${newTypes.join('、')}`);
-+        }
-+
-+        if (removedItems.length) {
-+          const removedTypes = [...new Set(removedItems.map(item => item.type))];
-+          if (removedTypes.length) changes.push(`删除${removedTypes.join('、')}`);
++        if (currentNewLis.length || removedItems.length) {
++          const newTypes = [...new Set([
++            ...[...currentNewLis].map(li => getRelType(li)),
++            ...removedItems.map(item => item.type)])];
++          changes.push(`修改${newTypes.join('、')}`);
 +        }
 +
 +        let typeModified, orderModified, remarkModified, checkboxModified = {};
@@ -72,9 +69,11 @@
 +          }
 +
 +          if (initial.remark !== current.remark) {
-+            if (!orderModified && pageFeatures.relatedContextType === 1) {
-+              changes.push('排序');
-+              orderModified = true;
++            if (pageFeatures.relatedContextType === 1) {
++              if (!orderModified) {
++                changes.push('排序');
++                orderModified = true;
++              }
 +            } else if (!remarkModified) {
 +              const remarkName = pageFeatures.relatedContextType === 2 ? '参与' : '备注';
 +              changes.push(`修改${remarkName}`);
@@ -129,7 +128,7 @@
      }
  
      if (editSummaryInput && changes.length) {
-@@ -332,10 +392,11 @@
+@@ -332,10 +391,11 @@
    }
  
    function genFieldChanges(oldData, newData) {
@@ -142,7 +141,7 @@
  
      for (const key of oldData.keys()) {
        const newKey = getNewKey(oldData, newData, key);
-@@ -393,7 +454,7 @@
+@@ -393,7 +453,7 @@
                }
              }
            }
@@ -151,7 +150,7 @@
          }
        }
      }
-@@ -486,11 +547,15 @@
+@@ -486,11 +546,15 @@
    }
    // #endregion
  

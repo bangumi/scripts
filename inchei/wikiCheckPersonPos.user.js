@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 关联人物职位查询
 // @namespace    https://bangumi.tv
-// @version      0.1.6
+// @version      0.1.7
 // @description  在关联人物编辑页面快速查看人物最近参与的职位信息
 // @author       aaa
 // @match        https://bgm.tv/subject/*/add_related/person*
@@ -174,7 +174,89 @@
       align-items: center;
       position: relative;
     }
-    `;
+
+    html[data-theme="dark"] .position-btn {
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+      border-color: #444;
+    }
+    html[data-theme="dark"] .position-btn.fetching {
+      background-color: #2a2a2a;
+      color: #888;
+      border-color: #444;
+    }
+    html[data-theme="dark"] .position-btn.fetching:hover {
+      background-color: #4a2a2a;
+      color: #ff6b6b;
+      border-color: #6b3b3b;
+    }
+
+    html[data-theme="dark"] .position-single-btn {
+      background-color: #333;
+      color: #ccc;
+      border-color: #444;
+    }
+    html[data-theme="dark"] .position-single-btn:hover {
+      background-color: #1e3a5f;
+      color: #70a9ff;
+      border-color: #3d5a80;
+    }
+    html[data-theme="dark"] .position-single-btn.fetching {
+      background-color: #4a3a1a;
+      color: #ffc145;
+      border-color: #6b522e;
+      cursor: not-allowed;
+    }
+
+    html[data-theme="dark"] .position-tag {
+      background-color: #1e3a5f;
+      color: #70a9ff;
+      border-color: #3d5a80;
+    }
+    html[data-theme="dark"] .position-tag.unmatched {
+      background-color: #333;
+      color: #ccc;
+      border-color: #444;
+    }
+    html[data-theme="dark"] .position-tag.matched-selected {
+      background-color: #2a4a3a;
+      color: #81c784;
+      border-color: #4a7a5a;
+    }
+
+    html[data-theme="dark"] .position-indicator.error {
+      background-color: #4a2a2a;
+      color: #ff6b6b;
+      border-color: #6b3b3b;
+    }
+    html[data-theme="dark"] .position-indicator.loading {
+      background-color: #4a3a1a;
+      color: #ffc145;
+      border-color: #6b522e;
+    }
+
+    html[data-theme="dark"] .matched-position {
+      color: #70a9ff;
+    }
+    html[data-theme="dark"] .selected-position {
+      color: #81c784;
+    }
+
+    html[data-theme="dark"] .position-more {
+      background-color: #333;
+      color: #ccc;
+      border-color: #444;
+    }
+
+    html[data-theme="dark"] .position-popup {
+      background: #1e1e1e;
+      border-color: #444;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      color: #e0e0e0;
+    }
+    html[data-theme="dark"] .position-popup li {
+      border-bottom-color: #333;
+    }`;
   document.head.appendChild(style);
 
   // 创建辅助容器

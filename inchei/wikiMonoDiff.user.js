@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         维基修订历史对比差异补完
 // @namespace    bangumi.wiki.mono.diff
-// @version      0.1.1
+// @version      0.1.2
 // @description  显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
 // @author       you
 // @homepage     https://bgm.tv/group/topic/448515
@@ -206,7 +206,10 @@
     .revision-compare-h2 {
       position: sticky;
       top: 0;
-      background: var(--dollars-bg);
+      background: #fff;
+    }
+    html[data-theme="dark"] .revision-compare-h2 {
+      background: #2d2e2f;
     }
     html[data-nav-mode="fixed"] .revision-compare-h2 {
       top: 60px;
@@ -227,13 +230,6 @@
       font-size: 12px;
       line-height: 1.4;
       cursor: pointer;
-    }
-    html[data-theme="dark"] .compare-btn {
-      background: rgba(70, 90, 120, 0.6);
-      color: #c5d4e3;
-    }
-    html[data-theme="dark"] .compare-btn:hover {
-      background: rgba(90, 110, 140, 0.8);
     }
     .SimpleSidePanel:not(:has(input[name="revisionA"]:checked):has(input[name="revisionB"]:checked)) .compare-btn {
       opacity: 0.5;

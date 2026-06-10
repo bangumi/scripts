@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bbcode预览
 // @namespace    bangumi.bbcode.preview
-// @version      0.0.1
+// @version      0.0.3
 // @description  bbcode预览
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -197,7 +197,7 @@
       'u': c => `<span style="text-decoration:underline">${c}</span>`,
       's': c => `<span style="text-decoration:line-through">${c}</span>`,
       'mask': c => `<span class="text_mask" style="background-color:#555;color:#555;border:1px solid #555;"><span class="inner">${c}</span></span>`,
-      'quote': c => `<div class="quote"><q>${c}</q></div>`,
+      'quote': c => `<div class="quote"><q>${c.replace(/^(<br>)+|(<br>)+$/g, '')}</q></div>`,
       'left': c => `<p style="text-align:left">${c}</p>`,
       'right': c => `<p style="text-align:right">${c}</p>`,
       'center': c => `<p style="text-align:center">${c}</p>`,
@@ -223,7 +223,7 @@
 
     if (!depth) {
       // eslint-disable-next-line no-control-regex
-      processed = processed.replace(/\x01CODE_(\d+)_CODE\x01/g, (_, i) => {
+      processed = processed.replace(/(?<!<[^>]*) /g, '&nbsp;').replace(/\x01CODE_(\d+)_CODE\x01/g, (_, i) => {
         console.log(codeBlocks[i]);
         const escaped = codeBlocks[i].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         return `<div class="codeHighlight" style="max-width:700px"><pre>${escaped.replaceAll('\n', '\n<br>')}</pre></div>`;
@@ -231,6 +231,32 @@
     }
 
     return updated ? bbcodeToHtml(processed, depth + 1, maxDepth) : processed;
+  }
+
+  function bgm38(bbcode) {
+    const gifIds = new Set([11, 23, 500, 501, 505, 515, 516, 517, 518, 519, 521, 522, 523]);
+    return bbcode
+      .replace(/\(bgm(\d+)\)/g, (_, n) => {
+        const num = +n;
+        const url = num <= 23
+          ? `/img/smiles/bgm/${num.toString().padStart(2, '0')}.${gifIds.has(num) ? 'gif' : 'png'}`
+          : num < 200
+            ? `/img/smiles/tv/${(num - 23).toString().padStart(2, '0')}.gif`
+            : num < 500
+              ? `/img/smiles/tv_vs/bgm_${num}.png`
+              : `/img/smiles/tv_500/bgm_${num}.${gifIds.has(num) ? 'gif' : 'png'}`;
+        return `<img src="${url}" smileid="${num + 16}" alt="(bgm${num})"${[124, 125].includes(num) ? ' width="21"' : ''}>`;
+      })
+      .replace(/\(bmo([A-Za-z0-9-]+)\)/g, (_, code) => {
+        return `<span class="bmo" data-code="(bmo${code})"><canvas class="bmoji-canvas" style="width: 21px; height: 21px;" width="63" height="63"></canvas></span>`;
+      })
+      .replace(/\((musume|blake)_(\d+)\)/g, (_, role, num) => {
+        const padded = num.toString().padStart(2, '0');
+        return `<img src="//lain.bgm.tv/img/smiles/${role}/${role}_${padded}.gif" class="smile smile-dynamic smile-musume" smileid="${role}_${padded}" alt="(${role}_${padded})" title="${
+          musumeCN[padded]
+        }" />`;
+      })
+      .replace(/\n/g, '<br>');
   }
 
   async function renderBMO(root) {
@@ -256,9 +282,14 @@
   const style = document.createElement('style');
   style.textContent = css`
     .bbcodePreview {
+      max-height: 500px;
+      overflow-y: auto;
       font-size: 14px;
       margin-block: 10px;
       font-family: 'SF Pro SC','SF Pro Display','PingFang SC','Lucida Grande','Helvetica Neue',Helvetica,Arial,Verdana,sans-serif,"Hiragino Sans GB";
+    }
+    #new_comment .bbcodePreview .inner {
+      margin-left: unset;
     }
     .bbcodePreviewBtn a {
       background-position: center;
@@ -295,8 +326,7 @@
   });
 
   function loadPreview(board, bbcode) {
-    console.log(bbcode);
-    board.innerHTML = bbcodeToHtml(bbcode);
+    board.innerHTML = (board.dataset.bgm38only ? bgm38 : bbcodeToHtml)(bbcode);
     renderBMO(board);
   }
 
@@ -309,6 +339,7 @@
       const board = document.createElement('div');
       board.className = 'bbcodePreview';
       board.hidden = true;
+      board.dataset.bgm38only = textarea.id === 'SayInput';
       header.parentElement.parentElement.after(board);
 
       let debounceTimer = null;

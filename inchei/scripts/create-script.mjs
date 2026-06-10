@@ -42,7 +42,7 @@ const scriptContent = `// ==UserScript==
 // ==/UserScript==
 
 (function () {
-    'use strict';
+  'use strict';
 
 })();
 `;

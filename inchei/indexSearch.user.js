@@ -605,34 +605,34 @@
           added.querySelectorAll(':scope .thickbox').forEach(tb_init);
           // from chiiLib.user_index.manage
           /* eslint-disable */
-                    $(modifyBtn).click(function () {
-                        var $rlt_id = $(this).attr('id').split('_')[1],
-                            $order = $(this).attr('order'),
-                            $content = $(this).parent().parent().find('div.text').text().trim();
-                        $('#ModifyRelatedForm').attr('action', '/index/related/' + $rlt_id + '/modify');
-                        $('#modify_order').attr('value', $order);
-                        $('#modify_content').attr('value', $content);
-                        return false;
-                    });
-                    $(eraseBtn).click(function () {
-                        if (confirm('确认删除该关联条目？')) {
-                            var tml_id = $(this).attr('id').split('_')[1];
-                            chiiLib.ukagaka.presentSpeech('<img src="/img/loading_s.gif" height="10" width="10" /> 请稍候，正在删除关联条目...');
-                            $.ajax({
-                                type: "GET",
-                                url: this + '&ajax=1',
-                                success: function (html) {
-                                    $('[attr-index-related="' + tml_id + '"]').fadeOut(500);
-                                    chiiLib.ukagaka.presentSpeech('你选择的关联条目已经删除咯～', true);
-                                },
-                                error: function (html) {
-                                    chiiLib.ukagaka.presentSpeech(AJAXtip['error'], true);
-                                }
-                            });
-                        }
-                        return false;
-                    });
-                    /* eslint-enable */
+          $(modifyBtn).click(function () {
+            var $rlt_id = $(this).attr('id').split('_')[1],
+                $order = $(this).attr('order'),
+                $content = $(this).parent().parent().find('div.text').text().trim();
+            $('#ModifyRelatedForm').attr('action', '/index/related/' + $rlt_id + '/modify');
+            $('#modify_order').attr('value', $order);
+            $('#modify_content').attr('value', $content);
+            return false;
+          });
+          $(eraseBtn).click(function () {
+            if (confirm('确认删除该关联条目？')) {
+              var tml_id = $(this).attr('id').split('_')[1];
+              chiiLib.ukagaka.presentSpeech('<img src="/img/loading_s.gif" height="10" width="10" /> 请稍候，正在删除关联条目...');
+              $.ajax({
+                type: "GET",
+                url: this + '&ajax=1',
+                success: function (html) {
+                  $('[attr-index-related="' + tml_id + '"]').fadeOut(500);
+                  chiiLib.ukagaka.presentSpeech('你选择的关联条目已经删除咯～', true);
+                },
+                error: function (html) {
+                  chiiLib.ukagaka.presentSpeech(AJAXtip['error'], true);
+                }
+              });
+            }
+            return false;
+          });
+          /* eslint-enable */
         }
 
         added.scrollIntoView({ behavior: 'smooth' });
@@ -665,10 +665,10 @@
     monitorElement('.bibeBox', bibeBox => {
       const container = document.createElement('div');
       container.style = `display: flex;
-                               justify-content: space-evenly;
-                               height: 300px;
-                               padding: 5px;
-                               overflow-y: auto;`;
+                         justify-content: space-evenly;
+                         height: 300px;
+                         padding: 5px;
+                         overflow-y: auto;`;
       const textarea = bibeBox.querySelector('textarea');
       textarea.rows = 8;
       bibeBox.previousSibling.after(container);
@@ -700,9 +700,9 @@
       select.onchange = newSearchAndRender;
       select.className = 'custom-search-select';
       select.innerHTML = `<option value="subject">条目</option>
-                                <option value="person">人物</option>
-                                <option value="character">角色</option>
-                                <option value="ep">章节</option>`;
+                          <option value="person">人物</option>
+                          <option value="character">角色</option>
+                          <option value="ep">章节</option>`;
 
       const btn = document.createElement('button');
       btn.className = 'custom-search-btn';
@@ -742,51 +742,51 @@
         const { cat, id: subjectId } = getCatAndId(location.href);
 
         tbContent.innerHTML = /* html */`
-                <div class="newIndexSection" style="padding: 10px;">
-                    <div id="indexSelectorWrapper">
-                        <span class="tip" style="min-width:5em">选择目录：</span>
-                        <!-- 搜索选择器容器 -->
-                        <div class="custom-select" id="searchableSelect">
-                            <input type="text" class="select-input inputtext" placeholder="获取目录中..." readonly>
-                            <span class="dropdown-icon"></span>
+          <div class="newIndexSection" style="padding: 10px;">
+            <div id="indexSelectorWrapper">
+              <span class="tip" style="min-width:5em">选择目录：</span>
+              <!-- 搜索选择器容器 -->
+              <div class="custom-select" id="searchableSelect">
+                <input type="text" class="select-input inputtext" placeholder="获取目录中..." readonly>
+                <span class="dropdown-icon"></span>
 
-                            <div class="dropdown-menu">
-                                <div class="search-box">
-                                    <input type="text" placeholder="搜索目录...">
-                                </div>
-                                <ul class="option-list"></ul>
-                            </div>
-                            <input type="hidden" class="hidden-field" name="selectedDirectory" id="selectedDirectory">
-                        </div>
-                        <a id="toggleCreateFormBtn" class="btn btn-lg primary">新建</a>
-                    </div>
+                <div class="dropdown-menu">
+                  <div class="search-box">
+                    <input type="text" placeholder="搜索目录...">
+                  </div>
+                  <ul class="option-list"></ul>
+                </div>
+                <input type="hidden" class="hidden-field" name="selectedDirectory" id="selectedDirectory">
+              </div>
+              <a id="toggleCreateFormBtn" class="btn btn-lg primary">新建</a>
+            </div>
 
-                    <div id="createIndexForm" style="display: none;">
-                        <div class="form-group">
-                            <span class="tip">目录标题：</span>
-                            <input type="text" id="createIndexTitle" required class="inputtext">
-                        </div>
-                        <div class="form-group">
-                            <span class="tip">目录描述：</span>
-                            <textarea id="createIndexDesc" class="reply" required></textarea>
-                        </div>
-                        <a href="javascript:;" id="createIndexBtn" class="chiiBtn">创建目录</a>
-                    </div>
+            <div id="createIndexForm" style="display: none;">
+              <div class="form-group">
+                <span class="tip">目录标题：</span>
+                <input type="text" id="createIndexTitle" required class="inputtext">
+              </div>
+              <div class="form-group">
+                <span class="tip">目录描述：</span>
+                <textarea id="createIndexDesc" class="reply" required></textarea>
+              </div>
+              <a href="javascript:;" id="createIndexBtn" class="chiiBtn">创建目录</a>
+            </div>
 
-                    <div style="margin-bottom: 10px;">
-                        <span class="tip">评价：</span>
-                        <textarea id="commentInput" class="reply" style="width: 100%; margin-top: 5px; resize: vertical; height: 120px"></textarea>
-                    </div>
+            <div style="margin-bottom: 10px;">
+              <span class="tip">评价：</span>
+              <textarea id="commentInput" class="reply" style="width: 100%; margin-top: 5px; resize: vertical; height: 120px"></textarea>
+            </div>
 
-                    <div style="margin-bottom: 10px;">
-                        <span class="tip">排序：</span>
-                        <input type="text" id="orderInput" class="inputtext">
-                    </div>
+            <div style="margin-bottom: 10px;">
+              <span class="tip">排序：</span>
+              <input type="text" id="orderInput" class="inputtext">
+            </div>
 
-                    <div>
-                        <input class="inputBtn" value="添加到目录" id="submitAddBtn" type="submit">
-                    </div>
-                </div>`;
+            <div>
+              <input class="inputBtn" value="添加到目录" id="submitAddBtn" type="submit">
+            </div>
+          </div>`;
 
         const selectorInstance = createSearchableSelect();
         selectorInstance.init();
@@ -1080,15 +1080,15 @@
       const grid = cat === 'subject' ? images?.grid : images?.grid.replace('/g/', '/s/');
       const exist = v => v ? v : '';
       m += `<li class="clearit">
-               <a href="/${cat}/${id}" class="avatar h">
-                 ${grid ? `<img src="${grid}" class="avatar ll">` : ''}
-               </a>
-               <div class="inner">
-                 <small class="grey rr">${exist(type)}</small>
-                 <p><a href="/${cat}/${id}" class="avatar h">${name}</a></p>
-                 <small class="tip">${exist(name_cn)}</small>
-               </div>
-             </li>`;
+              <a href="/${cat}/${id}" class="avatar h">
+                ${grid ? `<img src="${grid}" class="avatar ll">` : ''}
+              </a>
+              <div class="inner">
+                <small class="grey rr">${exist(type)}</small>
+                <p><a href="/${cat}/${id}" class="avatar h">${name}</a></p>
+                <small class="tip">${exist(name_cn)}</small>
+              </div>
+            </li>`;
       return m;
     }, '');
   };
