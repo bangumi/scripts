@@ -57,7 +57,7 @@
 | Greasy Fork | 无 |
 | 组件 | [4701](https://bgm.tv/dev/app/4701) |
 
-## 班固米右上角快速搜索 `0.1.11`
+## 班固米右上角快速搜索 `0.1.13`
 右上角搜索框输入文字后快速显示部分搜索结果
 
 - 讨论页：https://bgm.tv/group/topic/409735
@@ -67,6 +67,15 @@
 | GitHub | [quickSearch.user.js](https://github.com/bangumi/scripts/blob/master/inchei/quickSearch.user.js?raw=true) |
 | Greasy Fork | [517607](https://greasyfork.org/zh-CN/scripts/517607) |
 | 组件 | [3391](https://bgm.tv/dev/app/3391) |
+
+## 突破右上角搜索分类限制 `0.0.1`
+处于人物版块时，右上角搜索分类可选择条目；其他版块时，可选择虚拟或现实人物
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [searchCatExtend.user.js](https://github.com/bangumi/scripts/blob/master/inchei/searchCatExtend.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | [5945](https://bgm.tv/dev/app/5945) |
 
 ## 加入或修改收藏时标签功能加强 `0.3.1`
 加入或修改收藏时高亮或自动填充自己与他人的共同标签，高亮其中的元标签，点击展开所有标签
@@ -79,7 +88,7 @@
 | Greasy Fork | [513954](https://greasyfork.org/zh-CN/scripts/513954) |
 | 组件 | [3344](https://bgm.tv/dev/app/3344) |
 
-## 章节讨论吐槽加强 `0.6.1`
+## 章节讨论吐槽加强 `0.6.2`
 章节讨论中置顶显示自己的吐槽，高亮回复过的章节格子
 
 - 讨论页：https://bgm.tv/group/topic/408098
@@ -90,7 +99,7 @@
 | Greasy Fork | [516402](https://greasyfork.org/zh-CN/scripts/516402) |
 | 组件 | [3341](https://bgm.tv/dev/app/3341) |
 
-## 进度时间线显示评论 `0.1.8`
+## 进度时间线显示评论 `0.1.9`
 在班固米显示动画进度时间线的对应评论
 
 - 讨论页：https://bgm.tv/group/topic/
@@ -110,7 +119,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## RSS订阅班友收藏 `0.2.6`
+## RSS订阅班友收藏 `0.2.7`
 在班固米首页显示关注的班友的收藏RSS，我会一直看着你👁
 
 - 讨论页：https://bgm.tv/group/topic/414787
@@ -165,7 +174,7 @@
 | Greasy Fork | [534247](https://greasyfork.org/zh-CN/scripts/534247) |
 | 组件 | [3773](https://bgm.tv/dev/app/3773) |
 
-## 时光机查询特定条目评价 `0.2.3`
+## 时光机查询特定条目评价 `0.2.4`
 经济的同步率查询
 
 - 讨论页：https://bgm.tv/group/topic/411925
@@ -176,7 +185,7 @@
 | Greasy Fork | [520607](https://greasyfork.org/zh-CN/scripts/520607) |
 | 组件 | [3438](https://bgm.tv/dev/app/3438) |
 
-## bangumi 自动生成编辑摘要 `0.6.0`
+## bangumi 自动生成编辑摘要 `0.6.2`
 自动生成Bangumi编辑摘要
 
 - 讨论页：https://bgm.tv/group/topic/433505
@@ -209,7 +218,7 @@
 | Greasy Fork | 无 |
 | 组件 | [5349](https://bgm.tv/dev/app/5349) |
 
-## Bangumi 关联人物职位查询 `0.1.4`
+## Bangumi 关联人物职位查询 `0.1.7`
 在关联人物编辑页面快速查看人物最近参与的职位信息
 
 | 载点 | 链接 |
@@ -218,10 +227,8 @@
 | Greasy Fork | 无 |
 | 组件 | [4966](https://bgm.tv/dev/app/4966) |
 
-## 关联条目/角色拖拽排序 `0.0.3`
-修改自 biota
-
-- 讨论页：https://bgm.tv/group/topic/448955
+## 关联条目/角色拖拽排序（手柄拖动版） `0.5`
+左侧手柄拖动排序，无需激活按钮，支持动态新增条目
 
 | 载点 | 链接 |
 |------|------|
@@ -238,7 +245,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 根据章节简介关联制作人员参与 `0.2.7`
+## 根据章节简介关联制作人员参与 `0.2.8`
 从章节页或人物关联页根据章节简介关联制作人员参与
 
 - 讨论页：https://bgm.tv/group/topic/439326
@@ -258,6 +265,15 @@
 |------|------|
 | GitHub | [wikiImportBookVersion.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportBookVersion.user.js?raw=true) |
 | Greasy Fork | [556109](https://greasyfork.org/zh-CN/scripts/556109) |
+| 组件 | 无 |
+
+## Bookoff 添加条目到 bangumi `0.1`
+在Bookoff商品页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiImportBookoff.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiImportBookoff.user.js?raw=true) |
+| Greasy Fork | 无 |
 | 组件 | 无 |
 
 ## NDL 添加条目到 bangumi `0.2`
@@ -280,7 +296,7 @@
 | Greasy Fork | 无 |
 | 组件 | [5504](https://chii.in/dev/app/5504) |
 
-## 维基修订历史对比差异补完 `0.1.1`
+## 维基修订历史对比差异补完 `0.1.2`
 显示人物/角色、条目-条目、人物/角色-*维基修订历史差异，可恢复版本
 
 - 讨论页：https://bgm.tv/group/topic/448515
@@ -335,7 +351,16 @@
 | Greasy Fork | 无 |
 | 组件 | [5719](https://bgm.tv/dev/app/5719) |
 
-## Bangumi wiki 图片上传增强 `1.4.6`
+## 关联按钮直接选择条目类型 `0.0.1`
+关联按钮直接选择条目类型
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiRelateNonAnime.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiRelateNonAnime.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
+## Bangumi wiki 图片上传增强 `1.4.7`
 支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
 
 - 讨论页：https://bgm.tv/group/topic/431819
@@ -346,8 +371,8 @@
 | Greasy Fork | [545636](https://greasyfork.org/zh-CN/scripts/545636) |
 | 组件 | 无 |
 
-## 关联单行本自动排序 `0.0.1`
-按照数字一键排序单行本
+## 关联单行本自动排序 `0.1.2`
+按照数字一键排序单行本（支持可配置化扩展排序方式）
 
 - 讨论页：https://bgm.tv/group/topic/454446
 
