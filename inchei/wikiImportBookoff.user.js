@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bookoff 添加条目到 bangumi
-// @namespace    bangumi.wiki.import.bookoff
-// @version      0.1
+// @namespace    http://tampermonkey.net/
+// @version      0.1.1
 // @description  在Bookoff商品页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
 // @author       You
 // @match        *://shopping.bookoff.co.jp/used/*
@@ -170,7 +170,7 @@
 
       // 填充标签
       const tagsInput = document.querySelector('input#tags');
-      if (tagsInput) tagsInput.value = data.tags;
+      if (tagsInput && !data.title.match(/\(\d+\)/)) tagsInput.value = data.tags;
 
       // 构建 infobox 模板，填入价格
       const template = `{{Infobox animanga/Book

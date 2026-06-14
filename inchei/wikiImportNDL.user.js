@@ -1,8 +1,7 @@
 // ==UserScript==
 // @name         NDL 添加条目到 bangumi
 // @namespace    http://tampermonkey.net/
-// @homepage     https://bgm.tv/group/topic/438774
-// @version      0.2
+// @version      0.3
 // @description  在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
 // @author       You
 // @match        https://ndlsearch.ndl.go.jp/search*
@@ -192,7 +191,10 @@
     // 监听页面变化，动态添加链接（应对可能的分页或动态加载）
     const observer = new MutationObserver(addActionLinks);
     observer.observe(document.body, { childList: true, subtree: true });
-  } else if (window.location.pathname === '/new_subject/1') { // 在BGM.tv新条目页面的操作
+  }
+
+  // 在BGM.tv新条目页面的操作
+  else if (window.location.pathname === '/new_subject/1') {
     // 等待元素出现
     function waitForElement(selector, callback) {
       const element = document.querySelector(selector);
@@ -219,7 +221,7 @@
       const normalizedText = dateText.replace(/\/|\.|．|年|月|日/g, '-');
       const parts = normalizedText.split('-').map(part => {
         const num = parseInt(part.trim(), 10);
-        return Number.isNaN(num) ? part : num.toString().padStart(2, '0');
+        return isNaN(num) ? part : num.toString().padStart(2, '0');
       }).filter(part => part);
 
       switch (parts.length) {
@@ -244,7 +246,10 @@
         // 如果有卷数信息，添加到标题后
         if (data.volume && data.volume[0]) {
           if (/^第?\d+巻?$/.test(full2half(data.volume[0]))) {
-            titleText += ` (${full2half(data.volume[0]).match(/\d+/)[0]})`;
+            const num = full2half(data.volume[0]).match(/\d+/)?.[0];
+            if (num) {
+              titleText += ` (${num})`;
+            }
           } else {
             titleText += ` ${data.volume[0]}`;
           }
@@ -260,11 +265,11 @@
       let author = '', painter = '', gensaku = '';
       if (data.dc_creator && data.dc_creator[0]) {
         if (data.dc_creator.length === 1) {
-          author = data.dc_creator[0].name.replace(/\[.*?\]/g, '').replace(/[／∥ /]著/, '').trim();
+          author = data.dc_creator[0].name.replace(/\[.*?\]/g, '').replace(/[／∥ \/]著/, '').trim();
         } else {
           const authors = data.dc_creator.map(c => c.name);
-          gensaku = authors.find(a => a.match(/ 作$/)).replace(/ 作$/, '');
-          painter = authors.find(a => a.match(/ 画$/)).replace(/ 画$/, '');
+          gensaku = authors.find(a => a.match(/ 作$/))?.replace(/ 作$/, '');
+          painter = authors.find(a => a.match(/ 画$/))?.replace(/ 画$/, '');
           if ((gensaku && painter && authors.length > 2) || !gensaku || !painter) {
             gensaku = painter = '';
             author = authors.join('、');
@@ -292,7 +297,7 @@
       const releaseDate = processDate(full2half(data.date || data.issued));
 
       // 处理页数
-      const pages = data.extent ? full2half(data.extent[0]).match(/\d+/)[0] || '' : '';
+      const pages = data.extent ? full2half(data.extent[0]).match(/\d+/)?.[0] || '' : '';
 
       // 构建模板内容
       const template = `{{Infobox animanga/Book

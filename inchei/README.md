@@ -267,7 +267,7 @@
 | Greasy Fork | [556109](https://greasyfork.org/zh-CN/scripts/556109) |
 | 组件 | 无 |
 
-## Bookoff 添加条目到 bangumi `0.1`
+## Bookoff 添加条目到 bangumi `0.1.1`
 在Bookoff商品页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
 
 | 载点 | 链接 |
