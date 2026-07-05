@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.3
+// @version     0.5.4
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -3431,9 +3431,9 @@ const steamTools = {
             }
             if (location.hostname === 'store.steampowered.com') {
                 res.push({
-                    name: 'website',
+                    name: '链接',
                     value: `Steam|${location.origin + location.pathname}`,
-                    category: 'website,listItem',
+                    category: 'listItem',
                 });
             }
             return res;
@@ -3666,10 +3666,10 @@ const steamdbTools = {
                 }
             }
             const $appInstall = document.querySelector('#js-app-install');
-            const appId = $appInstall?.href.match(/steam:\/\/launch\/(\d+)/)?.[1];
+            const appId = $appInstall?.href.match(/steam:\/\/(?:install|launch)\/(\d+)/)?.[1];
             if (appId) {
                 res.push({
-                    name: 'website',
+                    name: '链接',
                     value: `Steam|https://store.steampowered.com/app/${appId}`,
                     category: 'listItem',
                 });
