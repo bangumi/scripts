@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.4
+// @version     0.5.5
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -378,13 +378,10 @@ amazonJpBookSubject.itemList.push({
             selector: '#tmmSwatches .a-button-selected .slot-price',
         },
         {
-            selector: '#tmm-grid-swatch-OTHER .slot-price',
+            selector: '#Northstar-Buybox .a-button-selected .slot-price',
         },
         {
             selector: '#tmm-grid-swatch-PAPERBACK .slot-price',
-        },
-        {
-            selector: '#tmmSwatches > div > div:last-child .slot-price',
         },
     ],
     pipes: ['ta'],
@@ -613,17 +610,21 @@ function toAmazonAcSl1500ImageUrl(url) {
     }
     return url.replace(/(?:\._[^/.]+_)?\.(jpe?g)(\?.*)?$/i, '._AC_SL1500_.$1$2');
 }
+function toHalfWidthDigits(str) {
+    return str.replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0));
+}
+function normalizeVolumeParenthesis(str) {
+    return str.replace(/([\s　]*)[（(]\s*([0-9０-９]+)\s*[）)]/g, (_, spacing, volume) => {
+        return `${spacing}(${toHalfWidthDigits(volume)})`;
+    });
+}
 const amazonUtils = {
     dealTitle(str = '') {
-        str = str.trim().split('\n')[0].trim();
-        const textList = [
-            '\\([^0-9]+?\\)$',
-            '（[^0-9]+?）$',
-            '\\(.+?\\d+.+?\\)$',
-            '（.+?\\d+.+?）$',
-        ];
-        str = str.replace(new RegExp(textList.join('|'), 'g'), '').trim();
-        return str;
+        str = normalizeVolumeParenthesis(str.trim().split('\n')[0].trim());
+        return str
+            .replace(/[\s　]*\((?!\s*[0-9]+\s*\))[^()]*\)$/, '')
+            .replace(/[\s　]*（(?!\s*[0-9０-９]+\s*）)[^（）]*）$/, '')
+            .trim();
     }};
 async function getAmazonCoverInfo(res, options = {}) {
     const $cover = document.querySelector('#imgTagWrapperId>img');
@@ -675,26 +676,6 @@ async function getAmazonCoverInfo(res, options = {}) {
     }
 }
 
-const usedOfferReg = /非全新品|中古品|中古商品|コレクター商品|收藏品/i;
-const currentUsedBuyboxReg = /中古品\s*[:：]|中古商品\s*[:：]|コンディション\s*[:：]?\s*(?:中古|非全新品)|コレクター商品\s*[:：]|非全新品\s*[:：]/i;
-const newOfferReg = /新品/i;
-const kindleFormatReg = /Kindle|電子書籍|电子书/i;
-function getText$1(selector) {
-    return document.querySelector(selector)?.textContent ?? '';
-}
-function isCurrentAmazonJpBookOfferUsed() {
-    const selectedFormatText = getText$1('#tmmSwatches .a-button-selected');
-    if (kindleFormatReg.test(selectedFormatText)) {
-        return false;
-    }
-    const currentBuyboxText = getText$1('#usedOnlyBuybox, #used_buybox_desktop, #usedBuySection, #desktop_buybox');
-    if (document.querySelector('#usedOnlyBuybox, #used_buybox_desktop, #usedBuySection, #usedOfferListingID') ||
-        currentUsedBuyboxReg.test(currentBuyboxText)) {
-        return true;
-    }
-    const otherOfferText = getText$1('.aod-popover-caret-link');
-    return usedOfferReg.test(otherOfferText) && !newOfferReg.test(otherOfferText);
-}
 function getBookFormatSwatches() {
     const $swatches = document.querySelector('#tmmSwatches');
     if (!$swatches) {
@@ -763,9 +744,6 @@ const amazonJpBookTools = {
                 }
                 else if (info.name === '价格') {
                     newInfo.value = stringValue.replace(/来自|より/, '').trim();
-                    if (isCurrentAmazonJpBookOfferUsed()) {
-                        newInfo = null;
-                    }
                 }
                 if (newInfo) {
                     res.push({
@@ -1288,14 +1266,27 @@ const dlsiteTools = {
                         val = v.map((s) => s.trim()).join(', ');
                     }
                 }
+                if (info.name === 'website' && stringValue) {
+                    const url = stringValue.startsWith('/')
+                        ? location.origin + stringValue
+                        : stringValue;
+                    res.push({
+                        ...info,
+                        name: '链接',
+                        value: `DLsite|${url}`,
+                        category: 'listItem',
+                    });
+                    continue;
+                }
                 res.push({
                     ...info,
                     value: val,
                 });
             }
-            if (location.hostname.includes('dlsite.com')) {
+            if (location.hostname.includes('dlsite.com') &&
+                !res.some((info) => info.name === '链接')) {
                 res.push({
-                    name: 'website',
+                    name: '链接',
                     value: `DLsite|${location.origin + location.pathname}`,
                     category: 'listItem',
                 });
