@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.5
+// @version     0.5.6
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -676,6 +676,34 @@ async function getAmazonCoverInfo(res, options = {}) {
     }
 }
 
+const usedOfferReg = /非全新品|中古品|中古商品|コレクター商品|收藏品/i;
+const currentUsedBuyboxReg = /中古品\s*[:：]|中古商品\s*[:：]|コンディション\s*[:：]?\s*(?:中古|非全新品)|コレクター商品\s*[:：]|非全新品\s*[:：]/i;
+const kindleFormatReg = /Kindle|電子書籍|电子书/i;
+function getText$1(selector) {
+    return document.querySelector(selector)?.textContent ?? '';
+}
+function isCurrentAmazonJpBookOfferUsed() {
+    const selectedFormatText = getText$1('#tmmSwatches .a-button-selected');
+    if (kindleFormatReg.test(selectedFormatText)) {
+        return false;
+    }
+    const currentBuyboxText = getText$1('#Northstar-Buybox .a-accordion-active');
+    if (currentUsedBuyboxReg.test(currentBuyboxText)) {
+        return true;
+    }
+    // Do not use broad positive labels such as 新品 here: they are locale-sensitive,
+    // and #desktop_buybox may include unrelated "other offers" text. Also,
+    // #usedOfferListingID can exist even when the selected buybox is not used.
+    // Only used-only buybox containers are structural evidence for filtering.
+    if (document.querySelector('#usedOnlyBuybox, #used_buybox_desktop, #usedBuySection')) {
+        return true;
+    }
+    if (currentBuyboxText.trim()) {
+        return false;
+    }
+    const otherOfferText = getText$1('.aod-popover-caret-link');
+    return usedOfferReg.test(otherOfferText);
+}
 function getBookFormatSwatches() {
     const $swatches = document.querySelector('#tmmSwatches');
     if (!$swatches) {
@@ -744,6 +772,9 @@ const amazonJpBookTools = {
                 }
                 else if (info.name === '价格') {
                     newInfo.value = stringValue.replace(/来自|より/, '').trim();
+                    if (isCurrentAmazonJpBookOfferUsed()) {
+                        newInfo = null;
+                    }
                 }
                 if (newInfo) {
                     res.push({
