@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Bangumi 旧帖提醒（“挖坟”警告！）
 // @namespace    tv.bgm.cedar.posttimereminder
-// @version      0.4
+// @version      0.4.1
 // @description  展示帖子发布距今的时间，顺便找找顶旧帖的评论
 // @author       Cedar
 // @include      /^https?://(bgm\.tv|chii\.in|bangumi\.tv)/group/topic/.*/
@@ -170,6 +170,7 @@ GM_addStyle(`
   border: none;
   font-size: 12px;
   background: none;
+  line-height: inherit; /* bangumi 特有的 line-height: 150% */
 }
 .post-time-reminder button::before {
   content: '[';
