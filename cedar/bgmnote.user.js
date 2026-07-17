@@ -3,7 +3,7 @@
 // @namespace    xd.cedar.bgmnote
 // @description  简易备注
 // @author       niR, Cedar
-// @version      1.1.3
+// @version      1.1.4
 // @match        *://bgm.tv/blog/*
 // @match        *://bgm.tv/ep/*
 // @match        *://bgm.tv/group/topic/*
@@ -124,7 +124,7 @@ class Database {
     let record = GM_getValue(key);
     return record || null;
   }
-  
+
   static setNote(key, note) {
     key = this._getMainKey(key);
     let record = GM_getValue(key);
@@ -460,20 +460,25 @@ class UserPageUI {
   }
 
   static _getNumberID() {
-    // 用户的numberID并不好找..举例: @aasp2
+    // 用户的numberID并不好找..举例: @aasp2、@nakedbaby、@mizudiwood
     // 目前只发现以下几处地方有可能存在:
     // * 没改过username的用户的域名中 (改了就没有了)
-    // * 头像的URL (如果他没改头像则无法获取)
     // * 私信链接, '发送短消息'按钮的URL (如果不登录或者本人主页则没有这个按钮)
+    // * 头像的URL (如果他没改头像则无法获取)(头像图片本身的链接可能有多种形式比如 `{numberID}.jpg` 或 `{numberID}_{hash}.jpg`，且不稳定)
     // * 日志配图的URL (如果没写过日志/日志没有配图/日志栏移到侧边导致不显示图片, 则没有图片)
+
+    // username 是 numberID
     let numberID = location.pathname.split('/').pop();
     if (Database.isNumberID(numberID)) return numberID;
-    let el = document.querySelector('#headerProfile span.avatarNeue');
-    numberID = el && el.style.backgroundImage.match(/(\d+)\.jpg/);
+    // 私信链接是 numberID
+    let el = document.querySelector('#headerProfile .actions a[href^="/pm/compose"]');
+    numberID = el?.pathname.match(/(\d+)\.chii/);
     if (numberID && Database.isNumberID(numberID[1])) return numberID[1];
-    el = document.querySelector('#headerProfile .actions a[href^="/pm/compose"]');
-    numberID = el && el.pathname.match(/(\d+)\.chii/);
+    // 头像链接是 numberID
+    el = document.querySelector('#headerProfile span.avatarNeue');
+    numberID = el?.style.backgroundImage.match(/^url\(".+\/(\d+)(_[^.]+)?\.jpg/); // 例：'url("//lain.bgm.tv/pic/user/c/000/02/18/21804_2Oro7.jpg?r=1757342413&hd=1")'
     if (numberID && Database.isNumberID(numberID[1])) return numberID[1];
+    // 博客头像是 numberID
     el = document.getElementById('blog');
     if (el) el = el.querySelector('#entry_list .pictureFrameGroup img');
     if (el) numberID = el.src.match(/\/(\d+)_.+\.jpg/);
