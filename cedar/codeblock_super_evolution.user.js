@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        代码块超进化！
 // @namespace   tv.bgm.cedar.codeblockSuperEvolution!
-// @version     3.0.2
+// @version     3.0.3
 // @description 进化！超代码块
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*$/
@@ -87,55 +87,58 @@ function saveSettings(fontfamily, fontsize) {
 const fontSettings = loadSettings();
 let defaultfontfamily = null;
 
-function validCollapseHead(head) {
-  return head.startsWith('===') && head.endsWith('===');
-}
-
-function validOpenHead(head) {
-  return head.startsWith('!===') && head.endsWith('===!');
-}
-
-function validCollapseCode(head) {
-  return validCollapseHead(head) || validOpenHead(head);
-}
-
-function noTitle(head) {
-  return /^!?=+!?$/.test(head); // 会允许类似 "!===" 这样的非法写法，要保证传入的参数是 valid 的
-}
-
 function validFontStyleLine(line) {
   return line.startsWith("font") || line.startsWith("line-height");
 }
 
 function tryMakeCollapseCode(preNode) {
-  let head = preNode.textContent.split("\n", 1)[0]; // 得到 "=== title ==="
-  if (!validCollapseCode(head))
+  const header = preNode.textContent.split("\n", 1)[0]; // 得到 "=== title ==="
+  const config = parseCodeBlockHeader(header)
+  if (!config.isValid)
     return;
-
-  let title = parseTitle(head) || "展开 / 折叠";
-  const collapseWrapper = getCollapseEl(title);
-  preNode.insertAdjacentElement('beforebegin', collapseWrapper);
-  collapseWrapper.append(preNode);
 
   // 注意处理没有换行的单行代码块：[code]===[/code]
   let i = preNode.textContent.indexOf("\n");
   if (i != -1)
     preNode.textContent = preNode.textContent.slice(i + 1); // 去掉开头的 === title ===\n
 
-  if (validOpenHead(head))
+  const collapseWrapper = getCollapseEl(config.title);
+  preNode.insertAdjacentElement('beforebegin', collapseWrapper);
+  collapseWrapper.append(preNode);
+  if (config.openByDefault)
     collapseWrapper.setAttribute("open", "");
 }
 
-function parseTitle(line) {
-  if (noTitle(line)) {
-    return "";
-  } else if (validCollapseHead(line)) {
-    return line.replace(/^=+\s*(.*?)\s*=+$/, "$1");
-  } else if (validOpenHead(line)) {
-    return line.replace(/^!=+\s*(.*?)\s*=+!$/, "$1");
-  } else {
-    return null;
-  }
+function parseCodeBlockHeader(str) {
+  const invalidResult = { isValid: false, openByDefault: false, title: null };
+
+  // 两侧有感叹号表示默认展开，如 `!===!`
+  const startWithExclamation = str.startsWith('!');
+  const endWithExclamation = str.endsWith('!');
+  // 感叹号必须对称
+  if (startWithExclamation !== endWithExclamation) return invalidResult;
+
+  // 剥离两端的感叹号
+  const innerStr = startWithExclamation ? str.slice(1, -1) : str;
+  // 必须以至少3个等号开头，如 `===`
+  const leftEqualsCount = (innerStr.match(/^=+/) ?? [''])[0].length;
+  if (leftEqualsCount < 3) return invalidResult;
+  // 左右等号数量要一致
+  const rightEqualsCount = (innerStr.match(/=+$/) ?? [''])[0].length;
+  if (leftEqualsCount !== rightEqualsCount) return invalidResult;
+
+  // 剥离两端的等号
+  // 注意：如果字符串全是等号，如 `===`，slice 之后会得到空字符串 `""`
+  const titlePart = innerStr.slice(leftEqualsCount, -leftEqualsCount);
+  // 解析标题。标题不能只有空格，即 `=== ===` 非法。如果无标题，则只能写为形如 `===` 或者 `!===!` 的形式
+  const title = titlePart.trim();
+  if (titlePart.length > 0 && title === "") return invalidResult;
+
+  return {
+    isValid: true,
+    openByDefault: startWithExclamation,
+    title: title || "展开 / 折叠"
+  };
 }
 
 // 用于组装折叠元素
