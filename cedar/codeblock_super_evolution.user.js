@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        代码块超进化！
 // @namespace   tv.bgm.cedar.codeblockSuperEvolution!
-// @version     3.0
+// @version     3.0.1
 // @description 进化！超代码块
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*$/
@@ -266,7 +266,7 @@ function addSettingsPage() {
 
   // Append the settings element to the target container
   settings.append(fontFamilyContainer, fontSizeContainer, saveButton, savedHintEl);
-  document.getElementById('columnB').appendChild(settings);
+  document.getElementById('columnSearchC').appendChild(settings);
 }
 
 function main() {
