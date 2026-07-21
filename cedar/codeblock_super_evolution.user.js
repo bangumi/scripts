@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        代码块超进化！
 // @namespace   tv.bgm.cedar.codeblockSuperEvolution!
-// @version     3.0.3
+// @version     3.0.4
 // @description 进化！超代码块
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*$/
@@ -74,14 +74,18 @@ html[data-theme='dark'] .code-block-collapse-wrapper pre {
 `);
 
 function loadSettings() {
-  return JSON.parse(localStorage['bgmcodeblockfont'] || `{"fontfamily": "","fontsize": ""}`);
+  let settings = {fontfamily: "", fontsize: null};
+  settings = Object.assign(settings, JSON.parse(localStorage.bgmcodeblockfont || "{}"));
+  settings.fontfamily = settings.fontfamily.replace(/[{}]/g, "");
+  settings.fontsize = parseFloat(settings.fontsize) || null;
+  return settings;
 }
 
 function saveSettings(fontfamily, fontsize) {
-  fontSettings.fontfamily = fontfamily;
-  fontSettings.fontsize = fontsize;
-  localStorage['bgmcodeblockfont'] = JSON.stringify(fontSettings);
-  $(".code-block-settings-save+span").fadeIn("fast").fadeTo(300, 1).fadeOut("slow");
+  fontSettings.fontfamily = fontfamily.replace(/[{}]/g, "");
+  fontSettings.fontsize = parseFloat(fontsize) || null;
+  localStorage.bgmcodeblockfont = JSON.stringify(fontSettings);
+  return true;
 }
 
 const fontSettings = loadSettings();
@@ -170,11 +174,11 @@ function parseLocalFontStyle(line) {
     return null;
 
   // 用临时元素判定用户的 font style 有效性，并保存合法结果，更安全
-  let testEl = document.createElement('span');
+  const testEl = document.createElement('span');
   testEl.setAttribute('style', line);
-  let fontStyles = {};
+  const fontStyles = {};
   for (const k of fontStyleKeywords) {
-    let style = testEl.style[k];
+    const style = testEl.style.getPropertyValue(k);
     if (style) fontStyles[k] = style;
   }
   if ('font-family' in fontStyles && fontSettings.fontfamily)
@@ -193,7 +197,6 @@ function handleCodeBlock(preNodes) {
 function addUserFontStyleNode() {
   if (fontSettings.fontfamily || fontSettings.fontsize) {
     const style = document.createElement('style');
-    style.type = "text/css";
     style.textContent = ".codeHighlight pre {"
       + (fontSettings.fontfamily && `font-family: ${fontSettings.fontfamily}, ${defaultfontfamily};`)
       + (fontSettings.fontsize && `font-size: ${fontSettings.fontsize}px;`)
@@ -203,21 +206,6 @@ function addUserFontStyleNode() {
 }
 
 function addSettingsPage() {
-  // 尽可能不用 jQuery 实现
-  // let $settings = $(document.createElement('div')).attr('id', 'code-block-settings');
-  // let input = document.createElement('input'); input.type = "text"; input.maxLength = 100;
-  // let $fontFamily = $(input).clone().val(fontSettings.fontfamily).css('width', '120px');
-  // let $fontSize = $(input).clone().val(fontSettings.fontsize).css('width', '20px');
-
-  // $settings.append($(document.createElement('h2')).addClass('subtitle').text("Code块自定义"))
-  //   .append($(document.createElement('div')).append(
-  //     $(document.createElement('span')).text('font-family:'), $fontFamily))
-  //   .append($(document.createElement('div')).append(
-  //     $(document.createElement('span')).text('font-size:'), $fontSize, $(document.createElement('span')).text('px'),
-  //     $(document.createElement('a')).addClass("code-block-settings-save chiiBtn").text("保存").on("click", saveSettings),
-  //     $(document.createElement('span')).hide()));
-  // $('#columnB').append($settings);
-
   // Create the settings element
   const settings = document.createElement('div');
   settings.id = 'code-block-settings';
@@ -258,7 +246,10 @@ function addSettingsPage() {
   const saveButton = document.createElement('a');
   saveButton.classList.add("code-block-settings-save", "chiiBtn");
   saveButton.textContent = "保存";
-  saveButton.addEventListener('click', () => { saveSettings(fontFamilyInput.value, fontSizeInput.value) });
+  saveButton.addEventListener('click', () => {
+    const successful = saveSettings(fontFamilyInput.value, fontSizeInput.value);
+    if (successful) $(".code-block-settings-save+span").fadeIn("fast").fadeTo(300, 1).fadeOut("slow");
+  });
 
   const savedHintEl = document.createElement('span');
   savedHintEl.style.display = 'none';
