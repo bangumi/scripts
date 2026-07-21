@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        代码块超进化！
 // @namespace   tv.bgm.cedar.codeblockSuperEvolution!
-// @version     3.0.1
+// @version     3.0.2
 // @description 进化！超代码块
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*$/
@@ -87,10 +87,6 @@ function saveSettings(fontfamily, fontsize) {
 const fontSettings = loadSettings();
 let defaultfontfamily = null;
 
-function removeRedundantBR(preNode) {
-  preNode.innerHTML = preNode.innerHTML.replace(/<br>\n/g, "<br>");
-}
-
 function validCollapseHead(head) {
   return head.startsWith('===') && head.endsWith('===');
 }
@@ -112,7 +108,7 @@ function validFontStyleLine(line) {
 }
 
 function tryMakeCollapseCode(preNode) {
-  let head = preNode.innerHTML.split("<br>", 1)[0]; // 得到 "=== title ==="
+  let head = preNode.textContent.split("\n", 1)[0]; // 得到 "=== title ==="
   if (!validCollapseCode(head))
     return;
 
@@ -121,10 +117,10 @@ function tryMakeCollapseCode(preNode) {
   preNode.insertAdjacentElement('beforebegin', collapseWrapper);
   collapseWrapper.append(preNode);
 
-  // 注意处理没有<br>的单行代码块：[code]===[/code]
-  let i = preNode.innerHTML.indexOf("<br>");
+  // 注意处理没有换行的单行代码块：[code]===[/code]
+  let i = preNode.textContent.indexOf("\n");
   if (i != -1)
-    preNode.innerHTML = preNode.innerHTML.slice(i + 4); // 去掉开头的 === title ===<br>
+    preNode.textContent = preNode.textContent.slice(i + 1); // 去掉开头的 === title ===\n
 
   if (validOpenHead(head))
     collapseWrapper.setAttribute("open", "");
@@ -147,7 +143,7 @@ function getCollapseEl(title) {
   const summaryEl = document.createElement('summary');
   summaryEl.style.fontWeight = "bold";
   summaryEl.style.cursor = "pointer";
-  summaryEl.innerText = title;
+  summaryEl.textContent = title;
   const collapseWrapper = document.createElement("details");
   collapseWrapper.classList.add("code-block-collapse-wrapper");
   collapseWrapper.append(summaryEl);
@@ -157,7 +153,7 @@ function getCollapseEl(title) {
 
 function tryAddLocalFontStyle(preNode) {
   // 注意调用该函数前必须先把标题处理好
-  let head = preNode.innerHTML.split("<br>", 1)[0];
+  let head = preNode.textContent.split("\n", 1)[0];
   let style = parseLocalFontStyle(head);
   if (style) {
     Object.assign(preNode.style, style);
@@ -185,7 +181,7 @@ function parseLocalFontStyle(line) {
 
 function handleCodeBlock(preNodes) {
   for (const c of preNodes) {
-    removeRedundantBR(c);
+    c.textContent = c.textContent; // bangumi 的代码 bug 会在所有 `\n` 后面添加不必要的 <br> 标签。该代码可去除 pre 元素中包括 <br> 的所有标签，只留下纯文本。
     tryMakeCollapseCode(c);
     tryAddLocalFontStyle(c);
   }
@@ -195,7 +191,7 @@ function addUserFontStyleNode() {
   if (fontSettings.fontfamily || fontSettings.fontsize) {
     const style = document.createElement('style');
     style.type = "text/css";
-    style.innerHTML = ".codeHighlight pre {"
+    style.textContent = ".codeHighlight pre {"
       + (fontSettings.fontfamily && `font-family: ${fontSettings.fontfamily}, ${defaultfontfamily};`)
       + (fontSettings.fontsize && `font-size: ${fontSettings.fontsize}px;`)
       + "}";
