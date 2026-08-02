@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.6
+// @version     0.5.7
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -432,6 +432,12 @@ function getCoverValue(value) {
 function getGMRequest() {
     return globalThis.GM_xmlhttpRequest;
 }
+function isSuccessfulHttpStatus(status) {
+    return status >= 200 && status < 300;
+}
+function createHttpStatusError(status, url) {
+    return new Error(`Request failed with status ${status}: ${url}`);
+}
 function resolveRequestBody(method, body, data) {
     if (method === 'POST') {
         return data ?? body ?? null;
@@ -453,8 +459,8 @@ function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
                 responseType,
                 ...(requestBody ? { data: requestBody } : {}),
                 onload(res) {
-                    if (res.status === 404) {
-                        reject(404);
+                    if (!isSuccessfulHttpStatus(res.status)) {
+                        reject(createHttpStatusError(res.status, url));
                         return;
                     }
                     if (decode && responseType === 'arraybuffer') {
@@ -478,8 +484,8 @@ function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
         body: requestBody,
     }), TIMEOUT)
         .then(async (response) => {
-        if (!response.ok) {
-            throw new Error('Not 2xx response');
+        if (!isSuccessfulHttpStatus(response.status)) {
+            throw createHttpStatusError(response.status, url);
         }
         if (decode) {
             const buffer = await response.arrayBuffer();
@@ -496,7 +502,7 @@ function fetchInfo(url, type, opts = {}, TIMEOUT = 10 * 1000) {
             case 'arraybuffer':
                 return response.arrayBuffer();
         }
-        throw new Error('Not 2xx response');
+        throw new Error(`Unsupported response type: ${type}`);
     })
         .catch((err) => {
         console.log('fetch err: ', err);
@@ -5132,6 +5138,55 @@ var Protocol;
     Protocol["http"] = "http";
     Protocol["https"] = "https";
 })(Protocol || (Protocol = {}));
+/** Bangumi HTML 搜索页使用约 60 秒的搜索冷却 Cookie。 */
+const HTML_SEARCH_INTERVAL_MS = 60 * 1000;
+const JSON_SEARCH_TYPES = {
+    [SubjectTypeId.book]: 'book',
+    [SubjectTypeId.music]: 'music',
+    [SubjectTypeId.game]: 'game',
+};
+let lastHtmlSearchAt = 0;
+class InvalidBangumiSearchResponseError extends Error {
+    constructor() {
+        super('Invalid Bangumi search response: result list not found');
+        this.name = 'InvalidBangumiSearchResponseError';
+    }
+}
+class UnauthenticatedBangumiSearchError extends Error {
+    constructor() {
+        super('Bangumi search response is unauthenticated');
+        this.name = 'UnauthenticatedBangumiSearchError';
+    }
+}
+function isBangumiJsonSearchItem(value) {
+    if (!value || typeof value !== 'object')
+        return false;
+    const item = value;
+    return ((typeof item.id === 'string' || typeof item.id === 'number') &&
+        (typeof item.type_id === 'string' || typeof item.type_id === 'number') &&
+        typeof item.name === 'string');
+}
+function dealJsonSearchResults(info, expectedType) {
+    if (!Array.isArray(info) || !info.every(isBangumiJsonSearchItem)) {
+        throw new Error('Invalid Bangumi JSON search response');
+    }
+    return info
+        .filter((item) => Number(item.type_id) === Number(expectedType) &&
+        (!item.url_mod || item.url_mod === 'subject'))
+        .map((item) => ({
+        name: item.name,
+        greyName: item.name_cn?.trim() ?? '',
+        url: `/subject/${item.id}`,
+    }));
+}
+async function fetchHtmlSearchResults(url) {
+    const waitTime = HTML_SEARCH_INTERVAL_MS - (Date.now() - lastHtmlSearchAt);
+    if (lastHtmlSearchAt && waitTime > 0) {
+        await sleep(waitTime);
+    }
+    lastHtmlSearchAt = Date.now();
+    return dealSearchResults(await fetchText(url));
+}
 /**
  * 处理搜索页面的 html
  * @param info 字符串 html
@@ -5139,14 +5194,29 @@ var Protocol;
 function dealSearchResults(info) {
     const results = [];
     let $doc = new DOMParser().parseFromString(info, 'text/html');
-    let items = $doc.querySelectorAll('#browserItemList>li>div.inner');
+    const isUnauthenticated = /\bCHOBITS_UID\s*=\s*['"]?0\b/.test(info) ||
+        !!$doc.querySelector('.guest.login[href*="/login"]');
+    if (isUnauthenticated) {
+        throw new UnauthenticatedBangumiSearchError();
+    }
+    const $resultList = $doc.querySelector('#browserItemList');
+    if (!$resultList) {
+        throw new InvalidBangumiSearchResponseError();
+    }
+    let items = $resultList.querySelectorAll('li>div.inner');
     // get number of page
     let numOfPage = 1;
     let pList = $doc.querySelectorAll('.page_inner>.p');
-    if (pList && pList.length) {
-        let tempNum = parseInt(pList[pList.length - 2].getAttribute('href').match(/page=(\d*)/)[1]);
-        numOfPage = parseInt(pList[pList.length - 1].getAttribute('href').match(/page=(\d*)/)[1]);
-        numOfPage = numOfPage > tempNum ? numOfPage : tempNum;
+    if (pList.length >= 2) {
+        const secondLastPage = pList[pList.length - 2]
+            .getAttribute('href')
+            ?.match(/page=(\d+)/)?.[1];
+        const lastPage = pList[pList.length - 1]
+            .getAttribute('href')
+            ?.match(/page=(\d+)/)?.[1];
+        const tempNum = Number.parseInt(secondLastPage ?? '1', 10);
+        numOfPage = Number.parseInt(lastPage ?? '1', 10);
+        numOfPage = Math.max(numOfPage, tempNum);
     }
     if (items && items.length) {
         for (const item of Array.prototype.slice.call(items)) {
@@ -5185,9 +5255,6 @@ function dealSearchResults(info) {
             results.push(itemSubject);
         }
     }
-    else {
-        return [];
-    }
     return [results, numOfPage];
 }
 /**
@@ -5202,21 +5269,34 @@ async function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = Sub
     }
     let query = (subjectInfo.name || '').trim();
     if (type === SubjectTypeId.book) {
-        // 去掉末尾的括号并加上引号
+        // 去掉末尾的括号
         query = query.replace(/（[^0-9]+?）|\([^0-9]+?\)$/, '');
-        query = `"${query}"`;
     }
     if (uniqueQueryStr) {
-        query = `"${uniqueQueryStr || ''}"`;
+        query = uniqueQueryStr.trim();
     }
-    if (!query || query === '""') {
+    if (!query) {
         console.info('Query string is empty');
         return;
     }
-    const url = `${bgmHost}/subject_search/${encodeURIComponent(query)}?cat=${type}`;
-    console.info('search bangumi subject URL: ', url);
-    const rawText = await fetchText(url);
-    const rawInfoList = dealSearchResults(rawText)[0] || [];
+    const htmlQuery = type === SubjectTypeId.book || uniqueQueryStr ? `"${query}"` : query;
+    const url = `${bgmHost}/subject_search/${encodeURIComponent(htmlQuery)}?cat=${type}`;
+    let rawInfoList;
+    const jsonSearchType = JSON_SEARCH_TYPES[type];
+    if (jsonSearchType) {
+        const jsonUrl = `${bgmHost}/json/search-${jsonSearchType}/${encodeURIComponent(query)}`;
+        console.info('search bangumi subject JSON URL: ', jsonUrl);
+        try {
+            rawInfoList = dealJsonSearchResults(await fetchJson(jsonUrl), type);
+        }
+        catch (error) {
+            console.warn('Bangumi JSON search failed, falling back to HTML:', error);
+        }
+    }
+    if (!rawInfoList) {
+        console.info('search bangumi subject HTML URL: ', url);
+        rawInfoList = (await fetchHtmlSearchResults(url))[0];
+    }
     // 使用指定搜索字符串如 ISBN 搜索时, 并且结果只有一条时，不再使用名称过滤
     if (uniqueQueryStr && rawInfoList && rawInfoList.length === 1) {
         return rawInfoList[0];
@@ -5254,8 +5334,7 @@ async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNu
     }
     const url = `${bgmHost}/${type}/browser/airtime/${releaseDate.getFullYear()}-${releaseDate.getMonth() + 1}${query}`;
     console.info('find subject by date: ', url);
-    const rawText = await fetchText(url);
-    let [rawInfoList, numOfPage] = dealSearchResults(rawText);
+    let [rawInfoList, numOfPage] = await fetchHtmlSearchResults(url);
     const options = {
         threshold: 0.3,
         keys: ['name', 'greyName'],
@@ -5263,7 +5342,6 @@ async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNu
     let result = filterResults(rawInfoList, subjectInfo, options, false);
     if (!result) {
         if (pageNumber < numOfPage) {
-            await sleep(300);
             return await findSubjectByDate(subjectInfo, bgmHost, pageNumber + 1, type);
         }
         else {
@@ -5275,23 +5353,15 @@ async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNu
 async function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
     if (subjectInfo.isbn) {
         const numISBN = subjectInfo.isbn.replace(/-/g, '');
-        let searchResult = await searchSubject(subjectInfo, bgmHost, type, numISBN);
+        const searchResult = await searchSubject(subjectInfo, bgmHost, type, numISBN);
         console.info(`First: search book of bangumi: `, searchResult);
         if (searchResult && searchResult.url) {
             return searchResult;
         }
-        // 判断一下是否重复
-        if (numISBN !== subjectInfo.isbn) {
-            searchResult = await searchSubject(subjectInfo, bgmHost, type, subjectInfo.isbn);
-            console.info(`Second: search book by ${subjectInfo.isbn}: `, searchResult);
-            if (searchResult && searchResult.url) {
-                return searchResult;
-            }
-        }
     }
     // 默认使用名称搜索
     const searchResult = await searchSubject(subjectInfo, bgmHost, type);
-    console.info('Third: search book of bangumi: ', searchResult);
+    console.info('Second: search book of bangumi by name: ', searchResult);
     return searchResult;
 }
 /**
@@ -5419,9 +5489,17 @@ async function searchExistingSubject(payload, runtime) {
     }
     catch (error) {
         console.error('search request failed:', error);
+        const isUnauthenticatedSearch = error instanceof Error &&
+            error.name === 'UnauthenticatedBangumiSearchError';
+        const isInvalidSearchPage = error instanceof Error &&
+            error.name === 'InvalidBangumiSearchResponseError';
         await runtime.notify({
             type: 'error',
-            message: `Bangumi 搜索请求失败: <br/><b>${payload.subjectInfo?.name ?? ''}</b>`,
+            message: isUnauthenticatedSearch
+                ? `Bangumi 搜索请求丢失了登录状态。<br/>请打开 <a href="${runtime.bgmHost}/" target="_blank" rel="noopener noreferrer">${runtime.bgmHost} 主页</a>恢复登录状态，然后返回当前页面重试。`
+                : isInvalidSearchPage
+                    ? `Bangumi 返回了异常的搜索页面，可能是登录状态或搜索频率限制。<br/>请打开 <a href="${runtime.bgmHost}/" target="_blank" rel="noopener noreferrer">${runtime.bgmHost} 主页</a>确认登录，并等待至少 60 秒后再试。`
+                    : `Bangumi 搜索请求失败: <br/><b>${payload.subjectInfo?.name ?? ''}</b>`,
             cmd: 'dismissNotError',
         });
         throw error;
