@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        代码块超进化！
 // @namespace   tv.bgm.cedar.codeblockSuperEvolution!
-// @version     3.0.4
+// @version     3.0.5
 // @description 进化！超代码块
 // @author      Cedar
 // @include     /^https?://((bangumi|bgm)\.tv|chii\.in)/.*$/
@@ -181,8 +181,13 @@ function parseLocalFontStyle(line) {
     const style = testEl.style.getPropertyValue(k);
     if (style) fontStyles[k] = style;
   }
-  if ('font-family' in fontStyles && fontSettings.fontfamily)
-    fontStyles['font-family'] += `, ${fontSettings.fontfamily}, ${defaultfontfamily}`;
+  if ('font-family' in fontStyles) {
+    fontStyles['font-family'] = [
+      fontStyles['font-family'],
+      fontSettings.fontfamily,
+      defaultfontfamily
+    ].filter(Boolean).join(', ');
+  }
   return fontStyles;
 }
 
