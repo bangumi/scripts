@@ -22,6 +22,7 @@
 // ==/UserScript==
 
 /* global OpenCC */
+/* global openccCN */
 // window.personAliasQuery
 
 (async function () {
@@ -29,6 +30,25 @@
 
   // #region vars
   let epsCache;
+
+  async function personAliasFallback(name) {
+    const provider = localStorage.getItem('wikiMissingPositionsProvider') || 'https://bgq.iccci.cc.cd';
+    try {
+      const res = await fetch(`${provider}/api/aliases/${encodeURIComponent(name)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch (e) {
+      console.error('personAliasFallback API error:', e);
+    }
+    const all = await window.personAliasQueryAll?.(name);
+    if (all && all.length > 0) return all;
+    if (all !== undefined) return [];
+    const single = await window.personAliasQuery?.(name);
+    if (single) return [single];
+    return [];
+  }
   const roleIdMap = [...document.querySelectorAll('#prsnPos_0 option')].reduce((map, option) => {
     map[option.textContent.split(' /')[0]] = option.value;
     return map;
@@ -39,89 +59,163 @@
   let converters = {}, loading;
   // #endregion
 
+  function refinedToCN(str) {
+    // Keep ノ (U+30CE) as-is for match-friendly candidates: stash it out of the
+    // pipeline (the library maps ノ→之, which hurts matching against the page's
+    // original 東ノ助 spelling), then restore after conversion.
+    const KEEP = '\uE000';
+    const stashed = str.includes('ノ') ? str.replace(/ノ/g, KEEP) : str;
+    const out = openccCN.refinedToCN(stashed, {
+      jp2t: converters['jp-tw'] || OpenCC.Converter({ from: 'jp', to: 'tw' }),
+      t2s: converters['tw-cn'] || OpenCC.Converter({ from: 'tw', to: 'cn' }),
+      tw2s: converters['tw-cn'] || OpenCC.Converter({ from: 'tw', to: 'cn' }),
+      hk2s: converters['hk-cn'] || OpenCC.Converter({ from: 'hk', to: 'cn' }),
+      t2jp: converters['tw-jp'] || OpenCC.Converter({ from: 'tw', to: 'jp' }),
+    });
+    return str.includes('ノ') ? out.replace(new RegExp(KEEP, 'g'), 'ノ') : out;
+  }
+
   // #region
-  const regexes_per = {
-    '脚本': /(?<=[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '分镜': /(?<=[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '演出': /(?<=[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '构图': /(?<=[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '作画监督': /(?<=[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '总作画监督': /(?<=((総|总)(作監|作画監督|作监|作画监督|作艦)|作画総監督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '动作作画监督': /(?<=(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '机械作画监督': /(?<=(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '特效作画监督': /(?<=(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '原画': /(?<=(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '作画监督助理': /(?<=[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '演出助理': /(?<=演出(補|補佐|补佐|协力|協力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '副导演': /(?<=(?<!作画)監督(補|補佐|补佐|协力|協力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '剪辑': /(?<=(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    'CG 导演': /(?<=(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|=|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '美术监督': /(?<=(美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '美术': /(?<=(美術|美术)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '背景美术': /(?<=(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|･|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '制作进行': /(?<=(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '设定制作': /(?<=(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '制作管理': /(?<=(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '制作协力': /(?<=[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '总作画监督助理': /(?<=((総|总)(作監|作画監督|作监|作画监督|作艦)|作画総監督)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '色彩演出': /(?<=(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-    '氛围稿': /(?<=(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：)))(\W|\w)+?(?=\n|$)/g,
-  };
-  const regexes_role_per = {
-    '脚本': /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '分镜': /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '演出': /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '构图': /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '作画监督': /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '总作画监督': /((総|总)(作監|作画監督|作监|作画监督|作艦)|作画総監督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '动作作画监督': /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|=|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '机械作画监督': /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|=|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '特效作画监督': /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|･|=|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '原画': /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '作画监督助理': /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|協力|协力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '演出助理': /演出(補|補佐|补佐|協力|协力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '副导演': /(?<!作画)監督(補|補佐|补佐|協力|协力|辅佐|辅助|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '剪辑': /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    'CG 导演': /(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '美术监督': /(美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '美术': /(美術|美术)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '背景美术': /(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|、|･|＆|\u0026|•|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '制作进行': /(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '制作管理': /(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '设定制作': /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '制作协力': /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '总作画监督助理': /((総|总)(作監|作画監督|作监|作画监督|作艦)|作画総監督)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '色彩演出': /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-    '氛围稿': /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))(\W|\w)+?(?=\n|$)/g,
-  };
-  const regexes_role = {
-    '脚本': /[\u3040-\u9fa5]*?(脚本|シナリオ|剧本|编剧|プロット|大纲)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '分镜': /[\u3040-\u9fa5]*?(分镜|コンテ)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '演出': /[\u3040-\u9fa5]*?(演出)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '构图': /[\u3040-\u9fa5]*?(レイアウト|构图|layout|レイアウター)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '作画监督': /[\u3040-\u9fa5]*?(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '总作画监督': /((総|总)(作監|作画監督|作监|作画监督|作艦)|作画総監督)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '动作作画监督': /(アクション|动作)(作監|作画監督|設計|设计|ディレクター|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '机械作画监督': /(メカ|メカニック|机械)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-･|、|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '特效作画监督': /(エフェクト|特效|特技)(作監|作画監督|作监|作画监督|作艦)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|・|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '原画': /(原画|作画)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '作画监督助理': /[\u3040-\u9fa5]*?(?<!総|总)(作監|作画監督|作监|作画监督|作艦)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '演出助理': /演出(補|補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '副导演': /(?<!作画)監督(補|補佐|补佐|协力|辅佐|辅助|協力|助理|助手)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '剪辑': /(剪辑|編集)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|＆|=|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    'CG 导演': /(3DCGディレクター|CGディレクター|3DCG导演|CG导演)\s*?(?:\uff1a|\u003A|】|\/|／|·|-･|、|=|・|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '美术监督': /(美術監督|美术监督)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '美术': /(美術|美术)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '背景美术': /(背景)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|･|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '制作进行': /(制作进行|制作進行)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|･|=|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '制作管理': /(制作デスク|制作管理|制作主任)\s*?(?:\uff1a|\u003A|】|\/|／|=|·|-、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '设定制作': /(设定制作|設定制作)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '制作协力': /[\u3040-\u9fa5]*?(制作協力|制作协力|協力プロダクション)\s*?(?:\uff1a|\u003A|】|\/|／|·|-=|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    //以下为bangumi没有的职位
-    '总作画监督助理': /((総|总)(作監|作画監督|作监|作画监督|作艦)|作画総監督)(補|補佐|补佐|协力|協力|辅佐|辅助|助理)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|=|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '色彩演出': /(カラースクリプト)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-    '氛围稿': /(イメージボード)\s*?(?:\uff1a|\u003A|】|\/|／|·|-、|・|、|=|＆|\u0026|、|・|･|、|＆|\u0026|•|♦|◆|■|◎|\s(?!:|：))/g,
-  };
+  const SEP = '(?:\\uff1a|\\u003A|】|\\/|／|·|-、|・|･|、|=|＝|＆|\\u0026|•|♦|◆|■|◎|×|\\[|\\s?\\]|\\s(?![×\\]:：]))';
+
+  const POSITIONS = [
+    { name: '脚本', pattern: '(?:脚本|シナリオ|剧本|编剧|プロット|大纲)' },
+    { name: '分镜', pattern: '(?:分镜|コンテ|ストーリーボード|絵コンテ|画コンテ)' },
+    { name: '演出', pattern: '(?<!チーフ|OP・ED[ 　]|アニメーション|コンテ・)(?:演出)' },
+    { name: '构图', pattern: '(?:レイアウト|构图|layout|レイアウター)' },
+    { name: '作画监督', pattern: '(?<!総|总|アクション|メカ|ニック|エフェクト|动作|机械|特效|プロップ|キャラクター|レイアウト|特技)(?:作監|作画監督|作监|作画监督|作艦|アニメーション演出)' },
+    { name: '总作画监督', pattern: '(?:(?:総|总)(?:作監|作画監督|作监|作画监督|作艦)|作画総監督|チーフ作画監督)' },
+    { name: '动作作画监督', pattern: '(?:アクション|动作)(?:作監|作画監督|作监|作画监督|作艦)' },
+    { name: '机械作画监督', pattern: '(?:メカ|メカニック|机械)(?:作監|作画監督|作监|作画监督|作艦)' },
+    { name: '特效作画监督', pattern: '(?:エフェクト|特效|特技)(?:作監|作画監督|作监|作画监督|作艦)' },
+    { name: '原画', pattern: '(?<!第二)(?:原画|作画)' },
+    { name: '第二原画', pattern: '(?:第二原画|二原|原画協力)' },
+    { name: '作画监督助理', pattern: '(?<!総|总)(?:作監|作画監督|作监|作画监督|作艦)(?:補|補佐|补佐|协力|協力|辅佐|辅助|助理)' },
+    { name: '演出助理', pattern: '演出(?:補|補佐|补佐|协力|協力|辅佐|辅助|助理|助手)' },
+    { name: '監督補佐', pattern: '(?:助監督|(?<!作画)監督(?:補|補佐|补佐|协力|協力|辅佐|辅助|助理|助手))' }, // bangumi无此职位，仅用于识别（≠副导演）
+    { name: '剪辑', pattern: '(?<!オンライン|オフライン|台詞)(?:剪辑|編集)' },
+    { name: '3DCG 导演', pattern: '(?:3DCGディレクター|3DCG导演|3DCG監督)' },
+    { name: 'CG 导演', pattern: '(?:CGディレクター|CG导演|CG監督)' },
+    { name: '美术监督', pattern: '(?:美術監督|美术监督|アートディレクション|背景監督)' },
+    { name: '美术', pattern: '(?:美術|美术)' },
+    { name: '背景美术', pattern: '(?:背景)' },
+    { name: '制作进行', pattern: '(?:制作进行|制作進行)' },
+    { name: '设定制作', pattern: '(?:设定制作|設定制作|制作設定)' },
+    { name: '制作管理', pattern: '(?:制作デスク|制作管理|制作主任|制作マネージャー|制作担当|制作班長)' },
+    { name: '制作协力', pattern: '(?:制作協力|制作协力|協力プロダクション|作品協力)' },
+    { name: '总作画监督助理', pattern: '(?:(?:総|总)(?:作監|作画監督|作监|作画监督|作艦)|作画総監督)(?:補|補佐|补佐|协力|協力|辅佐|辅助|助理)' },
+    { name: '色彩脚本', pattern: '(?:カラースクリプト)' },
+    { name: '印象板', pattern: '(?:イメージボード)' },
+    { name: '动画检查', pattern: '(?:動画検査|动画检查|動检|動画チェック)' },
+    { name: '特效', pattern: '(?:特殊効果)' },
+    { name: '导演', pattern: '(?<!美術|美术|音響|音响|撮影|摄影|作画|総|总|アクション|メカ|メカニック|エフェクト|动作|机械|特效|3DCG|CG|助)(?:監督|导演|ディレクター|シリーズ監督)' },
+    { name: '人物设定', pattern: '(?:キャラクターデザイン|キャラ設定|人物設定|人物设计|人物设定|キャラデザ|人设)' },
+    { name: '系列构成', pattern: '(?<!副)(?:シリーズ構成|系列构成|系列構成|シナリオディレクター|構成|脚本構成)' },
+    { name: '色彩设计', pattern: '(?:色彩設計|色彩设计|色彩設定|カラーデザイン)' },
+    { name: '摄影监督', pattern: '(?:撮影|摄影)(?:監督|监督)' },
+    { name: '音响监督', pattern: '(?:音響|音响)(?:監督|监督)' },
+    { name: '原作', pattern: '(?:原作)' },
+    { name: '音乐', pattern: '(?:音楽|音乐|楽曲)' },
+    { name: '3DCG', pattern: '(?:3DCG|3D ?CG)' },
+    { name: '原案', pattern: '(?<!キャラ|人物)(?:原案)' },
+    { name: '配音监督', pattern: '(?:配音)(?:監督|监督|导演)' },
+    { name: '选曲', pattern: '(?:選曲|选曲)' },
+    { name: '监修', pattern: '(?<!作画|レイアウト)(?:監修|监修|シリーズ監修|スーパーバイザー)' },
+    { name: '录音', pattern: '(?:録音|录音)' },
+    { name: '音效', pattern: '(?:音響効果|効果音|音效)' },
+    { name: '企画', pattern: '(?:企画|企划|プランニング|企画開発)' },
+    { name: '分镜协力', pattern: '(?:コンテ協力|分镜协力|分鏡協力|絵コンテ協力)' },
+    { name: '上色', pattern: '(?:仕上|仕上げ|上色)' },
+    { name: '主动画师', pattern: '(?:メインアニメーター|主動畫師|主动画师)' },
+    { name: '插画', pattern: '(?:イラスト|插画|挿絵|片尾插画)' },
+    { name: '道具设计', pattern: '(?:プロップデザイン|道具設計|道具设计|小物設定)' },
+    { name: '美术设计', pattern: '(?:美術設定|美术设定|美術設計|美术设计)' },
+    { name: '色彩指定', pattern: '(?:色彩指定|色指定)' },
+    { name: '上色检查', pattern: '(?:仕上検查|仕上検査|上色检查|仕上げ検査)' },
+    { name: '色彩检查', pattern: '(?:色検查|色検査|色彩检查)' },
+    { name: '补间动画', pattern: '(?:動画|补间动画)' },
+    { name: '摄影', pattern: '(?:撮影|摄影)' },
+    { name: '设定', pattern: '(?<!キャラ|人物|色彩|小物|美術|美术|メカニック|机械|機械|衣装|基本|場面|背景|制作)(?:設定|设定)' },
+    { name: '制作', pattern: '(?<!设定|設定|动画|アニメーション|アニメ|音乐|楽曲|音楽)(?:製作|制作)' },
+    { name: '音响', pattern: '(?:音響|音声|音响)' },
+    { name: '人物原案', pattern: '(?:キャラ原案|人物原案)' },
+    { name: '机械设定', pattern: '(?:メカニック設定|机械设定|機械設定)' },
+    { name: '总导演', pattern: '(?:(?<!作画)総監督|チーフディレクター|总导演)' },
+    { name: '分镜抄写', pattern: '(?:絵コンテ清書|コンテ清書|分镜抄写)' },
+    { name: '动画制作', pattern: '(?:アニメーション制作|アニメ制作|动画制作)' },
+    { name: '脚本协力', pattern: '(?:脚本協力|脚本协力)' },
+    { name: '协力', pattern: '(?<!作監|作画監督|作监|作画监督|作艦|演出|原画|制作|コンテ|絵コンテ|分镜|分鏡|脚本|友情|設定|设定|デザイン|制作進行|制作进行|作品)(?:協力|协力)(?!プロダクション)' },
+    { name: '特别鸣谢', pattern: '(?:友情協力|特别鸣谢)' },
+    { name: 'OP・ED 分镜', pattern: '(?:OP・ED(?:の)?分鏡|OP・ED(?:の)?分镜|OP絵コンテ)' },
+    { name: '美术板', pattern: '(?:美術ボード|美术板)' },
+    { name: '美术监督助理', pattern: '(?:美術監督補佐|美术监督助理)' },
+    { name: '设定协力', pattern: '(?:設定協力|デザイン協力|设定协力)' },
+    { name: '道具作画监督', pattern: '(?:プロップ作画監督|プロップ作監|道具作画监督)' },
+    { name: '角色作画监督', pattern: '(?:キャラクター作画監督|角色作画监督)' },
+    { name: '作画监修', pattern: '(?:作画監修|作画监修)' },
+    { name: '构图监修', pattern: '(?:レイアウト監修|构图监修)' },
+    { name: '构图作画监督', pattern: '(?:レイアウト作画監督|レイアウト作監|构图作画监督)' },
+    { name: '服装设计', pattern: '(?:衣装デザイン|衣装設定|服装设计|服裝設計)' },
+    { name: '概念设计', pattern: '(?:コンセプトデザイン|概念设计)' },
+    { name: '背景设定', pattern: '(?:基本設定|場面設定|場面設計|背景设定)' },
+    { name: '主演出', pattern: '(?:チーフ演出|主演出)' },
+    { name: '视觉导演', pattern: '(?:ビジュアルディレクター|视觉导演)' },
+    { name: '音乐监督', pattern: '(?:音楽ディレクター|音乐监督)' },
+    { name: '录音助理', pattern: '(?:録音アシスタント|録音助手|录音助理)' },
+    { name: '制作进行协力', pattern: '(?:制作進行協力|制作进行协力)' },
+    { name: '音乐制作', pattern: '(?:楽曲制作|音楽制作|音乐制作)' },
+    { name: '摄影监督助理', pattern: '(?:撮影監督補佐|摄影监督助理)' },
+    { name: '色彩设计助理', pattern: '(?:色彩設計補佐|色彩设计助理)' },
+    { name: '制作管理助理', pattern: '(?:制作デスク補佐|制作管理助理)' },
+    { name: '设定制作助理', pattern: '(?:設定制作補佐|设定制作助理)' },
+    { name: '动作导演', pattern: '(?:アクション監督|动作导演)' },
+    { name: '制作助理', pattern: '(?:制作アシスタント|制作補佐|製作補|制作助理)' },
+    { name: '制作协调', pattern: '(?:制作コーディネーター|制作协调)' },
+    { name: '构成协力', pattern: '(?:構成協力|构成协力)' },
+    { name: '企画协力', pattern: '(?:企画協力|企画协力)' },
+    { name: '在线剪辑', pattern: '(?:オンライン編集|在线剪辑)' },
+    { name: '离线剪辑', pattern: '(?:オフライン編集|离线剪辑)' },
+    { name: '剧本协调', pattern: '(?:シナリオコーディネーター|剧本协调)' },
+    { name: '副系列构成', pattern: '(?:副シリーズ構成|副系列构成)' },
+    { name: 'OP・ED 演出', pattern: '(?:OP・ED 演出|OP・ED演出)' },
+    { name: '特摄效果', pattern: '(?:特撮|特摄效果)' },
+    { name: '视觉效果', pattern: '(?:ビジュアルエフェクト|视觉效果)' },
+    { name: '录音工作室', pattern: '(?:録音スタジオ|录音工作室)' },
+    { name: '整音', pattern: '(?:整音)' },
+    { name: '台词编辑', pattern: '(?:台詞編集|台词编辑)' },
+    { name: '制片人', pattern: '(?<!チーフ|アソシエイト|ライン|美術|音響)(?:プロデュース|プロデューサー|制片人)' },
+    { name: '宣传', pattern: '(?:パブリシティ|宣伝|広告宣伝|番組宣伝|宣传)' },
+    { name: '标题设计', pattern: '(?:タイトルデザイン|标题设计)' },
+    { name: '总制片人', pattern: '(?:チーフプロデューサー|チーフ制作|総合プロデューサー|总制片人)' },
+    { name: '执行制片人', pattern: '(?:製作総指揮|执行制片人)' },
+    { name: '副制片人', pattern: '(?:アソシエイトプロデューサー|副制片人)' },
+    { name: '现场制片人', pattern: '(?:ラインプロデューサー|现场制片人)' },
+    { name: '创意总监', pattern: '(?:クリエイティブスーパーバイザー|クリエイティブディレクター|创意总监)' },
+    { name: '制作统括', pattern: '(?:制作統括|制作统括)' },
+    { name: '监制', pattern: '(?:监制)' },
+    { name: '概念艺术', pattern: '(?:コンセプトアート|概念艺术)' },
+    { name: '画面设计', pattern: '(?:画面設計|画面设计)' },
+    { name: '美术制作人', pattern: '(?:美術プロデューサー|美术制作人)' },
+    { name: '音响制作人', pattern: '(?:音響プロデューサー|音响制作人)' },
+  ];
+
+  const [regexes_per, regexes_role_per, regexes_role] = (() => {
+    const per = {}, rolePer = {}, role = {};
+    const tolerateIWS = p => {
+      // 只在最后一个 (?: 之后（关键字部分）插入可选全角空格，不动 (?<!...) 等前置断言
+      const i = p.lastIndexOf('(?:');
+      return i < 0 ? p : p.slice(0, i) + p.slice(i).replace(/([\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\u3005\u30fc])/g, '$1\\u3000?');
+    };
+    for (const { name, pattern } of POSITIONS) {
+      const tp = tolerateIWS(pattern);
+      const kw = tp + '\\s*?' + SEP;
+      const nameCapture = '(\\W|\\w)+?(?=\\n|$|\\s*\\|)';
+      per[name] = new RegExp('(?<=[\\u3040-\\u9fa5]*?' + kw + ')' + nameCapture, 'g');
+      rolePer[name] = new RegExp(kw + nameCapture, 'g');
+      role[name] = new RegExp(kw, 'g');
+    }
+    return [per, rolePer, role];
+  })();
   const regex_sym = /[\uff1a\u003A【】（）()/／、、＆\u0026♦◆■=]/g;
   // #endregion
 
@@ -399,6 +493,17 @@
       try {
         const staffInfo = JSON.parse(params.get('staffs'));
 
+        let cancelled = false;
+        document.addEventListener('click', () => {
+          cancelled = true;
+        }, { capture: true, once: true });
+        const waitRelate = () => {
+          if (cancelled) return Promise.resolve(false);
+          if (document.querySelector('#crtRelateSubjects')) return Promise.resolve(true);
+          return new Promise(resolve => setTimeout(() => resolve(waitRelate()), 200));
+        };
+        if (!(await waitRelate())) return;
+
         btn.disabled = true;
         btn.textContent = '解析参与中……';
         await updAppearEps(staffInfo, []);
@@ -557,10 +662,9 @@
           yield originalName;
           aliased = true;
 
-          const _aliased = await window.personAliasQuery?.(originalName);
-          if (_aliased) {
-            const aliasedName = _aliased.name;
-            if (yieldUnique(aliasedName)) yield aliasedName;
+          const aliasedResults = await personAliasFallback(originalName);
+          for (const a of aliasedResults) {
+            if (yieldUnique(a.name)) yield a.name;
           }
 
           for (const name of await getConvertedNames(originalName)) {
@@ -568,10 +672,9 @@
           }
 
           for (const name of await getConvertedNames(originalName)) {
-            const _aliased = await window.personAliasQuery?.(name);
-            if (_aliased) {
-              const aliasedName = _aliased.name;
-              if (yieldUnique(aliasedName)) yield aliasedName;
+            const aliasedResults = await personAliasFallback(name);
+            for (const a of aliasedResults) {
+              if (yieldUnique(a.name)) yield a.name;
             }
           }
 
@@ -614,15 +717,128 @@
             break;
           }
         }
-        const groupKey = `${name}-${role}`;
-        const liId = `staff-${name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
+        let groupKey = `${name}-${role}`;
+        let liId = `staff-${name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
 
         if (matchedLi) {
           handleMatched(matchedLi);
         } else if (matchedLis) {
           matchedLis.forEach(handleMatched);
+        } else if (await tryReSplit()) {
+          // handled by tryReSplit
         } else {
           groupedRecords.unmatched[groupKey] ||= { name: originalName, role, epLabels: new Set(epLabels) };
+        }
+
+        async function tryReSplit() {
+          const trySearch = async (token) => {
+            const sr = await autoSearchAndRelate(token, role);
+            if (!sr) return null;
+            const { ids, name: resultName } = sr;
+            const allLis = [...document.querySelectorAll('#crtRelateSubjects li')];
+            const li = allLis.find(l => ids.some(id => sameId(id)(l)) && sameRole(l));
+            return li ? { name: resultName, li } : null;
+          };
+
+          // 1. 按空格重新拆分（仅对含 CJK/假名的 token，排除纯英文）
+          if (/[ 　]/.test(originalName)) {
+            const tokens = originalName.split(/[ 　]+/).filter(Boolean);
+            const cjkTokens = tokens.filter(t => /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\u3005\u30fc]/.test(t));
+            if (cjkTokens.length > 1) {
+              const matched = [];
+              for (const token of cjkTokens) {
+                let li = matchOldLi(token);
+                if (li) {
+                  matched.push({ name: token, li, token }); continue;
+                }
+                const sr = await trySearch(token);
+                if (sr) {
+                  matched.push({ name: sr.name, li: sr.li, token });
+                }
+              }
+              if (matched.length) {
+                for (const m of matched) {
+                  name = m.name;
+                  groupKey = `${m.name}-${role}`; liId = `staff-${m.name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
+                  handleMatched(m.li);
+                }
+                const matchedSet = new Set(matched.map(m => m.token));
+                const rest = cjkTokens.filter(t => !matchedSet.has(t));
+                if (rest.length) {
+                  const restName = rest.join(' ');
+                  groupedRecords.unmatched[`${restName}-${role}`] ||= { name: restName, role, epLabels: new Set(epLabels) };
+                }
+                return true;
+              }
+            }
+          }
+          // 2. 按软分隔符重新拆分（原始拆分可能因英文上下文而保留）
+          if (/[・•·･]/.test(originalName)) {
+            const tokens = originalName.split(/[・•·･]+/).filter(Boolean);
+            const matched = [];
+            for (const token of tokens) {
+              let li = matchOldLi(token);
+              if (li) {
+                matched.push({ name: token, li, token }); continue;
+              }
+              const sr = await trySearch(token);
+              if (sr) {
+                matched.push({ name: sr.name, li: sr.li, token });
+              }
+            }
+            if (matched.length) {
+              for (const m of matched) {
+                name = m.name;
+                groupKey = `${m.name}-${role}`; liId = `staff-${m.name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
+                handleMatched(m.li);
+              }
+              const matchedSet = new Set(matched.map(m => m.token));
+              const rest = tokens.filter(t => !matchedSet.has(t));
+              if (rest.length) {
+                const restName = rest.join('・');
+                groupedRecords.unmatched[`${restName}-${role}`] ||= { name: restName, role, epLabels: new Set(epLabels) };
+              }
+              return true;
+            }
+          }
+          // 3. 从原文复原空格边界后拆分（extractStaffInfo 末尾合并了 CJK 姓名间的空格）
+          {
+            const desc = epsCache?.[epLabels[0]]?.desc || '';
+            if (desc) {
+              const esc = originalName.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*');
+              const m = desc.match(new RegExp(esc));
+              if (m && /\s/.test(m[0])) {
+                const parts = m[0].split(/\s+/).filter(Boolean);
+                // 若有段落是单个汉字（如拆出了姓），说明是中文姓名内空格，不应拆分
+                if (parts.length > 1 && !parts.some(p => p.length === 1 && /[\u4e00-\u9fff]/.test(p))) {
+                  const matched = [];
+                  for (const part of parts) {
+                    let li = matchOldLi(part);
+                    if (!li) {
+                      const sr = await trySearch(part); if (sr) li = sr.li;
+                    }
+                    if (li) matched.push({ name: part, li });
+                  }
+                  if (matched.length) {
+                    aliased = false;
+                    for (const m2 of matched) {
+                      name = m2.name;
+                      groupKey = `${m2.name}-${role}`; liId = `staff-${m2.name.replace(/\s/g, '')}-${role.replace(/\s/g, '')}`;
+                      handleMatched(m2.li);
+                    }
+                    const matchedSet = new Set(matched.map(m2 => m2.name));
+                    const rest = parts.filter(p => !matchedSet.has(p));
+                    if (rest.length) {
+                      const restName = rest.join(' ');
+                      groupedRecords.unmatched[`${restName}-${role}`] ||= { name: restName, role, epLabels: new Set(epLabels) };
+                    }
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+          return false;
         }
 
         function handleMatched(matchedLi) {
@@ -639,7 +855,8 @@
             if (!wasExisting) {
               labelsToAdd.push(epLabel);
               if (matchedLi.classList.contains('old')) {
-                matchedLi.style.background = 'rgba(255, 248, 165, 0.2)';
+                matchedLi.style.background = document.documentElement.getAttribute('data-theme') === 'dark'
+                  ? 'rgba(255, 248, 165, 0.08)' : 'rgba(255, 248, 165, 0.2)';
               }
             }
 
@@ -727,10 +944,26 @@
     const tipBox = document.createElement('div');
     tipBox.className = 'staff-tip-box';
     tipBox.id = 'wikiEpRelate';
+    tipBox.setAttribute('aria-hidden', 'true');
 
     const dragHandle = document.createElement('div');
     dragHandle.className = 'staff-tip-handle';
-    dragHandle.textContent = '制作人员参与填写结果';
+    const handleLabel = document.createElement('span');
+    handleLabel.textContent = '制作人员参与填写结果';
+    const toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.checked = true;
+    toggle.style.cssText = 'margin:0 0 0 8px;vertical-align:middle;cursor:pointer';
+    toggle.title = '切换面板内容是否参与页面搜索（Ctrl+F 是否命中此面板）';
+    toggle.addEventListener('change', () => {
+      tipBox.setAttribute('aria-hidden', toggle.checked);
+      const w = document.createTreeWalker(contentBox, NodeFilter.SHOW_TEXT, null, false);
+      while (w.nextNode()) {
+        const raw = w.currentNode.data.replace(/\u200B/g, '');
+        w.currentNode.data = toggle.checked ? raw.split('').join('\u200B') : raw;
+      }
+    });
+    dragHandle.append(handleLabel, toggle);
     const contentBox = document.createElement('div');
     contentBox.className = 'staff-tip-content';
     tipBox.append(dragHandle, contentBox);
@@ -830,6 +1063,7 @@
 
     // 鼠标事件
     dragHandle.addEventListener('mousedown', (e) => {
+      if (e.target === toggle) return; // 避开 checkbox，让它自己处理点击
       isDragging = true;
       startX = e.clientX;
       startY = e.clientY;
@@ -876,25 +1110,43 @@
   async function getConvertedNames(str) {
     if (!loading && !Object.keys(converters).length) {
       loading = new Promise(resolve => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js';
-        script.onload = () => {
-          regions.forEach(from => regions.forEach(to => {
-            if (from !== to) converters[`${from}-${to}`] = OpenCC.Converter({ from, to });
-          }));
-          resolve(true);
-        };
-        script.onerror = () => resolve(false);
-        document.head.appendChild(script);
+        const srcs = [
+          'https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js',
+          'https://cdn.jsdmirror.com/npm/opencc-cn-name@0.1.1/dist/umd/opencc-cn-name.js',
+        ];
+        let remaining = srcs.length;
+        let ok = true;
+        srcs.forEach(src => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = () => {
+            if (--remaining === 0) {
+              if (ok && typeof OpenCC !== 'undefined') {
+                regions.forEach(from => regions.forEach(to => {
+                  if (from !== to) converters[`${from}-${to}`] = OpenCC.Converter({ from, to });
+                }));
+              }
+              resolve(ok);
+            }
+          };
+          script.onerror = () => {
+            ok = false;
+            if (--remaining === 0) resolve(false);
+          };
+          document.head.appendChild(script);
+        });
       });
     }
     const success = await loading;
-    if (!success) return [];
+    if (!success || typeof openccCN === 'undefined') return [];
 
     const converted = new Set();
     regions.forEach(from => regions.forEach(to => {
       if (from !== to) converted.add(converters[`${from}-${to}`](str));
     }));
+    // refined JP→CN conversion (handles variant/obsolete chars OpenCC misses)
+    const refined = refinedToCN(str);
+    if (refined !== str) converted.add(refined);
     return Array.from(converted);
   }
 
@@ -1098,7 +1350,39 @@
               if (splitResult.length === 0) {
                 newNames.push(currentName);
               } else {
-                newNames.push(...splitResult);
+                // 空格拆分后，合并被空格拆散的汉字姓名（如 赵 小玲 → 赵小玲，梅田 香 → 梅田香）
+                if (groupIndex === 2) {
+                  const cjk1 = t => t.length === 1 && /[\u4e00-\u9fff]/.test(t);
+                  const han = t => /^[\u4e00-\u9fff]+$/.test(t);
+                  const sc = splitResult.filter(t => cjk1(t));
+                  if (sc.length) {
+                    const merged = [];
+                    for (let i = 0; i < splitResult.length; i++) {
+                      const c = splitResult[i];
+                      const n = splitResult[i + 1];
+                      if (cjk1(c) && n && han(n) && n.length >= 2) {
+                        // 1+2: 单汉字姓 + 多字名 → 向前合并
+                        merged.push(c + n);
+                        i++;
+                      } else if (n && cjk1(n) && c.length >= 2 && han(c)) {
+                        // 2+1: 多字姓 + 单汉字名 → 向后合并（仅纯汉字）
+                        merged.push(c + n);
+                        i++;
+                      } else if (cjk1(c) && n && cjk1(n)) {
+                        // 1+1: 两单汉字 → 合并为一个双字名
+                        merged.push(c + n);
+                        i++;
+                      } else {
+                        merged.push(c);
+                      }
+                    }
+                    newNames.push(...merged);
+                  } else {
+                    newNames.push(...splitResult);
+                  }
+                } else {
+                  newNames.push(...splitResult);
+                }
 
                 // 对于第二类分隔符，如果有不满足跳过条件的分隔符，则重新处理所有片段
                 if (groupIndex === 1 && hasValidSeparator) {
@@ -1218,7 +1502,7 @@
         for (let id in searchResult) {
           const resultName = searchResult[id].name;
           if (normalize(name) === normalize(resultName) || bgmIdMap[name] == id
-                    || (await window.personAliasQuery?.(name))?.id == id) {
+                    || (await personAliasFallback(name)).some(a => a.id == id)) {
             await addPersonToRelate(role, normalize(name), id, searchResult[id]);
             ids.add(id);
             displayName ||= resultName;
@@ -1238,6 +1522,9 @@
   function normalize(name) {
     return name
       .replace(/\s/g, '').replaceAll('-', '')
+      .replace(/々/g, function (m, offset, str) {
+        return offset > 0 ? str[offset - 1] : '';
+      })
       .replace(/[\u30A1-\u30F6]/g, function(match) {
         return String.fromCharCode(match.charCodeAt(0) - 0x60);
       })
@@ -1306,6 +1593,11 @@
   async function addPersonToRelate(role, name, personId, personData) {
     const roleId = roleIdMap[role];
     if (!staffSet.has(roleId + '/' + personId)) {
+      const existing = [...document.querySelectorAll('#crtRelateSubjects li')]
+        .some(li => li.querySelector('.title a').href.split('/').pop() == personId
+          && li.querySelector('select').value === roleId);
+      if (existing) return false;
+
       staffSet.add(roleId + '/' + personId);
       staffSet.has(roleId + name) ? repeatSet.add(name + '-' + role) : staffSet.add(roleId + name);
 
@@ -1346,7 +1638,8 @@
   }
 
   function colorItem(idx, flag) {
-    $('#crtRelateSubjects .clearit').eq(idx).css('background-color', flag ? '#eef4c9' : '');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    $('#crtRelateSubjects .clearit').eq(idx).css('background-color', flag ? (isDark ? '#3a3a2a' : '#eef4c9') : '');
   }
 
   function addSbjListener() {

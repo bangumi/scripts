@@ -2,7 +2,7 @@
 // @name         班固米人物别名本地 API
 // @namespace    https://bgm.tv/
 // @homepage     https://bgm.tv/group/topic/439645
-// @version      1.3
+// @version      1.4
 // @description  从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
 // @author       Your Name
 // @match        http*://bgm.tv/*
@@ -33,7 +33,7 @@
     githubRepo: 'inchei/bangumi-wiki-scripts',
     dbName: 'bangumiPersonDB',
     storeName: 'personAlias',
-    dbVersion: 2,
+    dbVersion: 3,
     compressedFile: 'person_alias.json.gz'
   };
 
@@ -357,13 +357,11 @@
           const personsStore = tx.objectStore('persons');
           const aliasesStore = tx.objectStore('aliases');
 
-          // 清空现有数据（避免冲突）
           personsStore.clear();
           aliasesStore.clear();
 
           const [persons, aliases] = data;
 
-          // 导入人物数据
           if (persons && Array.isArray(persons)) {
             persons.forEach((person, index) => {
               if (Array.isArray(person) && person.length >= 2) {
@@ -377,12 +375,12 @@
             });
           }
 
-          // 导入别名数据
           if (aliases && typeof aliases === 'object') {
-            Object.entries(aliases).forEach(([alias, personIndex]) => {
+            Object.entries(aliases).forEach(([alias, val]) => {
+              const indexes = Array.isArray(val) ? val : [val];
               aliasesStore.put({
                 alias: alias,
-                personIndex: personIndex
+                personIndexes: indexes
               });
             });
           }
@@ -402,8 +400,21 @@
     });
   }
 
-  // 暴露查询接口（原有功能，逻辑不变）
   unsafeWindow.personAliasQuery = async function(aliasName) {
+    const all = await unsafeWindow.personAliasQueryAll(aliasName);
+    if (!all || !all.length) return null;
+    if (all.length > 1) {
+      const nameList = all.map(p => `${p.name} (${p.id})`).join('\n');
+      showGMNotification({
+        title: '别名匹配到多个人物',
+        text: `别名 "${aliasName}" 匹配到 ${all.length} 个人物，已取第一个:\n${nameList}`
+      });
+      console.warn(`personAliasQuery: 别名 "${aliasName}" 匹配到多个人物:`, all);
+    }
+    return all[0];
+  };
+
+  unsafeWindow.personAliasQueryAll = async function(aliasName) {
     if (!dbInitialized) {
       await initDB();
     }
@@ -420,36 +431,53 @@
 
         aliasReq.onsuccess = () => {
           if (aliasReq.result) {
-            const personIndex = aliasReq.result.personIndex;
-            const personReq = personsStore.get(personIndex);
+            const indexes = aliasReq.result.personIndexes || [];
+            const results = [];
+            let remaining = indexes.length;
 
-            personReq.onsuccess = () => {
+            if (remaining === 0) {
               db.close();
-              resolve(personReq.result ? {
-                name: personReq.result.name,
-                id: personReq.result.id
-              } : null);
-            };
+              resolve([]);
+              return;
+            }
 
-            personReq.onerror = () => {
-              db.close();
-              resolve(null);
-              console.error('查询人物信息失败:', personReq.error);
-            };
+            indexes.forEach(idx => {
+              const personReq = personsStore.get(idx);
+              personReq.onsuccess = () => {
+                if (personReq.result) {
+                  results.push({
+                    name: personReq.result.name,
+                    id: personReq.result.id
+                  });
+                }
+                remaining--;
+                if (remaining === 0) {
+                  db.close();
+                  resolve(results);
+                }
+              };
+              personReq.onerror = () => {
+                remaining--;
+                if (remaining === 0) {
+                  db.close();
+                  resolve(results);
+                }
+              };
+            });
           } else {
             db.close();
-            resolve(null);
+            resolve([]);
           }
         };
 
         aliasReq.onerror = () => {
           db.close();
-          resolve(null);
+          resolve([]);
           console.error('查询别名失败:', aliasReq.error);
         };
       };
       request.onerror = () => {
-        resolve(null);
+        resolve([]);
         console.error('打开数据库出错:', request.error);
       };
     });

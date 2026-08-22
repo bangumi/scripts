@@ -120,22 +120,40 @@
             || !document.querySelector('.nameSingle .grey').nextElementSibling
     ) return;
     const [volName, volId] = info.split('"""');
-    if (document.querySelector(`#crtRelateSubjects li a[href="/subject/${volId}"]`)) {
-      sessionStorage.removeItem('seriesVolumeInfo');
-      return;
-    }
 
-    subjectList = [{ id: volId, type_id: '1', name: volName, name_cn: '', url_mod: 'subject' }];
-    addRelateSubject(0, 'submitForm');
-    const searchInput = document.querySelector('#subjectName');
-    searchInput.value = document.querySelector('.nameSingle a').textContent;
-    findSubjectFunc();
-    // eslint-disable-next-line no-undef
-    $('#crtRelateSubjects a.h').click(rmParent);
-    waitForElement('#id_start', e => {
-      e.value = volId;
-      document.querySelector('#id_end').value = volId;
-    });
+    let cancelled = false;
+    document.addEventListener('click', () => {
+      cancelled = true;
+    }, { capture: true, once: true });
+
+    const run = () => {
+      if (cancelled) return;
+      const ul = document.querySelector('#crtRelateSubjects');
+      const searchInput = document.querySelector('#subjectName');
+      if (!ul || !searchInput) throw new Error('关联列表未就绪');
+      if (document.querySelector(`#crtRelateSubjects li a[href="/subject/${volId}"]`)) {
+        sessionStorage.removeItem('seriesVolumeInfo');
+        return;
+      }
+      subjectList = [{ id: volId, type_id: '1', name: volName, name_cn: '', url_mod: 'subject' }];
+      addRelateSubject(0, 'submitForm');
+      searchInput.value = document.querySelector('.nameSingle a').textContent;
+      findSubjectFunc();
+      // eslint-disable-next-line no-undef
+      $('#crtRelateSubjects a.h').click(rmParent);
+      waitForElement('#id_start', e => {
+        e.value = volId;
+        document.querySelector('#id_end').value = volId;
+      });
+    };
+    const attempt = () => {
+      try {
+        run();
+      } catch {
+        setTimeout(attempt, 200);
+      }
+    };
+    attempt();
   }
 
   function waitForElement(selector, callback) {

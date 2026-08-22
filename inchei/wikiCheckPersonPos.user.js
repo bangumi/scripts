@@ -662,12 +662,7 @@
     document.querySelectorAll('#crtRelateSubjects > li').forEach(addSingleQueryBtn);
   };
 
-  // 页面加载完成后初始化
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  // 页面加载完成后初始化（等待关联列表就绪后执行，见下方 setup）
 
   // 监听新添加的人物条目
   const observer = new MutationObserver(mutations => {
@@ -703,9 +698,24 @@
     });
   });
 
-  // 启动观察器
-  const crtRelateSubjects = document.getElementById('crtRelateSubjects');
-  if (crtRelateSubjects) {
+  // 等待关联列表就绪后初始化并启动观察器
+  let cancelled = false;
+  document.addEventListener('click', () => {
+    cancelled = true;
+  }, { capture: true, once: true });
+  const setup = () => {
+    if (cancelled) return;
+    const crtRelateSubjects = document.getElementById('crtRelateSubjects');
+    if (!crtRelateSubjects) {
+      setTimeout(setup, 200);
+      return;
+    }
+    init();
     observer.observe(crtRelateSubjects, { childList: true });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
   }
 })();

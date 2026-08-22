@@ -121,9 +121,6 @@
     style.textContent = css`
       #wikiRelDiff {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
         min-width: 60vw;
         width: 600px;
         max-width: 100vw;
@@ -143,6 +140,8 @@
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid rgba(255, 255, 255, .2);
+        cursor: move;
+        user-select: none;
       }
       #wikiRelDiff .staff-tip-close {
         background: none;
@@ -429,6 +428,18 @@
         `;
     document.body.appendChild(popup);
 
+    // 初始定位
+    const popupWidth = popup.offsetWidth;
+    const popupHeight = popup.offsetHeight;
+    const viewWidth = window.innerWidth;
+    const viewHeight = window.innerHeight;
+    let targetRight = 50;
+    let targetBottom = 50;
+    targetRight = Math.min(targetRight, Math.max(viewWidth - popupWidth, 0));
+    targetBottom = Math.min(targetBottom, Math.max(viewHeight - popupHeight, 0));
+    popup.style.bottom = `${targetBottom}px`;
+    popup.style.right = `${targetRight}px`;
+
     // 关闭按钮事件
     popup.querySelector('.staff-tip-close').addEventListener('click', () => popup.remove());
 
@@ -442,6 +453,62 @@
             `;
       popup.querySelector('.staff-tip-content').prepend(warning);
     }
+
+    // 拖拽功能
+    const dragHandle = popup.querySelector('.staff-tip-header');
+    let isDragging = false;
+    let startX, startY, offsetX, offsetY;
+
+    function handleMove(clientX, clientY) {
+      const moveX = clientX - startX;
+      const moveY = clientY - startY;
+      const newX = offsetX + moveX;
+      const newY = offsetY + moveY;
+      popup.style.left = `${newX}px`;
+      popup.style.top = `${newY}px`;
+      popup.style.right = 'auto';
+      popup.style.bottom = 'auto';
+    }
+
+    dragHandle.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.staff-tip-close')) return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      offsetX = popup.offsetLeft;
+      offsetY = popup.offsetTop;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      handleMove(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) isDragging = false;
+    });
+
+    dragHandle.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.staff-tip-close')) return;
+      e.preventDefault();
+      isDragging = true;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      offsetX = popup.offsetLeft;
+      offsetY = popup.offsetTop;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+      if (isDragging) isDragging = false;
+    });
 
     return popup;
   }

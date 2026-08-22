@@ -63,8 +63,25 @@
     if (!crtId) return;
     const crtName = decodeURIComponent(params.get('name'));
 
-    const ul = document.querySelector('#crtRelateSubjects');
-    ul.insertAdjacentHTML('afterbegin', `<li class="clearit "><p><a href="javascript:void(0);" class="h rr">x</a></p><p class="title"><a href="/character/${crtId}" class="l" target="_blank">${crtName}</a></p><span class="tip"><input type="hidden" name="infoArr[n0][crt_id]" value="${crtId}">类型: <select name="infoArr[n0][crt_type]"><option value="1">主角</option><option value="2">配角</option><option value="3">客串</option><option value="4">闲角</option><option value="5">旁白</option><option value="6">声库</option></select><span class="tip_j"> 参与：</span><input type="text" name="infoArr[n0][crt_appear_eps]" class="inputtext medium" value=""><label><span class="tip_j"> 剧透：</span><input type="checkbox" name="infoArr[n0][crt_spoiler]" value="1" undefined=""></label><span class="tip_j"> 排序：</span><input type="text" name="infoArr[n0][crt_order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off"></span></li>`);
+    let cancelled = false;
+    document.addEventListener('click', () => {
+      cancelled = true;
+    }, { capture: true, once: true });
+
+    const insert = () => {
+      if (cancelled) return;
+      const ul = document.querySelector('#crtRelateSubjects');
+      if (!ul) throw new Error('关联列表未就绪');
+      ul.insertAdjacentHTML('afterbegin', `<li class="clearit "><p><a href="javascript:void(0);" class="h rr">x</a></p><p class="title"><a href="/character/${crtId}" class="l" target="_blank">${crtName}</a></p><span class="tip"><input type="hidden" name="infoArr[n0][crt_id]" value="${crtId}">类型: <select name="infoArr[n0][crt_type]"><option value="1">主角</option><option value="2">配角</option><option value="3">客串</option><option value="4">闲角</option><option value="5">旁白</option><option value="6">声库</option></select><span class="tip_j"> 参与：</span><input type="text" name="infoArr[n0][crt_appear_eps]" class="inputtext medium" value=""><label><span class="tip_j"> 剧透：</span><input type="checkbox" name="infoArr[n0][crt_spoiler]" value="1" undefined=""></label><span class="tip_j"> 排序：</span><input type="text" name="infoArr[n0][crt_order]" value="0" class="inputtext item_sort" onfocus="this.select()" onmouseover="this.focus()" autocomplete="off"></span></li>`);
+    };
+    const attempt = () => {
+      try {
+        insert();
+      } catch {
+        setTimeout(attempt, 200);
+      }
+    };
+    attempt();
   }
 
 })();
