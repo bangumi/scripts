@@ -10,7 +10,7 @@
 // @match      *://*/*
 // @author      zhifengle
 // @homepage    https://github.com/zhifengle/bangumi-new-wiki-helper
-// @version     0.5.8
+// @version     0.6.0
 // @note        0.4.27 支持音乐条目曲目列表
 // @note        0.3.0 使用 typescript 重构，浏览器扩展和脚本使用公共代码
 // @run-at      document-end
@@ -3217,6 +3217,7 @@ moepediaSubject.itemList.push({
         },
     ],
     pipes: ['date'],
+    category: 'date',
 }, {
     name: '售价',
     selector: [
@@ -4282,13 +4283,17 @@ function insertControlBtn($t, cb) {
         $search.innerHTML = '查重中...';
         try {
             await cb(e, true);
-            $search.innerHTML = '新建并查重';
         }
         catch (e) {
             if (e === 'notmatched') {
                 $search.innerHTML = '未查到条目';
             }
             console.error(e);
+        }
+        finally {
+            if ($search.innerHTML === '查重中...') {
+                $search.innerHTML = '新建并查重';
+            }
         }
     });
 }
@@ -5162,6 +5167,10 @@ function isBangumiJsonSearchItem(value) {
         typeof item.name === 'string');
 }
 function dealJsonSearchResults(info, expectedType) {
+    // Bangumi JSON 搜索在没有结果时返回 null。
+    if (info === null) {
+        return [];
+    }
     if (!Array.isArray(info) || !info.every(isBangumiJsonSearchItem)) {
         throw new Error('Invalid Bangumi JSON search response');
     }
@@ -5258,10 +5267,8 @@ function dealSearchResults(info) {
  * @param type
  * @param uniqueQueryStr
  */
-async function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = SubjectTypeId.all, uniqueQueryStr = '') {
-    if (subjectInfo && subjectInfo.releaseDate) {
-        subjectInfo.releaseDate;
-    }
+async function searchSubject(subjectInfo, options = {}) {
+    const { host = 'https://bgm.tv', type = SubjectTypeId.all, uniqueQueryStr = '', fallbackToWebSearch = false, } = options;
     let query = (subjectInfo.name || '').trim();
     if (type === SubjectTypeId.book) {
         // 去掉末尾的括号
@@ -5275,14 +5282,20 @@ async function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = Sub
         return;
     }
     const htmlQuery = type === SubjectTypeId.book || uniqueQueryStr ? `"${query}"` : query;
-    const url = `${bgmHost}/subject_search/${encodeURIComponent(htmlQuery)}?cat=${type}`;
+    const url = `${host}/subject_search/${encodeURIComponent(htmlQuery)}?cat=${type}`;
     let rawInfoList;
     const jsonSearchType = JSON_SEARCH_TYPES[type];
     if (jsonSearchType) {
-        const jsonUrl = `${bgmHost}/json/search-${jsonSearchType}/${encodeURIComponent(query)}`;
+        const jsonUrl = `${host}/json/search-${jsonSearchType}/${encodeURIComponent(query)}`;
         console.info('search bangumi subject JSON URL: ', jsonUrl);
         try {
-            rawInfoList = dealJsonSearchResults(await fetchJson(jsonUrl), type);
+            const jsonResponse = await fetchJson(jsonUrl);
+            if (jsonResponse === null && fallbackToWebSearch) {
+                console.info('Bangumi JSON search returned null, falling back to HTML');
+            }
+            else {
+                rawInfoList = dealJsonSearchResults(jsonResponse, type);
+            }
         }
         catch (error) {
             console.warn('Bangumi JSON search failed, falling back to HTML:', error);
@@ -5296,114 +5309,48 @@ async function searchSubject(subjectInfo, bgmHost = 'https://bgm.tv', type = Sub
     if (uniqueQueryStr && rawInfoList && rawInfoList.length === 1) {
         return rawInfoList[0];
     }
-    const options = {
+    const filterOptions = {
         keys: ['name', 'greyName'],
     };
-    return filterResults(rawInfoList, subjectInfo, options);
+    return filterResults(rawInfoList, subjectInfo, filterOptions);
 }
-/**
- * 通过时间查找条目
- * @param subjectInfo 条目信息
- * @param pageNumber 页码
- * @param type 条目类型
- */
-async function findSubjectByDate(subjectInfo, bgmHost = 'https://bgm.tv', pageNumber = 1, type) {
-    if (!subjectInfo || !subjectInfo.releaseDate || !subjectInfo.name) {
-        throw new Error('invalid subject info');
-    }
-    const releaseDate = new Date(subjectInfo.releaseDate);
-    if (isNaN(releaseDate.getTime())) {
-        throw new Error(`invalid releasedate: ${subjectInfo.releaseDate}`);
-    }
-    const sort = releaseDate.getDate() > 15 ? 'sort=date' : '';
-    const page = pageNumber ? `page=${pageNumber}` : '';
-    let query = '';
-    if (sort && page) {
-        query = '?' + sort + '&' + page;
-    }
-    else if (sort) {
-        query = '?' + sort;
-    }
-    else if (page) {
-        query = '?' + page;
-    }
-    const url = `${bgmHost}/${type}/browser/airtime/${releaseDate.getFullYear()}-${releaseDate.getMonth() + 1}${query}`;
-    console.info('find subject by date: ', url);
-    let [rawInfoList, numOfPage] = await fetchHtmlSearchResults(url);
-    const options = {
-        threshold: 0.3,
-        keys: ['name', 'greyName'],
-    };
-    let result = filterResults(rawInfoList, subjectInfo, options, false);
-    if (!result) {
-        if (pageNumber < numOfPage) {
-            return await findSubjectByDate(subjectInfo, bgmHost, pageNumber + 1, type);
-        }
-        else {
-            return undefined;
-        }
-    }
-    return result;
-}
-async function checkBookSubjectExist(subjectInfo, bgmHost = 'https://bgm.tv', type) {
+async function checkBookSubjectExist(subjectInfo, options) {
     if (subjectInfo.isbn) {
         const numISBN = subjectInfo.isbn.replace(/-/g, '');
-        const searchResult = await searchSubject(subjectInfo, bgmHost, type, numISBN);
+        const searchResult = await searchSubject(subjectInfo, {
+            ...options,
+            uniqueQueryStr: numISBN,
+        });
         console.info(`First: search book of bangumi: `, searchResult);
         if (searchResult && searchResult.url) {
             return searchResult;
         }
     }
     // 默认使用名称搜索
-    const searchResult = await searchSubject(subjectInfo, bgmHost, type);
+    const searchResult = await searchSubject(subjectInfo, options);
     console.info('Second: search book of bangumi by name: ', searchResult);
     return searchResult;
 }
 /**
- * 查找条目是否存在： 通过名称搜索或者日期加上名称的过滤查询
+ * 查找条目是否存在
  * @param subjectInfo 条目基本信息
- * @param bgmHost bangumi 域名
- * @param type 条目类型
+ * @param options 搜索配置
  */
-async function checkExist(subjectInfo, bgmHost = 'https://bgm.tv', type, disabelDate) {
-    const subjectTypeDict = {
-        [SubjectTypeId.game]: 'game',
-        [SubjectTypeId.anime]: 'anime',
-        [SubjectTypeId.music]: 'music',
-        [SubjectTypeId.book]: 'book',
-        [SubjectTypeId.real]: 'real',
-        [SubjectTypeId.all]: 'all',
-    };
-    let searchResult = await searchSubject(subjectInfo, bgmHost, type);
-    console.info(`First: search result of bangumi: `, searchResult);
-    if (searchResult && searchResult.url) {
-        return searchResult;
-    }
-    if (disabelDate) {
-        return;
-    }
-    searchResult = await findSubjectByDate(subjectInfo, bgmHost, 1, subjectTypeDict[type]);
-    console.info(`Second: search result by date: `, searchResult);
-    return searchResult;
-}
-async function checkSubjectExit(subjectInfo, bgmHost = 'https://bgm.tv', type, disableDate) {
-    let result;
-    switch (type) {
+async function checkSubjectExit(subjectInfo, options) {
+    switch (options.type) {
         case SubjectTypeId.book:
-            result = await checkBookSubjectExist(subjectInfo, bgmHost, type);
-            break;
+            return checkBookSubjectExist(subjectInfo, options);
         case SubjectTypeId.game:
-            result = await checkExist(subjectInfo, bgmHost, type, disableDate);
-            break;
-        case SubjectTypeId.music:
-            result = await checkExist(subjectInfo, bgmHost, type, true);
-            break;
+        case SubjectTypeId.music: {
+            const result = await searchSubject(subjectInfo, options);
+            console.info('Search result of bangumi: ', result);
+            return result;
+        }
         case SubjectTypeId.anime:
         case SubjectTypeId.real:
         default:
-            console.info('not support type: ', type);
+            console.info('not support type: ', options.type);
     }
-    return result;
 }
 
 function getBgmHost() {
@@ -5477,7 +5424,10 @@ async function searchExistingSubject(payload, runtime) {
         duration: 0,
     });
     try {
-        const result = await checkSubjectExit(payload.subjectInfo, runtime.bgmHost, payload.type, payload.disableDate);
+        const result = await checkSubjectExit(payload.subjectInfo, {
+            ...runtime.bangumi,
+            type: payload.type,
+        });
         console.info('search results: ', result);
         await runtime.notify(dismissNotification());
         return result;
@@ -5491,9 +5441,9 @@ async function searchExistingSubject(payload, runtime) {
         await runtime.notify({
             type: 'error',
             message: isUnauthenticatedSearch
-                ? `Bangumi 搜索请求丢失了登录状态。<br/>请打开 <a href="${runtime.bgmHost}/" target="_blank" rel="noopener noreferrer">${runtime.bgmHost} 主页</a>恢复登录状态，然后返回当前页面重试。`
+                ? `Bangumi 搜索请求丢失了登录状态。<br/>请打开 <a href="${runtime.bangumi.host}/" target="_blank" rel="noopener noreferrer">${runtime.bangumi.host} 主页</a>恢复登录状态，然后返回当前页面重试。`
                 : isInvalidSearchPage
-                    ? `Bangumi 返回了异常的搜索页面，可能是登录状态或搜索频率限制。<br/>请打开 <a href="${runtime.bgmHost}/" target="_blank" rel="noopener noreferrer">${runtime.bgmHost} 主页</a>确认登录，并等待至少 60 秒后再试。`
+                    ? `Bangumi 返回了异常的搜索页面，可能是登录状态或搜索频率限制。<br/>请打开 <a href="${runtime.bangumi.host}/" target="_blank" rel="noopener noreferrer">${runtime.bangumi.host} 主页</a>确认登录，并等待至少 60 秒后再试。`
                     : `Bangumi 搜索请求失败: <br/><b>${payload.subjectInfo?.name ?? ''}</b>`,
             cmd: 'dismissNotError',
         });
@@ -6045,6 +5995,7 @@ const CHARA_DATA = SCRIPT_PREFIX + 'chara_data';
 const PROTOCOL = SCRIPT_PREFIX + 'protocol';
 const BGM_DOMAIN = SCRIPT_PREFIX + 'bgm_domain';
 const SUBJECT_ID = SCRIPT_PREFIX + 'subject_id';
+const FALLBACK_TO_WEB_SEARCH = SCRIPT_PREFIX + 'fallback_to_web_search';
 
 const userScriptDraftStore = {
     async saveSubjectDraft(wikiData) {
@@ -6131,8 +6082,8 @@ async function openNewSubject(type, delay = 200) {
     }, delay);
 }
 async function submitSubjectCreation({ wikiData, queryInfo, payload, shouldCheckDup, }) {
-    const bgmHost = getBangumiHost();
-    const subjectCreationRuntime = createUserScriptSubjectCreationRuntime(bgmHost);
+    const host = getBangumiHost();
+    const subjectCreationRuntime = createUserScriptSubjectCreationRuntime(host);
     await userScriptRuntimeCapabilities.storage.saveSubjectDraft(wikiData);
     if (shouldCheckDup) {
         await checkSubjectAndOpenEntry({
@@ -6154,11 +6105,14 @@ async function submitCharacterCreation({ charaData, }) {
     await sleep(200);
     GM_openInTab(`${getBangumiHost()}/character/new`);
 }
-function createUserScriptSubjectCreationRuntime(bgmHost) {
+function createUserScriptSubjectCreationRuntime(host) {
     const notify = userScriptRuntimeCapabilities.notifier?.notify ?? logMessage;
     const openTab = getOpenTab();
     return {
-        bgmHost,
+        bangumi: {
+            host,
+            fallbackToWebSearch: GM_getValue(FALLBACK_TO_WEB_SEARCH) || false,
+        },
         notify,
         updateAuxData,
         saveSubjectId(subjectId) {
@@ -6166,7 +6120,7 @@ function createUserScriptSubjectCreationRuntime(bgmHost) {
         },
         async openExistingSubject(url) {
             await sleep(100);
-            await openTab(bgmHost + url);
+            await openTab(host + url);
         },
         openNewSubject(type) {
             return openNewSubject(type);
@@ -7939,19 +7893,255 @@ async function initChara(siteConfig) {
     return initSourceCharacter(siteConfig, userScriptRuntimeAdapter);
 }
 
-function setDomain() {
-    bgm_domain = prompt('预设bangumi的地址是 "' + 'bgm.tv' + '". 根据需要输入bangumi.tv', 'bgm.tv');
-    GM_setValue(BGM_DOMAIN, bgm_domain);
-    return bgm_domain;
+const BANGUMI_DOMAINS = ['bgm.tv', 'bangumi.tv', 'chii.in'];
+function showSettingsDialog() {
+    const existing = document.querySelector('.e-bnwh-config-dialog');
+    if (existing) {
+        if (!existing.open)
+            existing.showModal();
+        return;
+    }
+    const currentDomain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+    const useHttps = (GM_getValue(PROTOCOL) || 'https') === 'https';
+    const fallbackToWebSearch = GM_getValue(FALLBACK_TO_WEB_SEARCH) || false;
+    const domainOptions = BANGUMI_DOMAINS.map((domain) => `<option value="${domain}"${domain === currentDomain ? ' selected' : ''}>${domain}</option>`).join('');
+    const $dialog = htmlToElement(`
+<dialog class="e-bnwh-config-dialog" aria-labelledby="e-bnwh-config-title">
+  <style>
+    .e-bnwh-config-dialog {
+      box-sizing: border-box;
+      width: min(420px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      padding: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      color: #09090b;
+      background: #fff;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .e-bnwh-config-dialog::backdrop {
+      background: rgba(15, 23, 42, 0.42);
+    }
+    .e-bnwh-config-content {
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    .e-bnwh-config-header {
+      margin-bottom: 18px;
+    }
+    .e-bnwh-config-title {
+      margin: 0;
+      color: #09090b;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .e-bnwh-config-desc,
+    .e-bnwh-config-row-desc,
+    .e-bnwh-config-status {
+      color: #71717a;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .e-bnwh-config-desc {
+      margin: 6px 0 0;
+      font-size: 13px;
+    }
+    .e-bnwh-config-section {
+      display: grid;
+      gap: 8px;
+      padding: 14px 0;
+      border-top: 1px solid #e5e7eb;
+    }
+    .e-bnwh-config-row {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .e-bnwh-config-row:hover {
+      border-color: #d4d4d8;
+      background: #f8fafc;
+    }
+    .e-bnwh-config-row-text {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+    .e-bnwh-config-row-title {
+      color: #09090b;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+    .e-bnwh-config-row-desc {
+      margin: 0;
+    }
+    .e-bnwh-config-switch {
+      appearance: none;
+      position: relative;
+      flex: 0 0 auto;
+      width: 38px;
+      height: 22px;
+      margin: 0;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: #e4e4e7;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .e-bnwh-config-switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
+      transition: transform 0.15s ease;
+    }
+    .e-bnwh-config-switch:checked {
+      background: #18181b;
+    }
+    .e-bnwh-config-switch:checked::after {
+      transform: translateX(16px);
+    }
+    .e-bnwh-config-select {
+      box-sizing: border-box;
+      min-width: 120px;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      color: #09090b;
+      background: #fff;
+      font-size: 13px;
+    }
+    .e-bnwh-config-switch:focus-visible,
+    .e-bnwh-config-select:focus-visible,
+    .e-bnwh-config-button:focus-visible {
+      outline: 2px solid #18181b;
+      outline-offset: 2px;
+    }
+    .e-bnwh-config-status {
+      min-height: 18px;
+      margin: 0;
+      padding-top: 2px;
+    }
+    .e-bnwh-config-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .e-bnwh-config-button {
+      height: 36px;
+      padding: 0 14px;
+      border: 1px solid #18181b;
+      border-radius: 8px;
+      color: #fff;
+      background: #18181b;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .e-bnwh-config-button:hover {
+      background: #27272a;
+    }
+  </style>
+  <div class="e-bnwh-config-content">
+    <div class="e-bnwh-config-header">
+      <p id="e-bnwh-config-title" class="e-bnwh-config-title">条目助手设置</p>
+      <p class="e-bnwh-config-desc">集中管理 Bangumi 地址和查重请求行为。</p>
+    </div>
+    <div class="e-bnwh-config-section">
+      <label class="e-bnwh-config-row" for="e-bnwh-domain">
+        <span class="e-bnwh-config-row-text">
+          <span class="e-bnwh-config-row-title">Bangumi 域名</span>
+          <span class="e-bnwh-config-row-desc">新建条目与查重请求使用的站点</span>
+        </span>
+        <select class="e-bnwh-config-select" id="e-bnwh-domain">${domainOptions}</select>
+      </label>
+      <label class="e-bnwh-config-row" for="e-bnwh-use-https">
+        <span class="e-bnwh-config-row-text">
+          <span class="e-bnwh-config-row-title">使用 HTTPS</span>
+          <span class="e-bnwh-config-row-desc">关闭后使用 HTTP 访问所选域名</span>
+        </span>
+        <input class="e-bnwh-config-switch" type="checkbox" id="e-bnwh-use-https"${useHttps ? ' checked' : ''}>
+      </label>
+    </div>
+    <div class="e-bnwh-config-section">
+      <label class="e-bnwh-config-row" for="e-bnwh-web-search-fallback">
+        <span class="e-bnwh-config-row-text">
+          <span class="e-bnwh-config-row-title">启用网页搜索回退</span>
+          <span class="e-bnwh-config-row-desc">默认关闭。Bangumi 接口未返回条目时，再请求站内搜索页查重。</span>
+        </span>
+        <input class="e-bnwh-config-switch" type="checkbox" id="e-bnwh-web-search-fallback"${fallbackToWebSearch ? ' checked' : ''}>
+      </label>
+      <p class="e-bnwh-config-status" aria-live="polite"></p>
+    </div>
+    <div class="e-bnwh-config-footer">
+      <button class="e-bnwh-config-button e-bnwh-config-close" type="button" autofocus>完成</button>
+    </div>
+  </div>
+</dialog>
+`);
+    const $status = $dialog.querySelector('.e-bnwh-config-status');
+    const setStatus = (message) => {
+        $status.textContent = message;
+    };
+    $dialog
+        .querySelector('#e-bnwh-domain')
+        .addEventListener('change', (event) => {
+        const value = event.currentTarget.value;
+        GM_setValue(BGM_DOMAIN, value);
+        setStatus(`Bangumi 域名已保存为 ${value}。`);
+    });
+    $dialog
+        .querySelector('#e-bnwh-use-https')
+        .addEventListener('change', (event) => {
+        const checked = event.currentTarget.checked;
+        GM_setValue(PROTOCOL, checked ? 'https' : 'http');
+        setStatus(`HTTPS 已${checked ? '开启' : '关闭'}。`);
+    });
+    $dialog
+        .querySelector('#e-bnwh-web-search-fallback')
+        .addEventListener('change', (event) => {
+        const checked = event.currentTarget.checked;
+        GM_setValue(FALLBACK_TO_WEB_SEARCH, checked);
+        setStatus(`网页搜索回退已${checked ? '开启' : '关闭'}。`);
+    });
+    const closeDialog = () => {
+        $dialog.close();
+        $dialog.remove();
+    };
+    $dialog
+        .querySelector('.e-bnwh-config-close')
+        .addEventListener('click', closeDialog);
+    $dialog.addEventListener('cancel', () => {
+        $dialog.remove();
+    });
+    $dialog.addEventListener('click', (event) => {
+        if (event.target === $dialog)
+            closeDialog();
+    });
+    document.body.appendChild($dialog);
+    $dialog.showModal();
 }
-function setProtocol() {
-    var p = prompt(`预设的 bangumi 页面协议是https 根据需要输入 http`, 'https');
-    GM_setValue(PROTOCOL, p);
-}
-var bgm_domain = GM_getValue(BGM_DOMAIN) || 'bgm.tv';
+
 if (GM_registerMenuCommand) {
-    GM_registerMenuCommand('设置 Bangumi 域名', setDomain, 'b');
-    GM_registerMenuCommand('新建条目页面(http 或者 https)', setProtocol, 'h');
+    GM_registerMenuCommand('条目助手设置', showSettingsDialog);
 }
 const init = async () => {
     const host = window.location.hostname;
