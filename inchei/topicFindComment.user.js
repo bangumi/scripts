@@ -36,6 +36,7 @@
 
   let userLinks = [];
   const ongoingRequests = new Map();
+  const MAX_ONGOING_REQUESTS = 50;
   let accessToken;
   const fallbackNames = {};
   const sfwSubjects = new Set(JSON.parse(sessionStorage.getItem('ccf_sfw') || '[]'));
@@ -182,6 +183,9 @@
       }
     })();
 
+    if (ongoingRequests.size >= MAX_ONGOING_REQUESTS) {
+      ongoingRequests.delete(ongoingRequests.keys().next().value);
+    }
     ongoingRequests.set(cacheKey, requestPromise);
 
     try {
@@ -395,18 +399,20 @@
     if (sfwSubjects.has(subject_id)) return;
     sfwSubjects.add(subject_id);
     sessionStorage.setItem('ccf_sfw', JSON.stringify([...sfwSubjects]));
-    document.querySelectorAll(`.ccf-sfw-tbd-${subject_id}`).forEach(status => {
+    const safeId = parseInt(subject_id, 10);
+    document.querySelectorAll('.ccf-sfw-tbd-' + safeId).forEach(status => {
       status.innerHTML = status.innerHTML.slice(0, -sfwq.length);
       status.disabled = true;
       status.classList.remove('ccf-unborne');
     });
-    document.querySelectorAll(`.ccf-at-${subject_id}`).forEach(status => status.remove());
+    document.querySelectorAll('.ccf-at-' + safeId).forEach(status => status.remove());
   }
 
   function updName(subject_id, name) {
     if (fallbackNames[subject_id]) return;
     fallbackNames[subject_id] = name;
-    document.querySelectorAll(`.ccf-name-tbd-${subject_id}`).forEach(status => {
+    const safeId = parseInt(subject_id, 10);
+    document.querySelectorAll('.ccf-name-tbd-' + safeId).forEach(status => {
       status.textContent = name;
     });
   }
