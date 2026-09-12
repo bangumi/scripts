@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         全站动态&好友动态切换完全版
 // @namespace    tv.bgm.cedar.timelinePerfectSwitcher
-// @version      1.1.1
+// @version      1.2
 // @description  完美切换全站动态&好友动态. 全标签页适配. 长按可修改默认行为.
 // @author       Cedar
 // @match        *://bgm.tv/
@@ -23,11 +23,11 @@
 #columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-focus,
 #columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-on {
   color: white;
-  background: #4F93CF;
+  background: var(--secondary-color, #02a3fb);
 }
 #columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-off {
   color: white;
-  background: #F09199;
+  background: var(--primary-color, #f09199);
 }
 `);
 
@@ -64,6 +64,36 @@
   let default_global = localStorage.getItem("global_timeline_switch_on") || 'false';
   if(default_global == 'true') $globalTLSwitchBtn.trigger('click');
 
+  // 确定次要主题色，作为全站动态按钮的背景色
+  function getSecondaryThemeColor() {
+    /* 点开右下角个性化面板后，可通过如下代码确认每种主题色对应的 hex 颜色值。
+    const elements = document.querySelectorAll('#customize-panel .color-options .color-preview');
+    themeColors = Array.from(elements).map(el => {
+      const rgbcolor = getComputedStyle(el).backgroundColor; // 返回值形如 'rgb(240, 145, 253)'
+      const match = /(\d+),\s*(\d+),\s*(\d+)/.exec(rgbcolor);
+      const [r, g, b] = match.slice(1).map(Number);
+      const hexcolor = "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+      return `${el.classList.value}: ${hexcolor}`;
+    });
+    console.log(themeColors);
+    */
+    const themeColors = {
+      // secondaryColor 的选择要提高按钮区分度
+      'pink': {color: '#f09199', secondaryColor: 'blue'},
+      'blue': {color: '#02a3fb', secondaryColor: 'pink'},
+      'green': {color: '#89bd88', secondaryColor: 'red'},
+      'purple': {color: '#a987ec', secondaryColor: 'orange'},
+      'orange': {color: '#f37d4b', secondaryColor: 'purple'},
+      'red': {color: '#e24658', secondaryColor: 'green'},
+    };
+
+    const themeColorConfig = chiiLib.ukagaka.getDefaultGeneralConfig().find(config => config.name == "themeColor"); // bangumi 官方 API
+    const currentThemeColorName = themeColorConfig.getCurrentValue();
+    const themeColor = themeColors[currentThemeColorName] || themeColors[themeColorConfig.defaultValue];
+    if (!themeColor) return themeColors['pink'].color;
+    return themeColors[themeColor.secondaryColor].color;
+  }
+
   function switch_globalTLtabs(e) {
     e.preventDefault();
     // 要用currentTarget而不是target, 单击"更多"菜单下的按钮时可能会按到 a>span 上..
@@ -97,6 +127,7 @@
   function toggle_globalTLtabs(e) {
     e.preventDefault();
     $globalTLSwitchBtn.toggleClass('global-timeline-on global-timeline-off');
+    $TLtabsWrapper[0].style.setProperty('--secondary-color', getSecondaryThemeColor());
     $globalTLtabs.toggle();
     $TLtabs.toggle();
 
