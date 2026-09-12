@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         全站动态&好友动态切换完全版
 // @namespace    tv.bgm.cedar.timelinePerfectSwitcher
-// @version      1.2
+// @version      1.2.1
 // @description  完美切换全站动态&好友动态. 全标签页适配. 长按可修改默认行为.
 // @author       Cedar
 // @match        *://bgm.tv/
@@ -79,12 +79,12 @@
     */
     const themeColors = {
       // secondaryColor 的选择要提高按钮区分度
-      'pink': {color: '#f09199', secondaryColor: 'blue'},
-      'blue': {color: '#02a3fb', secondaryColor: 'pink'},
-      'green': {color: '#89bd88', secondaryColor: 'red'},
+      'pink': {color: '#f09199', secondaryColor: 'green'},
+      'blue': {color: '#02a3fb', secondaryColor: 'red'},
+      'green': {color: '#89bd88', secondaryColor: 'pink'},
       'purple': {color: '#a987ec', secondaryColor: 'orange'},
       'orange': {color: '#f37d4b', secondaryColor: 'purple'},
-      'red': {color: '#e24658', secondaryColor: 'green'},
+      'red': {color: '#e24658', secondaryColor: 'blue'},
     };
 
     const themeColorConfig = chiiLib.ukagaka.getDefaultGeneralConfig().find(config => config.name == "themeColor"); // bangumi 官方 API
