@@ -1,10 +1,18 @@
 // ==UserScript==
 // @name         全站动态&好友动态切换完全版
 // @namespace    tv.bgm.cedar.timelinePerfectSwitcher
-// @version      1.1
+// @version      1.1.1
 // @description  完美切换全站动态&好友动态. 全标签页适配. 长按可修改默认行为.
 // @author       Cedar
-// @include      /^https?://((bgm|bangumi)\.tv|chii\.in)/(timeline)?(\?.*)?$/
+// @match        *://bgm.tv/
+// @match        *://bgm.tv/timeline
+// @match        *://bgm.tv/timeline?*
+// @match        *://bangumi.tv/
+// @match        *://bangumi.tv/timeline
+// @match        *://bangumi.tv/timeline?*
+// @match        *://chii.in/
+// @match        *://chii.in/timeline
+// @match        *://chii.in/timeline?*
 // @grant        GM_addStyle
 // ==/UserScript==
 
