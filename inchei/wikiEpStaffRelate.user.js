@@ -2,7 +2,7 @@
 // @name         根据章节简介关联制作人员参与
 // @namespace    wiki.ep.staff.replate
 // @homepage     https://bgm.tv/group/topic/439326
-// @version      0.2.8
+// @version      0.2.9
 // @description  从章节页或人物关联页根据章节简介关联制作人员参与
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -1112,7 +1112,7 @@
       loading = new Promise(resolve => {
         const srcs = [
           'https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js',
-          'https://cdn.jsdmirror.com/npm/opencc-cn-name@0.1.1/dist/umd/opencc-cn-name.js',
+          'https://cdn.jsdmirror.com/npm/opencc-cn-name/dist/umd/opencc-cn-name.js',
         ];
         let remaining = srcs.length;
         let ok = true;

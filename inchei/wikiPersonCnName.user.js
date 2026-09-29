@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         自动填写人物简体中文名
 // @namespace    bangumi.wiki.person.cnname
-// @version      0.0.3
+// @version      0.0.4
 // @description  在人物新建/编辑页面，若未填写简体中文名则自动从标题转换生成，并自动填充日文别名
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
@@ -102,7 +102,7 @@
       openccPromise = new Promise(function (resolve) {
         const srcs = [
           'https://cdn.jsdmirror.com/npm/opencc-js@1.0.5/dist/umd/full.js',
-          'https://cdn.jsdmirror.com/npm/opencc-cn-name@0.1.1/dist/umd/opencc-cn-name.js',
+          'https://cdn.jsdmirror.com/npm/opencc-cn-name/dist/umd/opencc-cn-name.js',
         ];
         let remaining = srcs.length;
         let ok = true;
