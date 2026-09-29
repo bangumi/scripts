@@ -207,6 +207,15 @@
 | Greasy Fork | 无 |
 | 组件 | [5411](https://bgm.tv/dev/app/5411) |
 
+## 自动填写书籍区标签 `0.0.1`
+自动填写书籍区标签
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiAutoTags.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiAutoTags.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
 ## 顶部维基直接可选编辑/修订历史/封面/关联 `0.0.2`
 顶部添加直接编辑/修订历史/封面/关联的按钮，不需要先点开修订历史，可设置点击 Wiki 按钮默认打开哪一项
 
@@ -245,7 +254,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 根据章节简介关联制作人员参与 `0.2.8`
+## 根据章节简介关联制作人员参与 `0.2.9`
 从章节页或人物关联页根据章节简介关联制作人员参与
 
 - 讨论页：https://bgm.tv/group/topic/439326
@@ -255,6 +264,15 @@
 | GitHub | [wikiEpStaffRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEpStaffRelate.user.js?raw=true) |
 | Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
 | 组件 | [4948](https://bgm.tv/dev/app/4948) |
+
+## 从亚马逊获取书籍简介 `0.0.1`
+从亚马逊获取书籍简介
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiGetAmazonSummary.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiGetAmazonSummary.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
 
 ## 从引进出版社网站获取班固米书籍版本 `0.3.0`
 支持东立、长鸿、东贩、台角、青文、尖端、玉皇朝、豆瓣、当当、京东、天猫等，暴露window.getBgmVersion(url)方法
@@ -276,10 +294,8 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## NDL 添加条目到 bangumi `0.2`
+## NDL 添加条目到 bangumi `0.3`
 在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
-
-- 讨论页：https://bgm.tv/group/topic/438774
 
 | 载点 | 链接 |
 |------|------|
@@ -318,7 +334,7 @@
 | Greasy Fork | [549613](https://greasyfork.org/zh-CN/scripts/549613) |
 | 组件 | [3465](https://bgm.tv/dev/app/3465) |
 
-## 班固米人物别名本地 API `1.3`
+## 班固米人物别名本地 API `1.4`
 从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
 
 - 讨论页：https://bgm.tv/group/topic/439645
@@ -327,6 +343,24 @@
 |------|------|
 | GitHub | [wikiPersonAlias.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonAlias.user.js?raw=true) |
 | Greasy Fork | [552759](https://greasyfork.org/zh-CN/scripts/552759) |
+| 组件 | 无 |
+
+## 自动填写人物简体中文名 `0.0.4`
+在人物新建/编辑页面，若未填写简体中文名则自动从标题转换生成，并自动填充日文别名
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiPersonCnName.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonCnName.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
+
+## 人物回收合并 `0.1.0`
+将当前人物的全部关联转移到目标人物，为目标人物添加别名，并清空源人物信息标记「待回收」
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiPersonRecycle.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiPersonRecycle.user.js?raw=true) |
+| Greasy Fork | 无 |
 | 组件 | 无 |
 
 ## 维基关联历史对比差异 `0.2.3`
