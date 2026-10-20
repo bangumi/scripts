@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         NDL 添加条目到 bangumi
 // @namespace    http://tampermonkey.net/
-// @version      0.3
-// @description  在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+// @version      0.4
+// @description  在NDL搜索页添加同步链接，点击后自动填充数据到BGM新条目页面；菜单可设置使用的bangumi域名
 // @author       You
 // @match        https://ndlsearch.ndl.go.jp/search*
 // @match        https://bgm.tv/new_subject/1
@@ -10,6 +10,7 @@
 // @match        https://chii.in/new_subject/1
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
+// @grant        GM_registerMenuCommand
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -18,6 +19,64 @@
 
 (function() {
   'use strict';
+
+  // ==================== greasyfork 菜单：bangumi 域名设置 ====================
+  const BGM_DOMAINS = ['bgm.tv', 'bangumi.tv', 'chii.in'];
+
+  function getBgmDomain() {
+    const saved = GM_getValue('bgmDomain', 'bgm.tv');
+    return BGM_DOMAINS.includes(saved) ? saved : 'bgm.tv';
+  }
+
+  if (typeof GM_registerMenuCommand === 'function') {
+    GM_registerMenuCommand(`设置 bangumi 域名（当前：${getBgmDomain()}）`, () => {
+      const input = prompt(
+        `打开新条目页使用的 bangumi 域名：\n${BGM_DOMAINS.join(' / ')}`,
+        getBgmDomain()
+      );
+      if (input === null) {
+        return;
+      }
+      const domain = input.trim().toLowerCase();
+      if (!BGM_DOMAINS.includes(domain)) {
+        alert(`无效域名，仅支持：${BGM_DOMAINS.join(' / ')}`);
+        return;
+      }
+      GM_setValue('bgmDomain', domain);
+      alert(`已保存，之后新条目页将使用 ${domain}`);
+    });
+  }
+
+  // 封面投递：wikiUploadPic 消费隐藏的 data-bgm-import-cover img；
+  // 若没装 wikiUploadPic，兜底给 bangumi-new-wiki-helper 的 img.preview
+  function deliverCover(dataUrl) {
+    if (!dataUrl) return;
+    const cover = document.createElement('img');
+    cover.setAttribute('data-bgm-import-cover', '');
+    cover.style.display = 'none';
+    cover.src = dataUrl;
+    document.body.appendChild(cover);
+
+    waitForElement('img.preview', (img) => {
+      img.src = dataUrl;
+    });
+  }
+
+  function waitForElement(selector, callback) {
+    const element = document.querySelector(selector);
+    if (element) {
+      callback(element);
+      return;
+    }
+    const observer = new MutationObserver(() => {
+      const elem = document.querySelector(selector);
+      if (elem) {
+        observer.disconnect();
+        callback(elem);
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
   function full2half(str) {
     let res = '';
@@ -172,8 +231,8 @@
                 data: data,
                 imgDataUrl: dataUrl
               }));
-              // 打开BGM新条目页面
-              GM_openInTab('https://bgm.tv/new_subject/1', { active: true });
+              // 打开BGM新条目页面（域名可在脚本菜单设置）
+              GM_openInTab(`https://${getBgmDomain()}/new_subject/1`, { active: true });
             } catch (e) {
               console.error('解析JSON失败:', e);
             }
@@ -191,29 +250,8 @@
     // 监听页面变化，动态添加链接（应对可能的分页或动态加载）
     const observer = new MutationObserver(addActionLinks);
     observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  // 在BGM.tv新条目页面的操作
-  else if (window.location.pathname === '/new_subject/1') {
-    // 等待元素出现
-    function waitForElement(selector, callback) {
-      const element = document.querySelector(selector);
-      if (element) {
-        callback(element);
-        return;
-      }
-
-      // 使用MutationObserver等待元素出现
-      const observer = new MutationObserver(() => {
-        const elem = document.querySelector(selector);
-        if (elem) {
-          observer.disconnect();
-          callback(elem);
-        }
-      });
-
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
+  } else if (window.location.pathname === '/new_subject/1') {
+    // 在BGM.tv新条目页面的操作
 
     // 处理日期格式为YYYY-MM-DD
     function processDate(dateText) {
@@ -237,7 +275,7 @@
     }
 
     // 填充表单数据
-    function fillFormData(data, imgDataUrl) {
+    function fillFormData(data) {
       // 填充标题，添加卷数信息
       const titleInput = document.querySelector('input[name="subject_title"]');
       if (titleInput && data.title && data.title[0]) {
@@ -265,7 +303,7 @@
       let author = '', painter = '', gensaku = '';
       if (data.dc_creator && data.dc_creator[0]) {
         if (data.dc_creator.length === 1) {
-          author = data.dc_creator[0].name.replace(/\[.*?\]/g, '').replace(/[／∥ \/]著/, '').trim();
+          author = data.dc_creator[0].name.replace(/\[.*?\]/g, '').replace(/[／∥ /]著/, '').trim();
         } else {
           const authors = data.dc_creator.map(c => c.name);
           gensaku = authors.find(a => a.match(/ 作$/))?.replace(/ 作$/, '');
@@ -328,13 +366,6 @@
         textarea.value = template;
       }
 
-      // 设置预览图片（使用Data URL）
-      if (imgDataUrl) {
-        waitForElement('img.preview', (previewImg) => {
-          previewImg.src = imgDataUrl;
-        });
-      }
-
       // 自动点击#cat_comic元素
       waitForElement('#cat_comic', (catComic) => {
         catComic.click();
@@ -346,8 +377,8 @@
     if (storedData) {
       try {
         const { data, imgDataUrl } = JSON.parse(storedData);
-        fillFormData(data, imgDataUrl);
-        // 清除已使用的数据
+        fillFormData(data);
+        deliverCover(imgDataUrl);
         GM_deleteValue('ndlData');
       } catch (e) {
         console.error('解析存储的数据失败:', e);

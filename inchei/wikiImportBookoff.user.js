@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Bookoff 添加条目到 bangumi
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
-// @description  在Bookoff商品页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+// @version      0.2
+// @description  在Bookoff商品页添加同步链接，点击后自动填充数据到BGM新条目页面；菜单可设置使用的bangumi域名
 // @author       You
 // @match        *://shopping.bookoff.co.jp/used/*
 // @match        *://bgm.tv/new_subject/1
@@ -10,6 +10,7 @@
 // @match        *://chii.in/new_subject/1
 // @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
+// @grant        GM_registerMenuCommand
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -18,6 +19,64 @@
 
 (function() {
   'use strict';
+
+  // ==================== greasyfork 菜单：bangumi 域名设置 ====================
+  const BGM_DOMAINS = ['bgm.tv', 'bangumi.tv', 'chii.in'];
+
+  function getBgmDomain() {
+    const saved = GM_getValue('bgmDomain', 'bgm.tv');
+    return BGM_DOMAINS.includes(saved) ? saved : 'bgm.tv';
+  }
+
+  if (typeof GM_registerMenuCommand === 'function') {
+    GM_registerMenuCommand(`设置 bangumi 域名（当前：${getBgmDomain()}）`, () => {
+      const input = prompt(
+        `打开新条目页使用的 bangumi 域名：\n${BGM_DOMAINS.join(' / ')}`,
+        getBgmDomain()
+      );
+      if (input === null) {
+        return;
+      }
+      const domain = input.trim().toLowerCase();
+      if (!BGM_DOMAINS.includes(domain)) {
+        alert(`无效域名，仅支持：${BGM_DOMAINS.join(' / ')}`);
+        return;
+      }
+      GM_setValue('bgmDomain', domain);
+      alert(`已保存，之后新条目页将使用 ${domain}`);
+    });
+  }
+
+  // 封面投递：wikiUploadPic 消费隐藏的 data-bgm-import-cover img；
+  // 若没装 wikiUploadPic，兜底给 bangumi-new-wiki-helper 的 img.preview
+  function deliverCover(dataUrl) {
+    if (!dataUrl) return;
+    const cover = document.createElement('img');
+    cover.setAttribute('data-bgm-import-cover', '');
+    cover.style.display = 'none';
+    cover.src = dataUrl;
+    document.body.appendChild(cover);
+
+    waitForElement('img.preview', (img) => {
+      img.src = dataUrl;
+    });
+  }
+
+  function waitForElement(selector, callback) {
+    const element = document.querySelector(selector);
+    if (element) {
+      callback(element);
+      return;
+    }
+    const observer = new MutationObserver(() => {
+      const elem = document.querySelector(selector);
+      if (elem) {
+        observer.disconnect();
+        callback(elem);
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
   // 书系映射表：后缀 → 完整书系名
   const SERIES_MAP = {
@@ -132,8 +191,8 @@
           imgDataUrl: dataUrl,
           price: price
         }));
-        // 打开BGM新建页面
-        GM_openInTab('https://bgm.tv/new_subject/1', { active: true });
+        // 打开BGM新建页面（域名可在脚本菜单设置）
+        GM_openInTab(`https://${getBgmDomain()}/new_subject/1`, { active: true });
       });
     }
 
@@ -141,27 +200,8 @@
     addButton();
     const observer = new MutationObserver(addButton);
     observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  // ==================== BGM 新建条目页面逻辑 ====================
-  else if (window.location.pathname === '/new_subject/1') {
-    // 等待元素加载
-    function waitForElement(selector, callback) {
-      const el = document.querySelector(selector);
-      if (el) {
-        callback(el);
-        return;
-      }
-      const observer = new MutationObserver(() => {
-        const elem = document.querySelector(selector);
-        if (elem) {
-          observer.disconnect();
-          callback(elem);
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-
+  } else if (window.location.pathname === '/new_subject/1') {
+    // ==================== BGM 新建条目页面逻辑 ====================
     // 填充表单
     function fillForm(data) {
       // 填充标题
@@ -196,10 +236,7 @@
       const textarea = document.querySelector('textarea');
       if (textarea) textarea.value = template;
 
-      // 设置封面
-      if (data.imgDataUrl) {
-        waitForElement('img.preview', (img) => img.src = data.imgDataUrl);
-      }
+      deliverCover(data.imgDataUrl);
 
       // 自动选择漫画分类
       waitForElement('#cat_comic', (cat) => cat.click());
