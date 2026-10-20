@@ -254,17 +254,6 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## 根据章节简介关联制作人员参与 `0.2.9`
-从章节页或人物关联页根据章节简介关联制作人员参与
-
-- 讨论页：https://bgm.tv/group/topic/439326
-
-| 载点 | 链接 |
-|------|------|
-| GitHub | [wikiEpStaffRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiEpStaffRelate.user.js?raw=true) |
-| Greasy Fork | [552493](https://greasyfork.org/zh-CN/scripts/552493) |
-| 组件 | [4948](https://bgm.tv/dev/app/4948) |
-
 ## 从亚马逊获取书籍简介 `0.0.1`
 从亚马逊获取书籍简介
 
@@ -285,8 +274,8 @@
 | Greasy Fork | [556109](https://greasyfork.org/zh-CN/scripts/556109) |
 | 组件 | 无 |
 
-## Bookoff 添加条目到 bangumi `0.1.1`
-在Bookoff商品页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+## Bookoff 添加条目到 bangumi `0.2`
+在Bookoff商品页添加同步链接，点击后自动填充数据到BGM新条目页面；菜单可设置使用的bangumi域名
 
 | 载点 | 链接 |
 |------|------|
@@ -294,8 +283,8 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## NDL 添加条目到 bangumi `0.3`
-在NDL搜索页添加同步链接，点击后自动填充数据到BGM.tv新条目页面
+## NDL 添加条目到 bangumi `0.4`
+在NDL搜索页添加同步链接，点击后自动填充数据到BGM新条目页面；菜单可设置使用的bangumi域名
 
 | 载点 | 链接 |
 |------|------|
@@ -333,6 +322,15 @@
 | GitHub | [wikiNewCharRelate.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiNewCharRelate.user.js?raw=true) |
 | Greasy Fork | [549613](https://greasyfork.org/zh-CN/scripts/549613) |
 | 组件 | [3465](https://bgm.tv/dev/app/3465) |
+
+## 创建条目重名检查 `0.1.0`
+创建条目前用搜索 API 查重，存在同名条目时要求先修改条目名；书籍另用 ISBN 查重
+
+| 载点 | 链接 |
+|------|------|
+| GitHub | [wikiNewSubjectDupCheck.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiNewSubjectDupCheck.user.js?raw=true) |
+| Greasy Fork | 无 |
+| 组件 | 无 |
 
 ## 班固米人物别名本地 API `1.4`
 从 wiki archive 自动生成，支持远程更新和本地 .json.gz 文件导入，与其他脚本联合使用
@@ -394,8 +392,8 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## Bangumi wiki 图片上传增强 `1.4.7`
-支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
+## Bangumi wiki 图片上传增强 `1.5.1`
+支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览；新建条目时自动上传封面
 
 - 讨论页：https://bgm.tv/group/topic/431819
 
@@ -416,8 +414,8 @@
 | Greasy Fork | 无 |
 | 组件 | [5411](https://bgm.tv/dev/app/5411) |
 
-## 由单行本创建系列 `0.1.0`
-从单行本第一卷创建系列条目
+## 由单行本创建系列 `0.1.1`
+从单行本第一卷创建系列条目；封面支持交给 wikiUploadPic 上传
 
 - 讨论页：https://bgm.tv/group/topic/451224
 
