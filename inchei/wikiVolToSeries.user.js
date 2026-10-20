@@ -2,8 +2,8 @@
 // @name         由单行本创建系列
 // @namespace    wiki.vol.to.series
 // @homepage     https://bgm.tv/group/topic/451224
-// @version      0.1.0
-// @description  从单行本第一卷创建系列条目
+// @version      0.1.1
+// @description  从单行本第一卷创建系列条目；封面支持交给 wikiUploadPic 上传
 // @author       you
 // @icon         https://bgm.tv/img/favicon.ico
 // @match        http*://bgm.tv/subject/*
@@ -99,10 +99,7 @@
         })[res.platform] || ''} 系列`;
 
         if (cover) {
-          waitForElement('img.preview', async (previewImg) => {
-            const coverDataURL = await convertImageToDataURL(cover);
-            previewImg.src = coverDataURL;
-          });
+          convertImageToDataURL(cover).then(coverDataURL => deliverCover(coverDataURL));
         }
       },
       onerror: function (error) {
@@ -154,6 +151,20 @@
       }
     };
     attempt();
+  }
+
+  // 封面投递：wikiUploadPic 消费隐藏的 data-bgm-import-cover img；
+  // 若没装 wikiUploadPic，兜底给 bangumi-new-wiki-helper 的 img.preview
+  function deliverCover(dataUrl) {
+    if (!dataUrl) return;
+    const cover = document.createElement('img');
+    cover.setAttribute('data-bgm-import-cover', '');
+    cover.style.display = 'none';
+    cover.src = dataUrl;
+    document.body.appendChild(cover);
+    waitForElement('img.preview', (img) => {
+      img.src = dataUrl;
+    });
   }
 
   function waitForElement(selector, callback) {
