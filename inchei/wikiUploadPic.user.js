@@ -2,8 +2,8 @@
 // @name         Bangumi wiki 图片上传增强
 // @namespace    https://bgm.tv/group/topic/431819
 // @homepage     https://bgm.tv/group/topic/431819
-// @version      1.4.7
-// @description  支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览
+// @version      1.5.1
+// @description  支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览；新建条目时自动上传封面
 // @author       You
 // @match        https://bangumi.tv/character/*/upload_photo
 // @match        https://bangumi.tv/character/*/upload_img
@@ -13,6 +13,7 @@
 // @match        https://bangumi.tv/person/*/edit
 // @match        https://bangumi.tv/subject/*/upload_img
 // @match        https://bangumi.tv/*/new
+// @match        https://bangumi.tv/new_subject/*
 // @match        https://bangumi.tv/settings
 // @match        https://bgm.tv/character/*/upload_photo
 // @match        https://bgm.tv/character/*/upload_img
@@ -22,6 +23,7 @@
 // @match        https://bgm.tv/person/*/edit
 // @match        https://bgm.tv/subject/*/upload_img
 // @match        https://bgm.tv/*/new
+// @match        https://bgm.tv/new_subject/*
 // @match        https://bgm.tv/settings
 // @match        https://chii.in/character/*/upload_photo
 // @match        https://chii.in/character/*/upload_img
@@ -31,6 +33,7 @@
 // @match        https://chii.in/person/*/edit
 // @match        https://chii.in/subject/*/upload_img
 // @match        https://chii.in/*/new
+// @match        https://chii.in/new_subject/*
 // @match        https://chii.in/settings
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
@@ -180,8 +183,24 @@
   pasteHelper.setAttribute('aria-hidden', 'true');
   document.body.appendChild(pasteHelper);
 
+  // /new_subject/{type} 页面的表单自身没有图片输入框：注入一个自用 input，
+  // 提交时改走两步请求：XHR 创建条目 → /subject/{id}/upload_img 上传封面。
+  // 请求处理移植自 bangumi-new-wiki-helper（MIT）的 sendForm / uploadSubjectCover
+  const isNewSubjectPage = /^\/new_subject\//.test(window.location.pathname);
+  const createForm = isNewSubjectPage
+    ? document.querySelector('form[name=create_subject]')
+    : null;
+  if (isNewSubjectPage && !createForm) return;
+
   // 直接获取文件输入框
-  const fileInput = document.querySelector('input[type="file"][name="picfile"]');
+  let fileInput = null;
+  if (isNewSubjectPage) {
+    fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+  } else {
+    fileInput = document.querySelector('input[type="file"][name="picfile"]');
+  }
   if (!fileInput) return;
 
   const isUploadPhotoPage = window.location.pathname.includes('/upload_photo');
@@ -300,7 +319,13 @@
 
   controls.append(cropBtn, removeBgBtn, mosaicBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn);
   container.append(clipboardControl, previewWrapper, previewText, controls, mosaicControls);
-  fileInput.parentNode.insertBefore(container, fileInput.nextSibling);
+  if (isNewSubjectPage) {
+    // 合成输入框没有 name，不会被表单提交；容器插在表单之后
+    clipboardControl.insertBefore(fileInput, getClipboardBtn);
+    createForm.parentNode.insertBefore(container, createForm.nextSibling);
+  } else {
+    fileInput.parentNode.insertBefore(container, fileInput.nextSibling);
+  }
   // #endregion
 
   // #region 变量定义
@@ -311,6 +336,8 @@
   };
   const allowedExtensions = Object.values(allowedImageTypes);
   let currentFile = null;
+  // 当前已处理完成、可随创建请求上送的图片（预览处理失败时会被置空）
+  let pendingImage = null;
   let originalFileBeforeBgRemove = null;
   let cropper = null;
   let isCropping = false;
@@ -986,6 +1013,7 @@
 
   // #region 预览更新
   async function updatePreview(file) {
+    pendingImage = null;
     try {
       const convertedFile = await convertToJpg(file);
       const compressedFile = await compressImage(convertedFile);
@@ -1028,6 +1056,7 @@
       };
       reader.readAsDataURL(compressedFile);
       currentFile = compressedFile;
+      pendingImage = compressedFile;
       return true;
     } catch (error) {
       previewText.textContent = `处理失败: ${error.message}`;
@@ -1200,6 +1229,192 @@
   }
   // #endregion
 
+  // #region 新建条目时上传封面（请求处理移植自 bangumi-new-wiki-helper，MIT）
+  const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+
+  function genRandomStr(len) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let str = '';
+    for (let i = 0; i < len; i++) {
+      str += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return str;
+  }
+
+  function insertLoading($sibling) {
+    const $loading = document.createElement('div');
+    $loading.setAttribute(
+      'style',
+      'width: 208px; height: 13px; background-image: url("/img/loadingAnimation.gif");'
+    );
+    $sibling.parentNode.insertBefore($loading, $sibling);
+    return $loading;
+  }
+
+  function getImgExt(type) {
+    return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' })[type] || 'jpg';
+  }
+
+  // 以 XHR 提交表单；服务端 302 会被自动跟随，用 xhr.responseURL 拿目标地址。
+  // FormData 不会包含未被点击的 submit 按钮，按 helper 的做法手动补回
+  function sendBgmForm($form, extraItems = []) {
+    return new Promise((resolve, reject) => {
+      const fd = new FormData($form);
+      extraItems.forEach((item) => {
+        if (item.filename) {
+          fd.set(item.name, item.value, item.filename);
+        } else if (item.value instanceof Blob) {
+          fd.set(item.name, item.value);
+        } else {
+          fd.set(item.name, String(item.value));
+        }
+      });
+      const $submit = $form.querySelector('[name=submit]');
+      if ($submit?.name && $submit.value) {
+        fd.set($submit.name, $submit.value);
+      }
+      const method = ($form.getAttribute('method') || 'POST').toUpperCase();
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, $form.action, true);
+      xhr.onload = function () {
+        if (xhr.status !== 200) {
+          reject(new Error(`请求失败，状态码 ${xhr.status}`));
+          return;
+        }
+        if (!xhr.responseURL) {
+          reject(new Error('未获取到返回地址'));
+          return;
+        }
+        resolve(xhr.responseURL);
+      };
+      xhr.onerror = function () {
+        reject(new Error('网络请求失败'));
+      };
+      xhr.send(fd);
+    });
+  }
+
+  // 把封面 POST 到 /subject/{id}/upload_img：
+  // 1. 页面自带 formhash 时直接组 FormData（formhash + picfile + submit）用 fetch 提交；
+  // 2. 否则抓上传页 HTML，解析 form[name=img_upload]（含 formhash）后用 XHR 提交。
+  // 成功时服务端 302，fetch/XHR 自动跟随
+  async function uploadSubjectCover(subjectId, file) {
+    const filename = `${genRandomStr(5)}.${getImgExt(file.type)}`;
+    const $hash = document.querySelector('form > input[name="formhash"]');
+    if ($hash) {
+      const fd = new FormData();
+      fd.set('formhash', $hash.value);
+      fd.set('picfile', file, filename);
+      fd.set('submit', '上传图片');
+      await fetch(`/subject/${subjectId}/upload_img`, { method: 'post', body: fd });
+      return;
+    }
+    const res = await fetch(`/subject/${subjectId}/upload_img`);
+    const rawText = await res.text();
+    const $doc = new DOMParser().parseFromString(rawText, 'text/html');
+    const $form = $doc.querySelector('form[name=img_upload]');
+    if (!$form) {
+      throw new Error('上传页未找到 img_upload 表单');
+    }
+    const $fileInput = $form.querySelector('input[type=file]');
+    await sendBgmForm($form, [
+      { name: $fileInput?.name || 'picfile', value: file, filename },
+    ]);
+  }
+
+  // 带图时接管创建提交：先创建条目拿到新 id，再上传封面
+  async function handleCreateSubmit($form) {
+    const file = pendingImage;
+    if (!file) return;
+
+    const $submit = $form.querySelector('[name=submit]');
+    const $loading = $submit ? insertLoading($submit) : null;
+    previewText.textContent = '正在创建条目…';
+    previewWrapper.style.display = 'flex';
+    try {
+      if ($submit) $submit.disabled = true;
+      // helper 在提交前会点「wiki 模式」，把新手模式的表单字段同步进 wcode 编辑框
+      const $wikiMode = document.querySelector(
+        'table small a:nth-of-type(1)[href="javascript:void(0)"]'
+      );
+      if ($wikiMode) $wikiMode.click();
+      await sleep(200);
+
+      const url = await sendBgmForm($form);
+      const match = url.match(/subject\/(\d+)/);
+      if (!match) {
+        throw new Error(`未从返回地址解析出条目 id：${url}`);
+      }
+      const subjectId = match[1];
+      console.log('wikiUploadPic: 条目已创建', url);
+
+      previewText.textContent = `条目已创建（${subjectId}），正在上传封面…`;
+      try {
+        await uploadSubjectCover(subjectId, file);
+        previewText.textContent = '封面已上传，正在跳转…';
+      } catch (coverErr) {
+        console.error('wikiUploadPic 上传封面失败:', coverErr);
+        previewText.textContent = `封面上传失败：${coverErr.message || coverErr}，稍后跳转…`;
+        await sleep(1500);
+      }
+      location.assign(url);
+    } catch (err) {
+      console.error('wikiUploadPic 创建条目失败:', err);
+      previewText.textContent = `创建条目失败：${err.message || err}`;
+      if ($submit) $submit.disabled = false;
+      if ($loading) $loading.remove();
+    }
+  }
+
+  // 有图时拦截表单提交走两步请求；无图时放行原提交，行为与未装脚本一致
+  if (isNewSubjectPage && createForm) {
+    createForm.addEventListener('submit', function (e) {
+      if (!pendingImage) return;
+      e.preventDefault();
+      handleCreateSubmit(createForm);
+    });
+
+    // 接收 wikiImportNDL / wikiImportBookoff 投递的封面 img（src 为 dataURL）
+    function consumeImportedCover() {
+      const $cover = document.querySelector('img[data-bgm-import-cover]');
+      if (!$cover) return false;
+      const dataUrl = $cover.getAttribute('src') || '';
+      const fromImport = dataUrl.startsWith('data:');
+      $cover.remove();
+      if (!fromImport) return false;
+      fetch(dataUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const file = new File(
+            [blob],
+            `import-${Date.now()}.${getImgExt(blob.type)}`,
+            { type: blob.type || 'image/jpeg' }
+          );
+          previewText.textContent = '检测到导入封面，处理中…';
+          return updatePreview(file);
+        })
+        .then((ok) => {
+          if (ok === false) {
+            previewText.textContent = '导入封面处理失败';
+          }
+        })
+        .catch((err) => {
+          console.error('导入封面处理失败:', err);
+          previewText.textContent = `导入封面处理失败：${err.message || err}`;
+        });
+      return true;
+    }
+
+    // 监听 DOM，出现导入封面元素即接管消费
+    const coverObserver = new MutationObserver(() => {
+      if (consumeImportedCover()) {
+        coverObserver.disconnect();
+      }
+    });
+    coverObserver.observe(document.body, { childList: true, subtree: true });
+  }
+  // #endregion
+
   // #region 事件监听
   // 裁切相关事件
   cropBtn.addEventListener('click', startCropping);
@@ -1272,7 +1487,10 @@
   // 添加提示信息
   const hint = document.createElement('div');
   hint.className = 'bgm-hint';
-  hint.textContent = '提示：点击按钮获取剪贴板内容，或直接按 Ctrl+V 粘贴图片';
-  fileInput.parentNode.insertBefore(hint, fileInput.nextSibling);
+  hint.textContent = isNewSubjectPage
+    ? '提示：选好或粘贴图片后，点原页面的创建按钮，脚本会先创建条目再自动上传封面'
+    : '提示：点击按钮获取剪贴板内容，或直接按 Ctrl+V 粘贴图片';
+  const hintAnchor = isNewSubjectPage ? getClipboardBtn : fileInput;
+  hintAnchor.parentNode.insertBefore(hint, hintAnchor.nextSibling);
 // #endregion
 })();
