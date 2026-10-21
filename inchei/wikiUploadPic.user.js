@@ -2,8 +2,8 @@
 // @name         Bangumi wiki 图片上传增强
 // @namespace    https://bgm.tv/group/topic/431819
 // @homepage     https://bgm.tv/group/topic/431819
-// @version      1.5.1
-// @description  支持直接粘贴，自动转换图片格式，自动压缩，裁切和马赛克，预览；新建条目时自动上传封面
+// @version      1.6.0
+// @description  支持直接粘贴或拖入，自动转换图片格式，自动压缩，裁切和马赛克，预览；新建条目时自动上传封面
 // @author       You
 // @match        https://bangumi.tv/character/*/upload_photo
 // @match        https://bangumi.tv/character/*/upload_img
@@ -217,6 +217,7 @@
   // 单一剪贴板按钮
   const getClipboardBtn = document.createElement('button');
   getClipboardBtn.id = 'getClipboardBtn';
+  getClipboardBtn.type = 'button';
   getClipboardBtn.textContent = '获取剪贴板内容';
   clipboardControl.appendChild(getClipboardBtn);
 
@@ -252,32 +253,44 @@
   controls.className = 'bgm-controls';
 
   const cropBtn = document.createElement('button');
+  cropBtn.type = 'button';
   cropBtn.textContent = '裁切图片';
   cropBtn.style.display = 'none';
 
   const cropConfirmBtn = document.createElement('button');
+  cropConfirmBtn.type = 'button';
   cropConfirmBtn.textContent = '确认裁切';
   cropConfirmBtn.style.display = 'none';
 
   const cropCancelBtn = document.createElement('button');
+  cropCancelBtn.type = 'button';
   cropCancelBtn.textContent = '取消裁切';
   cropCancelBtn.style.display = 'none';
 
   const mosaicBtn = document.createElement('button');
+  mosaicBtn.type = 'button';
   mosaicBtn.textContent = '添加马赛克';
   mosaicBtn.style.display = 'none';
 
   const mosaicConfirmBtn = document.createElement('button');
+  mosaicConfirmBtn.type = 'button';
   mosaicConfirmBtn.textContent = '完成马赛克';
   mosaicConfirmBtn.style.display = 'none';
 
   const mosaicCancelBtn = document.createElement('button');
+  mosaicCancelBtn.type = 'button';
   mosaicCancelBtn.textContent = '取消马赛克';
   mosaicCancelBtn.style.display = 'none';
 
   const removeBgBtn = document.createElement('button');
+  removeBgBtn.type = 'button';
   removeBgBtn.textContent = '去底';
   removeBgBtn.style.display = 'none';
+
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.textContent = '清除图片';
+  clearBtn.style.display = 'none';
 
   // 马赛克大小控制
   const mosaicControls = document.createElement('div');
@@ -317,7 +330,7 @@
     previewWrapper.appendChild(squarePreview);
   }
 
-  controls.append(cropBtn, removeBgBtn, mosaicBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn);
+  controls.append(cropBtn, removeBgBtn, mosaicBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn, clearBtn);
   container.append(clipboardControl, previewWrapper, previewText, controls, mosaicControls);
   if (isNewSubjectPage) {
     // 合成输入框没有 name，不会被表单提交；容器插在表单之后
@@ -430,12 +443,33 @@
     cropBtn.style.display = 'inline-block';
     removeBgBtn.style.display = 'inline-block';
     mosaicBtn.style.display = 'inline-block';
+    clearBtn.style.display = 'inline-block';
   }
 
   function hideEditButtons() {
     cropBtn.style.display = 'none';
     removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+  }
+
+  // 清除当前待上传图片并复位预览 UI（程序清空 input 不触发 change，复位需自理）
+  function clearPendingImage() {
+    endCropping();
+    endMosaicing();
+    pendingImage = null;
+    currentFile = null;
+    isBgRemoved = false;
+    removeBgBtn.textContent = '去底';
+    originalFileBeforeBgRemove = null;
+    fileInput.value = '';
+    // 转换/下载/读取剪贴板等流程会先展示预览框，必须清掉 src 避免闪现已清除的旧图
+    previewImage.removeAttribute('src');
+    previewWrapper.style.display = 'none';
+    controls.style.display = 'none';
+    mosaicControls.style.display = 'none';
+    if (squarePreview) squarePreview.style.display = 'none';
+    previewText.textContent = '';
   }
 
   // 转换图片为JPG格式
@@ -598,7 +632,6 @@
       if (text.startsWith('//')) text = `https:${text}`;
       const url = new URL(text);
       const ext = url.pathname.split('.').pop().toLowerCase();
-      console.debug(ext);
       return allowedExtensions.includes(ext) ||
                    ['bmp', 'webp', 'tiff', 'svg', 'jpeg', 'avif'].includes(ext);
     } catch {
@@ -948,6 +981,12 @@
   function confirmMosaic(e) {
     e.preventDefault();
     if (!isMosaicing || !tempCanvas || !canvasContainer) return;
+
+    // JPEG 无 alpha，透明区域会被压成黑底：导出前先垫白底（预览与上传文件保持一致）
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    ctx.globalCompositeOperation = 'source-over';
 
     tempCanvas.toBlob(blob => {
       const fileName = currentFile.name.replace(/\.[^/.]+$/, '') + '_mosaic.jpg';
@@ -1390,6 +1429,11 @@
             `import-${Date.now()}.${getImgExt(blob.type)}`,
             { type: blob.type || 'image/jpeg' }
           );
+          // 同步到注入的文件选择框：让输入框显示已选文件而非「未选择文件」；
+          // input 无 name，不会被序列化进创建请求，实际上传仍走 pendingImage
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
           previewText.textContent = '检测到导入封面，处理中…';
           return updatePreview(file);
         })
@@ -1412,6 +1456,8 @@
       }
     });
     coverObserver.observe(document.body, { childList: true, subtree: true });
+    // 导入脚本可能先于本脚本注入封面（observer 只能看到注册之后的变化），先扫一次
+    consumeImportedCover();
   }
   // #endregion
 
@@ -1423,6 +1469,9 @@
 
   // 去底按钮事件
   removeBgBtn.addEventListener('click', toggleRemoveBackground);
+
+  // 清除按钮事件
+  clearBtn.addEventListener('click', clearPendingImage);
 
   // 马赛克相关事件
   mosaicBtn.addEventListener('click', startMosaicing);
@@ -1484,12 +1533,84 @@
     }
   });
 
+  // 全局拖拽：拖入图片文件/图片 URL 即导入；带文件的拖拽必须拦截默认行为，
+  // 否则浏览器会直接打开文件、丢掉已填写的表单
+  const dragHasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  const isEditableTarget = (e) => {
+    const el = e.target;
+    return el instanceof Element && el.closest('textarea, input, [contenteditable]');
+  };
+  const dragImageUrl = (e) => {
+    if (!e.dataTransfer) return '';
+    // uri-list 可能带 # 注释行
+    const url = (e.dataTransfer.getData('text/uri-list') ||
+      e.dataTransfer.getData('text/plain') || '')
+      .split('\n').filter((line) => line && !line.startsWith('#'))[0] || '';
+    return url && isImageUrl(url) ? url : '';
+  };
+
+  document.addEventListener('dragover', function (e) {
+    if (dragHasFiles(e)) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      return;
+    }
+    // 非文件拖拽（多是文本/图片链接）：仅放行拖向输入框的文本，其余拦截防页面跳转
+    if (!isEditableTarget(e)) e.preventDefault();
+  });
+
+  document.addEventListener('drop', async function (e) {
+    if (dragHasFiles(e)) {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        previewText.textContent = '读取拖入的图片...';
+        previewWrapper.style.display = 'flex';
+        const ok = await updatePreview(file);
+        if (ok !== false) {
+          // 与粘贴/URL 下载一致：把处理完成的文件同步回输入框
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(currentFile || file);
+          fileInput.files = dataTransfer.files;
+          isBgRemoved = false;
+          removeBgBtn.textContent = '去底';
+          originalFileBeforeBgRemove = null;
+        }
+      } else {
+        previewText.textContent = '拖入的不是图片文件';
+        previewWrapper.style.display = 'flex';
+      }
+      return;
+    }
+
+    // 图片 URL 拖入（如从其他网页拖动图片）；非编辑目标一律拦截默认行为
+    if (isEditableTarget(e)) return;
+    e.preventDefault();
+    const url = dragImageUrl(e);
+    if (!url) return;
+    try {
+      const imageFile = await fetchImageFromUrl(url);
+      if (imageFile) {
+        await updatePreview(imageFile);
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(currentFile || imageFile);
+        fileInput.files = dataTransfer.files;
+        isBgRemoved = false;
+        removeBgBtn.textContent = '去底';
+        originalFileBeforeBgRemove = null;
+      }
+    } catch (err) {
+      previewText.textContent = err.message || '图片下载失败';
+      previewWrapper.style.display = 'flex';
+    }
+  });
+
   // 添加提示信息
   const hint = document.createElement('div');
   hint.className = 'bgm-hint';
   hint.textContent = isNewSubjectPage
-    ? '提示：选好或粘贴图片后，点原页面的创建按钮，脚本会先创建条目再自动上传封面'
-    : '提示：点击按钮获取剪贴板内容，或直接按 Ctrl+V 粘贴图片';
+    ? '提示：选好、粘贴或拖入图片后，点原页面的创建按钮，脚本会先创建条目再自动上传封面'
+    : '提示：点击按钮获取剪贴板内容，或直接按 Ctrl+V 粘贴，也可拖入图片';
   const hintAnchor = isNewSubjectPage ? getClipboardBtn : fileInput;
   hintAnchor.parentNode.insertBefore(hint, hintAnchor.nextSibling);
 // #endregion
