@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Bangumi 发帖预览
 // @namespace    https://github.com/bangumi/scripts/tree/master/ankopala
-// @version      0.4.2
-// @description  小组发新话题页：点「预览」让正文框原地变成预览，按官方 BBCode 规则渲染，配色跟随站点主题
+// @version      0.5.0
+// @description  发帖 / 回复 / 编辑话题页：点「预览」让正文框原地变成渲染结果，按官方 BBCode 规则
 // @author       ankopala
 // @license      MIT
 // @homepageURL  https://github.com/bangumi/scripts/tree/master/ankopala
@@ -115,14 +115,30 @@
 
   /* ---------------- 找编辑框 ---------------- */
 
-  // 只在「发新话题」的场景挂载：回复框、吐槽框一律跳过
-  function isNewTopicContext(form) {
+  // 只在「写 BBCode 长文」的地方挂载：发新话题、话题回复、编辑已有话题。
+  // 短评、吐槽那种一行小框跳过——它们不需要排版预览，多一个按钮只是噪音。
+  function isEditorContext(el, form) {
     var act = (form && form.getAttribute('action') || '').toLowerCase();
-    if (/new_reply|reply|say|comment\/new/.test(act)) return false;
-    if (/topic\/new|new_topic/.test(act)) return true;
-    if (/new_topic/.test(location.pathname)) return true;
+    var path = location.pathname.toLowerCase();
+
+    // 短评 / 吐槽 / 日志评论
+    if (/say|tsukkomi|comment\/new/.test(act)) return false;
+
+    // 1) 发新话题
+    if (/new_topic|topic\/new/.test(act)) return true;
+    if (/\/new_topic\b/.test(path)) return true;
     // 站内弹窗的表单没有 action 时，用它所在的容器 id 判断
     if (form && form.closest('#rakuen_new_topic, [id*="new_topic"]')) return true;
+
+    // 2) 编辑已有内容（话题 / 日志 / 目录的 /edit 页）
+    if (/\/edit\/?$/.test(path)) return true;
+    if (/edit/.test(act) && /content/.test((el && el.name) || '')) return true;
+
+    // 3) 话题回复
+    if (/reply/.test(act)) return true;
+    if (form && form.closest('#reply, #reply_box, .reply_box')) return true;
+    if (el && /^reply/i.test(el.id || '')) return true;
+
     return false;
   }
 
@@ -140,7 +156,7 @@
     for (var i = 0; i < cands.length; i++) {
       var el = cands[i];
       var form = el.closest('form');
-      if (!isNewTopicContext(form)) continue;
+      if (!isEditorContext(el, form)) continue;
       var isTa = el.tagName === 'TEXTAREA';
       return {
         el: el,
@@ -318,11 +334,30 @@
 
   /* ---------------- 编辑 / 预览 切换 ---------------- */
 
+  // 回复框、编辑页的正文框上方常有一排 BBCode 按钮（B / I / U / 链接 / 图片）。
+  // 预览时 textarea 被藏起来，这排按钮如果还露着，点下去会往隐藏的框里插标记，
+  // 屏幕上毫无反应，看起来像坏了，所以一起收起来。
+  // 判断保持保守：只认紧邻的前一个兄弟，且不能含输入控件、至少两个可点元素。
+  function toolbarOf(el) {
+    var prev = el.previousElementSibling;
+    if (!prev || !prev.querySelectorAll) return null;
+    if (prev.querySelector('textarea, input[type="text"], input[type="submit"], [type="submit"]')) return null;
+    var btns = prev.querySelectorAll('a, button, input[type="button"]');
+    return btns.length >= 2 ? prev : null;
+  }
+
+  function hideChrome(hide) {
+    if (!chromeEl) chromeEl = toolbarOf(editor.el);
+    if (!chromeEl) return;
+    chromeEl.style.display = hide ? 'none' : '';
+  }
+
   var SUBMIT_SEL = 'input[type="submit"], button[type="submit"]';
   var editor, view, body, jumpLink;
   var previewing = false;
   var notedHeight = 0;   // 正文框在可见状态下量到的高度，用来对齐预览块
   var boundEl = null;
+  var chromeEl = null;   // 正文框上方那排 BBCode 按钮（有的话）
   var obsTimer = null;
   var timer = null;
 
@@ -367,17 +402,20 @@
 
     if (on) {
       applyTheme();
-      // 高度对齐正文框，避免切换时页面跳一下
-      var h = Math.max(180, notedHeight || editor.el.offsetHeight || 0);
+      // 回复框、编辑页往往比发帖框矮：下限压到 120，避免切换时页面跳一下
+      var h = Math.max(120, notedHeight || editor.el.offsetHeight || 0);
       view.style.minHeight = h + 'px';
       previewing = true;
       refresh();
       view.classList.add('bgmtp-on');
+      hideChrome(true);
       editor.el.style.display = 'none';
       try { view.scrollIntoView({ block: 'nearest' }); } catch (e) {}
     } else {
       previewing = false;
       view.classList.remove('bgmtp-on');
+      view.style.minHeight = '';
+      hideChrome(false);
       editor.el.style.display = '';
       try { editor.el.focus(); } catch (e) {}
     }
@@ -414,6 +452,7 @@
     if (view && view.parentNode) view.parentNode.removeChild(view);
     if (boundEl && boundEl.style) boundEl.style.display = '';
     view = body = jumpLink = null;
+    chromeEl = null;
     previewing = false;
 
     injectCss();
@@ -429,7 +468,7 @@
     ed.el.addEventListener('keyup', refreshSoon);
     ed.el.addEventListener('paste', function () { setTimeout(refresh, 60); });
 
-    console.log(LOG, '已就绪（正文框来自 ' + ed.why + '），点提交按钮左边的「预览」切换');
+    console.log(LOG, 'v0.5.0 已就绪（正文框来自 ' + ed.why + '），点提交按钮左边的「预览」切换');
     return true;
   }
 
