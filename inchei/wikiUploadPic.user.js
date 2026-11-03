@@ -2,8 +2,8 @@
 // @name         Bangumi wiki 图片上传增强
 // @namespace    https://bgm.tv/group/topic/431819
 // @homepage     https://bgm.tv/group/topic/431819
-// @version      1.6.0
-// @description  支持直接粘贴或拖入，自动转换图片格式，自动压缩，裁切和马赛克，预览；新建条目时自动上传封面
+// @version      1.7.0
+// @description  支持直接粘贴或拖入，自动转换图片格式，自动压缩，旋转、裁切和马赛克，预览；新建条目时自动上传封面
 // @author       You
 // @match        https://bangumi.tv/character/*/upload_photo
 // @match        https://bangumi.tv/character/*/upload_img
@@ -36,15 +36,12 @@
 // @match        https://chii.in/new_subject/*
 // @match        https://chii.in/settings
 // @grant        GM_xmlhttpRequest
-// @grant        GM_getResourceText
-// @require      https://cdn.jsdelivr.net/npm/cropperjs@1.5.12/dist/cropper.min.js
-// @require      https://cdn.jsdelivr.net/npm/image-compressor.js@1.1.4/dist/image-compressor.min.js
-// @resource     cropperCSS https://cdn.jsdelivr.net/npm/cropperjs@1.5.12/dist/cropper.min.css
+// @require      https://cdn.jsdelivr.net/npm/cropperjs@2.3.1/dist/cropper.min.js
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/545636
 // ==/UserScript==
 
-/* global ImageCompressor Cropper */
+/* global Cropper */
 
 (function () {
   'use strict';
@@ -93,10 +90,6 @@
       object-position: top center;
     }
 
-    .bgm-square-image.cropper-mode {
-      transform-origin: left top;
-    }
-
     .bgm-preview-text {
       margin-top: 5px;
       font-size: 0.8em;
@@ -123,11 +116,35 @@
       margin-block: 5px;
     }
 
-    .cropper-modal {
-      opacity: 0 !important;
-    }
-    .cropper-container {
+    .bgm-cropper-canvas {
+      width: 100%;
+      height: 300px;
       border: 1px solid #ddd;
+    }
+
+    .bgm-rotate-handle {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #fff;
+      border-radius: 50%;
+      background-color: #39f;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .bgm-rotate-handle::before {
+      content: '↻';
+      color: #fff;
+      display: block;
+      font-size: 12px;
+      line-height: 15px;
+      text-align: center;
+    }
+
+    .bgm-rotate-handle.active {
+      cursor: grabbing;
     }
 
     .slider-control {
@@ -171,12 +188,6 @@
     `;
   document.head.appendChild(style);
 
-  // 添加Cropper.js CSS
-  const cropperCSS = GM_getResourceText('cropperCSS');
-  const cropperStyle = document.createElement('style');
-  cropperStyle.textContent = cropperCSS;
-  document.head.appendChild(cropperStyle);
-
   // 创建隐藏的粘贴辅助区域（用于兼容模式）
   const pasteHelper = document.createElement('textarea');
   pasteHelper.id = 'pasteHelper';
@@ -205,6 +216,7 @@
 
   const isUploadPhotoPage = window.location.pathname.includes('/upload_photo');
   const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+  const MAX_COMPRESS_DIM = 4096; // 压缩画布最大边长（超出部分等比缩小）
 
   // 创建UI容器
   const container = document.createElement('div');
@@ -254,7 +266,7 @@
 
   const cropBtn = document.createElement('button');
   cropBtn.type = 'button';
-  cropBtn.textContent = '裁切图片';
+  cropBtn.textContent = '裁切和旋转';
   cropBtn.style.display = 'none';
 
   const cropConfirmBtn = document.createElement('button');
@@ -282,10 +294,16 @@
   mosaicCancelBtn.textContent = '取消马赛克';
   mosaicCancelBtn.style.display = 'none';
 
-  const removeBgBtn = document.createElement('button');
-  removeBgBtn.type = 'button';
-  removeBgBtn.textContent = '去底';
-  removeBgBtn.style.display = 'none';
+  // 旋转按钮：仅在裁切模式内显示，由 Cropper 旋转画布
+  const rotateLBtn = document.createElement('button');
+  rotateLBtn.type = 'button';
+  rotateLBtn.textContent = '左旋90°';
+  rotateLBtn.style.display = 'none';
+
+  const rotateRBtn = document.createElement('button');
+  rotateRBtn.type = 'button';
+  rotateRBtn.textContent = '右旋90°';
+  rotateRBtn.style.display = 'none';
 
   const clearBtn = document.createElement('button');
   clearBtn.type = 'button';
@@ -330,7 +348,7 @@
     previewWrapper.appendChild(squarePreview);
   }
 
-  controls.append(cropBtn, removeBgBtn, mosaicBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn, clearBtn);
+  controls.append(cropBtn, mosaicBtn, rotateLBtn, rotateRBtn, cropConfirmBtn, cropCancelBtn, mosaicConfirmBtn, mosaicCancelBtn, clearBtn);
   container.append(clipboardControl, previewWrapper, previewText, controls, mosaicControls);
   if (isNewSubjectPage) {
     // 合成输入框没有 name，不会被表单提交；容器插在表单之后
@@ -351,11 +369,14 @@
   let currentFile = null;
   // 当前已处理完成、可随创建请求上送的图片（预览处理失败时会被置空）
   let pendingImage = null;
-  let originalFileBeforeBgRemove = null;
   let cropper = null;
+  // 旋转拖拽状态：手柄绕画布中心细调任意角度
+  let rotateHandle = null;
+  let isRotating = false;
+  let rotateLastAngle = 0;
+  let rotateCenter = null;
   let isCropping = false;
   let isMosaicing = false;
-  let isBgRemoved = false;
   let mosaicSizePercent = 3;
   let originalCanvas = null;
   let tempCanvas = null;
@@ -366,89 +387,16 @@
   let canvasScale = 1.0;
   // #endregion
 
-  /**
-   * 纯原生JS 去除白底 + 自动裁剪白边
-   * @param {string} base64Img 输入图片base64
-   * @param {number} whiteThresh 白色阈值(0-255)，越大越宽松
-   * @returns {Promise<string>} 处理后透明png base64
-   */
-  async function removeWhiteBgAndTrim(base64Img, whiteThresh = 245) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = function () {
-        const w = img.width;
-        const h = img.height;
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = w;
-        canvas.height = h;
-        ctx.drawImage(img, 0, 0);
-
-        // 获取整张图像素
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
-
-        // 1. 纯白像素置透明
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          if (r > whiteThresh && g > whiteThresh && b > whiteThresh) {
-            data[i + 3] = 0;
-          }
-        }
-        ctx.putImageData(imgData, 0, 0);
-
-        // 2. 寻找有效内容边界，裁白边
-        let minX = w, maxX = 0;
-        let minY = h, maxY = 0;
-        const alphaData = ctx.getImageData(0, 0, w, h).data;
-
-        for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            const idx = (y * w + x) * 4 + 3;
-            if (alphaData[idx] > 0) {
-              minX = Math.min(minX, x);
-              maxX = Math.max(maxX, x);
-              minY = Math.min(minY, y);
-              maxY = Math.max(maxY, y);
-            }
-          }
-        }
-
-        // 无内容兜底
-        if (minX > maxX || minY > maxY) {
-          resolve(canvas.toDataURL('image/png'));
-          return;
-        }
-
-        // 裁剪画布
-        const cropW = maxX - minX + 1;
-        const cropH = maxY - minY + 1;
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = cropW;
-        cropCanvas.height = cropH;
-        const cropCtx = cropCanvas.getContext('2d');
-        cropCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
-
-        resolve(cropCanvas.toDataURL('image/png'));
-      };
-      img.src = base64Img;
-    });
-  }
-
   // #region 工具函数
   // 显示/隐藏编辑按钮
   function showEditButtons() {
     cropBtn.style.display = 'inline-block';
-    removeBgBtn.style.display = 'inline-block';
     mosaicBtn.style.display = 'inline-block';
     clearBtn.style.display = 'inline-block';
   }
 
   function hideEditButtons() {
     cropBtn.style.display = 'none';
-    removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
     clearBtn.style.display = 'none';
   }
@@ -459,9 +407,6 @@
     endMosaicing();
     pendingImage = null;
     currentFile = null;
-    isBgRemoved = false;
-    removeBgBtn.textContent = '去底';
-    originalFileBeforeBgRemove = null;
     fileInput.value = '';
     // 转换/下载/读取剪贴板等流程会先展示预览框，必须清掉 src 避免闪现已清除的旧图
     previewImage.removeAttribute('src');
@@ -543,6 +488,57 @@
     });
   }
 
+  // 以指定质量把图片绘制到 JPEG 画布（透明区域垫白，与格式转换行为一致）
+  function encodeJpeg(img, width, height, quality) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        blob => (blob ? resolve(blob) : reject(new Error('压缩失败'))),
+        'image/jpeg',
+        quality
+      );
+    });
+  }
+
+  // 二分搜索不超出上限的最大压缩质量（约 6 次编码直接逼近目标体积）；
+  // 连最低质量都超限时按体积差距降采样，再来一轮
+  async function compressToTargetSize(img, width, height) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      let lo = 0.05;
+      let hi = 0.95;
+      let best = null;
+      let oversize = null;
+
+      while (hi - lo > 0.02) {
+        const mid = (lo + hi) / 2;
+        const blob = await encodeJpeg(img, width, height, mid);
+        if (blob.size <= MAX_FILE_SIZE) {
+          best = blob;
+          lo = mid;
+        } else {
+          oversize = blob;
+          hi = mid;
+        }
+      }
+
+      if (best) {
+        return best;
+      }
+
+      const ratio = Math.sqrt(MAX_FILE_SIZE / oversize.size);
+      width = Math.max(64, Math.round(width * ratio));
+      height = Math.max(64, Math.round(height * ratio));
+    }
+
+    throw new Error('压缩失败');
+  }
+
   // 压缩图片
   function compressImage(file) {
     return new Promise((resolve, reject) => {
@@ -553,60 +549,32 @@
 
       previewText.textContent = '正在压缩图片...';
 
-      new ImageCompressor(file, {
-        quality: 0.8,
-        maxWidth: 2000,
-        maxHeight: 2000,
-        success(result) {
-          if (result.size > MAX_FILE_SIZE) {
-            new ImageCompressor(result, {
-              quality: 0.5,
-              maxWidth: 1600,
-              maxHeight: 1600,
-              success(secondResult) {
-                if (secondResult.size > MAX_FILE_SIZE) {
-                  new ImageCompressor(secondResult, {
-                    quality: 0.3,
-                    maxWidth: 1200,
-                    maxHeight: 1200,
-                    success(finalResult) {
-                      const compressedFile = new File(
-                        [finalResult],
-                        file.name,
-                        { type: file.type }
-                      );
-                      resolve(compressedFile);
-                    },
-                    error() {
-                      reject(new Error('压缩失败'));
-                    }
-                  });
-                } else {
-                  const compressedFile = new File(
-                    [secondResult],
-                    file.name,
-                    { type: file.type }
-                  );
-                  resolve(compressedFile);
-                }
-              },
-              error() {
-                reject(new Error('压缩失败'));
-              }
-            });
-          } else {
-            const compressedFile = new File(
-              [result],
-              file.name,
-              { type: file.type }
-            );
-            resolve(compressedFile);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onerror = () => reject(new Error('压缩失败'));
+        img.onload = () => {
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
+          const longEdge = Math.max(width, height);
+          if (longEdge > MAX_COMPRESS_DIM) {
+            const k = MAX_COMPRESS_DIM / longEdge;
+            width = Math.round(width * k);
+            height = Math.round(height * k);
           }
-        },
-        error() {
-          reject(new Error('压缩失败'));
-        }
-      });
+
+          compressToTargetSize(img, width, height)
+            .then(blob => {
+              const baseName = file.name.replace(/\.[^/.]+$/, '');
+              resolve(new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' }));
+            })
+            .catch(reject);
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('读取文件失败'));
+      reader.readAsDataURL(file);
     });
   }
 
@@ -689,50 +657,104 @@
     if (!squarePreviewImage) return;
 
     if (isCropping && cropper) {
-      const canvas = cropper.getCroppedCanvas();
-      if (!canvas) return;
-
-      const scale = 100 / canvas.width;
-      squarePreviewImage.src = canvas.toDataURL();
-      squarePreviewImage.style.width = `${canvas.width * scale}px`;
-      squarePreviewImage.style.height = `${canvas.height * scale}px`;
-      squarePreviewImage.style.left = '50%';
-      squarePreviewImage.style.transform = 'translateX(-50%)';
-      squarePreviewImage.classList.add('cropper-mode');
-    } else {
-      squarePreviewImage.src = previewImage.src;
-      squarePreviewImage.style.width = '100%';
-      squarePreviewImage.style.height = '100%';
-      squarePreviewImage.style.left = '0';
-      squarePreviewImage.style.transform = 'none';
-      squarePreviewImage.classList.remove('cropper-mode');
+      const selection = cropper.getCropperSelection();
+      if (!selection || !selection.width || !selection.height) return;
+      // 选框内容异步渲染进正方形预览，切换/销毁后跳过陈旧结果
+      selection.$toCanvas().then((canvas) => {
+        if (!isCropping || !cropper) return;
+        squarePreviewImage.src = canvas.toDataURL();
+      }).catch(() => {});
+      return;
     }
+
+    squarePreviewImage.src = previewImage.src;
   }
   // #endregion
 
   // #region 裁切功能
-  function initCropper() {
-    previewImage.style.maxHeight = '500px';
+  // Cropper.js v2 模板：整图 contain 居中，选框覆盖全幅且可移动/缩放，设置页锁 1:1
+  function buildCropperTemplate() {
+    const aspectRatio = location.pathname === '/settings' ? ' aspect-ratio="1"' : '';
+    return `<cropper-canvas class="bgm-cropper-canvas" background>
+  <cropper-image initial-fit="contain" rotatable scalable translatable></cropper-image>
+  <cropper-shade hidden></cropper-shade>
+  <cropper-handle action="select" plain></cropper-handle>
+  <cropper-selection initial-coverage="1"${aspectRatio} movable resizable zoomable>
+    <cropper-grid role="grid" bordered covered></cropper-grid>
+    <cropper-crosshair centered></cropper-crosshair>
+    <cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>
+    <cropper-handle action="n-resize"></cropper-handle>
+    <cropper-handle action="e-resize"></cropper-handle>
+    <cropper-handle action="s-resize"></cropper-handle>
+    <cropper-handle action="w-resize"></cropper-handle>
+    <cropper-handle action="ne-resize"></cropper-handle>
+    <cropper-handle action="nw-resize"></cropper-handle>
+    <cropper-handle action="se-resize"></cropper-handle>
+    <cropper-handle action="sw-resize"></cropper-handle>
+  </cropper-selection>
+</cropper-canvas>`;
+  }
 
+  // 把选框对齐到图片当前变换包围盒的 contain 边界（选框覆盖全幅）
+  function syncSelectionToImage() {
+    if (!cropper) return;
+
+    const bbox = getImageBBox();
+    const canvasEl = cropper.getCropperCanvas();
+    const selection = cropper.getCropperSelection();
+    if (!bbox || !canvasEl || !selection) return;
+
+    const cw = canvasEl.offsetWidth;
+    const ch = canvasEl.offsetHeight;
+    const scale = Math.min(cw / bbox[0], ch / bbox[1]);
+    const dispW = bbox[0] * scale;
+    const dispH = bbox[1] * scale;
+
+    selection.$change((cw - dispW) / 2, (ch - dispH) / 2, dispW, dispH);
+  }
+
+  function initCropper() {
     if (cropper) {
       cropper.destroy();
     }
 
     isCropping = true;
-    cropper = new Cropper(previewImage, {
-      viewMode: 1,
-      autoCropArea: 1,
-      responsive: true,
-      movable: true,
-      rotatable: true,
-      scalable: true,
-      zoomable: true,
-      background: false,
-      ready: updateSquarePreview,
-      cropend: updateSquarePreview,
-      aspectRatio: location.pathname === '/settings' ? 1 : NaN,
-    });
+    previewImage.style.display = 'none';
+    cropper = Cropper.createCropper(previewImage, { template: buildCropperTemplate() });
 
+    const cropperImage = cropper.getCropperImage();
+    const cropperCanvas = cropper.getCropperCanvas();
+    const selection = cropper.getCropperSelection();
+    if (cropperImage) {
+      // v1 的 ready 事件
+      cropperImage.$ready(() => {
+        syncSelectionToImage();
+        positionRotateHandle();
+        updateSquarePreview();
+      });
+    }
+    if (cropperCanvas) {
+      // v1 的 cropend 事件
+      cropperCanvas.addEventListener('actionend', updateSquarePreview);
+    }
+
+    // 裁切框上方旋转手柄：拖拽细调任意角度
+    if (rotateHandle) {
+      rotateHandle.remove();
+    }
+    if (cropperCanvas && selection) {
+      rotateHandle = document.createElement('div');
+      rotateHandle.className = 'bgm-rotate-handle';
+      rotateHandle.title = '拖动调整旋转角度';
+      cropperCanvas.appendChild(rotateHandle);
+      bindRotateHandleEvents(rotateHandle);
+      selection.addEventListener('change', positionRotateHandle);
+    } else {
+      rotateHandle = null;
+    }
+
+    syncSelectionToImage();
+    positionRotateHandle();
     updateSquarePreview();
   }
 
@@ -742,43 +764,52 @@
 
     initCropper();
     cropBtn.style.display = 'none';
-    removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
+    rotateLBtn.style.display = 'inline-block';
+    rotateRBtn.style.display = 'inline-block';
     cropConfirmBtn.style.display = 'inline-block';
     cropCancelBtn.style.display = 'inline-block';
-    previewText.textContent = '调整裁切区域，点击"确认裁切"';
+    previewText.textContent = '调整裁切区域或旋转图片，点击"确认裁切"';
   }
 
-  function confirmCrop(e) {
+  async function confirmCrop(e) {
     e.preventDefault();
     if (!cropper || !isCropping) return;
 
-    cropper.getCroppedCanvas().toBlob(blob => {
+    const selection = cropper.getCropperSelection();
+    if (!selection || !selection.width || !selection.height) return;
+
+    try {
+      // 把选框映射回近似自然分辨率导出，避免按预览尺寸放大失真
+      const dims = getExportDims();
+      if (!dims) return;
+      const canvas = await selection.$toCanvas({ width: dims[0], height: dims[1] });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) {
+        throw new Error('裁切结果导出失败');
+      }
+
       const fileName = currentFile.name.replace(/\.[^/.]+$/, '') + '_cropped.png';
       const croppedFile = new File([blob], fileName, { type: 'image/png' });
+      const compressedFile = await compressImage(croppedFile);
 
-      compressImage(croppedFile).then(compressedFile => {
-        currentFile = compressedFile;
-        // 去底状态重置
-        isBgRemoved = false;
-        removeBgBtn.textContent = '去底';
-        originalFileBeforeBgRemove = null;
+      currentFile = compressedFile;
 
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(currentFile);
-        fileInput.files = dataTransfer.files;
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(currentFile);
+      fileInput.files = dataTransfer.files;
 
-        updatePreview(currentFile);
-        endCropping();
-      }).catch(() => {
-        previewText.textContent = '裁切后压缩失败';
-      });
-    }, 'image/png');
+      updatePreview(currentFile);
+      endCropping();
+    } catch (err) {
+      previewText.textContent = `裁切失败：${err.message || err}`;
+    }
   }
 
   function cancelCrop(e) {
     e.preventDefault();
     if (!isCropping) return;
+    // 旋转仅作用于预览层（未写回文件），取消即自动放弃旋转与裁切
     updatePreview(currentFile);
     endCropping();
   }
@@ -786,66 +817,126 @@
   function endCropping() {
     isCropping = false;
     if (cropper) {
-      previewImage.style.maxHeight = '300px';
       cropper.destroy();
       cropper = null;
     }
+    rotateHandle = null;
+    isRotating = false;
+    previewImage.style.display = '';
     showEditButtons();
+    rotateLBtn.style.display = 'none';
+    rotateRBtn.style.display = 'none';
     cropConfirmBtn.style.display = 'none';
     cropCancelBtn.style.display = 'none';
     updateSquarePreview();
   }
   // #endregion
 
-  // #region 去底功能
-  async function toggleRemoveBackground(e) {
+  // #region 旋转功能
+  // 图片经当前变换后在画布坐标系中的轴对齐包围盒（含旋转与缩放）
+  function getImageBBox() {
+    const cropperImage = cropper && cropper.getCropperImage();
+    if (!cropperImage) return null;
+
+    const w0 = previewImage.naturalWidth;
+    const h0 = previewImage.naturalHeight;
+    if (!w0 || !h0) return null;
+
+    const [a, b, c, d] = cropperImage.$getTransform();
+    return [
+      Math.abs(a) * w0 + Math.abs(c) * h0,
+      Math.abs(b) * w0 + Math.abs(d) * h0,
+    ];
+  }
+
+  // 选框导出尺寸：按变换缩放分量映射回近似自然分辨率
+  function getExportDims() {
+    const cropperImage = cropper && cropper.getCropperImage();
+    const selection = cropper && cropper.getCropperSelection();
+    if (!cropperImage || !selection) return null;
+
+    const [a, b] = cropperImage.$getTransform();
+    const scale = Math.hypot(a, b) || 1;
+    return [
+      Math.round(selection.width / scale),
+      Math.round(selection.height / scale),
+    ];
+  }
+
+  // 旋转手柄跟随选框顶边中点
+  function positionRotateHandle() {
+    if (!rotateHandle || !cropper) return;
+
+    const selection = cropper.getCropperSelection();
+    if (!selection) return;
+
+    rotateHandle.style.transform = `translate(${selection.x + selection.width / 2 - 8}px, ${selection.y - 22}px)`;
+  }
+
+  // 拖拽手柄绕画布中心实时旋转（自定义手势，v2 未内置单指针旋转）
+  function bindRotateHandleEvents(handle) {
+    const angleOf = (event) => Math.atan2(
+      event.clientY - rotateCenter.y,
+      event.clientX - rotateCenter.x
+    );
+
+    handle.addEventListener('pointerdown', (event) => {
+      if (isMosaicing || !isCropping || !cropper) return;
+      const cropperImage = cropper.getCropperImage();
+      if (!cropperImage) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      const rect = cropper.getCropperCanvas().getBoundingClientRect();
+      rotateCenter = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      rotateLastAngle = angleOf(event);
+      isRotating = true;
+      handle.classList.add('active');
+      handle.setPointerCapture(event.pointerId);
+    });
+
+    handle.addEventListener('pointermove', (event) => {
+      if (!isRotating || !cropper) return;
+      const cropperImage = cropper.getCropperImage();
+      if (!cropperImage) return;
+
+      const angle = angleOf(event);
+      let delta = angle - rotateLastAngle;
+      // 拖过正上方跨越 ±π 时归一化，避免角度跳变
+      if (delta > Math.PI) delta -= 2 * Math.PI;
+      if (delta < -Math.PI) delta += 2 * Math.PI;
+      rotateLastAngle = angle;
+      cropperImage.$rotate(delta);
+    });
+
+    const endRotate = () => {
+      if (!isRotating) return;
+      isRotating = false;
+      handle.classList.remove('active');
+      updateSquarePreview();
+    };
+    handle.addEventListener('pointerup', endRotate);
+    handle.addEventListener('pointercancel', endRotate);
+  }
+
+  // 裁切模式内旋转：v2 旋转是纯 transform 不裁画布，随“确认裁切”经 selection.$toCanvas 一并写回文件
+  function handleRotate(e) {
     e.preventDefault();
-    if (!currentFile || isCropping || isMosaicing) return;
+    if (!currentFile || !isCropping || !cropper) return;
 
-    try {
-      if (!isBgRemoved) {
-        previewText.textContent = '正在去除白底...';
-        originalFileBeforeBgRemove = currentFile;
+    const cropperImage = cropper.getCropperImage();
+    if (!cropperImage) return;
 
-        const reader = new FileReader();
-        reader.readAsDataURL(currentFile);
-        reader.onload = async function (e) {
-          const base64 = e.target.result;
-          const resultBase64 = await removeWhiteBgAndTrim(base64);
-
-          const res = await fetch(resultBase64);
-          const blob = await res.blob();
-          const newFile = new File([blob], currentFile.name.replace(/\.\w+$/, '_nobg.png'), { type: 'image/png' });
-
-          currentFile = newFile;
-          isBgRemoved = true;
-          removeBgBtn.textContent = '取消去底';
-
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(currentFile);
-          fileInput.files = dataTransfer.files;
-
-          await updatePreview(currentFile);
-          previewText.textContent = '已去除白底并自动裁边';
-        };
-      } else {
-        if (originalFileBeforeBgRemove) {
-          currentFile = originalFileBeforeBgRemove;
-          isBgRemoved = false;
-          removeBgBtn.textContent = '去底';
-          originalFileBeforeBgRemove = null;
-
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(currentFile);
-          fileInput.files = dataTransfer.files;
-
-          await updatePreview(currentFile);
-          previewText.textContent = '已恢复原始图片';
-        }
-      }
-    } catch (err) {
-      previewText.textContent = '去底失败：' + err.message;
-    }
+    const deg = e.currentTarget === rotateRBtn ? 90 : -90;
+    cropperImage.$rotate(`${deg}deg`);
+    cropperImage.$center('contain');
+    syncSelectionToImage();
+    positionRotateHandle();
+    updateSquarePreview();
+    previewText.textContent = '已旋转，可继续调整裁切区域或再次旋转';
   }
   // #endregion
 
@@ -924,7 +1015,6 @@
     initMosaic();
 
     cropBtn.style.display = 'none';
-    removeBgBtn.style.display = 'none';
     mosaicBtn.style.display = 'none';
     mosaicConfirmBtn.style.display = 'inline-block';
     mosaicCancelBtn.style.display = 'inline-block';
@@ -994,10 +1084,6 @@
 
       compressImage(mosaicFile).then(compressedFile => {
         currentFile = compressedFile;
-        // 去底状态重置
-        isBgRemoved = false;
-        removeBgBtn.textContent = '去底';
-        originalFileBeforeBgRemove = null;
 
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(currentFile);
@@ -1096,6 +1182,11 @@
       reader.readAsDataURL(compressedFile);
       currentFile = compressedFile;
       pendingImage = compressedFile;
+
+      // 同步处理结果到文件选择框（upload_photo 等页面直接提交 input 里的文件）
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(compressedFile);
+      fileInput.files = dataTransfer.files;
       return true;
     } catch (error) {
       previewText.textContent = `处理失败: ${error.message}`;
@@ -1122,10 +1213,6 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(currentFile || blob);
               fileInput.files = dataTransfer.files;
-              // 重置去底状态
-              isBgRemoved = false;
-              removeBgBtn.textContent = '去底';
-              originalFileBeforeBgRemove = null;
               return true;
             }
           }
@@ -1149,10 +1236,6 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(currentFile || imageFile);
               fileInput.files = dataTransfer.files;
-              // 重置去底状态
-              isBgRemoved = false;
-              removeBgBtn.textContent = '去底';
-              originalFileBeforeBgRemove = null;
               return true;
             }
           } catch (error) {
@@ -1192,10 +1275,6 @@
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(currentFile || file);
                 fileInput.files = dataTransfer.files;
-                // 重置去底状态
-                isBgRemoved = false;
-                removeBgBtn.textContent = '去底';
-                originalFileBeforeBgRemove = null;
                 return;
               }
             }
@@ -1213,10 +1292,6 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(currentFile || imageFile);
               fileInput.files = dataTransfer.files;
-              // 重置去底状态
-              isBgRemoved = false;
-              removeBgBtn.textContent = '去底';
-              originalFileBeforeBgRemove = null;
               return;
             }
           } else {
@@ -1467,8 +1542,9 @@
   cropConfirmBtn.addEventListener('click', confirmCrop);
   cropCancelBtn.addEventListener('click', cancelCrop);
 
-  // 去底按钮事件
-  removeBgBtn.addEventListener('click', toggleRemoveBackground);
+  // 旋转按钮事件
+  rotateLBtn.addEventListener('click', handleRotate);
+  rotateRBtn.addEventListener('click', handleRotate);
 
   // 清除按钮事件
   clearBtn.addEventListener('click', clearPendingImage);
@@ -1507,9 +1583,6 @@
   fileInput.addEventListener('change', async function () {
     if (this.files.length > 0) {
       await updatePreview(this.files[0]);
-      isBgRemoved = false;
-      removeBgBtn.textContent = '去底';
-      originalFileBeforeBgRemove = null;
     } else {
       hideEditButtons();
     }
@@ -1572,9 +1645,6 @@
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(currentFile || file);
           fileInput.files = dataTransfer.files;
-          isBgRemoved = false;
-          removeBgBtn.textContent = '去底';
-          originalFileBeforeBgRemove = null;
         }
       } else {
         previewText.textContent = '拖入的不是图片文件';
@@ -1595,9 +1665,6 @@
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(currentFile || imageFile);
         fileInput.files = dataTransfer.files;
-        isBgRemoved = false;
-        removeBgBtn.textContent = '去底';
-        originalFileBeforeBgRemove = null;
       }
     } catch (err) {
       previewText.textContent = err.message || '图片下载失败';
