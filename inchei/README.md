@@ -323,7 +323,7 @@
 | Greasy Fork | [549613](https://greasyfork.org/zh-CN/scripts/549613) |
 | 组件 | [3465](https://bgm.tv/dev/app/3465) |
 
-## 创建条目重名检查 `0.3.3`
+## 创建条目重名检查 `0.2.0`
 创建条目前用搜索 API 查重，存在同名条目时要求先修改条目名；书籍另用 ISBN 查重
 
 | 载点 | 链接 |
