@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Bangumi 发帖预览
 // @namespace    https://github.com/bangumi/scripts/tree/master/ankopala
-// @version      0.5.0
-// @description  发帖 / 回复 / 编辑话题页：点「预览」让正文框原地变成渲染结果，按官方 BBCode 规则
+// @version      0.7.0
+// @description  小组/条目讨论/日志的 发帖·回复·编辑·评论：点「预览」让正文框原地变成渲染结果，按官方 BBCode 规则
 // @author       ankopala
 // @license      MIT
 // @homepageURL  https://github.com/bangumi/scripts/tree/master/ankopala
@@ -10,11 +10,26 @@
 // @match        https://bgm.tv/group/*
 // @match        https://bangumi.tv/group/*
 // @match        https://chii.in/group/*
+// @match        https://bgm.tv/subject/*/topic/new*
+// @match        https://bangumi.tv/subject/*/topic/new*
+// @match        https://chii.in/subject/*/topic/new*
+// @match        https://bgm.tv/subject/topic/*
+// @match        https://bangumi.tv/subject/topic/*
+// @match        https://chii.in/subject/topic/*
+// @match        https://bgm.tv/blog/*
+// @match        https://bangumi.tv/blog/*
+// @match        https://chii.in/blog/*
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
 
 /*
+ * 支持的页面（都要有「一段 BBCode 长文」+ 提交按钮才挂）：
+ *   小组     发新话题 /group/<id>/new_topic、话题回复、编辑话题
+ *   条目     讨论版发新话题 /subject/<id>/topic/new、讨论帖里回复 /subject/topic/<id>
+ *   日志     写日志与条目评论 /blog/create（?review=<id> 就是评论）、日志页回复 /blog/<id>、编辑日志
+ * 短评、吐槽这类一行小框不挂。
+ *
  * 渲染规则来自官方帮助页 https://bgm.tv/help/bbcode 的「显示效果」列，
  * 是站点渲染器实际吐出来的 HTML，所以预览和发帖后的结果一致：
  *
@@ -115,7 +130,8 @@
 
   /* ---------------- 找编辑框 ---------------- */
 
-  // 只在「写 BBCode 长文」的地方挂载：发新话题、话题回复、编辑已有话题。
+  // 只在「写 BBCode 长文」的地方挂载：发新话题、话题回复、编辑已有话题、
+  // 条目讨论发新话题、写日志与条目评论。
   // 短评、吐槽那种一行小框跳过——它们不需要排版预览，多一个按钮只是噪音。
   function isEditorContext(el, form) {
     var act = (form && form.getAttribute('action') || '').toLowerCase();
@@ -124,27 +140,35 @@
     // 短评 / 吐槽 / 日志评论
     if (/say|tsukkomi|comment\/new/.test(act)) return false;
 
-    // 1) 发新话题
+    // 1) 发新话题（小组 /group/<id>/new_topic 与条目讨论 /subject/<id>/topic/new）
     if (/new_topic|topic\/new/.test(act)) return true;
     if (/\/new_topic\b/.test(path)) return true;
+    if (/^\/subject\/\d+\/topic\/new/.test(path)) return true;
     // 站内弹窗的表单没有 action 时，用它所在的容器 id 判断
     if (form && form.closest('#rakuen_new_topic, [id*="new_topic"]')) return true;
 
-    // 2) 编辑已有内容（话题 / 日志 / 目录的 /edit 页）
+    // 2) 日志：/blog/create（?review=<id> 就是给该条目写评论）、日志页 /blog/<id>、
+    //    编辑日志 /blog/<id>/edit——这三个页面上唯一的 textarea 就是正文或回复框
+    if (/^\/blog\//.test(path)) return true;
+
+    // 3) 编辑已有内容（话题 / 日志 / 目录的 /edit 页）
     if (/\/edit\/?$/.test(path)) return true;
     if (/edit/.test(act) && /content/.test((el && el.name) || '')) return true;
 
-    // 3) 话题回复
+    // 4) 话题回复：小组话题、条目讨论帖
     if (/reply/.test(act)) return true;
     if (form && form.closest('#reply, #reply_box, .reply_box')) return true;
     if (el && /^reply/i.test(el.id || '')) return true;
+    if (/^\/subject\/topic\/\d+/.test(path)) return true;
 
     return false;
   }
 
   function findEditor() {
+    // 不只看 name="content"：各页面正文框的 name/id 不统一（日志页是 blog_content 之类），
+    // 所以把所有 textarea 都收进来，靠 isEditorContext() 按场景筛，再按面积取最大的那个
     var cands = Array.prototype.slice.call(
-      document.querySelectorAll('textarea[name="content"], [contenteditable="true"]')
+      document.querySelectorAll('textarea, [contenteditable="true"]')
     );
 
     // 面积最大的优先，避免抓到小号的搜索框
@@ -468,7 +492,7 @@
     ed.el.addEventListener('keyup', refreshSoon);
     ed.el.addEventListener('paste', function () { setTimeout(refresh, 60); });
 
-    console.log(LOG, 'v0.5.0 已就绪（正文框来自 ' + ed.why + '），点提交按钮左边的「预览」切换');
+    console.log(LOG, 'v0.7.0 已就绪（正文框来自 ' + ed.why + '），点提交按钮左边的「预览」切换');
     return true;
   }
 
@@ -476,7 +500,7 @@
   (function attempt() {
     if (boot()) return;
     if (++tries > 10) {
-      console.log(LOG, '这个页面没找到「发新话题」的编辑框，什么也没做。');
+      console.log(LOG, '这个页面没找到可预览的编辑框，什么也没做。');
       return;
     }
     setTimeout(attempt, tries < 4 ? 200 : 600);
