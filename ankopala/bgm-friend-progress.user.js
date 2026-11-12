@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目页好友进度
 // @namespace    https://github.com/ankopala/bgm-friend-progress
-// @version      0.1.11
+// @version      0.1.12
 // @description  在番剧条目页列出好友的收藏状态与集数进度（谁在看、看到第几话）
 // @author       ankopala
 // @match        https://bgm.tv/subject/*
@@ -646,7 +646,7 @@
   #bfp .bfp-filters button.on{ background:var(--bfp-accent); border-color:var(--bfp-accent); color:#fff; }
   #bfp ul.bfp-list{ list-style:none; margin:0; padding:0; display:grid;
     grid-template-columns:repeat(auto-fill,minmax(228px,1fr)); column-gap:20px; }
-  #bfp li.bfp-row{ display:grid; grid-template-columns:16px minmax(0,1fr) auto 40px 36px;
+  #bfp li.bfp-row{ display:grid; grid-template-columns:16px minmax(0,96px) auto minmax(20px,1fr) 36px;
     align-items:center; gap:4px; padding:5px 0; font-size:12px; border-radius:4px; }
   #bfp li.bfp-row:hover{ background:var(--bfp-hover); }
   #bfp .bfp-ava{ width:16px; height:16px; border-radius:50%; object-fit:cover;
