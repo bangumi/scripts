@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         条目页好友进度
 // @namespace    https://github.com/ankopala/bgm-friend-progress
-// @version      0.1.12
+// @version      0.1.13
 // @description  在番剧条目页列出好友的收藏状态与集数进度（谁在看、看到第几话）
 // @author       ankopala
 // @match        https://bgm.tv/subject/*
@@ -28,13 +28,32 @@
     gap: 220,                    // 每次请求之间的间隔(ms)
   };
 
-  const STATUS = {
-    1: { label: '想看', cls: 'wish' },
-    2: { label: '看过', cls: 'done' },
-    3: { label: '在看', cls: 'doing' },
-    4: { label: '搁置', cls: 'hold' },
-    5: { label: '抛弃', cls: 'drop' },
+  // 条目类型的收藏动词。bgm 用 RDFa 的 typeof="v:Movie|Book|Music|Game" 标注类型，
+  // 三次元与动画同为 Movie、用词一致，所以只需要四组。
+  const VERB_BY_TYPEOF = { Movie: 'kan', Book: 'du', Music: 'ting', Game: 'wan' };
+  const WORD = {
+    kan: ['想看', '看过', '在看'],
+    du: ['想读', '读过', '在读'],
+    ting: ['想听', '听过', '在听'],
+    wan: ['想玩', '玩过', '在玩'],
   };
+  const CLS = { 1: 'wish', 2: 'done', 3: 'doing', 4: 'hold', 5: 'drop' };
+
+  let VERB = 'kan'; // bootstrap 时按条目类型改写
+
+  function detectVerb() {
+    const el = document.querySelector('[typeof^="v:"]');
+    const m = el && (el.getAttribute('typeof') || '').match(/v:(\w+)/);
+    if (m && VERB_BY_TYPEOF[m[1]]) return VERB_BY_TYPEOF[m[1]];
+
+    // 兜底：从「谁看这部动画?」「谁玩这部游戏?」这类标题推断
+    const h = document.querySelector('#subjectPanelCollect h2');
+    const t = (h && h.textContent) || '';
+    if (/谁听/.test(t)) return 'ting';
+    if (/谁玩/.test(t)) return 'wan';
+    if (/谁读/.test(t)) return 'du';
+    return 'kan';
+  }
 
   const ORDER = { 3: 0, 2: 1, 1: 2, 4: 3, 5: 4 };
 
@@ -703,17 +722,21 @@
     error: '',
   };
 
-  const PANEL_BODY =
-    '<div class="bfp-meta" id="bfp-meta"></div>' +
-    '<div class="bfp-filters" id="bfp-filters">' +
-    '  <button type="button" data-f="all" class="on">全部</button>' +
-    '  <button type="button" data-f="3">在看</button>' +
-    '  <button type="button" data-f="2">看过</button>' +
-    '  <button type="button" data-f="4">搁置</button>' +
-    '  <button type="button" data-f="5">抛弃</button>' +
-    '  <a href="javascript:;" id="bfp-refresh">刷新</a>' +
-    '</div>' +
-    '<div id="bfp-body"><div class="bfp-msg">正在读取好友列表…</div></div>';
+  function panelBody() {
+    const w = WORD[VERB] || WORD.kan;
+    return (
+      '<div class="bfp-meta" id="bfp-meta"></div>' +
+      '<div class="bfp-filters" id="bfp-filters">' +
+      '  <button type="button" data-f="all" class="on">全部</button>' +
+      '  <button type="button" data-f="3">' + w[2] + '</button>' +
+      '  <button type="button" data-f="2">' + w[1] + '</button>' +
+      '  <button type="button" data-f="4">搁置</button>' +
+      '  <button type="button" data-f="5">抛弃</button>' +
+      '  <a href="javascript:;" id="bfp-refresh">刷新</a>' +
+      '</div>' +
+      '<div id="bfp-body"><div class="bfp-msg">正在读取好友列表…</div></div>'
+    );
+  }
 
   /**
    * wide=true 时用条目页正栏的分区结构（.subject_section + h2.subtitle），
@@ -727,11 +750,11 @@
     if (wide) {
       el.className = 'subject_section clearit';
       el.innerHTML =
-        '<div class="clearit"><h2 class="subtitle">好友进度</h2></div>' + PANEL_BODY;
+        '<div class="clearit"><h2 class="subtitle">好友进度</h2></div>' + panelBody();
     } else {
       el.className = 'SimpleSidePanel';
       el.innerHTML =
-        '<h2>好友进度</h2>' + PANEL_BODY;
+        '<h2>好友进度</h2>' + panelBody();
     }
     return el;
   }
@@ -770,13 +793,14 @@
   }
 
   function statusTag(type) {
-    const s = STATUS[type];
-    return s ? s.label : '未收藏';
+    if (type === 4) return '搁置';
+    if (type === 5) return '抛弃';
+    const w = WORD[VERB] || WORD.kan;
+    return w[type - 1] || '未收藏';
   }
 
   function statusCls(type) {
-    const s = STATUS[type];
-    return s ? s.cls : 'drop';
+    return CLS[type] || 'drop';
   }
 
   function sortResults(list) {
@@ -861,7 +885,7 @@
       ? '已查询 ' + queried + ' / ' + total + ' 位好友' +
         (state.friendSource === 'subject' ? '（条目内反查）' : '') +
         (state.pending ? '（进行中…）' : '') +
-        (doing ? '，' + doing + ' 人在看' : '') +
+        (doing ? '，' + doing + ' 人' + WORD[VERB][2] : '') +
         (state.moreCount ? '；另有 ' + state.moreCount + ' 位超出上限未查询' : '')
       : '';
 
@@ -877,13 +901,15 @@
       const tag = statusTag(r.type);
       const cls = statusCls(r.type);
       const ep = r.ep || 0;
+      // 游戏、音乐不按集数推进，只显示状态和评分
+      const hasEp = VERB === 'kan' || VERB === 'du';
       let bar = '';
       let num = '';
-      if (r.type === 3 && ep > 0) {
+      if (hasEp && r.type === 3 && ep > 0) {
         const pct = totalEps ? Math.min(100, Math.round((ep / totalEps) * 100)) : 100;
         bar = '<span class="bfp-track"><i style="width:' + pct + '%"></i></span>';
         num = totalEps ? ep + '/' + totalEps : ep + ' 话';
-      } else if (r.type === 3) {
+      } else if (hasEp && r.type === 3) {
         bar = '<span class="bfp-track"><i style="width:0%"></i></span>';
         num = '0' + (totalEps ? '/' + totalEps : '');
       } else {
@@ -971,7 +997,9 @@
     renderSoon();
 
     // 总话数：优先页面，拿不到就算了（进度条退化为纯数字）
-    if (!state.total) {
+    // 游戏/音乐没有集数概念，直接跳过
+    const needEps = VERB === 'kan' || VERB === 'du';
+    if (needEps && !state.total) {
       state.total = getTotalEps();
       if (!state.total) {
         try {
@@ -1068,6 +1096,7 @@
     state.subjectId = getSubjectId();
     if (!state.subjectId) return;
 
+    VERB = detectVerb();
     state.me = getMe();
     mount();
     bind();
