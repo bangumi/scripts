@@ -392,7 +392,7 @@
 | Greasy Fork | 无 |
 | 组件 | 无 |
 
-## Bangumi wiki 图片上传增强 `1.7.0`
+## Bangumi wiki 图片上传增强 `1.8.0`
 支持直接粘贴或拖入，自动转换图片格式，自动压缩，旋转、裁切和马赛克，预览；新建条目时自动上传封面
 
 - 讨论页：https://bgm.tv/group/topic/431819
@@ -413,15 +413,4 @@
 | GitHub | [wikiVolSort.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolSort.user.js?raw=true) |
 | Greasy Fork | 无 |
 | 组件 | [5411](https://bgm.tv/dev/app/5411) |
-
-## 由单行本创建系列 `0.1.1`
-从单行本第一卷创建系列条目；封面支持交给 wikiUploadPic 上传
-
-- 讨论页：https://bgm.tv/group/topic/451224
-
-| 载点 | 链接 |
-|------|------|
-| GitHub | [wikiVolToSeries.user.js](https://github.com/bangumi/scripts/blob/master/inchei/wikiVolToSeries.user.js?raw=true) |
-| Greasy Fork | 无 |
-| 组件 | 无 |
 

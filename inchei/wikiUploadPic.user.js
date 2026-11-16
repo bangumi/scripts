@@ -2,7 +2,7 @@
 // @name         Bangumi wiki 图片上传增强
 // @namespace    https://bgm.tv/group/topic/431819
 // @homepage     https://bgm.tv/group/topic/431819
-// @version      1.7.0
+// @version      1.8.0
 // @description  支持直接粘贴或拖入，自动转换图片格式，自动压缩，旋转、裁切和马赛克，预览；新建条目时自动上传封面
 // @author       You
 // @match        https://bangumi.tv/character/*/upload_photo
@@ -36,7 +36,6 @@
 // @match        https://chii.in/new_subject/*
 // @match        https://chii.in/settings
 // @grant        GM_xmlhttpRequest
-// @require      https://cdn.jsdelivr.net/npm/cropperjs@2.3.1/dist/cropper.min.js
 // @license      MIT
 // @gf           https://greasyfork.org/zh-CN/scripts/545636
 // ==/UserScript==
@@ -47,7 +46,6 @@
   'use strict';
 
   // #region 样式与DOM元素初始化
-  // 注入必要的CSS样式
   const css = (strings, ...values) => strings.reduce((res, str, i) => res + str + (values[i] ?? ''), '');
 
   const style = document.createElement('style');
@@ -118,7 +116,6 @@
 
     .bgm-cropper-canvas {
       width: 100%;
-      height: 300px;
       border: 1px solid #ddd;
     }
 
@@ -203,7 +200,6 @@
     : null;
   if (isNewSubjectPage && !createForm) return;
 
-  // 直接获取文件输入框
   let fileInput = null;
   if (isNewSubjectPage) {
     fileInput = document.createElement('input');
@@ -216,24 +212,19 @@
 
   const isUploadPhotoPage = window.location.pathname.includes('/upload_photo');
   const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-  const MAX_COMPRESS_DIM = 4096; // 压缩画布最大边长（超出部分等比缩小）
 
-  // 创建UI容器
   const container = document.createElement('div');
   container.className = 'bgm-uploader-container';
 
-  // 剪贴板按钮容器
   const clipboardControl = document.createElement('div');
   clipboardControl.className = 'bgm-clipboard-control';
 
-  // 单一剪贴板按钮
   const getClipboardBtn = document.createElement('button');
   getClipboardBtn.id = 'getClipboardBtn';
   getClipboardBtn.type = 'button';
   getClipboardBtn.textContent = '获取剪贴板内容';
   clipboardControl.appendChild(getClipboardBtn);
 
-  // 预览区域
   const previewWrapper = document.createElement('div');
   previewWrapper.className = 'bgm-preview-container';
 
@@ -260,7 +251,6 @@
     squarePreview.appendChild(squarePreviewImage);
   }
 
-  // 其他控制按钮
   const controls = document.createElement('div');
   controls.className = 'bgm-controls';
 
@@ -294,7 +284,6 @@
   mosaicCancelBtn.textContent = '取消马赛克';
   mosaicCancelBtn.style.display = 'none';
 
-  // 旋转按钮：仅在裁切模式内显示，由 Cropper 旋转画布
   const rotateLBtn = document.createElement('button');
   rotateLBtn.type = 'button';
   rotateLBtn.textContent = '左旋90°';
@@ -310,7 +299,6 @@
   clearBtn.textContent = '清除图片';
   clearBtn.style.display = 'none';
 
-  // 马赛克大小控制
   const mosaicControls = document.createElement('div');
   mosaicControls.className = 'bgm-mosaic-controls';
 
@@ -340,7 +328,6 @@
   mosaicControls.appendChild(blockSizeControl);
   mosaicControls.appendChild(brushSizeInfo);
 
-  // 组装UI
   originalPreview.appendChild(previewImage);
   previewWrapper.append(originalPreview);
 
@@ -388,7 +375,6 @@
   // #endregion
 
   // #region 工具函数
-  // 显示/隐藏编辑按钮
   function showEditButtons() {
     cropBtn.style.display = 'inline-block';
     mosaicBtn.style.display = 'inline-block';
@@ -417,7 +403,6 @@
     previewText.textContent = '';
   }
 
-  // 转换图片为JPG格式
   function convertToJpg(file) {
     return new Promise((resolve, reject) => {
       if (allowedImageTypes[file.type]) {
@@ -439,15 +424,12 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // 设置Canvas尺寸与图片一致
             canvas.width = img.naturalWidth || img.width;
             canvas.height = img.naturalHeight || img.height;
 
-            // 白色背景
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 绘制图片，保持原始尺寸
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
             canvas.toBlob(blob => {
@@ -471,7 +453,6 @@
           reject(new Error('无法加载图片'));
         };
 
-        // 修复SVG的MIME类型
         let src = e.target.result;
         if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
           src = src.replace('data:image/svg', 'data:image/svg+xml');
@@ -506,14 +487,20 @@
     });
   }
 
-  // 二分搜索不超出上限的最大压缩质量（约 6 次编码直接逼近目标体积）；
-  // 连最低质量都超限时按体积差距降采样，再来一轮
+  // 二分搜索不超出上限的最大压缩质量；连最低质量都超限时按体积差距降采样重试
   async function compressToTargetSize(img, width, height) {
     for (let attempt = 0; attempt < 3; attempt += 1) {
+      // 先试无损档 quality=1：塞得进上限就直接用（保留最大质量与原始分辨率）
+      const topBlob = await encodeJpeg(img, width, height, 1);
+      if (topBlob.size <= MAX_FILE_SIZE) {
+        return topBlob;
+      }
+
+      // 有损区间 [0.05, 1) 内二分，找不超出上限的最大质量
       let lo = 0.05;
-      let hi = 0.95;
+      let hi = 1;
       let best = null;
-      let oversize = null;
+      let oversize = topBlob;
 
       while (hi - lo > 0.02) {
         const mid = (lo + hi) / 2;
@@ -531,6 +518,7 @@
         return best;
       }
 
+      // 最低质量仍超限：按体积差距缩小尺寸再来一轮
       const ratio = Math.sqrt(MAX_FILE_SIZE / oversize.size);
       width = Math.max(64, Math.round(width * ratio));
       height = Math.max(64, Math.round(height * ratio));
@@ -539,7 +527,6 @@
     throw new Error('压缩失败');
   }
 
-  // 压缩图片
   function compressImage(file) {
     return new Promise((resolve, reject) => {
       if (file.size <= MAX_FILE_SIZE) {
@@ -555,14 +542,8 @@
         img.crossOrigin = 'anonymous';
         img.onerror = () => reject(new Error('压缩失败'));
         img.onload = () => {
-          let width = img.naturalWidth || img.width;
-          let height = img.naturalHeight || img.height;
-          const longEdge = Math.max(width, height);
-          if (longEdge > MAX_COMPRESS_DIM) {
-            const k = MAX_COMPRESS_DIM / longEdge;
-            width = Math.round(width * k);
-            height = Math.round(height * k);
-          }
+          const width = img.naturalWidth || img.width;
+          const height = img.naturalHeight || img.height;
 
           compressToTargetSize(img, width, height)
             .then(blob => {
@@ -578,7 +559,6 @@
     });
   }
 
-  // 计算实际马赛克大小
   function calculateMosaicSize() {
     if (!originalCanvas) return 1;
 
@@ -586,7 +566,6 @@
     return Math.max(2, Math.round(baseSize * mosaicSizePercent / 100));
   }
 
-  // 更新马赛克大小显示
   function updateMosaicSizeDisplay() {
     if (isMosaicing && originalCanvas) {
       const pixelSize = calculateMosaicSize();
@@ -594,7 +573,6 @@
     }
   }
 
-  // 检查是否是图片URL
   function isImageUrl(text) {
     try {
       if (text.startsWith('//')) text = `https:${text}`;
@@ -607,52 +585,58 @@
     }
   }
 
-  // 从URL获取图片文件
+  // 下载图片 blob：油猴环境走 GM_xmlhttpRequest 绕过跨域；
+  // 站点组件环境没有 GM API，退回 fetch（仅同源或带 CORS 头的图片可用）
+  function fetchImageBlob(url) {
+    if (typeof GM_xmlhttpRequest === 'function') {
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url: url,
+          responseType: 'blob',
+          overrideMimeType: 'image/*',
+          onload: (response) => resolve(response.response),
+          onerror: () => reject(new Error('图片下载失败'))
+        });
+      });
+    }
+
+    return fetch(url, { mode: 'cors' }).then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.blob();
+    });
+  }
+
   function fetchImageFromUrl(url) {
     previewText.textContent = '正在下载图片...';
     previewWrapper.style.display = 'flex';
     if (squarePreview) squarePreview.style.display = 'none';
 
-    return new Promise((resolve, reject) => {
-      GM_xmlhttpRequest({
-        method: 'GET',
-        url: url,
-        responseType: 'blob',
-        overrideMimeType: 'image/*',
-        onload: function (response) {
-          const blob = response.response;
-          let type = 'image/jpeg';
+    return fetchImageBlob(url)
+      .then((blob) => {
+        let type = blob.type || '';
 
+        // 下载通道拿不到可靠 Content-Type 时按扩展名判断
+        if (!type.startsWith('image/')) {
+          type = 'image/jpeg';
           const extension = url.split('.').pop().toLowerCase();
           if (extension === 'png') type = 'image/png';
           else if (extension === 'gif') type = 'image/gif';
           else if (extension === 'webp') type = 'image/webp';
-
-          const contentType = response.responseHeaders.match(/Content-Type:\s*(image\/\w+)/i);
-          if (contentType && contentType[1]) {
-            type = contentType[1];
-          }
-
-          const fileName = url.split('/').pop();
-          const correctedBlob = new Blob([blob], { type });
-          const file = new File([correctedBlob], fileName, { type });
-
-          convertToJpg(file)
-            .then(convertedFile => compressImage(convertedFile))
-            .then(compressedFile => resolve(compressedFile))
-            .catch(e => {
-              console.error(e);
-              reject(new Error('下载后处理失败'));
-            });
-        },
-        onerror: function () {
-          reject(new Error('图片下载失败'));
         }
+
+        const fileName = url.split('/').pop();
+        const file = new File([blob], fileName, { type });
+
+        return convertToJpg(file)
+          .then(convertedFile => compressImage(convertedFile));
+      })
+      .catch(e => {
+        console.error(e);
+        throw new Error('下载后处理失败');
       });
-    });
   }
 
-  // 更新正方形预览
   function updateSquarePreview() {
     if (!squarePreviewImage) return;
 
@@ -675,7 +659,14 @@
   // Cropper.js v2 模板：整图 contain 居中，选框覆盖全幅且可移动/缩放，设置页锁 1:1
   function buildCropperTemplate() {
     const aspectRatio = location.pathname === '/settings' ? ' aspect-ratio="1"' : '';
-    return `<cropper-canvas class="bgm-cropper-canvas" background>
+    // 按原图比例同时确定画布宽高，而不是用限高 300px 的缩略图列宽计算高度
+    const maxWidth = container.clientWidth || previewWrapper.clientWidth || 500;
+    const imageWidth = previewImage.naturalWidth || 1;
+    const imageHeight = previewImage.naturalHeight || 1;
+    const width = Math.max(1, Math.round(Math.min(maxWidth, 500 * imageWidth / imageHeight)));
+    const height = Math.max(1, Math.round(width * imageHeight / imageWidth));
+    originalPreview.style.width = `${width}px`;
+    return `<cropper-canvas class="bgm-cropper-canvas" background style="height:${height}px">
   <cropper-image initial-fit="contain" rotatable scalable translatable></cropper-image>
   <cropper-shade hidden></cropper-shade>
   <cropper-handle action="select" plain></cropper-handle>
@@ -713,6 +704,50 @@
     selection.$change((cw - dispW) / 2, (ch - dispH) / 2, dispW, dispH);
   }
 
+  // cropper 库运行时加载：首次进入裁切时动态插 script，多 CDN 依次兜底，不依赖 @require
+  let cropperLib = null;
+  const CROPPER_CDNS = [
+    'https://unpkg.com/cropperjs@2.3.1/dist/cropper.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.3.1/cropper.min.js',
+    'https://registry.npmmirror.com/cropperjs/2.3.1/files/dist/cropper.min.js'
+  ];
+
+  function loadCropperScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => {
+        script.remove();
+        reject(new Error(`加载失败: ${src}`));
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  async function ensureCropperLib() {
+    if (cropperLib) return;
+
+    // 页面上下文可能已有 cropper（其他脚本/组件环境预载）
+    if (typeof Cropper !== 'undefined') {
+      cropperLib = Cropper;
+      return;
+    }
+
+    for (const url of CROPPER_CDNS) {
+      try {
+        await loadCropperScript(url);
+        // 动态 script 落在页面上下文，从页面 window 取回引用
+        cropperLib = (typeof unsafeWindow !== 'undefined' ? unsafeWindow.Cropper : window.Cropper) || null;
+        if (cropperLib) return;
+      } catch (e) {
+        console.warn('wikiUploadPic:', e);
+      }
+    }
+
+    throw new Error('Cropper.js 加载失败');
+  }
+
   function initCropper() {
     if (cropper) {
       cropper.destroy();
@@ -720,13 +755,12 @@
 
     isCropping = true;
     previewImage.style.display = 'none';
-    cropper = Cropper.createCropper(previewImage, { template: buildCropperTemplate() });
+    cropper = cropperLib.createCropper(previewImage, { template: buildCropperTemplate() });
 
     const cropperImage = cropper.getCropperImage();
     const cropperCanvas = cropper.getCropperCanvas();
     const selection = cropper.getCropperSelection();
     if (cropperImage) {
-      // v1 的 ready 事件
       cropperImage.$ready(() => {
         syncSelectionToImage();
         positionRotateHandle();
@@ -734,7 +768,6 @@
       });
     }
     if (cropperCanvas) {
-      // v1 的 cropend 事件
       cropperCanvas.addEventListener('actionend', updateSquarePreview);
     }
 
@@ -758,9 +791,18 @@
     updateSquarePreview();
   }
 
-  function startCropping(e) {
+  async function startCropping(e) {
     e.preventDefault();
     if (!currentFile || isMosaicing) return;
+
+    previewText.textContent = '正在加载裁切组件...';
+    try {
+      await ensureCropperLib();
+    } catch (err) {
+      console.error(err);
+      previewText.textContent = 'Cropper 库加载失败，请检查网络后重试';
+      return;
+    }
 
     initCropper();
     cropBtn.style.display = 'none';
@@ -769,7 +811,7 @@
     rotateRBtn.style.display = 'inline-block';
     cropConfirmBtn.style.display = 'inline-block';
     cropCancelBtn.style.display = 'inline-block';
-    previewText.textContent = '调整裁切区域或旋转图片，点击"确认裁切"';
+    previewText.textContent = '调整裁切区域或旋转图片，点击"确认裁切"（滚轮可缩放视图）';
   }
 
   async function confirmCrop(e) {
@@ -823,6 +865,7 @@
     rotateHandle = null;
     isRotating = false;
     previewImage.style.display = '';
+    originalPreview.style.width = '';
     showEditButtons();
     rotateLBtn.style.display = 'none';
     rotateRBtn.style.display = 'none';
@@ -863,6 +906,7 @@
     ];
   }
 
+  // 图片当前的显示缩放（矩阵缩放分量）
   // 旋转手柄跟随选框顶边中点
   function positionRotateHandle() {
     if (!rotateHandle || !cropper) return;
@@ -933,6 +977,16 @@
     const deg = e.currentTarget === rotateRBtn ? 90 : -90;
     cropperImage.$rotate(`${deg}deg`);
     cropperImage.$center('contain');
+    // $center 内部「先移动后缩放」可能留下残余偏移：实测 bbox 强制归位到画布正中
+    const canvasEl = cropper.getCropperCanvas();
+    if (canvasEl) {
+      const cr = canvasEl.getBoundingClientRect();
+      const ir = cropperImage.getBoundingClientRect();
+      cropperImage.$move(
+        cr.left + (cr.width - ir.width) / 2 - ir.left,
+        cr.top + (cr.height - ir.height) / 2 - ir.top
+      );
+    }
     syncSelectionToImage();
     positionRotateHandle();
     updateSquarePreview();
@@ -1262,7 +1316,6 @@
         previewText.textContent = '正在获取剪贴板...';
         previewWrapper.style.display = 'flex';
 
-        // 尝试读取图片
         const clipboardItems = await navigator.clipboard.read();
         for (const item of clipboardItems) {
           for (const type of item.types) {
@@ -1281,7 +1334,6 @@
           }
         }
 
-        // 尝试读取文本
         const text = await navigator.clipboard.readText();
         if (text) {
           const trimmedText = text.trim();
@@ -1326,7 +1378,6 @@
       document.removeEventListener('click', handleClickOutside);
     };
 
-    // 点击外部取消
     const handleClickOutside = function() {
       pasteHelper.blur();
       document.removeEventListener('paste', handlePaste);
@@ -1537,34 +1588,27 @@
   // #endregion
 
   // #region 事件监听
-  // 裁切相关事件
   cropBtn.addEventListener('click', startCropping);
   cropConfirmBtn.addEventListener('click', confirmCrop);
   cropCancelBtn.addEventListener('click', cancelCrop);
 
-  // 旋转按钮事件
   rotateLBtn.addEventListener('click', handleRotate);
   rotateRBtn.addEventListener('click', handleRotate);
 
-  // 清除按钮事件
   clearBtn.addEventListener('click', clearPendingImage);
 
-  // 马赛克相关事件
   mosaicBtn.addEventListener('click', startMosaicing);
   mosaicConfirmBtn.addEventListener('click', confirmMosaic);
   mosaicCancelBtn.addEventListener('click', cancelMosaic);
 
-  // 剪贴板按钮事件
   getClipboardBtn.addEventListener('click', handleClipboard);
 
-  // 马赛克比例调整事件
   blockSizeSlider.addEventListener('input', function() {
     mosaicSizePercent = parseInt(this.value);
     blockSizeValue.textContent = `${mosaicSizePercent}%`;
     updateMosaicSizeDisplay();
   });
 
-  // 鼠标绘制事件
   document.addEventListener('mousemove', function(e) {
     if (isMosaicing && isDrawing && tempCanvas && e.target === tempCanvas) {
       drawMosaic(e);
@@ -1579,7 +1623,6 @@
     isDrawing = false;
   });
 
-  // 文件输入事件
   fileInput.addEventListener('change', async function () {
     if (this.files.length > 0) {
       await updatePreview(this.files[0]);
@@ -1591,7 +1634,6 @@
     updatePreview(fileInput.files[0]);
   }
 
-  // 全局粘贴事件
   document.addEventListener('paste', async function (e) {
     const activeElement = document.activeElement;
     if (!activeElement ||
@@ -1672,7 +1714,6 @@
     }
   });
 
-  // 添加提示信息
   const hint = document.createElement('div');
   hint.className = 'bgm-hint';
   hint.textContent = isNewSubjectPage
