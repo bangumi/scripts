@@ -8852,8 +8852,7 @@ ${names.map((n) => `<option value="${n}">${n}</option>`)}
       return new Set(checks.filter(({ matches }) => matches).map(({ url }) => url));
   }
   /**
-   * 已验证 ISBN 或唯一的完整标题与日期组合可以自动命中。
-   * 主标题和相似标题只作为人工复核候选。
+   * 已验证的唯一 ISBN，或只有一条候选且完整标题一致时，可以自动命中。
    */
   function matchSubjectCandidates(candidates, subjectInfo, options = {}) {
       const items = uniqueByUrl(candidates);
@@ -8865,13 +8864,13 @@ ${names.map((n) => `<option value="${n}">${n}</option>`)}
           return { candidates: verified };
       const name = subjectInfo.name?.trim() ?? '';
       const exact = items.filter((candidate) => hasSameSearchName(candidate, name));
+      // 提供 ISBN 时，直接打开须以 ISBN 核验为准。
+      if (!subjectInfo.isbn && items.length === 1 && exact.length === 1)
+          return exact[0];
       const sourceDate = subjectInfo.releaseDate && dealDate(subjectInfo.releaseDate);
       const sameDate = sourceDate
           ? exact.filter(({ releaseDate }) => releaseDate && dealDate(releaseDate) === sourceDate)
           : [];
-      // 提供 ISBN 却未验证一致时，不允许较弱的标题/日期覆盖这个冲突信号。
-      if (!subjectInfo.isbn && sameDate.length === 1)
-          return sameDate[0];
       const mainTitleMatches = items.filter((candidate) => hasSameSubjectMainTitle(candidate, name));
       const ranked = new Set([
           ...sameDate,
